@@ -78,50 +78,71 @@ class StatusViewModel with ChangeNotifier {
   Timer? _statusDataTimer;
   Timer? _overTimeDataTimer;
   Timer? _metricsDataTimer;
+  int? _previousRefreshTime;
   bool _isAutoRefreshRunning = false;
-  bool _isStatusFetchInProgress = false;
-  bool _isOvertimeFetchInProgress = false;
-  bool _isMetricsFetchInProgress = false;
 
-  // Fatal error surfaced to the shell for interactive recovery (e.g. TLS pin
-  // mismatch or TOTP required). Consumed via [consumeFatalConnectionError].
+  // Raised when auto-refresh stops on a TLS error (e.g. pin mismatch); the UI
+  // shows the recovery dialog, then clears it.
   Exception? _fatalConnectionError;
 
   // ---------------------------------------------------------------------------
-  // Getters
+  // Getters — API unchanged from the former StatusViewModel so that all 15+
+  // UI widgets using `context.select<StatusViewModel, ...>` need zero changes.
   // ---------------------------------------------------------------------------
   LoadStatus get getServerStatus => _serverStatus;
+
+  bool get isServerLoading => _serverStatus == LoadStatus.loading;
+
+  RealtimeStatus? get getRealtimeStatus => _realtimeStatus;
+
   LoadStatus get getStatusLoading => _statusLoading;
-  LoadStatus get getOvertimeDataLoading => _overtimeDataLoading;
-  RealtimeStatus? get realtimeStatus => _realtimeStatus;
-  OverTime? get overTimeData => _overtimeData;
-  FtlDnsMetrics? get ftlDnsMetrics => _ftlDnsMetrics;
-  FtlSystem? get ftlSystem => _ftlSystem;
-  FtlSensor? get ftlSensor => _ftlSensor;
+
+  OverTime? get getOvertimeData => _overtimeData;
+
+  FtlDnsMetrics? get getFtlDnsMetrics => _ftlDnsMetrics;
+
+  DnsCache? get getDnsCache => _ftlDnsMetrics?.cache;
+
+  DnsReplies? get getDnsReplies => _ftlDnsMetrics?.replies;
+
+  FtlSystem? get getFtlSystem => _ftlSystem;
+
+  FtlSensor? get getFtlSensor => _ftlSensor;
+
+  double? get getQueriesPerMinute {
+    final freq = _realtimeStatus?.summary.frequency;
+    if (freq == null) return null;
+    return freq * 60;
+  }
+
+  LoadStatus get getOvertimeDataLoadStatus => _overtimeDataLoading;
+
   bool get isAutoRefreshRunning => _isAutoRefreshRunning;
 
-  /// Returns and clears a pending fatal connection error.
-  Exception? consumeFatalConnectionError() {
-    final error = _fatalConnectionError;
+  Exception? get fatalConnectionError => _fatalConnectionError;
+
+  void clearFatalConnectionError() {
     _fatalConnectionError = null;
-    return error;
   }
 
-  /// Derived top client names for filter UI. Replaces the former push-based
-  /// `FiltersViewModel.setClients()` call in `StatusUpdateService`.
-  List<String> get topClientNames {
-    final clients = _realtimeStatus?.topClients ?? [];
-    return clients.map((c) => c.name).toList();
-  }
-
-  // ---------------------------------------------------------------------------
-  // Dependency update (called by ProxyProvider)
-  // ---------------------------------------------------------------------------
-
-  /// Updates repository dependencies and primitive configuration values.
+  /// Derived getter: extracts client hostnames from the current
+  /// [RealtimeStatus]. Used by `LogsViewModel` via ProxyProvider to replace
+  /// the former `StatusUpdateService._setClientsFromTopSources()` push.
   ///
-  /// Called by `ChangeNotifierProxyProvider4` from [dependencies.dart] whenever
-  /// the selected server or app config changes.
+  /// In topSources, client keys are formatted as either:
+  /// - `hostname|ip`  (if hostname is available)
+  /// - `ip`           (if no hostname is available)
+  List<String> get topClientNames {
+    if (_realtimeStatus == null) return [];
+    return _realtimeStatus!.topClients.topSources
+        .map((source) => source.source.split('|').first)
+        .toList();
+  }
+
+  // ---------------------------------------------------------------------------
+  // update() — called by ChangeNotifierProxyProvider2 whenever
+  // RepositoryBundle or ServersViewModel changes.
+  // ---------------------------------------------------------------------------
   void update({
     RealtimeStatusRepository? realtimeStatusRepository,
     MetricsRepository? metricsRepository,
@@ -130,11 +151,12 @@ class StatusViewModel with ChangeNotifier {
     String? apiVersion,
     String? selectedServerAddress,
     String? selectedServerAlias,
-    bool? isConnecting,
+    bool isConnecting = false,
     int? autoRefreshTime,
     void Function(bool)? onUpdateServerStatus,
   }) {
     final serverChanged = selectedServerAddress != _selectedServerAddress;
+
     _realtimeStatusRepository = realtimeStatusRepository;
     _metricsRepository = metricsRepository;
     _dnsRepository = dnsRepository;
@@ -142,68 +164,165 @@ class StatusViewModel with ChangeNotifier {
     _apiVersion = apiVersion;
     _selectedServerAddress = selectedServerAddress;
     _selectedServerAlias = selectedServerAlias;
-    _isConnecting = isConnecting ?? false;
+    _isConnecting = isConnecting;
     _autoRefreshTime = autoRefreshTime;
     _onUpdateServerStatus = onUpdateServerStatus;
 
+    // Restart all timers when the refresh interval changes mid-polling.
+    final hasInterval = _previousRefreshTime != null;
+    final intervalChanged = autoRefreshTime != _previousRefreshTime;
+    final refreshTimeChanged =
+        hasInterval &&
+        intervalChanged &&
+        _isAutoRefreshRunning &&
+        !serverChanged;
+    _previousRefreshTime = autoRefreshTime;
+
+    if (refreshTimeChanged) {
+      logger.d('Auto Refresh Time Changed. Restarting all timers.');
+      _stopAutoRefresh(showLoadingIndicator: false);
+      Future.microtask(() {
+        if (!_isAutoRefreshRunning && _selectedServerAddress != null) {
+          startAutoRefresh(showLoadingIndicator: false);
+        }
+      });
+    }
+
+    // When the server changes, reset all state (functionally equivalent to
+    // disposing and recreating the ViewModel).
     if (serverChanged) {
-      // Reset stale data so a previous server's status is never shown while the
-      // newly selected one is loading.
+      final wasRunning = _isAutoRefreshRunning;
+      stopAutoRefresh();
+      _fatalConnectionError = null;
       _realtimeStatus = null;
       _overtimeData = null;
       _ftlDnsMetrics = null;
       _ftlSystem = null;
       _ftlSensor = null;
-      _serverStatus = LoadStatus.loading;
+      // When auto-refresh was already running (e.g. ServerConnectionService
+      // just set serverStatus=loaded and called startAutoRefresh), preserve
+      // _serverStatus to avoid a visible "disconnected" flicker.  The
+      // restarted auto-refresh will update it on success/failure.
+      if (!wasRunning) {
+        _serverStatus = LoadStatus.loading;
+      }
       _statusLoading = LoadStatus.loading;
       _overtimeDataLoading = LoadStatus.loading;
-      _fatalConnectionError = null;
+      notifyListeners();
+
+      // If auto-refresh was running before the server change (e.g. started by
+      // Base or ServerConnectionService), restart it with the new server's
+      // repositories.  Deferred via microtask so that notifyListeners() during
+      // the Provider build phase doesn't cause a re-entrant build.
+      if (wasRunning && _selectedServerAddress != null) {
+        Future.microtask(() {
+          if (!_isAutoRefreshRunning && _selectedServerAddress != null) {
+            startAutoRefresh();
+          }
+        });
+      }
     }
   }
 
   // ---------------------------------------------------------------------------
-  // Public state setters
+  // Public methods — used by ServerConnectionService, Base, etc.
   // ---------------------------------------------------------------------------
 
+  /// Sets the server connection status imperatively.
+  /// Used by `ServerConnectionService` during server connection flow.
+  ///
+  /// NOTE: Not implemented as a `Command` — synchronous setter, not an
+  /// async user-triggered operation.
   void setServerStatus(LoadStatus status) {
-    if (_serverStatus != status) {
-      _serverStatus = status;
+    _serverStatus = status;
+    notifyListeners();
+  }
+
+  /// Start timer for auto refresh.
+  ///
+  /// - [runImmediately]: If true, the refresh will start immediately.
+  /// - [isDelay]: If true, the refresh will be delayed by a short duration.
+  /// - [showLoadingIndicator]: If true, shows a loading indicator during the
+  ///   refresh.
+  ///
+  /// NOTE: Not implemented as a `Command` because this method sets up three
+  /// timers that fire indefinitely — there is no single completion event.
+  /// `Command` wraps one-shot async operations with a clear done/error signal,
+  /// which does not apply to continuous background polling.
+  void startAutoRefresh({
+    bool runImmediately = true,
+    bool isDelay = false,
+    bool showLoadingIndicator = true,
+  }) {
+    if (!_isAutoRefreshRunning) {
+      logger.d(
+        'Starting Auto Refresh: '
+        '($_selectedServerAlias) $_selectedServerAddress',
+      );
+      _startAutoRefresh(
+        runImmediately: runImmediately,
+        isDelay: isDelay,
+        showLoadingIndicator: showLoadingIndicator,
+      );
+    }
+  }
+
+  /// Refresh the status data once. Returns true if all data fetched
+  /// successfully.
+  ///
+  /// NOTE: Not implemented as a `Command` because this method triggers three
+  /// parallel HTTP requests ([_fetchStatusData], [_fetchOverTimeData],
+  /// [_fetchMetricsData]), each of which calls [notifyListeners] independently
+  /// as it completes. A `Command` wraps a single async action with one
+  /// completion/error event and cannot model these fine-grained, parallel
+  /// intermediate state transitions. The `bool` return value is used directly
+  /// by callers to decide whether to show an error snackbar.
+  Future<bool> refreshOnce() async {
+    logger.d('Refresh once Server Status');
+    return _refreshOnce();
+  }
+
+  /// Stop auto-refresh timers.
+  ///
+  /// NOTE: Not implemented as a `Command` — synchronous timer cancellation,
+  /// not an async user-triggered operation.
+  void stopAutoRefresh({bool showLoadingIndicator = true}) {
+    if (_isAutoRefreshRunning) {
+      logger.d(
+        'Stop Auto Refresh: '
+        '($_selectedServerAlias) $_selectedServerAddress',
+      );
+      _stopAutoRefresh(showLoadingIndicator: showLoadingIndicator);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Private — auto-refresh lifecycle
+  // ---------------------------------------------------------------------------
+
+  void _startAutoRefresh({
+    bool runImmediately = true,
+    bool isDelay = false,
+    bool showLoadingIndicator = true,
+  }) {
+    if (_isAutoRefreshRunning) return;
+    _isAutoRefreshRunning = true;
+
+    if (showLoadingIndicator) {
+      _statusLoading = LoadStatus.loading;
+      _overtimeDataLoading = LoadStatus.loading;
+      notifyListeners();
+    } else {
+      // Skip loading UI on resume, but still notify listeners to trigger
+      // data reload.
       notifyListeners();
     }
-  }
-
-  // ---------------------------------------------------------------------------
-  // Auto-refresh lifecycle
-  // ---------------------------------------------------------------------------
-
-  /// Starts (or restarts) all status polling timers.
-  ///
-  /// [runImmediately] triggers the first fetch synchronously before scheduling
-  /// the timer. [isDelay] delays overtime/metrics on resume to reduce bursts.
-  void startAutoRefresh({bool runImmediately = true, bool isDelay = false}) {
-    if (_selectedServerAddress == null) return;
-    _stopAutoRefresh(showLoadingIndicator: false);
-    _isAutoRefreshRunning = true;
-    _serverStatus = LoadStatus.loading;
-    _statusLoading = LoadStatus.loading;
-    _overtimeDataLoading = LoadStatus.loading;
-    notifyListeners();
 
     _setupStatusDataTimer(runImmediately: runImmediately);
     _setupOverTimeDataTimer(runImmediately: runImmediately, isDelay: isDelay);
     _setupMetricsDataTimer(runImmediately: runImmediately, isDelay: isDelay);
   }
 
-  /// Stops polling timers. When [showLoadingIndicator] is true (default),
-  /// loading indicators are shown until the next connection starts.
-  void stopAutoRefresh({bool showLoadingIndicator = true}) {
-    _stopAutoRefresh(showLoadingIndicator: showLoadingIndicator);
-  }
-
-  /// One-shot refresh used by pull-to-refresh and resume.
-  Future<bool> refreshOnce() => _refreshOnce();
-
-  /// Whether the given error is a TLS certificate mismatch (HTTP 495).
   bool _isSslError(Object? error) =>
       error is HttpStatusCodeException && error.statusCode == 495;
 
@@ -246,8 +365,15 @@ class StatusViewModel with ChangeNotifier {
     _metricsDataTimer = null;
   }
 
+  // ---------------------------------------------------------------------------
+  // Private — one-shot refresh
+  // ---------------------------------------------------------------------------
+
   Future<bool> _refreshOnce() async {
     final selectedUrlBefore = _selectedServerAddress;
+    // _fetchStatusData issues multiple HTTP requests, so we start it
+    // immediately to give it a head start. The others are slightly delayed
+    // to avoid overwhelming the connection pool.
     final (statusOk, overtimeOk, metricsOk, _) = await (
       _fetchStatusData(),
       Future.delayed(
@@ -261,20 +387,31 @@ class StatusViewModel with ChangeNotifier {
       ).then((_) => _fetchSlowSystemData()),
     ).wait;
 
-    if (_selectedServerAddress != selectedUrlBefore) return false;
+    if (_selectedServerAddress != selectedUrlBefore) {
+      logger.d(
+        'Skipping stale refreshOnce result: server was changed during fetch. '
+        'Previous: $selectedUrlBefore, Selected: $_selectedServerAddress',
+      );
+      return false;
+    }
 
     if (statusOk && overtimeOk && metricsOk) {
       _serverStatus = LoadStatus.loaded;
       notifyListeners();
       return true;
+    } else {
+      logger.w('Failed to fetch all status data.');
+      _serverStatus = LoadStatus.error;
+      notifyListeners();
+      return false;
     }
-
-    logger.w('Failed to fetch all status data.');
-    _serverStatus = LoadStatus.error;
-    notifyListeners();
-    return false;
   }
 
+  // ---------------------------------------------------------------------------
+  // Private — data fetchers
+  // ---------------------------------------------------------------------------
+
+  /// Creates the appropriate [RealtimeStatusUseCase] based on API version.
   RealtimeStatusUseCase? _createRealtimeStatusUseCase() {
     if (_apiVersion == SupportedApiVersions.v6) {
       final metrics = _metricsRepository;
@@ -284,11 +421,11 @@ class StatusViewModel with ChangeNotifier {
         metricsRepository: metrics,
         dnsRepository: dns,
       );
+    } else {
+      final repo = _realtimeStatusRepository;
+      if (repo == null) return null;
+      return RealtimeStatusUseCaseV5(repository: repo);
     }
-
-    final repo = _realtimeStatusRepository;
-    if (repo == null) return null;
-    return RealtimeStatusUseCaseV5(repository: repo);
   }
 
   Future<bool> _fetchStatusData() async {
@@ -300,7 +437,13 @@ class StatusViewModel with ChangeNotifier {
 
     final result = await useCase.fetchRealtimeStatus();
 
-    if (_selectedServerAddress != selectedUrlBefore) return false;
+    if (_selectedServerAddress != selectedUrlBefore) {
+      logger.d(
+        'Skipping stale status update: server was changed during fetch. '
+        'Previous: $selectedUrlBefore, Selected: $_selectedServerAddress',
+      );
+      return false;
+    }
 
     return result.fold(
       (status) {
@@ -323,11 +466,19 @@ class StatusViewModel with ChangeNotifier {
   Future<bool> _fetchOverTimeData() async {
     if (_selectedServerAddress == null) return false;
     final selectedUrlBefore = _selectedServerAddress;
+
     final metricsRepo = _metricsRepository;
     if (metricsRepo == null) return false;
 
     final result = await metricsRepo.fetchOverTime();
-    if (_selectedServerAddress != selectedUrlBefore) return false;
+
+    if (_selectedServerAddress != selectedUrlBefore) {
+      logger.d(
+        'Skipping stale overtime data update: server was changed during '
+        'fetch. Previous: $selectedUrlBefore, Selected: $_selectedServerAddress',
+      );
+      return false;
+    }
 
     return result.fold(
       (overTime) {
@@ -348,11 +499,19 @@ class StatusViewModel with ChangeNotifier {
   Future<bool> _fetchMetricsData() async {
     if (_selectedServerAddress == null) return false;
     final selectedUrlBefore = _selectedServerAddress;
+
     final ftlRepo = _ftlRepository;
     if (ftlRepo == null) return false;
 
     final result = await ftlRepo.fetchInfoMetrics();
-    if (_selectedServerAddress != selectedUrlBefore) return false;
+
+    if (_selectedServerAddress != selectedUrlBefore) {
+      logger.d(
+        'Skipping stale metrics update: server was changed during fetch. '
+        'Previous: $selectedUrlBefore, Selected: $_selectedServerAddress',
+      );
+      return false;
+    }
 
     return result.fold(
       (metrics) {
@@ -361,12 +520,15 @@ class StatusViewModel with ChangeNotifier {
         return true;
       },
       (error) {
+        // v5 returns NotSupportedException for metrics — that's OK.
+        // Genuine errors (e.g. network) should propagate as failure.
         if (error is NotSupportedException) return true;
         return false;
       },
     );
   }
 
+  // Fetched at overtime-timer frequency (slow): system stats + temperature
   Future<bool> _fetchSlowSystemData() async {
     if (_selectedServerAddress == null) return false;
     final selectedUrlBefore = _selectedServerAddress;
@@ -377,14 +539,24 @@ class StatusViewModel with ChangeNotifier {
       ftlRepo.fetchInfoSystem(),
       ftlRepo.fetchInfoSensors(),
     ).wait;
-    if (_selectedServerAddress != selectedUrlBefore) return false;
+
+    // Drop the result when the selected server changed during the fetch.
+    if (_selectedServerAddress != selectedUrlBefore) {
+      logger.d(
+        'Skipping stale system data update: server was changed during fetch. '
+        'Previous: $selectedUrlBefore, Selected: $_selectedServerAddress',
+      );
+      return false;
+    }
 
     systemResult.fold((system) => _ftlSystem = system, (_) {});
     sensorResult.fold((sensor) => _ftlSensor = sensor, (_) {});
-    notifyListeners();
     return true;
   }
 
+  // ---------------------------------------------------------------------------
+  // Private — timer setup (status data)
+  // ---------------------------------------------------------------------------
   void _setupStatusDataTimer({bool runImmediately = true}) {
     Future<void> timerFn({Timer? timer}) async {
       if (_selectedServerAddress == null) {
@@ -392,20 +564,29 @@ class StatusViewModel with ChangeNotifier {
         return;
       }
       final selectedUrlBefore = _selectedServerAddress;
-      if (_isStatusFetchInProgress || _isConnecting) return;
 
-      _isStatusFetchInProgress = true;
-      final useCase = _createRealtimeStatusUseCase();
-      if (useCase == null) {
-        _isStatusFetchInProgress = false;
+      if (_isConnecting) {
+        logger.d(
+          'Skipping status data fetch due to ongoing connection attempt',
+        );
         return;
       }
 
+      final useCase = _createRealtimeStatusUseCase();
+      if (useCase == null) return;
+
+      // Capture blocking status before fetch to detect changes.
       final prevBlockingStatus = _realtimeStatus?.status;
       final result = await useCase.fetchRealtimeStatus();
-      _isStatusFetchInProgress = false;
 
-      if (_selectedServerAddress != selectedUrlBefore) return;
+      if (_selectedServerAddress != selectedUrlBefore) {
+        logger.d(
+          'Skipping stale status update: server was changed during fetch. '
+          'Previous: $selectedUrlBefore, '
+          'Selected: $_selectedServerAddress',
+        );
+        return;
+      }
 
       result.fold(
         (status) {
@@ -419,6 +600,9 @@ class StatusViewModel with ChangeNotifier {
           }
           notifyListeners();
 
+          // When blocking status changes during auto-refresh (e.g. a timed
+          // disable expired while the app was in the foreground), notify the
+          // home widget so it reflects the new state immediately.
           if (status.status != prevBlockingStatus &&
               _selectedServerAddress != null) {
             WidgetChannel.sendBlockingUpdated(
@@ -449,13 +633,24 @@ class StatusViewModel with ChangeNotifier {
       );
     }
 
-    if (runImmediately) timerFn();
+    if (runImmediately) {
+      timerFn();
+    }
+
     _statusDataTimer = Timer.periodic(
+      // Add a slight negative offset to avoid
+      // 'ClientException: Connection closed before full header was received'.
+      // This error occurs frequently on certain devices (e.g. Pixel 6a) when
+      // using exact intervals (e.g. 5000ms). Using a slightly shorter interval
+      // (e.g. 4700ms) prevents hitting the edge of server-side timeout.
       Duration(milliseconds: (_autoRefreshTime ?? 5) * 1000 - 300),
       (timer) => timerFn(timer: timer),
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // Private — timer setup (overtime data)
+  // ---------------------------------------------------------------------------
   void _setupOverTimeDataTimer({
     bool runImmediately = true,
     bool isDelay = false,
@@ -465,24 +660,31 @@ class StatusViewModel with ChangeNotifier {
         timer?.cancel();
         return;
       }
-      if (_isOvertimeFetchInProgress || _isConnecting) return;
       final selectedUrlBefore = _selectedServerAddress;
 
-      _isOvertimeFetchInProgress = true;
-      final metricsRepo = _metricsRepository;
-      if (metricsRepo == null) {
-        _isOvertimeFetchInProgress = false;
+      if (_isConnecting) {
+        logger.d(
+          'Skipping overtime data fetch due to ongoing connection attempt',
+        );
         return;
       }
 
-      if (isDelay) await const Duration(seconds: 1).delay;
+      final metricsRepo = _metricsRepository;
+      if (metricsRepo == null) return;
+
       final (result, _) = await (
         metricsRepo.fetchOverTime(),
         _fetchSlowSystemData(),
       ).wait;
-      _isOvertimeFetchInProgress = false;
 
-      if (_selectedServerAddress != selectedUrlBefore) return;
+      if (_selectedServerAddress != selectedUrlBefore) {
+        logger.d(
+          'Skipping stale overtime data update: server was changed during '
+          'fetch. Previous: $selectedUrlBefore, '
+          'Selected: $_selectedServerAddress',
+        );
+        return;
+      }
 
       result.fold(
         (overTime) {
@@ -515,7 +717,10 @@ class StatusViewModel with ChangeNotifier {
     }
 
     void start() {
-      if (runImmediately) timerFn();
+      if (runImmediately) {
+        timerFn();
+      }
+
       _overTimeDataTimer = Timer.periodic(
         const Duration(minutes: 1),
         (timer) => timerFn(timer: timer),
@@ -523,12 +728,15 @@ class StatusViewModel with ChangeNotifier {
     }
 
     if (isDelay) {
-      Future.delayed(const Duration(seconds: 2), start);
+      Future.delayed(const Duration(milliseconds: 100), start);
     } else {
       start();
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // Private — timer setup (metrics data)
+  // ---------------------------------------------------------------------------
   void _setupMetricsDataTimer({
     bool runImmediately = true,
     bool isDelay = false,
@@ -538,17 +746,28 @@ class StatusViewModel with ChangeNotifier {
         timer?.cancel();
         return;
       }
-      if (_isMetricsFetchInProgress || _isConnecting) return;
       final selectedUrlBefore = _selectedServerAddress;
+
+      if (_isConnecting) {
+        logger.d(
+          'Skipping metrics data fetch due to ongoing connection attempt',
+        );
+        return;
+      }
+
       final ftlRepo = _ftlRepository;
       if (ftlRepo == null) return;
 
-      _isMetricsFetchInProgress = true;
-      if (isDelay) await const Duration(milliseconds: 500).delay;
       final result = await ftlRepo.fetchInfoMetrics();
-      _isMetricsFetchInProgress = false;
 
-      if (_selectedServerAddress != selectedUrlBefore) return;
+      if (_selectedServerAddress != selectedUrlBefore) {
+        logger.d(
+          'Skipping stale metrics update: server was changed during fetch. '
+          'Previous: $selectedUrlBefore, '
+          'Selected: $_selectedServerAddress',
+        );
+        return;
+      }
 
       result.fold(
         (metrics) {
@@ -556,30 +775,37 @@ class StatusViewModel with ChangeNotifier {
           notifyListeners();
         },
         (error) {
-          if (error is NotSupportedException) return;
-          logger.d('Metrics auto-refresh failed: $error');
+          // v5 returns NotSupportedException — that's OK
         },
       );
     }
 
     void start() {
-      if (runImmediately) timerFn();
+      if (runImmediately) {
+        timerFn();
+      }
+
       _metricsDataTimer = Timer.periodic(
-        const Duration(minutes: 1),
+        Duration(seconds: _autoRefreshTime ?? 5),
         (timer) => timerFn(timer: timer),
       );
     }
 
     if (isDelay) {
-      Future.delayed(const Duration(milliseconds: 700), start);
+      Future.delayed(const Duration(milliseconds: 100), start);
     } else {
       start();
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // Lifecycle
+  // ---------------------------------------------------------------------------
   @override
   void dispose() {
-    _stopAutoRefresh(showLoadingIndicator: false);
+    _statusDataTimer?.cancel();
+    _overTimeDataTimer?.cancel();
+    _metricsDataTimer?.cancel();
     super.dispose();
   }
 }
