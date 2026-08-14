@@ -30,7 +30,7 @@ class _AddGroupModalState extends State<AddGroupModal> {
   Widget build(BuildContext context) {
     Widget content() {
       return Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Flexible(
             child: SingleChildScrollView(
@@ -126,7 +126,7 @@ class _AddGroupModalState extends State<AddGroupModal> {
     if (widget.window) {
       return Dialog(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 600, maxHeight: 520),
+          constraints: const BoxConstraints(maxWidth: 600),
           child: Padding(padding: const EdgeInsets.all(16), child: content()),
         ),
       );
@@ -134,11 +134,9 @@ class _AddGroupModalState extends State<AddGroupModal> {
 
     return Padding(
       padding: MediaQuery.of(context).viewInsets,
-      child: SafeArea(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxHeight: 520),
-          child: Padding(padding: const EdgeInsets.all(24), child: content()),
-        ),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: SafeArea(child: content()),
       ),
     );
   }

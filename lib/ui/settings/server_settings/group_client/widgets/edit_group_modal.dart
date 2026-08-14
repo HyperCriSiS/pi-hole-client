@@ -47,91 +47,96 @@ class _EditGroupModalState extends State<EditGroupModal> {
   @override
   Widget build(BuildContext context) {
     Widget content() {
-      return Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Flexible(
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.edit_rounded,
-                    size: 24,
-                    color: Theme.of(context).colorScheme.secondary,
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Text(
-                      AppLocalizations.of(context)!.groupEdit,
-                      style: const TextStyle(fontSize: 24),
-                    ),
-                  ),
-                  TextField(
-                    controller: nameController,
-                    onChanged: (_) => validateForm(),
-                    decoration: InputDecoration(
-                      prefixIcon: const Icon(Icons.group_rounded),
-                      border: const OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(10)),
+      return Container(
+        constraints: const BoxConstraints(minHeight: 360),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Flexible(
+              child: Center(
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.edit_rounded,
+                        size: 24,
+                        color: Theme.of(context).colorScheme.secondary,
                       ),
-                      labelText: AppLocalizations.of(context)!.groupName,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: commentController,
-                    onChanged: (_) => validateForm(),
-                    decoration: InputDecoration(
-                      prefixIcon: const Icon(Icons.comment_rounded),
-                      border: const OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(10)),
+                      Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Text(
+                          AppLocalizations.of(context)!.groupEdit,
+                          style: const TextStyle(fontSize: 24),
+                        ),
                       ),
-                      labelText: AppLocalizations.of(context)!.comment,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton(
-                onPressed: () => Navigator.maybePop(context),
-                child: Text(AppLocalizations.of(context)!.cancel),
-              ),
-              const SizedBox(width: 14),
-              TextButton(
-                onPressed: allDataValid
-                    ? () {
-                        final name = nameController.text.trim();
-                        final comment = commentController.text.trim();
-                        widget.onConfirm((
-                          name: name,
-                          comment: comment.isEmpty ? null : comment,
-                          enabled: widget.group.enabled,
-                        ));
-                        Navigator.maybePop(context);
-                      }
-                    : null,
-                style: ButtonStyle(
-                  foregroundColor: WidgetStateProperty.all(
-                    allDataValid ? null : Colors.grey,
+                      TextField(
+                        controller: nameController,
+                        onChanged: (_) => validateForm(),
+                        decoration: InputDecoration(
+                          prefixIcon: const Icon(Icons.group_rounded),
+                          border: const OutlineInputBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(10)),
+                          ),
+                          labelText: AppLocalizations.of(context)!.groupName,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: commentController,
+                        onChanged: (_) => validateForm(),
+                        decoration: InputDecoration(
+                          prefixIcon: const Icon(Icons.comment_rounded),
+                          border: const OutlineInputBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(10)),
+                          ),
+                          labelText: AppLocalizations.of(context)!.comment,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                child: Text(AppLocalizations.of(context)!.edit),
               ),
-            ],
-          ),
-        ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.maybePop(context),
+                  child: Text(AppLocalizations.of(context)!.cancel),
+                ),
+                const SizedBox(width: 14),
+                TextButton(
+                  onPressed: allDataValid
+                      ? () {
+                          final name = nameController.text.trim();
+                          final comment = commentController.text.trim();
+                          widget.onConfirm((
+                            name: name,
+                            comment: comment.isEmpty ? null : comment,
+                            enabled: widget.group.enabled,
+                          ));
+                          Navigator.maybePop(context);
+                        }
+                      : null,
+                  style: ButtonStyle(
+                    foregroundColor: WidgetStateProperty.all(
+                      allDataValid ? null : Colors.grey,
+                    ),
+                  ),
+                  child: Text(AppLocalizations.of(context)!.edit),
+                ),
+              ],
+            ),
+          ],
+        ),
       );
     }
 
     if (widget.window) {
       return Dialog(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 600, maxHeight: 520),
+          constraints: const BoxConstraints(maxWidth: 600, maxHeight: 480),
           child: Padding(padding: const EdgeInsets.all(16), child: content()),
         ),
       );
@@ -141,7 +146,7 @@ class _EditGroupModalState extends State<EditGroupModal> {
       padding: MediaQuery.of(context).viewInsets,
       child: SafeArea(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxHeight: 520),
+          constraints: const BoxConstraints(maxHeight: 480),
           child: Padding(padding: const EdgeInsets.all(24), child: content()),
         ),
       ),
