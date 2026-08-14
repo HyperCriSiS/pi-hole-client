@@ -119,36 +119,36 @@ class AppConfigViewModel with ChangeNotifier {
     return _iosDeviceInfo;
   }
 
-  bool get biometricsSupport {
-    return _biometricsSupport;
-  }
-
-  bool get validVibrator {
-    return _validVibrator;
-  }
-
   String? get passCode {
     return _passCode;
   }
 
+  bool get biometricsSupport {
+    return _biometricsSupport;
+  }
+
   bool get useBiometrics {
-    return _useBiometrics == 0 ? false : true;
+    return _useBiometrics == 1;
   }
 
   bool get appUnlocked {
     return _appUnlocked;
   }
 
-  int get importantInfoReaden {
-    return _importantInfoReaden;
+  bool get validVibrator {
+    return _validVibrator;
+  }
+
+  bool get importantInfoReaden {
+    return _importantInfoReaden == 1;
   }
 
   bool get hideZeroValues {
-    return _hideZeroValues == 0 ? false : true;
+    return _hideZeroValues == 1;
   }
 
   bool get loadingAnimation {
-    return _loadingAnimation == 1 ? true : false;
+    return _loadingAnimation == 1;
   }
 
   StatisticsVisualizationMode get statisticsVisualizationMode {
@@ -179,43 +179,50 @@ class AppConfigViewModel with ChangeNotifier {
     return _isLivelogPaused;
   }
 
-  void setShowingSnackbar(bool showing) {
-    _showingSnackbar = showing;
+  void setShowingSnackbar(bool status) {
+    if (_showingSnackbar == status) return;
+    _showingSnackbar = status;
     notifyListeners();
   }
 
-  void setDetailScreenOpen(bool open) {
-    _detailScreenOpen = open;
+  bool get detailScreenOpen => _detailScreenOpen;
+
+  void setDetailScreenOpen(bool value) {
+    if (_detailScreenOpen == value) return;
+    _detailScreenOpen = value;
     notifyListeners();
   }
 
-  void setSelectedTab(int tab) {
-    _selectedTab = tab;
+  void setSelectedTab(int selectedTab) {
+    if (_selectedTab == selectedTab) return;
+    _selectedTab = selectedTab;
     notifyListeners();
   }
 
-  void setAndroidInfo(AndroidDeviceInfo info) {
-    _androidDeviceInfo = info;
+  void setAppInfo(PackageInfo appInfo) {
+    _appInfo = appInfo;
     notifyListeners();
   }
 
-  void setIosInfo(IosDeviceInfo info) {
-    _iosDeviceInfo = info;
+  void setAndroidInfo(AndroidDeviceInfo deviceInfo) {
+    _androidDeviceInfo = deviceInfo;
     notifyListeners();
   }
 
-  void setAppInfo(PackageInfo info) {
-    _appInfo = info;
+  void setIosInfo(IosDeviceInfo deviceInfo) {
+    _iosDeviceInfo = deviceInfo;
     notifyListeners();
   }
 
-  void setBiometricsSupport(bool support) {
-    _biometricsSupport = support;
+  void setBiometricsSupport(bool isSupported) {
+    if (_biometricsSupport == isSupported) return;
+    _biometricsSupport = isSupported;
     notifyListeners();
   }
 
-  void setAppUnlocked(bool unlocked) {
-    _appUnlocked = unlocked;
+  void setAppUnlocked(bool status) {
+    if (_appUnlocked == status) return;
+    _appUnlocked = status;
     notifyListeners();
   }
 
@@ -238,52 +245,55 @@ class AppConfigViewModel with ChangeNotifier {
       return true;
     } else {
       logger.w(
-        'Failed to set biometrics: ${updated.exceptionOrNull()}',
+        'Failed to persist useBiometrics setting to the database. In-memory state has been updated, but DB and app state may be inconsistent.',
       );
+      return false;
+    }
+  }
+
+  Future<bool> setImportantInfoReaden(bool status) async {
+    final updated = await _repository.updateImportantInfoReaden(status);
+    if (updated.isSuccess()) {
+      _importantInfoReaden = status == true ? 1 : 0;
+      notifyListeners();
+      return true;
+    } else {
       return false;
     }
   }
 
   Future<bool> setPassCode(String? code) async {
-    final updated = await _repository.updatePassCode(code);
-    if (updated.isSuccess()) {
-      _passCode = code;
-      notifyListeners();
-      return true;
+    if (_useBiometrics == 1) {
+      final updated = await _repository.updateUseBiometricAuth(false);
+      if (updated.isSuccess()) {
+        _useBiometrics = 0;
+        final updated2 = await _repository.updatePassCode(code);
+        if (updated2.isSuccess()) {
+          _passCode = code;
+          notifyListeners();
+          return true;
+        } else {
+          return false;
+        }
+      } else {
+        return false;
+      }
     } else {
-      logger.w(
-        'Failed to set passcode: ${updated.exceptionOrNull()}',
-      );
-      return false;
+      final updated = await _repository.updatePassCode(code);
+      if (updated.isSuccess()) {
+        _passCode = code;
+        notifyListeners();
+        return true;
+      } else {
+        return false;
+      }
     }
   }
 
-  Future<bool> setAutoRefreshTime(int? time) async {
-    final updated = await _repository.updateAutoRefreshTime(time);
+  Future<bool> setAutoRefreshTime(int seconds) async {
+    final updated = await _repository.updateAutoRefreshTime(seconds);
     if (updated.isSuccess()) {
-      _autoRefreshTime = time;
-      notifyListeners();
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  Future<bool> setTheme(AppThemeMode theme) async {
-    final updated = await _repository.updateTheme(theme);
-    if (updated.isSuccess()) {
-      _selectedTheme = theme;
-      notifyListeners();
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  Future<bool> setReducedDataCharts(bool reduced) async {
-    final updated = await _repository.updateReducedDataCharts(reduced);
-    if (updated.isSuccess()) {
-      _reducedDataCharts = reduced ? 1 : 0;
+      _autoRefreshTime = seconds;
       notifyListeners();
       return true;
     } else {
@@ -302,10 +312,10 @@ class AppConfigViewModel with ChangeNotifier {
     }
   }
 
-  Future<bool> setLogAutoRefreshTime(int time) async {
-    final updated = await _repository.updateLogAutoRefreshTime(time);
+  Future<bool> setSendCrashReports(bool status) async {
+    final updated = await _repository.updateSendCrashReports(status);
     if (updated.isSuccess()) {
-      _logAutoRefreshTime = time;
+      _sendCrashReports = status == true ? 1 : 0;
       notifyListeners();
       return true;
     } else {
@@ -313,10 +323,10 @@ class AppConfigViewModel with ChangeNotifier {
     }
   }
 
-  Future<bool> setLiveLog(bool live) async {
-    final updated = await _repository.updateLiveLog(live);
+  Future<bool> setLogAutoRefreshTime(int seconds) async {
+    final updated = await _repository.updateLogAutoRefreshTime(seconds);
     if (updated.isSuccess()) {
-      _liveLog = live;
+      _logAutoRefreshTime = seconds;
       notifyListeners();
       return true;
     } else {
@@ -324,10 +334,10 @@ class AppConfigViewModel with ChangeNotifier {
     }
   }
 
-  Future<bool> setIsLivelogPaused(bool paused) async {
-    final updated = await _repository.updateIsLivelogPaused(paused);
+  Future<bool> setLiveLog(bool status) async {
+    final updated = await _repository.updateLiveLog(status);
     if (updated.isSuccess()) {
-      _isLivelogPaused = paused;
+      _liveLog = status;
       notifyListeners();
       return true;
     } else {
@@ -335,10 +345,10 @@ class AppConfigViewModel with ChangeNotifier {
     }
   }
 
-  Future<bool> setSelectedLanguage(String language) async {
-    final updated = await _repository.updateLanguage(language);
+  Future<bool> setLivelogPaused(bool status) async {
+    final updated = await _repository.updateIsLivelogPaused(status);
     if (updated.isSuccess()) {
-      _selectedLanguage = language;
+      _isLivelogPaused = status;
       notifyListeners();
       return true;
     } else {
@@ -346,89 +356,7 @@ class AppConfigViewModel with ChangeNotifier {
     }
   }
 
-  Future<bool> setImportantInfoReaden(int readen) async {
-    final updated = await _repository.updateImportantInfoReaden(readen);
-    if (updated.isSuccess()) {
-      _importantInfoReaden = readen;
-      notifyListeners();
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  Future<bool> setHideZeroValues(bool hide) async {
-    final updated = await _repository.updateHideZeroValues(hide);
-    if (updated.isSuccess()) {
-      _hideZeroValues = hide ? 1 : 0;
-      notifyListeners();
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  Future<bool> setLoadingAnimation(bool loading) async {
-    final updated = await _repository.updateLoadingAnimation(loading);
-    if (updated.isSuccess()) {
-      _loadingAnimation = loading ? 1 : 0;
-      notifyListeners();
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  Future<bool> setStatisticsVisualizationMode(
-    StatisticsVisualizationMode mode,
-  ) async {
-    final updated = await _repository.updateStatisticsVisualizationMode(mode);
-    if (updated.isSuccess()) {
-      _statisticsVisualizationMode = mode;
-      notifyListeners();
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  Future<bool> setHomeVisualizationMode(HomeVisualizationMode mode) async {
-    final updated = await _repository.updateHomeVisualizationMode(mode);
-    if (updated.isSuccess()) {
-      _homeVisualizationMode = mode;
-      notifyListeners();
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  Future<bool> setSendCrashReports(bool send) async {
-    final updated = await _repository.updateSendCrashReports(send);
-    if (updated.isSuccess()) {
-      _sendCrashReports = send ? 1 : 0;
-      notifyListeners();
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  Future<bool> restoreAppConfig() async {
-    final result = await _repository.fetchAppConfig();
-    if (result.isSuccess()) {
-      saveFromDb(result.getOrNull());
-      return true;
-    } else {
-      logger.w(
-        'Failed to restore app config: ${result.exceptionOrNull()}',
-      );
-      return false;
-    }
-  }
-
-  void saveFromDb(AppConfig? config) {
-    if (config == null) return;
+  void saveFromDb(AppConfig config) {
     _autoRefreshTime = config.autoRefreshTime;
     _selectedTheme = config.theme;
     _selectedLanguage = config.language;
@@ -439,25 +367,105 @@ class AppConfigViewModel with ChangeNotifier {
     _isLivelogPaused = config.isLivelogPaused;
     _passCode = config.passCode;
     _useBiometrics = config.useBiometricAuth ? 1 : 0;
-    _importantInfoReaden = config.importantInfoReaden;
+    _importantInfoReaden = config.importantInfoReaden ? 1 : 0;
     _hideZeroValues = config.hideZeroValues ? 1 : 0;
     _loadingAnimation = config.loadingAnimation ? 1 : 0;
     _statisticsVisualizationMode = config.statisticsVisualizationMode;
     _homeVisualizationMode = config.homeVisualizationMode;
     _sendCrashReports = config.sendCrashReports ? 1 : 0;
+
+    if (config.passCode != null) {
+      _appUnlocked = false;
+    }
+
     notifyListeners();
   }
 
-  Future<bool> resetApp() async {
-    final result = await _repository.resetApp();
+  Future<bool> setReducedDataCharts(bool status) async {
+    final updated = await _repository.updateReducedDataCharts(status);
+    if (updated.isSuccess()) {
+      _reducedDataCharts = status == true ? 1 : 0;
+      notifyListeners();
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  Future<bool> setHideZeroValues(bool status) async {
+    final updated = await _repository.updateHideZeroValues(status);
+    if (updated.isSuccess()) {
+      _hideZeroValues = status == true ? 1 : 0;
+      notifyListeners();
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  Future<bool> setShowLoadingAnimation(bool status) async {
+    final updated = await _repository.updateLoadingAnimation(status);
+    if (updated.isSuccess()) {
+      _loadingAnimation = status ? 1 : 0;
+      notifyListeners();
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  Future<bool> setSelectedTheme(AppThemeMode value) async {
+    final updated = await _repository.updateTheme(value.index);
+    if (updated.isSuccess()) {
+      _selectedTheme = value;
+      notifyListeners();
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  Future<bool> setSelectedLanguage(String value) async {
+    final updated = await _repository.updateLanguage(value);
+    if (updated.isSuccess()) {
+      _selectedLanguage = value;
+      notifyListeners();
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  Future<bool> setStatisticsVisualizationMode(
+    StatisticsVisualizationMode value,
+  ) async {
+    final updated = await _repository.updateStatisticsVisualizationMode(
+      value.index,
+    );
+    if (updated.isSuccess()) {
+      _statisticsVisualizationMode = value;
+      notifyListeners();
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  Future<bool> setHomeVisualizationMode(HomeVisualizationMode value) async {
+    final updated = await _repository.updateHomeVisualizationMode(value.index);
+    if (updated.isSuccess()) {
+      _homeVisualizationMode = value;
+      notifyListeners();
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  Future<bool> restoreAppConfig() async {
+    final result = await _repository.resetAppConfig();
     if (result.isSuccess()) {
-      _showingSnackbar = false;
-      _detailScreenOpen = false;
-      _selectedTab = 0;
-      _androidDeviceInfo = null;
-      _iosDeviceInfo = null;
-      _appInfo = null;
-      _autoRefreshTime = 2;
+      _autoRefreshTime = 5;
       _selectedTheme = AppThemeMode.system;
       _selectedLanguage = 'en';
       _reducedDataCharts = 0;
@@ -487,4 +495,5 @@ class AppConfigViewModel with ChangeNotifier {
     _appLogService.removeListener(_onAppLogChanged);
     super.dispose();
   }
+
 }
