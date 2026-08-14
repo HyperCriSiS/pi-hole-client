@@ -1,4 +1,5 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:pi_hole_client/domain/services/app_log_service.dart';
 import 'package:pi_hole_client/utils/logger.dart';
 import 'package:result_dart/result_dart.dart';
 
@@ -14,10 +15,41 @@ import 'package:result_dart/result_dart.dart';
 /// useful for testing or customization. If not provided, a default instance
 /// is created internally.
 class SecureStorageService {
-  SecureStorageService({FlutterSecureStorage? secureStorage})
-    : _secureStorage = secureStorage ?? const FlutterSecureStorage();
+  SecureStorageService({
+    FlutterSecureStorage? secureStorage,
+    AppLogService? appLogService,
+  }) : _secureStorage = secureStorage ?? const FlutterSecureStorage(),
+       _appLogService = appLogService;
 
   final FlutterSecureStorage _secureStorage;
+  final AppLogService? _appLogService;
+
+  String _safeKeyLabel(String key) {
+    if (key.endsWith('_password')) return 'password credential';
+    if (key.endsWith('_token')) return 'token credential';
+    if (key.endsWith('_sid')) return 'session credential';
+    return 'secure value';
+  }
+
+  void _recordFailure({
+    required String operation,
+    required Object error,
+    required StackTrace stackTrace,
+    String? key,
+  }) {
+    final target = key == null ? 'secure storage' : _safeKeyLabel(key);
+    logger.e(
+      'Secure storage $operation failed for $target',
+      error: error,
+      stackTrace: stackTrace,
+    );
+    _appLogService?.addDiagnostic(
+      type: 'secure-storage',
+      message:
+          'Secure storage $operation failed for $target: '
+          '${error.runtimeType}: $error',
+    );
+  }
 
   /// Saves a [value] securely associated with the given [key].
   ///
@@ -27,10 +59,15 @@ class SecureStorageService {
   Future<Result<void>> saveValue(String key, String value) async {
     try {
       await _secureStorage.write(key: key, value: value);
-      logger.d('Value saved successfully: $key');
+      logger.d('Secure value saved successfully: ${_safeKeyLabel(key)}');
       return Success.unit();
     } catch (e, st) {
-      logger.e('Failed to save value: $e\n$st');
+      _recordFailure(
+        operation: 'write',
+        key: key,
+        error: e,
+        stackTrace: st,
+      );
       return Failure(Exception('Failed to save value: $e\n$st'));
     }
   }
@@ -44,13 +81,20 @@ class SecureStorageService {
     try {
       final value = await _secureStorage.read(key: key);
       if (value == null) {
-        logger.w('No value found for key: $key');
-        return Failure(Exception('No value found for key: $key'));
+        logger.w('No secure value found for ${_safeKeyLabel(key)}');
+        return Failure(
+          Exception('No value found for key: $key'),
+        );
       }
-      logger.d('Value retrieved successfully: $key');
+      logger.d('Secure value retrieved successfully: ${_safeKeyLabel(key)}');
       return Success(value);
     } catch (e, st) {
-      logger.e('Failed to read value: $e\n$st');
+      _recordFailure(
+        operation: 'read',
+        key: key,
+        error: e,
+        stackTrace: st,
+      );
       return Failure(Exception('Failed to read value: $e\n$st'));
     }
   }
@@ -63,10 +107,15 @@ class SecureStorageService {
   Future<Result<void>> deleteValue(String key) async {
     try {
       await _secureStorage.delete(key: key);
-      logger.d('Value deleted successfully: $key');
+      logger.d('Secure value deleted successfully: ${_safeKeyLabel(key)}');
       return Success.unit();
     } catch (e, st) {
-      logger.e('Failed to delete value: $e\n$st');
+      _recordFailure(
+        operation: 'delete',
+        key: key,
+        error: e,
+        stackTrace: st,
+      );
       return Failure(Exception('Failed to delete value: $e\n$st'));
     }
   }
@@ -79,10 +128,14 @@ class SecureStorageService {
   Future<Result<void>> clearAll() async {
     try {
       await _secureStorage.deleteAll();
-      logger.d('All values cleared successfully');
+      logger.d('All secure values cleared successfully');
       return Success.unit();
     } catch (e, st) {
-      logger.e('Failed to clear all values: $e\n$st');
+      _recordFailure(
+        operation: 'clear',
+        error: e,
+        stackTrace: st,
+      );
       return Failure(Exception('Failed to clear all values: $e\n$st'));
     }
   }
@@ -95,10 +148,14 @@ class SecureStorageService {
   Future<Result<Map<String, String>>> readAll() async {
     try {
       final allValues = await _secureStorage.readAll();
-      logger.d('All values read successfully: ${allValues.length} items');
+      logger.d('All secure values read successfully: ${allValues.length} items');
       return Success(allValues);
     } catch (e, st) {
-      logger.e('Failed to read all values: $e\n$st');
+      _recordFailure(
+        operation: 'read-all',
+        error: e,
+        stackTrace: st,
+      );
       return Failure(Exception('Failed to read all values: $e\n$st'));
     }
   }
