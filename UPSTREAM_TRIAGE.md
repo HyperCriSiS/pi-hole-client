@@ -36,7 +36,7 @@ The dependency update from upstream #660 also moves Dio from 5.9.2 to 5.11.0. Di
 | #639 | Pi-hole v6 API | Large refactor. Keep handwritten auth path until generated OpenAPI schema supports `totp`; migrate repository calls incrementally and add parity tests. |
 | #638 | Error UI | Design cleanup. Introduce/reuse one shared error-state widget and migrate screens incrementally. |
 | #636 | Android 17 connectivity | Needs device/log reproduction. Dependency refresh in #660 is relevant; collect App Log around connection/auth and verify network/TLS behavior on Android 17. |
-| #632 | App Log diagnostics | Next implementation task: add structured redacted logs around connection, auth/session restore and secure-storage failures. High value because it also helps #636/#293. |
+| #632 | App Log diagnostics | **Implemented in `dev`**. Added a shared App Log service with central secret redaction, diagnostics for connection/auth/v6 session/secure-storage failures, and persistence-result handling so password/token/SID write errors are no longer silently ignored. Added regression tests for redaction and storage/session failures. |
 | #622 | Group/Client sheets | **Implemented in `dev` (`c2765e31`)**. Add sheets are content-sized; edit sheets use centered content with `minHeight: 360` and `maxHeight: 480`, matching Adlist/Domain/Local DNS patterns. |
 | #604 | Domain Log Details | Feature work: add filter-by-domain and copy-domain quick actions; keep browser action. |
 | #598 | Android widgets no data | Needs Android reproduction/logging. Verify widget update channel/session restore after #660 secure-storage update. |
@@ -51,14 +51,14 @@ The dependency update from upstream #660 also moves Dio from 5.9.2 to 5.11.0. Di
 | #397 | Windows LocalDNS suggestions | Desktop focus/overlay bug; reproduce with mouse scrollbar and suggestion taps, then prevent outside-tap dismissal for interactions inside the suggestion overlay. |
 | #352 | v6 server-side log filtering | Performance feature. Depends on v6 API capabilities and overlaps #639; keep v5 local filtering. |
 | #293 | Android auth/secure-storage crash | Current code already moved to flutter_secure_storage 10.x; #660 moves to 11.0.0. Re-test affected Galaxy devices and migration from older app versions before considering resolved. |
-| #178 | App Lock after passcode removal | Old state-lifecycle bug; reproduce current build and ensure in-memory lock state is cleared immediately when passcode is removed, not only after process restart. |
+| #178 | App Lock after passcode removal | **Implemented in `dev` (`cc501770`, tests `e6bb9311`)**. Removing the passcode now immediately unlocks the in-memory app state, and loading persisted config synchronizes the lock state with whether a passcode actually exists. |
 | #134 | F-Droid | Packaging/release work rather than app code. Requires reproducible F-Droid-compatible build metadata and release process. |
 
 ## Priority order
 
 1. Live Log watchdog + dependency update (implemented in `dev`).
 2. #432 and #622 (implemented); #592/#593 verified as already addressed in current code.
-3. #632 diagnostics, because it makes Android/network/auth failures diagnosable.
-4. Reproduce/fix #636, #598, #293 and #178 on current dependencies.
-5. #639/#352 and #570: larger API architecture/features.
-6. Design/docs/release work (#638, #604, #501, #404, #397, #134).
+3. #632 diagnostics and #178 App Lock (implemented in `dev`).
+4. Implement deterministic UI/docs items (#604, #404, #638) and investigate #397/#442.
+5. Reproduce/fix device-dependent #636, #598, #501 and #293 on current dependencies.
+6. #639/#352 and #570: larger API architecture/features; #134 release packaging.
