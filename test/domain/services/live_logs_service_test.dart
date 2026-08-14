@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pi_hole_client/data/repositories/api/interfaces/metrics_repository.dart';
 import 'package:pi_hole_client/domain/model/enums.dart';
@@ -100,6 +102,22 @@ class _ThrowingPaginationService extends LogsPaginationService {
 }
 
 // ---------------------------------------------------------------------------
+// Fake that never completes to simulate a stalled network request.
+// ---------------------------------------------------------------------------
+class _HangingPaginationService extends LogsPaginationService {
+  _HangingPaginationService() : super(repository: _UnusedMetricsRepository());
+
+  @override
+  LoadStatus get finished => LoadStatus.loading;
+
+  @override
+  void reset(DateTime start, DateTime until) {}
+
+  @override
+  Future<List<Log>> loadNextPage() => Completer<List<Log>>().future;
+}
+
+// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 Log _log(int id) => Log(
@@ -188,6 +206,28 @@ void main() {
         expect(svc.isLoading, isFalse);
       },
     );
+  });
+
+  group('LiveLogsService – stalled request recovery', () {
+    test('times out, unlocks future ticks, and keeps the cursor', () async {
+      final svc = LiveLogsService(
+        paginationService: _HangingPaginationService(),
+        endTime: baseEnd,
+        requestTimeout: const Duration(milliseconds: 10),
+      );
+
+      final result = await svc.tickOnce();
+
+      expect(result, isEmpty);
+      expect(svc.isLoading, isFalse);
+      expect(svc.lastEnd, baseEnd);
+
+      // A timeout must not permanently lock the live-log service.
+      final second = await svc.tickOnce();
+      expect(second, isEmpty);
+      expect(svc.isLoading, isFalse);
+      expect(svc.lastEnd, baseEnd);
+    });
   });
 
   group('LiveLogsService – max page limit', () {
