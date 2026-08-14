@@ -661,7 +661,15 @@ class LogsViewModel extends ChangeNotifier {
     _recomputeLogsListDisplay();
   }
 
-  /// Triggered by the scroll listener to load the next page of logs.
+  /// Triggered by the scroll listener to load more logs in the direction
+  /// represented by the current sort order.
+  ///
+  /// With newest-first sorting (`0`), the end of the list represents older
+  /// history, so the historical pagination service expands to the previous
+  /// time window. With oldest-first sorting (`1`), the end of the list
+  /// represents newer data, so a one-shot live fetch advances from the last
+  /// live baseline to now. This also works while automatic Live Log is paused
+  /// or disabled.
   ///
   /// No-op when a load is already in progress.
   ///
@@ -671,7 +679,42 @@ class LogsViewModel extends ChangeNotifier {
   /// incompatible with the pagination state machine used here.
   Future<void> enqueueLoadMore() async {
     if (_isLoadingMore || _paginationService == null) return;
+
+    if (_sortStatus == 1) {
+      await _enqueueNewerLogs();
+      return;
+    }
+
     await _enqueueLoad(serverEpoch: _serverEpoch);
+  }
+
+  Future<void> _enqueueNewerLogs() async {
+    if (_isFiltering) return;
+
+    final serverEpoch = _serverEpoch;
+    final liveLogsService = _liveLogsService;
+    if (liveLogsService == null) return;
+
+    _isLoadingMore = true;
+    notifyListeners();
+
+    try {
+      final newLogs = await liveLogsService.tickOnce();
+      if (!_isCurrentServerEpoch(serverEpoch)) return;
+      if (_liveLogsService != liveLogsService) return;
+      if (newLogs.isNotEmpty) _addLogs(newLogs);
+    } catch (error, stackTrace) {
+      logger.e(
+        'Failed to load newer logs: $error',
+        stackTrace: stackTrace,
+      );
+    } finally {
+      if (_isCurrentServerEpoch(serverEpoch) &&
+          _liveLogsService == liveLogsService) {
+        _isLoadingMore = false;
+        notifyListeners();
+      }
+    }
   }
 
   bool get _isPaginationFinished =>
