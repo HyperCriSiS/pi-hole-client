@@ -1,11 +1,13 @@
+import 'dart:async';
 import 'dart:io';
 
+import 'package:command_it/command_it.dart';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:pi_hole_client/config/dependencies.dart';
@@ -23,24 +25,30 @@ import 'package:pi_hole_client/ui/core/view_models/servers_viewmodel.dart';
 import 'package:pi_hole_client/ui/core/view_models/status_viewmodel.dart';
 import 'package:pi_hole_client/ui/domains/view_models/domains_viewmodel.dart';
 import 'package:pi_hole_client/ui/logs/view_models/logs_viewmodel.dart';
-import 'package:pi_hole_client/ui/settings/server_settings/advanced_settings/gravity_update/view_models/gravity_update_viewmodel.dart';
+import 'package:pi_hole_client/ui/settings/server_settings/adlists/view_models/gravity_update_viewmodel.dart';
 import 'package:pi_hole_client/utils/logger.dart';
+import 'package:pi_hole_client/utils/widget_channel.dart';
 import 'package:provider/provider.dart';
 import 'package:result_dart/result_dart.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:vibration/vibration.dart';
+import 'package:window_manager/window_manager.dart';
+import 'package:window_size/window_size.dart';
 
-Future<void> main() async {
+Future<void> initializeFlutter() async {
   WidgetsFlutterBinding.ensureInitialized();
-  _configureSqlite();
-
-  final app = await bootstrapApp();
-  runApp(app);
+  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 }
 
-void _configureSqlite() {
-  if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
+Future<void> initializeDesktop() async {
+  if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+    await windowManager.ensureInitialized();
+    await windowManager.setMinimumSize(const Size(400, 400));
+    setWindowMinSize(const Size(500, 500));
+  }
+
+  if (Platform.isWindows || Platform.isLinux) {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
   }
@@ -53,33 +61,43 @@ Future<void> initializeBiometrics(
   try {
     if (!Platform.isAndroid && !Platform.isIOS) return;
 
-    final localAuth = LocalAuthentication();
-    final canCheckBiometrics = await localAuth.canCheckBiometrics;
-    final isDeviceSupported = await localAuth.isDeviceSupported();
-    final availableBiometrics = await localAuth.getAvailableBiometrics();
+    final auth = LocalAuthentication();
+    final isSupported = await auth.isDeviceSupported();
+    if (!isSupported) {
+      logger.w('Biometrics not supported on this device.');
+      configProvider.setBiometricsSupport(false);
+      await configProvider.setUseBiometrics(false);
+      return;
+    }
 
-    final canUseBiometrics =
-        canCheckBiometrics && isDeviceSupported && availableBiometrics.isNotEmpty;
+    final canAuth = await auth.canCheckBiometrics;
+    configProvider.setBiometricsSupport(canAuth);
 
-    configProvider.setBiometricsSupport(canUseBiometrics);
+    if (!canAuth) {
+      logger.w('Biometrics hardware present but cannot authenticate.');
+      await configProvider.setUseBiometrics(false);
+      return;
+    }
 
-    if (!canUseBiometrics && configProvider.useBiometrics) {
+    var available = <BiometricType>[];
+    try {
+      available = await auth.getAvailableBiometrics();
+    } catch (e) {
+      logger.w('Error getting available biometrics: $e');
+    }
+
+    final noSupported =
+        !available.contains(BiometricType.fingerprint) &&
+        !available.contains(BiometricType.strong) &&
+        !available.contains(BiometricType.weak);
+
+    if (noSupported &&
+        (repository.appConfig.getOrNull()?.useBiometricAuth ?? false)) {
+      logger.w('No usable biometrics available, disabling biometric auth.');
       await configProvider.setUseBiometrics(false);
     }
-  } on PlatformException catch (e, st) {
-    logger.w(
-      'Biometric platform error: $e',
-      error: e,
-      stackTrace: st,
-    );
-    configProvider.setBiometricsSupport(false);
-    await configProvider.setUseBiometrics(false);
-  } catch (e, st) {
-    logger.w(
-      'Biometric initialization error: $e',
-      error: e,
-      stackTrace: st,
-    );
+  } catch (e) {
+    logger.w('Error checking biometrics support: $e');
     configProvider.setBiometricsSupport(false);
     await configProvider.setUseBiometrics(false);
   }
@@ -108,7 +126,7 @@ Future<void> initializeDeviceInfo(AppConfigViewModel configProvider) async {
       configProvider.setIosInfo(iosInfo);
     }
   } catch (e) {
-    logger.w('Error loading device info: $e');
+    logger.w('Error fetching device info: $e');
   }
 }
 
@@ -123,35 +141,49 @@ Future<void> initializeSentry(AppConfigViewModel configProvider) async {
     return;
   }
 
-  try {
-    const dsn = String.fromEnvironment('SENTRY_DSN');
-    if (dsn.isEmpty) {
-      logger.w('Sentry DSN not configured');
-      return;
-    }
-
+  if ((kReleaseMode &&
+          (dotenv.env['SENTRY_DSN'] != null &&
+              dotenv.env['SENTRY_DSN'] != '')) ||
+      (dotenv.env['ENABLE_SENTRY'] == 'true' &&
+          (dotenv.env['SENTRY_DSN'] != null &&
+              dotenv.env['SENTRY_DSN'] != ''))) {
+    logger.d('Send Crash Reports: ON');
     await SentryFlutter.init((options) {
-      options.dsn = dsn;
-      options.tracesSampleRate = 0.1;
-      options.profilesSampleRate = 0.1;
-      options.attachScreenshot = true;
+      options.dsn = dotenv.env['SENTRY_DSN'];
       options.sendDefaultPii = false;
-      options.enableAutoSessionTracking = true;
+      options.attachScreenshot =
+          dotenv.env['ENABLE_SENTRY_SCREENSHOTS'] == 'true';
+      options.beforeSend = (event, hint) {
+        if (event.throwable is HttpException) {
+          return null;
+        }
+
+        if (event.message?.formatted.contains('Unexpected character') ??
+            false ||
+                (event.throwable != null &&
+                    event.throwable!.toString().contains(
+                      'Unexpected character',
+                    ))) {
+          return null; // Exclude this event
+        }
+
+        return event;
+      };
     });
-  } catch (e, st) {
-    logger.e('Failed to initialize Sentry', error: e, stackTrace: st);
   }
 }
 
-Future<void> configurePlatformOptions() async {
-  if (Platform.isAndroid) {
-    await SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-    ]);
-  }
-}
-
+/// Builds the full application widget tree: services, repositories, view models
+/// and the provider tree, then returns the root widget ready for [runApp] or
+/// `tester.pumpWidget`.
+///
+/// Extracted from [main] so integration tests can pump the real app with real
+/// DI while disabling side effects and isolating storage:
+/// - [enableSentry] / [enableBiometrics]: skipped in tests.
+/// - [databaseService] / [secureStorageService]: inject test-owned instances so
+///   the test can reset and assert on the same storage the app uses.
+///
+/// Production behaviour is unchanged — [main] calls this with all defaults.
 Future<Widget> bootstrapApp({
   bool enableSentry = true,
   bool enableBiometrics = true,
@@ -197,36 +229,48 @@ Future<Widget> bootstrapApp({
   }
   switch (servers) {
     case Success():
-      serversViewModel.loadFromDb(servers.getOrNull() ?? []);
+      await serversViewModel.saveFromDb(servers.getOrNull());
     case Failure():
       logger.e('Failed to load servers: ${servers.exceptionOrNull()}');
       throw servers.exceptionOrNull();
   }
+  await WidgetChannel.sendServersUpdated(serversViewModel.getServersList);
 
+  // Reclaim secure-storage entries (token/password/sid) orphaned by servers
+  // that no longer exist (e.g. after a failed edit). Best-effort.
+  final secretCleanup = await serverRepository.deleteUnusedServerSecrets();
+  if (secretCleanup.isError()) {
+    logger.w(
+      'Failed to reclaim orphaned server secrets: '
+      '${secretCleanup.exceptionOrNull()}',
+    );
+  }
+
+  // Platform-specific setup
   if (enableBiometrics) {
     await initializeBiometrics(configProvider, appConfigRepository);
   }
   await initializeVibration(configProvider);
   await initializeDeviceInfo(configProvider);
+  configProvider.setAppInfo(await loadAppInfo());
 
-  try {
-    configProvider.setAppInfo(await loadAppInfo());
-  } catch (e) {
-    logger.w('Error loading package info: $e');
-  }
-
+  // Error handling & Sentry
+  Command.globalExceptionHandler = (error, stackTrace) {
+    Sentry.captureException(error.error, stackTrace: stackTrace);
+    logger.e('Command error: ${error.error}', stackTrace: stackTrace);
+  };
   if (enableSentry) {
     await initializeSentry(configProvider);
   }
-  await configurePlatformOptions();
 
   return MultiProvider(
-    providers: buildAppProviders(
+    providers: createProviders(
+      dbService: dbService,
+      secureStorageService: storage,
       appConfigRepository: appConfigRepository,
       serverRepository: serverRepository,
-      secureStorageService: storage,
+      configProvider: configProvider,
       serversViewModel: serversViewModel,
-      appConfigViewModel: configProvider,
       statusViewModel: statusViewModel,
       logsViewModel: logsViewModel,
       domainsViewModel: domainsViewModel,
@@ -235,4 +279,14 @@ Future<Widget> bootstrapApp({
     ),
     child: SentryWidget(child: Phoenix(child: const PiHoleClient())),
   );
+}
+
+void main() async {
+  // 1. System init
+  await initializeFlutter();
+  await initializeDesktop();
+  await dotenv.load();
+
+  // 2. Build + launch (all side effects enabled, real storage)
+  runApp(await bootstrapApp());
 }
