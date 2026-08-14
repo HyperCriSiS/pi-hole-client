@@ -270,6 +270,7 @@ class AppConfigViewModel with ChangeNotifier {
         final updated2 = await _repository.updatePassCode(code);
         if (updated2.isSuccess()) {
           _passCode = code;
+          if (code == null) _appUnlocked = true;
           notifyListeners();
           return true;
         } else {
@@ -282,6 +283,7 @@ class AppConfigViewModel with ChangeNotifier {
       final updated = await _repository.updatePassCode(code);
       if (updated.isSuccess()) {
         _passCode = code;
+        if (code == null) _appUnlocked = true;
         notifyListeners();
         return true;
       } else {
@@ -374,9 +376,7 @@ class AppConfigViewModel with ChangeNotifier {
     _homeVisualizationMode = config.homeVisualizationMode;
     _sendCrashReports = config.sendCrashReports ? 1 : 0;
 
-    if (config.passCode != null) {
-      _appUnlocked = false;
-    }
+    _appUnlocked = config.passCode == null;
 
     notifyListeners();
   }
