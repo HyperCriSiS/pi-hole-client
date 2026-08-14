@@ -36,17 +36,17 @@ The dependency update from upstream #660 also moves Dio from 5.9.2 to 5.11.0. Di
 | #639 | Pi-hole v6 API | Large refactor. Keep handwritten auth path until generated OpenAPI schema supports `totp`; migrate repository calls incrementally and add parity tests. |
 | #638 | Error UI | Design cleanup. Introduce/reuse one shared error-state widget and migrate screens incrementally. |
 | #636 | Android 17 connectivity | Needs device/log reproduction. Dependency refresh in #660 is relevant; collect App Log around connection/auth and verify network/TLS behavior on Android 17. |
-| #632 | App Log diagnostics | Implement structured redacted logs around connection, auth/session restore and secure-storage failures. High value because it also helps #636/#293. |
-| #622 | Group/Client sheets | Straightforward UI consistency task: align edit sheets to centered 360–480 layout and add sheets to content-sized layout. |
+| #632 | App Log diagnostics | Next implementation task: add structured redacted logs around connection, auth/session restore and secure-storage failures. High value because it also helps #636/#293. |
+| #622 | Group/Client sheets | **Implemented in `dev` (`c2765e31`)**. Add sheets are content-sized; edit sheets use centered content with `minHeight: 360` and `maxHeight: 480`, matching Adlist/Domain/Local DNS patterns. |
 | #604 | Domain Log Details | Feature work: add filter-by-domain and copy-domain quick actions; keep browser action. |
 | #598 | Android widgets no data | Needs Android reproduction/logging. Verify widget update channel/session restore after #660 secure-storage update. |
-| #593 | v5 navigation | Reproduce on v5 and ensure Adlists/Network destinations expose a back affordance when launched from Home tiles. |
-| #592 | Tablet navigation | Reproduce tablet nested navigation and route back from Settings root to Home instead of terminating the app. |
+| #593 | v5 navigation | **Already addressed by current code** (`dc683828`, upstream #591): Adlists/Network expose explicit Back buttons with Home fallback and Home tiles push destinations directly. No duplicate production change needed. |
+| #592 | Tablet navigation | **Already addressed by current code** (`dc683828`, upstream #591): Settings root uses `PopScope` to route Back to Home; AppShell handles root-tab Back consistently. No duplicate production change needed. |
 | #570 | Local CNAME | Feature/API work. Add CNAME domain model/repository operations and UI tab after confirming v5/v6 API support. |
 | #501 | Android widget layout | Device/density-specific UI work; needs widget size tests across Android display scales. |
 | #442 | PopupMenu/Navigator crash | Needs reproduction/current stack. Old report is from v1.7.0 and points to a popup route losing its Navigator/context. Audit async popup/menu lifecycle and mounted checks. |
 | #438 | disableServer Provider/context crash | Current code already obtains providers before awaiting and checks `context.mounted` before post-request UI work, so the reported v1.7.0 stack appears mitigated in current `main`; retain regression monitoring. |
-| #432 | Logs oldest→newest pagination | Logic bug. Pagination direction must follow sort order; reaching the bottom in ascending order should extend toward newer timestamps while keeping scroll position stable. |
+| #432 | Logs oldest→newest pagination | **Implemented in `dev` (`d4e879da`, tests restored/extended in `6fef1232`)**. Infinite scrolling now follows visual sort direction: newest-first extends older history; oldest-first fetches newer logs from the live baseline, including while automatic Live Log is paused. |
 | #404 | Translation docs | Documentation task: add clear translation contribution instructions/link to README/website/About contribution docs. |
 | #397 | Windows LocalDNS suggestions | Desktop focus/overlay bug; reproduce with mouse scrollbar and suggestion taps, then prevent outside-tap dismissal for interactions inside the suggestion overlay. |
 | #352 | v6 server-side log filtering | Performance feature. Depends on v6 API capabilities and overlaps #639; keep v5 local filtering. |
@@ -57,8 +57,8 @@ The dependency update from upstream #660 also moves Dio from 5.9.2 to 5.11.0. Di
 ## Priority order
 
 1. Live Log watchdog + dependency update (implemented in `dev`).
-2. #632 diagnostics, because it makes Android/network/auth failures diagnosable.
-3. Reproduce/fix #636, #598, #293 and #178 on current dependencies.
-4. #432, #593, #592 and #622: bounded application/UI bugs.
+2. #432 and #622 (implemented); #592/#593 verified as already addressed in current code.
+3. #632 diagnostics, because it makes Android/network/auth failures diagnosable.
+4. Reproduce/fix #636, #598, #293 and #178 on current dependencies.
 5. #639/#352 and #570: larger API architecture/features.
 6. Design/docs/release work (#638, #604, #501, #404, #397, #134).
