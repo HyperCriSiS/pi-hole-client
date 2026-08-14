@@ -82,9 +82,7 @@ class SecureStorageService {
       final value = await _secureStorage.read(key: key);
       if (value == null) {
         logger.w('No secure value found for ${_safeKeyLabel(key)}');
-        return Failure(
-          Exception('No value found for key: $key'),
-        );
+        return Failure(Exception('No value found for key: $key'));
       }
       logger.d('Secure value retrieved successfully: ${_safeKeyLabel(key)}');
       return Success(value);
@@ -128,7 +126,7 @@ class SecureStorageService {
   Future<Result<void>> clearAll() async {
     try {
       await _secureStorage.deleteAll();
-      logger.d('All secure values cleared successfully');
+      logger.d('All values cleared successfully');
       return Success.unit();
     } catch (e, st) {
       _recordFailure(
@@ -148,7 +146,7 @@ class SecureStorageService {
   Future<Result<Map<String, String>>> readAll() async {
     try {
       final allValues = await _secureStorage.readAll();
-      logger.d('All secure values read successfully: ${allValues.length} items');
+      logger.d('All values read successfully: ${allValues.length} items');
       return Success(allValues);
     } catch (e, st) {
       _recordFailure(
