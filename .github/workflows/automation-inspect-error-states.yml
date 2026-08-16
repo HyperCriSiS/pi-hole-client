@@ -1,24 +1,44 @@
-name: automation inspect shared error-state candidates
+name: automation validate ClientsList shared error state
 on:
   push:
     branches: [dev]
     paths: ['.github/workflows/automation-inspect-error-states.yml']
 permissions:
-  contents: read
+  contents: write
 jobs:
-  inspect:
+  validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Inspect client error-state test hook
+        with:
+          ref: dev
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.35.2'
+          channel: stable
+      - name: Migrate ClientsList error state
+        shell: python
+        run: |
+          from pathlib import Path
+          p=Path('lib/ui/settings/server_settings/group_client/widgets/clients_list.dart')
+          s=p.read_text()
+          import_line="import 'package:pi_hole_client/ui/core/ui/components/error_message.dart';\n"
+          anchor="import 'package:pi_hole_client/ui/core/ui/components/tab_content_list.dart';\n"
+          if import_line not in s:
+              s=s.replace(anchor, import_line+anchor, 1)
+          old="""          errorGenerator: () => SizedBox(\n            width: double.maxFinite,\n            height: 300,\n            child: Column(\n              mainAxisAlignment: MainAxisAlignment.center,\n              children: [\n                const Icon(Icons.error, size: 50, color: Colors.red),\n                const SizedBox(height: 50),\n                Text(\n                  AppLocalizations.of(context)!.clientsNotLoaded,\n                  textAlign: TextAlign.center,\n                  style: TextStyle(\n                    color: Theme.of(context).colorScheme.onSurfaceVariant,\n                    fontSize: 22,\n                  ),\n                ),\n              ],\n            ),\n          ),\n"""
+          new="""          errorGenerator: () => SizedBox(\n            width: double.maxFinite,\n            height: 300,\n            child: ErrorMessage(\n              message: AppLocalizations.of(context)!.clientsNotLoaded,\n              fontSize: 22,\n              fontColor: Theme.of(context).colorScheme.onSurfaceVariant,\n            ),\n          ),\n"""
+          if old not in s:
+              raise SystemExit('expected ClientsList error block not found')
+          p.write_text(s.replace(old,new,1))
+      - run: flutter pub get
+      - name: Run focused group/client widget tests
+        run: flutter test test/ui/settings/server_settings/group_client/group_client_screen_test.dart
+      - name: Commit validated migration
         shell: bash
         run: |
-          echo '=== clients imports + error block ==='
-          sed -n '1,45p' lib/ui/settings/server_settings/group_client/widgets/clients_list.dart
-          grep -n -A35 -B5 'errorGenerator' lib/ui/settings/server_settings/group_client/widgets/clients_list.dart
-          echo '=== fake client repository ==='
-          sed -n '1,300p' test/testing/fakes/repositories/api/fake_client_repository.dart
-          echo '=== clients view model ==='
-          sed -n '1,320p' lib/ui/settings/server_settings/group_client/view_models/clients_viewmodel.dart
-          echo '=== clients tests ==='
-          sed -n '420,570p' test/ui/settings/server_settings/group_client/group_client_screen_test.dart
+          git config user.name HyperCriSiS
+          git config user.email dev.github@w3b.world
+          git add lib/ui/settings/server_settings/group_client/widgets/clients_list.dart
+          git commit -m 'refactor: reuse shared client list error state'
+          git push origin HEAD:dev
