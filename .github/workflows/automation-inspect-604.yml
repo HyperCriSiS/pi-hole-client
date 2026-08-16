@@ -15,7 +15,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
-      - name: Implement #604 and tests
+      - name: Implement
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -39,8 +39,9 @@ jobs:
           q=q.replace(anchor2,repl2,1)
           t.write_text(q)
           PY
-          dart format lib/ui/logs/widgets/log_details_screen.dart test/ui/logs/widgets/log_details_screen_test.dart
+          touch .env
           flutter pub get
+          dart format lib/ui/logs/widgets/log_details_screen.dart test/ui/logs/widgets/log_details_screen_test.dart
           flutter test test/ui/logs/widgets/log_details_screen_test.dart
           git diff --check
       - name: Update roadmap and commit
@@ -61,4 +62,5 @@ jobs:
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add lib/ui/logs/widgets/log_details_screen.dart test/ui/logs/widgets/log_details_screen_test.dart ROADMAP.md
           git commit -m 'Add log detail domain actions'
+          git pull --rebase origin dev
           git push origin HEAD:dev
