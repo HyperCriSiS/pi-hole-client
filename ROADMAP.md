@@ -24,7 +24,7 @@ The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPS
   - [x] Confirm the current detail route uses `LogDetailsScreen` through GoRouter and preserves the existing Allow/Block action callback.
   - [x] Confirm the existing log-detail tests already cover URL/details and the current allow/block/search behavior, defining the regression surface for the new actions.
   - [x] Implement copy-domain and filter-by-domain against the current complete screen source, then add focused widget tests (14/14 `LogDetailsScreen` widget tests green).
-- [ ] #404: complete the deterministic documentation/UI item tracked in `UPSTREAM_TRIAGE.md`.
+- [x] #404: document the current translation contribution workflow (`docs/translations.md`): existing languages are edited in `lib/ui/core/l10n/*.arb` and submitted by PR; new languages start with an issue; no Weblate/Crowdin project is currently in use.
 - [ ] #638: introduce/reuse a shared error-state widget and migrate screens incrementally.
 - [ ] #397: reproduce and fix the Windows LocalDNS suggestion overlay/focus dismissal behavior.
 - [ ] #442: investigate the currently triaged deterministic issue and define/implement the smallest verified fix.
@@ -56,4 +56,4 @@ The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPS
 
 ## Completion status
 
-**Not fully completed.** #604 is implemented and validated. #404 is the next preferred deterministic item.
+**Not fully completed.** #604 and #404 are implemented and validated. #638 is the next preferred deterministic item.
