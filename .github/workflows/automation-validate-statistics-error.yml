@@ -1,0 +1,69 @@
+name: automation validate statistics error
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: dev
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Migrate StatisticsList error state
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('lib/ui/statistics/widgets/statistics_list.dart')
+          s = p.read_text()
+          anchor = "import 'package:pi_hole_client/ui/core/ui/components/section_label.dart';\n"
+          addition = "import 'package:pi_hole_client/ui/core/ui/components/error_message.dart';\n"
+          if addition not in s:
+              s = s.replace(anchor, addition + anchor)
+          old = """      errorGenerator: () => SizedBox(
+        width: double.maxFinite,
+        height: 300,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error, size: 50, color: Colors.red),
+            const SizedBox(height: 50),
+            Text(
+              AppLocalizations.of(context)!.statsNotLoaded,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontSize: 22,
+              ),
+            ),
+          ],
+        ),
+      ),
+"""
+          new = """      errorGenerator: () => SizedBox(
+        width: double.maxFinite,
+        height: 300,
+        child: ErrorMessage(
+          message: AppLocalizations.of(context)!.statsNotLoaded,
+        ),
+      ),
+"""
+          if old not in s:
+              raise SystemExit('Expected StatisticsList error block not found')
+          p.write_text(s.replace(old, new))
+      - name: Format and test
+        run: |
+          dart format lib/ui/statistics/widgets/statistics_list.dart
+          flutter pub get
+          flutter test test/ui/statistics/statistics_test.dart
+      - name: Commit validated migration
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add lib/ui/statistics/widgets/statistics_list.dart
+          git commit -m 'refactor: reuse shared statistics error state'
+          git push origin HEAD:dev
