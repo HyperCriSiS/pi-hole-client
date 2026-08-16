@@ -1,0 +1,18 @@
+name: automation inspect statistics error state
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Show statistics error state and tests
+        run: |
+          echo '=== statistics_list.dart error context ==='
+          grep -n -C 16 -E 'Icons\.error|ErrorMessage|error' lib/ui/statistics/widgets/statistics_list.dart || true
+          echo '=== imports ==='
+          sed -n '1,60p' lib/ui/statistics/widgets/statistics_list.dart
+          echo '=== statistics tests error context ==='
+          grep -n -C 12 -E 'error|ErrorMessage|Icons\.error' test/ui/statistics/statistics_test.dart || true
