@@ -1,0 +1,22 @@
+name: Inspect log details
+on:
+  push:
+    branches:
+      - dev
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: dev
+      - name: Print relevant source and tests
+        run: |
+          echo '--- SCREEN ---'
+          sed -n '1,360p' lib/ui/logs/widgets/log_details_screen.dart
+          echo '--- TEST ---'
+          sed -n '1,480p' test/ui/logs/widgets/log_details_screen_test.dart
+          echo '--- ROUTES/FILTER REFERENCES ---'
+          grep -R -n -E "domain.*filter|filter.*domain|query.*domain|logs.*filter|LogDetailsScreen|clipboard|Clipboard" lib test | head -n 300 || true
