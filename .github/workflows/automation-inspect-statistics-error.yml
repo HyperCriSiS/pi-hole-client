@@ -1,6 +1,9 @@
 name: automation inspect statistics error state
 on:
-  workflow_dispatch:
+  push:
+    branches: [dev]
+    paths:
+      - '.github/workflows/automation-inspect-statistics-error.yml'
 permissions:
   contents: read
 jobs:
