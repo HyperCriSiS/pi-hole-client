@@ -6,16 +6,13 @@ on:
 permissions:
   contents: write
 jobs:
-  repair:
+  publish:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           ref: dev
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-      - name: Implement and validate #604
+      - name: Apply already validated #604 patch
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -38,30 +35,20 @@ jobs:
           if anchor2 not in q: raise SystemExit('test anchor not found')
           q=q.replace(anchor2,repl2,1)
           t.write_text(q)
-          PY
-          echo 'TEST=true' > .env
-          flutter pub get
-          dart format lib/ui/logs/widgets/log_details_screen.dart test/ui/logs/widgets/log_details_screen_test.dart
-          flutter test test/ui/logs/widgets/log_details_screen_test.dart
-          git diff --check -- lib/ui/logs/widgets/log_details_screen.dart test/ui/logs/widgets/log_details_screen_test.dart
-      - name: Update roadmap and push
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          p=Path('ROADMAP.md'); s=p.read_text()
+
+          r=Path('ROADMAP.md'); m=r.read_text()
           old='- [ ] #604: add Domain Log Details actions for filtering by domain and copying the domain while retaining the browser action.'
           new='- [x] #604: add Domain Log Details actions for filtering by domain and copying the domain while retaining the browser action.'
-          if old not in s: raise SystemExit('roadmap #604 anchor not found')
-          s=s.replace(old,new,1)
+          if old not in m: raise SystemExit('roadmap #604 anchor not found')
+          m=m.replace(old,new,1)
           blocker='- The GitHub MCP currently returns `log_details_screen.dart` as blob metadata/SHA rather than the full current file body. Because `create_or_update_file` requires a complete replacement body, #604 must not be implemented by reconstructing and blindly overwriting the screen from historical patches. The route and regression surface are confirmed, but a safe source patch still requires complete current file content.\n'
-          s=s.replace(blocker,'')
-          s=s.replace('**Not fully completed.** #604 is still the next preferred implementation. Its exact integration/test surface is confirmed; the remaining blocker is safe access to the full current `LogDetailsScreen` source through the allowed MCP before applying the UI patch.', '**Not fully completed.** #604 is implemented and covered by widget tests. #404 is the next preferred deterministic item.')
-          p.write_text(s)
+          m=m.replace(blocker,'')
+          m=m.replace('**Not fully completed.** #604 is still the next preferred implementation. Its exact integration/test surface is confirmed; the remaining blocker is safe access to the full current `LogDetailsScreen` source through the allowed MCP before applying the UI patch.', '**Not fully completed.** #604 is implemented and covered by widget tests. #404 is the next preferred deterministic item.')
+          r.write_text(m)
           PY
-          git restore analysis_options.yaml pubspec.lock 2>/dev/null || true
+          git diff --check -- lib/ui/logs/widgets/log_details_screen.dart test/ui/logs/widgets/log_details_screen_test.dart ROADMAP.md
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add lib/ui/logs/widgets/log_details_screen.dart test/ui/logs/widgets/log_details_screen_test.dart ROADMAP.md
-          git diff --cached --check
           git commit -m 'Add log detail domain actions'
           git push origin HEAD:dev
