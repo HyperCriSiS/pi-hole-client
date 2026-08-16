@@ -1,22 +1,42 @@
-name: automation inspect GroupsList error state
+name: automation validate GroupsList shared error state
 on:
   push:
     branches: [dev]
     paths:
       - '.github/workflows/automation-inspect-error-states.yml'
+permissions:
+  contents: write
 jobs:
-  inspect:
+  validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Inspect GroupsList and tests
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - name: Migrate GroupsList and validate
         run: |
-          echo '=== groups_list imports ==='
-          sed -n '1,45p' lib/ui/settings/server_settings/group_client/widgets/groups_list.dart
-          echo '=== groups_list error block ==='
-          sed -n '220,275p' lib/ui/settings/server_settings/group_client/widgets/groups_list.dart
-          echo '=== clients_list corresponding block ==='
-          sed -n '180,225p' lib/ui/settings/server_settings/group_client/widgets/clients_list.dart
-          echo '=== candidate tests ==='
-          find test -type f | grep -E 'group_client|groups_list|clients_list' || true
-          grep -R -n -E 'GroupsList|dataFetchFailed|group.*error|loadGroups' test/ui/settings/server_settings/group_client 2>/dev/null | head -n 160 || true
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('lib/ui/settings/server_settings/group_client/widgets/groups_list.dart')
+          s = p.read_text()
+          imp = "import 'package:pi_hole_client/ui/core/ui/components/error_message.dart';\n"
+          anchor = "import 'package:pi_hole_client/ui/core/l10n/generated/app_localizations.dart';\n"
+          if imp not in s:
+              s = s.replace(anchor, anchor + imp)
+          old = '''          errorGenerator: () => SizedBox(\n            width: double.maxFinite,\n            height: 300,\n            child: Column(\n              mainAxisAlignment: MainAxisAlignment.center,\n              children: [\n                const Icon(Icons.error, size: 50, color: Colors.red),\n                const SizedBox(height: 50),\n                Text(\n                  AppLocalizations.of(context)!.groupsNotLoaded,\n                  textAlign: TextAlign.center,\n                  style: TextStyle(\n                    color: Theme.of(context).colorScheme.onSurfaceVariant,\n                    fontSize: 22,\n                  ),\n                ),\n              ],\n            ),\n          ),'''
+          new = '''          errorGenerator: () => SizedBox(\n            width: double.maxFinite,\n            height: 300,\n            child: ErrorMessage(\n              message: AppLocalizations.of(context)!.groupsNotLoaded,\n              fontSize: 22,\n              fontColor: Theme.of(context).colorScheme.onSurfaceVariant,\n            ),\n          ),'''
+          if old not in s:
+              raise SystemExit('expected GroupsList error block not found')
+          p.write_text(s.replace(old, new))
+          PY
+          cp .env.sample .env
+          flutter pub get
+          dart format lib/ui/settings/server_settings/group_client/widgets/groups_list.dart
+          flutter test test/ui/settings/server_settings/group_client/group_client_screen_test.dart
+          git diff --check
+          git config user.name HyperCriSiS
+          git config user.email dev.github@w3b.world
+          git add lib/ui/settings/server_settings/group_client/widgets/groups_list.dart
+          git commit -m 'refactor: reuse shared error state for groups'
+          git push
