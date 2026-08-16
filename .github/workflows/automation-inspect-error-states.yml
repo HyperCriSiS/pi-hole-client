@@ -10,12 +10,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Inspect client list error state and tests
+      - name: Inspect client error-state test hook
         shell: bash
         run: |
-          echo '=== clients_list.dart ==='
-          sed -n '1,320p' lib/ui/settings/server_settings/group_client/widgets/clients_list.dart
-          echo '=== shared ErrorMessage ==='
-          grep -R -n -A80 -B10 'class ErrorMessage' lib/ui/core || true
-          echo '=== related test error assertions ==='
-          grep -n -A12 -B12 -E 'error|Error|clients|Clients' test/ui/settings/server_settings/group_client/group_client_screen_test.dart | head -n 500 || true
+          echo '=== clients imports + error block ==='
+          sed -n '1,45p' lib/ui/settings/server_settings/group_client/widgets/clients_list.dart
+          grep -n -A35 -B5 'errorGenerator' lib/ui/settings/server_settings/group_client/widgets/clients_list.dart
+          echo '=== fake client repository ==='
+          sed -n '1,300p' test/testing/fakes/repositories/api/fake_client_repository.dart
+          echo '=== clients view model ==='
+          sed -n '1,320p' lib/ui/settings/server_settings/group_client/view_models/clients_viewmodel.dart
+          echo '=== clients tests ==='
+          sed -n '420,570p' test/ui/settings/server_settings/group_client/group_client_screen_test.dart
