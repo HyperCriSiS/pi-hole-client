@@ -13,6 +13,8 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+      - name: Prepare test environment
+        run: touch .env
       - name: Migrate StatisticsList error state
         run: |
           python3 - <<'PY'
@@ -31,9 +33,9 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           p=Path('ROADMAP.md'); s=p.read_text()
-          anchor='- [ ] #638'
           line='  - [x] Migrate `StatisticsList` error state to shared `ErrorMessage` and verify `statistics_test.dart`.\n'
           if line not in s:
+            anchor='- [ ] #638'
             i=s.find(anchor)
             if i<0: raise SystemExit('roadmap #638 anchor missing')
             e=s.find('\n',i)+1
