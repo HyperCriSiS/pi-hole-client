@@ -1,0 +1,19 @@
+name: automation inspect error states
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Find duplicated error-state UI
+        shell: bash
+        run: |
+          echo '=== direct error colors/icons/text patterns ==='
+          grep -RInE "Icons\.(error|error_outline)|colorScheme\.error|colors\.error|Colors\.red|hasError|error != null" lib/ui --include='*.dart' | head -n 250 || true
+          echo '=== statistics_list.dart ==='
+          sed -n '1,260p' lib/ui/statistics/widgets/statistics_list.dart || true
+          echo '=== statistics tests ==='
+          find test -type f -iname '*statistics*' -o -iname '*stats*' | sort | head -n 100
