@@ -1,0 +1,17 @@
+name: automation inspect error states
+on:
+  push:
+    branches: [dev]
+    paths:
+      - '.github/workflows/automation-inspect-error-states.yml'
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect duplicated error-state patterns
+        run: |
+          echo '=== shared ErrorMessage uses ==='
+          grep -R -n "ErrorMessage(" lib/ui || true
+          echo '=== likely custom error presentations ==='
+          grep -R -n -E "Icons\.(error|warning)|colorScheme\.error|colors\.error|theme.*error|errorColor|hasError|error != null" lib/ui | head -n 260 || true
