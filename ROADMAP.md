@@ -50,6 +50,8 @@ The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPS
 - [ ] Keep `UPSTREAM_TRIAGE.md` synchronized when an upstream-tracked item changes state.
 - [ ] Merge the validated maintenance work from `dev` according to the repository's existing PR workflow.
 
+- [x] Migrate the group/client `ClientsList` load failure to the shared `ErrorMessage` widget; focused `group_client_screen_test.dart` passes (`280cf3d2`).
+
 ## Blockers / dependencies
 
 - Android 17, widget, and secure-storage items require real-device reproduction and logs before they can be considered resolved.
