@@ -1,0 +1,22 @@
+name: automation-inspect-604
+on:
+  push:
+    branches:
+      - dev
+    paths:
+      - .github/workflows/automation-inspect-604.yml
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect log details implementation
+        run: |
+          echo '=== ROADMAP ==='
+          grep -nE '^[-*] \[ \]|^[-*] \[x\]|^##|^###|Status|Blocker|604' ROADMAP.md || true
+          echo '=== SCREEN ==='
+          sed -n '1,360p' lib/ui/logs/widgets/log_details_screen.dart
+          echo '=== TEST ==='
+          sed -n '1,520p' test/ui/logs/widgets/log_details_screen_test.dart
+          echo '=== FILTER/COPY PATTERNS ==='
+          grep -Rni -E 'Clipboard|setData|filter.*domain|domain.*filter|queryParameters|Logs.*filter|Log.*Filter|searchParams|logs' lib/ui/logs lib | head -n 600 || true
