@@ -1,0 +1,22 @@
+name: automation inspect error state
+on:
+  push:
+    branches: [dev]
+    paths: ['.github/workflows/automation-inspect-errorstate.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect current error-state patterns
+        run: |
+          echo '=== ROADMAP ==='
+          cat ROADMAP.md
+          echo '=== error widgets/usages ==='
+          grep -RIn -E 'ErrorWidget|error state|hasError|AsyncError|ErrorState|error:' lib/ui | head -n 260 || true
+          echo '=== candidate reusable widgets ==='
+          find lib/ui -type f \( -name '*error*' -o -name '*state*' -o -name '*message*' \) -print | sort | head -n 160
+          echo '=== screens with retry/error UI ==='
+          grep -RIl -E 'retry|tryAgain|error' lib/ui | head -n 120 || true
