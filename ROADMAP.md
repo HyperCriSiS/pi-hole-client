@@ -8,7 +8,7 @@ Maintain and improve the unofficial Pi-hole client while upstream activity is li
 
 **Status: in progress**
 
-The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPSTREAM_TRIAGE.md` remains the detailed issue/PR triage reference; this file is the project-level execution roadmap and source of truth for future work. The next deterministic item remains #604. Its integration point is confirmed as `lib/ui/logs/widgets/log_details_screen.dart`, with existing Allow/Block behavior and GoRouter detail navigation already in place.
+The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPSTREAM_TRIAGE.md` remains the detailed issue/PR triage reference; this file is the project-level execution roadmap and source of truth for future work.
 
 ## Completed foundation
 
@@ -23,7 +23,7 @@ The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPS
 - [x] #604: add Domain Log Details actions for filtering by domain and copying the domain while retaining the browser action.
   - [x] Confirm the current detail route uses `LogDetailsScreen` through GoRouter and preserves the existing Allow/Block action callback.
   - [x] Confirm the existing log-detail tests already cover URL/details and the current allow/block/search behavior, defining the regression surface for the new actions.
-  - [ ] Implement copy-domain and filter-by-domain against the current complete screen source, then add focused widget tests.
+  - [x] Implement copy-domain and filter-by-domain against the current complete screen source, then add focused widget tests (14/14 `LogDetailsScreen` widget tests green).
 - [ ] #404: complete the deterministic documentation/UI item tracked in `UPSTREAM_TRIAGE.md`.
 - [ ] #638: introduce/reuse a shared error-state widget and migrate screens incrementally.
 - [ ] #397: reproduce and fix the Windows LocalDNS suggestion overlay/focus dismissal behavior.
@@ -56,4 +56,4 @@ The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPS
 
 ## Completion status
 
-**Not fully completed.** #604 is implemented and covered by widget tests. #404 is the next preferred deterministic item.
+**Not fully completed.** #604 is implemented and validated. #404 is the next preferred deterministic item.
