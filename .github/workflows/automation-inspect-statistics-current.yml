@@ -1,0 +1,20 @@
+name: automation inspect statistics current
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Show statistics error state and shared widget contract
+        run: |
+          echo '=== statistics_list imports ==='
+          sed -n '1,45p' lib/ui/statistics/widgets/statistics_list.dart
+          echo '=== statistics error context ==='
+          grep -n -B 12 -A 24 -E 'Icons\.error|ErrorMessage|errorGenerator|notLoaded|error' lib/ui/statistics/widgets/statistics_list.dart || true
+          echo '=== ErrorMessage widget ==='
+          cat lib/ui/core/ui/components/error_message.dart
+          echo '=== focused tests mentioning error ==='
+          grep -n -B 5 -A 15 -Ei 'error|not loaded|failed' test/ui/statistics/statistics_test.dart || true
