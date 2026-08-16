@@ -1,0 +1,31 @@
+name: automation update client error-state roadmap
+on:
+  push:
+    branches: [dev]
+    paths: ['.github/workflows/automation-update-roadmap.yml']
+permissions:
+  contents: write
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: dev}
+      - name: Update roadmap
+        shell: python
+        run: |
+          from pathlib import Path
+          p=Path('ROADMAP.md'); s=p.read_text()
+          anchor='- [ ] Continue #638 by migrating additional screens that still hand-roll the same error layout, validating each migration with the relevant widget tests.\n'
+          line='- [x] Migrate the group/client `ClientsList` load failure to the shared `ErrorMessage` widget; focused `group_client_screen_test.dart` passes (`280cf3d2`).\n'
+          if line not in s:
+              if anchor not in s: raise SystemExit('roadmap anchor missing')
+              s=s.replace(anchor,line+anchor,1)
+          p.write_text(s)
+      - name: Commit
+        run: |
+          git config user.name HyperCriSiS
+          git config user.email dev.github@w3b.world
+          git add ROADMAP.md
+          git commit -m 'docs: record client list error-state migration'
+          git push origin HEAD:dev
