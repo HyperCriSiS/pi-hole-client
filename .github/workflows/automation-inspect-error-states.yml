@@ -1,4 +1,4 @@
-name: automation inspect error states
+name: automation inspect GroupsList error state
 on:
   push:
     branches: [dev]
@@ -9,9 +9,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Inspect duplicated error-state patterns
+      - name: Inspect GroupsList and tests
         run: |
-          echo '=== shared ErrorMessage uses ==='
-          grep -R -n "ErrorMessage(" lib/ui || true
-          echo '=== likely custom error presentations ==='
-          grep -R -n -E "Icons\.(error|warning)|colorScheme\.error|colors\.error|theme.*error|errorColor|hasError|error != null" lib/ui | head -n 260 || true
+          echo '=== groups_list imports ==='
+          sed -n '1,45p' lib/ui/settings/server_settings/group_client/widgets/groups_list.dart
+          echo '=== groups_list error block ==='
+          sed -n '220,275p' lib/ui/settings/server_settings/group_client/widgets/groups_list.dart
+          echo '=== clients_list corresponding block ==='
+          sed -n '180,225p' lib/ui/settings/server_settings/group_client/widgets/clients_list.dart
+          echo '=== candidate tests ==='
+          find test -type f | grep -E 'group_client|groups_list|clients_list' || true
+          grep -R -n -E 'GroupsList|dataFetchFailed|group.*error|loadGroups' test/ui/settings/server_settings/group_client 2>/dev/null | head -n 160 || true
