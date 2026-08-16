@@ -1,6 +1,9 @@
-name: automation validate statistics error
+name: automation validate statistics error state
 on:
-  workflow_dispatch:
+  push:
+    branches: [dev]
+    paths:
+      - '.github/workflows/automation-validate-statistics-error.yml'
 permissions:
   contents: write
 jobs:
