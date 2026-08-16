@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pi_hole_client/domain/model/enums.dart';
@@ -175,6 +176,39 @@ void main() async {
       await tester.pump();
 
       expect(calledWith, 'white');
+    });
+
+    testWidgets('filters logs by the selected domain', (WidgetTester tester) async {
+      final vm = FakeLogsViewModel();
+      await tester.pumpWidget(_buildScreen(_forwardedLog, viewModel: vm));
+
+      await tester.tap(find.byIcon(Icons.filter_alt_rounded));
+      await tester.pump();
+
+      expect(vm.selectedDomain, 'example.com');
+    });
+
+    testWidgets('copies the domain to the clipboard', (WidgetTester tester) async {
+      await tester.pumpWidget(_buildScreen(_forwardedLog));
+      String? clipboardText;
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (call) async {
+          if (call.method == 'Clipboard.setData') {
+            clipboardText = (call.arguments as Map)['text'] as String?;
+          }
+          return null;
+        },
+      );
+
+      await tester.tap(find.byIcon(Icons.content_copy_rounded));
+      await tester.pump();
+
+      expect(clipboardText, 'example.com');
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      );
     });
 
     testWidgets('search online button is shown', (WidgetTester tester) async {
