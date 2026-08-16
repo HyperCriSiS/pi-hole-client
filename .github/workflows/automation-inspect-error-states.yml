@@ -1,0 +1,21 @@
+name: automation inspect shared error-state candidates
+on:
+  push:
+    branches: [dev]
+    paths: ['.github/workflows/automation-inspect-error-states.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Find duplicated UI error states
+        shell: bash
+        run: |
+          echo '=== ErrorMessage usages ==='
+          grep -R -n "ErrorMessage" lib/ui || true
+          echo '=== error color / explicit error text candidates ==='
+          grep -R -n -E "colorScheme\.error|Colors\.red|errorMessage|errorText|state\.error|\.error != null|error != null" lib/ui \
+            --include='*.dart' | head -n 300 || true
