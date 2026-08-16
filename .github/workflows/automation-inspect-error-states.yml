@@ -32,7 +32,7 @@ jobs:
           p.write_text(s.replace(old,new,1))
       - run: flutter pub get
       - name: Provide test env asset
-        run: touch .env
+        run: cp .env.sample .env
       - name: Run focused group/client widget tests
         run: flutter test test/ui/settings/server_settings/group_client/group_client_screen_test.dart
       - name: Commit validated migration
