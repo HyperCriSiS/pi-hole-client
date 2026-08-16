@@ -22,25 +22,18 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
-          p=Path('lib/ui/settings/server_settings/advanced_settings/find_domains_in_lists/widgets/results_section.dart')
-          s=p.read_text()
-          if "error_message.dart" not in s:
-              lines=s.splitlines()
-              idx=next(i for i,l in enumerate(lines) if l.startswith("import 'package:pi_hole_client/"))
+          p = Path('lib/ui/settings/server_settings/advanced_settings/find_domains_in_lists/widgets/results_section.dart')
+          s = p.read_text()
+          if 'error_message.dart' not in s:
+              lines = s.splitlines()
+              idx = next(i for i, line in enumerate(lines) if line.startswith("import 'package:pi_hole_client/"))
               lines.insert(idx, "import 'package:pi_hole_client/ui/core/ui/components/error_message.dart';")
-              s='\n'.join(lines)+'\n'
-          old="""    if (errorMessage != null) {
-      return Text(
-        errorMessage!,
-        style: TextStyle(color: Theme.of(context).colorScheme.error),
-      );
-    }"""
-          new="""    if (errorMessage != null) {
-      return ErrorMessage(message: errorMessage!);
-    }"""
+              s = '\n'.join(lines) + '\n'
+          old = "    if (errorMessage != null) {\n      return Text(\n        errorMessage!,\n        style: TextStyle(color: Theme.of(context).colorScheme.error),\n      );\n    }"
+          new = "    if (errorMessage != null) {\n      return ErrorMessage(message: errorMessage!);\n    }"
           if old not in s:
               raise SystemExit('error block not found')
-          p.write_text(s.replace(old,new,1))
+          p.write_text(s.replace(old, new, 1))
           PY
           flutter pub get
           flutter test test/ui/settings/server_settings/advanced_settings/find_domains_in_lists/find_domains_in_lists_screen_test.dart
