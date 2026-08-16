@@ -1,0 +1,34 @@
+name: Capture log details context
+
+on:
+  push:
+    branches:
+      - dev
+    paths:
+      - .github/workflows/capture-log-details-context.yml
+
+permissions:
+  contents: write
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: dev
+      - name: Capture target source and tests
+        run: |
+          {
+            echo '=== lib/ui/logs/widgets/log_details_screen.dart ==='
+            cat lib/ui/logs/widgets/log_details_screen.dart
+            echo '=== test/ui/logs/widgets/log_details_screen_test.dart ==='
+            cat test/ui/logs/widgets/log_details_screen_test.dart
+          } > log-details-context.txt
+      - name: Commit context
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add log-details-context.txt
+          git commit -m "chore: capture log details context"
+          git push origin HEAD:dev
