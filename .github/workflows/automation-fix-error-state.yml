@@ -1,0 +1,53 @@
+name: automation fix shared error state
+
+on:
+  push:
+    branches: [dev]
+    paths: ['.github/workflows/automation-fix-error-state.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  fix-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: dev
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - name: Migrate Find Domains error state
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('lib/ui/settings/server_settings/advanced_settings/find_domains_in_lists/widgets/results_section.dart')
+          s=p.read_text()
+          if "error_message.dart" not in s:
+              lines=s.splitlines()
+              idx=next(i for i,l in enumerate(lines) if l.startswith("import 'package:pi_hole_client/"))
+              lines.insert(idx, "import 'package:pi_hole_client/ui/core/ui/components/error_message.dart';")
+              s='\n'.join(lines)+'\n'
+          old="""    if (errorMessage != null) {
+      return Text(
+        errorMessage!,
+        style: TextStyle(color: Theme.of(context).colorScheme.error),
+      );
+    }"""
+          new="""    if (errorMessage != null) {
+      return ErrorMessage(message: errorMessage!);
+    }"""
+          if old not in s:
+              raise SystemExit('error block not found')
+          p.write_text(s.replace(old,new,1))
+          PY
+          flutter pub get
+          flutter test test/ui/settings/server_settings/advanced_settings/find_domains_in_lists/find_domains_in_lists_screen_test.dart
+      - name: Commit validated migration
+        run: |
+          git config user.name "HyperCriSiS"
+          git config user.email "dev.github@w3b.world"
+          git add lib/ui/settings/server_settings/advanced_settings/find_domains_in_lists/widgets/results_section.dart
+          git commit -m "refactor: reuse shared error state in domain lookup"
+          git push origin HEAD:dev
