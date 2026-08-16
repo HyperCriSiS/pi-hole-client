@@ -8,7 +8,7 @@ Maintain and improve the unofficial Pi-hole client while upstream activity is li
 
 **Status: in progress**
 
-The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPSTREAM_TRIAGE.md` remains the detailed issue/PR triage reference; this file is the project-level execution roadmap and source of truth for future work.
+The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPSTREAM_TRIAGE.md` remains the detailed issue/PR triage reference; this file is the project-level execution roadmap and source of truth for future work. Work on #638 is underway: the first duplicated error result has already been migrated to the shared `ErrorMessage` component, while the broader incremental screen migration remains open.
 
 ## Completed foundation
 
@@ -57,4 +57,4 @@ The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPS
 
 ## Completion status
 
-**Not fully completed.** #604 and #404 are implemented and validated. #638 is the next preferred deterministic item.
+**Not fully completed.** #604 and #404 are implemented and validated. #638 is now in progress: the Find Domains in Lists error result has been migrated to the shared `ErrorMessage` component, and the next step is to continue with the next verified duplicated error state while keeping focused widget coverage green.
