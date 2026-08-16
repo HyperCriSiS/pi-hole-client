@@ -1,0 +1,19 @@
+name: automation inspect duplicated error states
+on:
+  push:
+    branches: [dev]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Find duplicated error-state UI
+        shell: bash
+        run: |
+          echo '=== shared ErrorMessage usages ==='
+          grep -RIn --include='*.dart' 'ErrorMessage' lib | head -n 120 || true
+          echo '=== direct error color/text candidates ==='
+          grep -RIn --include='*.dart' -E 'colorScheme\.error|Colors\.red|errorColor|hasError|errorMessage|snapshot\.hasError' lib/ui | head -n 220 || true
