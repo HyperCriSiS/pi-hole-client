@@ -14,7 +14,6 @@ jobs:
           ref: dev
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.35.2'
           channel: stable
       - name: Migrate ClientsList error state
         shell: python
