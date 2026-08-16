@@ -11,11 +11,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Show statistics error state and tests
+      - name: Show shared error usage
         run: |
-          echo '=== statistics_list.dart error context ==='
-          grep -n -C 16 -E 'Icons\.error|ErrorMessage|error' lib/ui/statistics/widgets/statistics_list.dart || true
-          echo '=== imports ==='
-          sed -n '1,60p' lib/ui/statistics/widgets/statistics_list.dart
-          echo '=== statistics tests error context ==='
-          grep -n -C 12 -E 'error|ErrorMessage|Icons\.error' test/ui/statistics/statistics_test.dart || true
+          grep -R -n -C 8 'ErrorMessage(' lib/ui | head -n 260 || true
+          echo '=== widget declaration ==='
+          grep -R -n -C 12 'class ErrorMessage' lib/ui || true
+          echo '=== statistics target ==='
+          sed -n '1,95p' lib/ui/statistics/widgets/statistics_list.dart
