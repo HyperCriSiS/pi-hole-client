@@ -1,0 +1,23 @@
+name: automation inspect shared error state
+
+on:
+  push:
+    branches: [dev]
+    paths: ['.github/workflows/automation-inspect-error-state.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Print roadmap and error-state candidates
+        run: |
+          echo '=== ROADMAP ==='
+          cat ROADMAP.md
+          echo '=== ErrorMessage definition/usages ==='
+          grep -RIn -B8 -A18 -E 'class ErrorMessage|ErrorMessage\(' lib test | head -n 900 || true
+          echo '=== likely duplicated error states ==='
+          grep -RIn -B6 -A14 -E 'hasError|errorMessage|errorText|state.*error|Text\([^\n]*error|snapshot.*error|Async.*error' lib/ui test/ui | head -n 1200 || true
