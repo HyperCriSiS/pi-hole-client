@@ -1,0 +1,38 @@
+name: Automation finalize statistics roadmap
+"on":
+  push:
+    branches:
+      - dev
+    paths:
+      - .github/workflows/automation-finalize-statistics-roadmap.yml
+permissions:
+  contents: write
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: dev
+          fetch-depth: 0
+      - name: Update completion status
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('ROADMAP.md')
+          s = p.read_text()
+          old = '**Not fully completed.** #604 and #404 are implemented and validated. #638 is in progress with five verified shared-error-state migrations complete. The next confirmed candidate is `StatisticsQueriesServersTab`; migrate it to `ErrorMessage` and keep `statistics_test.dart` green.'
+          new = '**Not fully completed.** #604 and #404 are implemented and validated. #638 is in progress with six verified shared-error-state migrations complete. `StatisticsQueriesServersTab` is migrated and validated; identify the next duplicated error-state candidate before the next refactor.'
+          if old not in s:
+              raise SystemExit('expected completion-status text not found')
+          p.write_text(s.replace(old, new, 1))
+          PY
+      - name: Commit roadmap and self-remove
+        run: |
+          rm .github/workflows/automation-finalize-statistics-roadmap.yml
+          git config user.name 'HyperCriSiS'
+          git config user.email 'dev.github@w3b.world'
+          git add ROADMAP.md .github/workflows/automation-finalize-statistics-roadmap.yml
+          git diff --cached --check
+          git commit -m 'docs: advance statistics error-state roadmap'
+          git push origin HEAD:dev
