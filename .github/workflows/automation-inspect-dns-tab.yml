@@ -1,0 +1,19 @@
+name: automation inspect dns tab
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect DnsTab and shared ErrorMessage
+        shell: bash
+        run: |
+          echo '=== dns_tab.dart ==='
+          sed -n '1,260p' lib/ui/statistics/widgets/dns_tab.dart
+          echo '=== ErrorMessage references ==='
+          grep -R -n "ErrorMessage" lib/ui | head -80 || true
+          echo '=== statistics tests ==='
+          grep -n -E "DnsTab|error|Error" test/ui/statistics/statistics_test.dart | head -120 || true
