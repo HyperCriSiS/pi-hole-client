@@ -30,6 +30,7 @@ The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPS
 - [x] Migrate `ClientsList` to the shared `ErrorMessage` component and keep the focused group/client test green (`280cf3d2`).
 - [x] Migrate `GroupsList` to the shared `ErrorMessage` component and keep the focused group/client test green (`bf67381`).
 - [x] Migrate `StatisticsList` to the shared `ErrorMessage` component and keep `statistics_test.dart` green (9/9, `03864ddb`).
+- [x] Migrate `DnsTab` statistics error state to the shared `ErrorMessage` component; `statistics_test.dart` remains green.
 - [ ] Migrate the next verified duplicated statistics error state (`DnsTab`) to `ErrorMessage` and keep the statistics regression suite green.
 - [ ] #397: reproduce and fix the Windows LocalDNS suggestion overlay/focus dismissal behavior.
 - [ ] #442: investigate the currently triaged deterministic issue and define/implement the smallest verified fix.
