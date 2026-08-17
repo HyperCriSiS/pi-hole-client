@@ -1,10 +1,11 @@
-name: automation migrate statistics queries error state
-on:
+name: Automation migrate statistics queries error state
+"on":
   push:
     branches:
       - dev
     paths:
       - .github/workflows/automation-migrate-statistics-queries-error.yml
+      - .github/automation/migrate_statistics_queries_error.py
   workflow_dispatch:
 permissions:
   contents: write
@@ -19,76 +20,23 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
-      - name: Migrate QueriesServersTab to shared ErrorMessage
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
-
-          p = Path('lib/ui/statistics/widgets/statistics_queries_servers_tab.dart')
-          s = p.read_text()
-
-          imp = "import 'package:pi_hole_client/ui/core/ui/components/error_message.dart';\n"
-          anchor = "import 'package:pi_hole_client/ui/core/l10n/generated/app_localizations.dart';\n"
-          if imp not in s:
-              if anchor not in s:
-                  raise SystemExit('localization import anchor not found')
-              s = s.replace(anchor, anchor + imp, 1)
-
-          pattern = re.compile(
-              r"      errorGenerator: \(\) => SizedBox\(\n"
-              r"        width: double\.maxFinite,\n"
-              r"        height: 300,\n"
-              r"        child: Column\(\n"
-              r".*?"
-              r"        \),\n"
-              r"      \),\n"
-              r"      loadStatus: statusLoading,",
-              re.S,
-          )
-          replacement = """      errorGenerator: () => SizedBox(
-        width: double.maxFinite,
-        height: 300,
-        child: ErrorMessage(
-          message: AppLocalizations.of(context)!.statsNotLoaded,
-        ),
-      ),
-      loadStatus: statusLoading,"""
-
-          matches = list(pattern.finditer(s))
-          if len(matches) != 1:
-              raise SystemExit(f'expected exactly one QueriesServersTab error block, found {len(matches)}')
-          old = matches[0].group(0)
-          if 'statsNotLoaded' not in old or 'Icon(Icons.error' not in old:
-              raise SystemExit('matched error block does not have expected legacy semantics')
-          p.write_text(pattern.sub(replacement, s, count=1))
-          PY
+      - name: Prepare migration
+        run: python3 .github/automation/migrate_statistics_queries_error.py migrate
       - name: Run focused Flutter test
         run: |
           cp .env.sample .env
           flutter pub get
           flutter test test/ui/statistics/statistics_test.dart
-      - name: Update roadmap after validation
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          p = Path('ROADMAP.md')
-          s = p.read_text()
-          entry = '- [x] Migrate `QueriesServersTab` to the shared `ErrorMessage` component and keep `statistics_test.dart` green.\n'
-          if entry not in s:
-              anchor = '- [x] Migrate the StatisticsList error state to the shared `ErrorMessage` component and keep `statistics_test.dart` green.\n'
-              if anchor not in s:
-                  raise SystemExit('StatisticsList roadmap anchor not found')
-              s = s.replace(anchor, anchor + entry, 1)
-          p.write_text(s)
-          PY
-      - name: Commit validated migration and remove temporary workflow
+      - name: Mark validated roadmap item
+        run: python3 .github/automation/migrate_statistics_queries_error.py roadmap
+      - name: Commit validated migration
         run: |
           rm .github/workflows/automation-migrate-statistics-queries-error.yml
+          rm .github/automation/migrate_statistics_queries_error.py
           git checkout -- pubspec.lock analysis_options.yaml || true
           git config user.name 'HyperCriSiS'
           git config user.email 'dev.github@w3b.world'
-          git add lib/ui/statistics/widgets/statistics_queries_servers_tab.dart ROADMAP.md .github/workflows/automation-migrate-statistics-queries-error.yml
+          git add lib/ui/statistics/widgets/statistics_queries_servers_tab.dart ROADMAP.md .github/workflows/automation-migrate-statistics-queries-error.yml .github/automation/migrate_statistics_queries_error.py
           git diff --cached --check
           git commit -m 'refactor: reuse shared error state in statistics queries'
           git push origin HEAD:dev
