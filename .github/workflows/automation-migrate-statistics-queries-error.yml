@@ -1,5 +1,10 @@
 name: automation migrate statistics queries error state
 on:
+  push:
+    branches:
+      - dev
+    paths:
+      - .github/workflows/automation-migrate-statistics-queries-error.yml
   workflow_dispatch:
 permissions:
   contents: write
