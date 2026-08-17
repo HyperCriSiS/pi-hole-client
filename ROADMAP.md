@@ -8,7 +8,7 @@ Maintain and improve the unofficial Pi-hole client while upstream activity is li
 
 **Status: in progress**
 
-The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPSTREAM_TRIAGE.md` remains the detailed issue/PR triage reference; this file is the project-level execution roadmap and source of truth for future work. Work on #638 is underway: duplicated error states in Find Domains in Lists, ClientsList, GroupsList and StatisticsList have been migrated to the shared `ErrorMessage` component, while the broader incremental screen migration remains open.
+The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPSTREAM_TRIAGE.md` remains the detailed issue/PR triage reference; this file is the project-level execution roadmap and source of truth for future work. Work on #638 is underway: the first duplicated error result has already been migrated to the shared `ErrorMessage` component, while the broader incremental screen migration remains open.
 
 ## Completed foundation
 
@@ -27,11 +27,11 @@ The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPS
 - [x] #404: document the current translation contribution workflow (`docs/translations.md`): existing languages are edited in `lib/ui/core/l10n/*.arb` and submitted by PR; new languages start with an issue; no Weblate/Crowdin project is currently in use.
 - [ ] #638: introduce/reuse a shared error-state widget and migrate screens incrementally.
 - [x] Migrate the Find Domains in Lists error result to the shared `ErrorMessage` component and keep the focused screen test green (`809ba6cc`).
-- [x] Migrate `ClientsList` to the shared `ErrorMessage` component and keep the focused group/client test green (`280cf3d2`).
-- [x] Migrate `GroupsList` to the shared `ErrorMessage` component and keep the focused group/client test green (`bf67381`).
-- [x] Migrate `StatisticsList` to the shared `ErrorMessage` component and keep `statistics_test.dart` green (9/9, `03864ddb`).
-- [x] Migrate `DnsTab` statistics error state to the shared `ErrorMessage` component; `statistics_test.dart` remains green.
-- [ ] Migrate the next verified duplicated statistics error state (`StatisticsQueriesServersTab`) to `ErrorMessage` and keep the statistics regression suite green.
+- [x] Migrate `ClientsList` to the shared `ErrorMessage` component (`280cf3d2`) and keep the focused group/client tests green.
+- [x] Migrate `GroupsList` to the shared `ErrorMessage` component (`bf67381`) and keep the focused group/client tests green (16/16).
+- [x] Migrate `StatisticsList` to the shared `ErrorMessage` component (`03864ddb`) and keep `statistics_test.dart` green (9/9).
+- [x] Migrate `DnsTab` to the shared `ErrorMessage` component (`024b8d46`) and validate the focused statistics tests; remove validation side effects afterward (`82ad6343`).
+- [ ] Migrate `StatisticsQueriesServersTab` as the next verified duplicated statistics error-state and keep `statistics_test.dart` green.
 - [ ] #397: reproduce and fix the Windows LocalDNS suggestion overlay/focus dismissal behavior.
 - [ ] #442: investigate the currently triaged deterministic issue and define/implement the smallest verified fix.
 
@@ -62,4 +62,4 @@ The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPS
 
 ## Completion status
 
-**Not fully completed.** #604 and #404 are implemented and validated. #638 is in progress; four duplicated error states are already standardized, and `DnsTab` is the next verified migration candidate.
+**Not fully completed.** #604 and #404 are implemented and validated. #638 is in progress: Find Domains in Lists, ClientsList, GroupsList, StatisticsList and DnsTab have been migrated to the shared `ErrorMessage` component. The next verified candidate is `StatisticsQueriesServersTab`; keep focused widget coverage green after each migration.
