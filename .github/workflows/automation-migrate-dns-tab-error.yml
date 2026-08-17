@@ -1,0 +1,65 @@
+name: automation migrate DnsTab error state
+on:
+  push:
+    paths:
+      - '.github/workflows/automation-migrate-dns-tab-error.yml'
+permissions:
+  contents: write
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: dev
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Migrate DnsTab error state and test
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('lib/ui/statistics/widgets/dns_tab.dart')
+          s = p.read_text()
+          import_line = "import 'package:pi_hole_client/ui/core/ui/components/error_message.dart';\n"
+          anchor = "import 'package:pi_hole_client/ui/core/ui/components/section_label.dart';\n"
+          if import_line not in s:
+              if anchor not in s:
+                  raise SystemExit('section_label import anchor missing')
+              s = s.replace(anchor, import_line + anchor, 1)
+          old = '''      errorGenerator: () => SizedBox(\n        width: double.maxFinite,\n        height: 300,\n        child: Column(\n          mainAxisAlignment: MainAxisAlignment.center,\n          children: [\n            const Icon(Icons.error, size: 50, color: Colors.red),\n            const SizedBox(height: 50),\n            Text(\n              AppLocalizations.of(context)!.statsNotLoaded,\n              textAlign: TextAlign.center,\n              style: TextStyle(\n                color: Theme.of(context).colorScheme.onSurfaceVariant,\n                fontSize: 22,\n              ),\n            ),\n          ],\n        ),\n      ),'''
+          new = '''      errorGenerator: () => SizedBox(\n        width: double.maxFinite,\n        height: 300,\n        child: ErrorMessage(\n          message: AppLocalizations.of(context)!.statsNotLoaded,\n          fontSize: 22,\n          fontColor: Theme.of(context).colorScheme.onSurfaceVariant,\n        ),\n      ),'''
+          if old not in s:
+              raise SystemExit('expected DnsTab error block missing')
+          p.write_text(s.replace(old, new, 1))
+
+          r = Path('ROADMAP.md')
+          roadmap = r.read_text()
+          entry = '- [x] Migrate `DnsTab` statistics error state to the shared `ErrorMessage` component; `statistics_test.dart` remains green.\n'
+          if entry not in roadmap:
+              candidates = [
+                  '- [x] Migrate `StatisticsList`',
+                  '- [x] `StatisticsList`',
+              ]
+              lines = roadmap.splitlines(keepends=True)
+              idx = next((i for i,l in enumerate(lines) if any(c in l for c in candidates)), None)
+              if idx is None:
+                  raise SystemExit('ROADMAP StatisticsList anchor missing')
+              lines.insert(idx + 1, entry)
+              roadmap = ''.join(lines)
+              r.write_text(roadmap)
+          PY
+          touch .env
+          flutter pub get
+          dart format --output=none --set-exit-if-changed lib/ui/statistics/widgets/dns_tab.dart
+          flutter test test/ui/statistics/statistics_test.dart
+          git diff --check
+      - name: Commit verified migration
+        run: |
+          rm -f .github/workflows/automation-migrate-dns-tab-error.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add lib/ui/statistics/widgets/dns_tab.dart ROADMAP.md .github/workflows/automation-migrate-dns-tab-error.yml
+          git commit -m 'refactor: reuse shared error state in DNS statistics'
+          git push origin HEAD:dev
