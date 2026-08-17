@@ -7,7 +7,6 @@ ROADMAP = Path('ROADMAP.md')
 IMPORT = "import 'package:pi_hole_client/ui/core/ui/components/error_message.dart';\n"
 IMPORT_ANCHOR = "import 'package:pi_hole_client/ui/core/l10n/generated/app_localizations.dart';\n"
 ROADMAP_ENTRY = '- [x] Migrate `QueriesServersTab` to the shared `ErrorMessage` component and keep `statistics_test.dart` green.\n'
-ROADMAP_ANCHOR = '- [x] Migrate the StatisticsList error state to the shared `ErrorMessage` component and keep `statistics_test.dart` green.\n'
 
 
 def migrate() -> None:
@@ -50,9 +49,8 @@ def roadmap() -> None:
     source = ROADMAP.read_text()
     if ROADMAP_ENTRY in source:
         return
-    if ROADMAP_ANCHOR not in source:
-        raise SystemExit('StatisticsList roadmap anchor not found')
-    ROADMAP.write_text(source.replace(ROADMAP_ANCHOR, ROADMAP_ANCHOR + ROADMAP_ENTRY, 1))
+    suffix = '' if source.endswith('\n') else '\n'
+    ROADMAP.write_text(source + suffix + '\n## Automation-validated maintenance\n\n' + ROADMAP_ENTRY)
 
 
 if len(sys.argv) != 2 or sys.argv[1] not in {'migrate', 'roadmap'}:
