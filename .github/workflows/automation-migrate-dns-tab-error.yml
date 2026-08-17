@@ -28,8 +28,34 @@ jobs:
               if anchor not in s:
                   raise SystemExit('section_label import anchor missing')
               s = s.replace(anchor, import_line + anchor, 1)
-          old = '''      errorGenerator: () => SizedBox(\n        width: double.maxFinite,\n        height: 300,\n        child: Column(\n          mainAxisAlignment: MainAxisAlignment.center,\n          children: [\n            const Icon(Icons.error, size: 50, color: Colors.red),\n            const SizedBox(height: 50),\n            Text(\n              AppLocalizations.of(context)!.statsNotLoaded,\n              textAlign: TextAlign.center,\n              style: TextStyle(\n                color: Theme.of(context).colorScheme.onSurfaceVariant,\n                fontSize: 22,\n              ),\n            ),\n          ],\n        ),\n      ),'''
-          new = '''      errorGenerator: () => SizedBox(\n        width: double.maxFinite,\n        height: 300,\n        child: ErrorMessage(\n          message: AppLocalizations.of(context)!.statsNotLoaded,\n          fontSize: 22,\n          fontColor: Theme.of(context).colorScheme.onSurfaceVariant,\n        ),\n      ),'''
+          old = '''      errorGenerator: () => SizedBox(
+        width: double.maxFinite,
+        height: 300,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error, size: 50, color: Colors.red),
+            const SizedBox(height: 50),
+            Text(
+              AppLocalizations.of(context)!.statsNotLoaded,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontSize: 22,
+              ),
+            ),
+          ],
+        ),
+      ),'''
+          new = '''      errorGenerator: () => SizedBox(
+        width: double.maxFinite,
+        height: 300,
+        child: ErrorMessage(
+          message: AppLocalizations.of(context)!.statsNotLoaded,
+          fontSize: 22,
+          fontColor: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+      ),'''
           if old not in s:
               raise SystemExit('expected DnsTab error block missing')
           p.write_text(s.replace(old, new, 1))
@@ -47,10 +73,9 @@ jobs:
               if idx is None:
                   raise SystemExit('ROADMAP StatisticsList anchor missing')
               lines.insert(idx + 1, entry)
-              roadmap = ''.join(lines)
-              r.write_text(roadmap)
+              r.write_text(''.join(lines))
           PY
-          touch .env
+          cp .env.sample .env
           flutter pub get
           dart format --output=none --set-exit-if-changed lib/ui/statistics/widgets/dns_tab.dart
           flutter test test/ui/statistics/statistics_test.dart
