@@ -29,6 +29,7 @@ The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPS
 - [x] Migrate the Find Domains in Lists error result to the shared `ErrorMessage` component and keep the focused screen test green (`809ba6cc`).
 - [x] Migrate `ClientsList` to the shared `ErrorMessage` component and keep the focused Groups & Clients widget test green (`280cf3d2`).
 - [x] Migrate `GroupsList` to the shared `ErrorMessage` component; the focused `group_client_screen_test.dart` suite is green with 16/16 tests (`bf67381`).
+- [x] Migrate the StatisticsList error state to the shared `ErrorMessage` component and keep `statistics_test.dart` green.
 - [ ] #397: reproduce and fix the Windows LocalDNS suggestion overlay/focus dismissal behavior.
 - [ ] #442: investigate the currently triaged deterministic issue and define/implement the smallest verified fix.
 
