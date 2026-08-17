@@ -62,3 +62,7 @@ The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPS
 ## Completion status
 
 **Not fully completed.** #604 and #404 are implemented and validated. #638 is in progress with five verified shared-error-state migrations complete. The next confirmed candidate is `StatisticsQueriesServersTab`; migrate it to `ErrorMessage` and keep `statistics_test.dart` green.
+
+## Automation-validated maintenance
+
+- [x] Migrate `QueriesServersTab` to the shared `ErrorMessage` component and keep `statistics_test.dart` green.
