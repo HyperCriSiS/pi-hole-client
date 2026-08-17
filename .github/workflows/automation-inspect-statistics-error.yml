@@ -1,0 +1,20 @@
+name: automation inspect statistics error
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect StatisticsList error state and tests
+        run: |
+          echo '=== imports ==='
+          sed -n '1,80p' lib/ui/statistics/widgets/statistics_list.dart
+          echo '=== error snippets ==='
+          grep -n -B12 -A20 -E 'Icons\.error|ErrorMessage|errorColor|colorScheme\.error' lib/ui/statistics/widgets/statistics_list.dart || true
+          echo '=== shared ErrorMessage usages ==='
+          grep -R -n -m 8 'ErrorMessage(' lib/ui | head -n 40 || true
+          echo '=== statistics tests ==='
+          grep -n -B8 -A18 -E 'error|Error|failure|failed' test/ui/statistics/statistics_test.dart | head -n 180 || true
