@@ -1,0 +1,16 @@
+name: automation inspect next error
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect DnsTab and tests
+        run: |
+          echo '=== dns_tab.dart ==='
+          sed -n '1,260p' lib/ui/statistics/widgets/dns_tab.dart
+          echo '=== statistics_test references ==='
+          grep -n -C 6 -E 'DnsTab|error|ErrorMessage|statistics' test/ui/statistics/statistics_test.dart | head -n 240 || true
