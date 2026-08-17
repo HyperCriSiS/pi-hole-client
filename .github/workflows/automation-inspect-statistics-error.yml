@@ -31,7 +31,6 @@ jobs:
           if old not in s:
               raise SystemExit('expected StatisticsList error block not found')
           p.write_text(s.replace(old, new, 1))
-
           r = Path('ROADMAP.md')
           text = r.read_text()
           entry = '- [x] Migrate the StatisticsList error state to the shared `ErrorMessage` component and keep `statistics_test.dart` green.\n'
@@ -47,17 +46,17 @@ jobs:
                   raise SystemExit('ROADMAP #638 anchor not found')
               lines.insert(insert_at, entry)
               text = ''.join(lines)
-          text = text.replace('**Not fully completed.** #604 and #404 are implemented and validated. #638 is the next preferred deterministic item.', '**Not fully completed.** #604 and #404 are implemented and validated. #638 is in progress; shared error-state migration is continuing incrementally.')
           r.write_text(text)
           PY
       - name: Run focused Flutter test
         run: |
-          touch .env
+          cp .env.sample .env
           flutter pub get
           flutter test test/ui/statistics/statistics_test.dart
       - name: Commit validated migration and remove temporary workflow
         run: |
           rm .github/workflows/automation-inspect-statistics-error.yml
+          git checkout -- pubspec.lock analysis_options.yaml || true
           git config user.name 'HyperCriSiS'
           git config user.email 'dev.github@w3b.world'
           git add lib/ui/statistics/widgets/statistics_list.dart ROADMAP.md .github/workflows/automation-inspect-statistics-error.yml
