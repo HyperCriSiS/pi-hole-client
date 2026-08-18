@@ -14,13 +14,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - name: Inspect client filter state
+      - name: Inspect IP validation helpers
         run: |
-          echo '===== LogsViewModel client references ====='
-          grep -n -E -A6 -B6 'client|Client' lib/ui/logs/view_models/logs_viewmodel.dart | head -n 260
-          echo '===== Filters v6 ====='
-          cat lib/ui/logs/view_models/filters/filters_v6.dart
-          echo '===== Client filter widget ====='
-          cat lib/ui/logs/widgets/clients_filters_modal.dart
-          echo '===== Relevant test helpers ====='
-          grep -n -E -A8 -B8 'client|Client|applyFilterAndLoad|_buildVm' test/ui/logs/view_models/logs_viewmodel_test.dart | head -n 420
+          grep -RInE 'InternetAddress|IPv4|IPv6|isIp|isIP|ipAddress|validate.*ip|RegExp.*[Ii][Pp]' lib test | head -n 400 || true
+          echo '===== pubspec environment ====='
+          grep -n -A8 '^environment:' pubspec.yaml
+          echo '===== workflow list ====='
+          ls .github/workflows
