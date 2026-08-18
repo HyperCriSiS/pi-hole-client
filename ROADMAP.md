@@ -8,7 +8,7 @@ Maintain and improve the unofficial Pi-hole client while upstream activity is li
 
 **Status: in progress**
 
-The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPSTREAM_TRIAGE.md` remains the detailed issue/PR triage reference; this file is the project-level execution roadmap and source of truth for future work. Work on #638 is underway: five duplicated error states have been migrated to the shared `ErrorMessage` component (Find Domains in Lists, ClientsList, GroupsList, StatisticsList, and DnsTab), while the broader incremental screen migration remains open.
+The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPSTREAM_TRIAGE.md` remains the detailed issue/PR triage reference; this file is the project-level execution roadmap and source of truth for future work. Work on #638 is underway with twelve verified migrations to the shared `ErrorMessage` component; the remaining specialized error presentations must be reviewed before closing the broader incremental migration.
 
 ## Completed foundation
 
@@ -61,7 +61,7 @@ The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPS
 
 ## Completion status
 
-**Not fully completed.** #604 and #404 are implemented and validated. #638 is in progress with eleven verified shared-error-state migrations complete. `QueriesLastHoursLine` and `QueriesLastHoursBar` are migrated and validated; identify the next duplicated error-state candidate before the next refactor.
+**Not fully completed.** #604 and #404 are implemented and validated. #638 is in progress with twelve verified shared-error-state migrations complete. `LegalScreen` is migrated and validated; review the remaining specialized error presentations before closing #638.
 
 ## Automation-validated maintenance
 
@@ -71,3 +71,4 @@ The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPS
 - [x] Migrate `AdlistsList` to the shared `ErrorMessage` component and keep `adlists_test.dart` green.
 - [x] Migrate `QueriesLastHoursLine` to the shared `ErrorMessage` component and keep `queries_last_hours_line_test.dart` green.
 - [x] Migrate `QueriesLastHoursBar` to the shared `ErrorMessage` component and keep `home_charts_test.dart` green.
+- [x] Migrate `LegalScreen` to the shared `ErrorMessage` component and keep `legal_screen_test.dart` green.
