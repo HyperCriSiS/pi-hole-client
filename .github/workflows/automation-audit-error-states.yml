@@ -1,6 +1,10 @@
 name: Automation audit remaining error states
 "on":
-  workflow_dispatch:
+  push:
+    branches:
+      - dev
+    paths:
+      - .github/workflows/automation-audit-error-states.yml
 permissions:
   contents: read
 jobs:
