@@ -66,3 +66,11 @@ The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPS
 ## Completion status
 
 **Not fully completed.** #397 is implemented and fully CI-validated. #442 is the active item and currently requires a fresh Android 16 reproduction/current stack before a code change is justified.
+
+### Pi-hole v6 query-filter progress (2026-08-18)
+
+- [x] Model the FTL-supported server-side query filters (`domain`, `client_ip`, `status`, `type`, `reply`) as `V6QueryFilter`, including normalization and empty-value handling.
+- [x] Wire `V6QueryFilter` into `PiholeV6ApiClient.getQueries` using the existing query-string builder, keeping v5 behavior unchanged.
+- [ ] Thread `V6QueryFilter` through `MetricsRepositoryV6` and map the Logs screen's existing v6 filter state to server-side request filters with parity/regression tests.
+
+Completion status remains **not fully complete**.
