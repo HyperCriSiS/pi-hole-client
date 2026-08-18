@@ -1,4 +1,4 @@
-name: Temporary v6 log filter inspection
+name: Temporary v6 client filter inspection
 
 on:
   push:
@@ -14,19 +14,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - name: Inspect sources
+      - name: Inspect client filter state
         run: |
-          for f in \
-            lib/ui/logs/view_models/filters/filters_v6.dart \
-            lib/data/repositories/api/interfaces/metrics_repository.dart \
-            lib/data/repositories/api/v5/metrics_repository.dart \
-            lib/domain/services/logs_pagination_service.dart \
-            test/domain/services/logs_pagination_service_test.dart \
-            test/domain/services/live_logs_service_test.dart \
-            test/ui/logs/view_models/filters/filters_v6_test.dart \
-            ROADMAP.md; do
-            echo "===== FILE: $f ====="
-            cat "$f"
-          done
-          echo '===== FILE: lib/ui/logs/view_models/logs_viewmodel.dart relevant resets ====='
-          grep -n -A8 -B8 '_paginationService.*reset' lib/ui/logs/view_models/logs_viewmodel.dart
+          echo '===== LogsViewModel client references ====='
+          grep -n -E -A6 -B6 'client|Client' lib/ui/logs/view_models/logs_viewmodel.dart | head -n 260
+          echo '===== Filters v6 ====='
+          cat lib/ui/logs/view_models/filters/filters_v6.dart
+          echo '===== Client filter widget ====='
+          cat lib/ui/logs/widgets/clients_filters_modal.dart
+          echo '===== Relevant test helpers ====='
+          grep -n -E -A8 -B8 'client|Client|applyFilterAndLoad|_buildVm' test/ui/logs/view_models/logs_viewmodel_test.dart | head -n 420
