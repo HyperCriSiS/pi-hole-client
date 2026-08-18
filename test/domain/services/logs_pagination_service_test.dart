@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pi_hole_client/data/model/v6/metrics/query_filter.dart';
 import 'package:pi_hole_client/data/repositories/api/interfaces/metrics_repository.dart';
 import 'package:pi_hole_client/domain/model/enums.dart';
 import 'package:pi_hole_client/domain/model/metrics/clients.dart';
@@ -74,6 +75,32 @@ class _FakeMetricsRepository implements MetricsRepository {
   @override
   Future<Result<OverTime>> fetchOverTime({int? count = 10}) =>
       throw UnimplementedError();
+}
+
+class _FakeFilteredMetricsRepository extends _FakeMetricsRepository
+    implements FilteredMetricsRepository {
+  _FakeFilteredMetricsRepository(super.responses);
+
+  V6QueryFilter? lastFilter;
+
+  @override
+  Future<Result<Logs>> fetchQueriesFiltered({
+    required DateTime from,
+    required DateTime until,
+    int? length = 100,
+    int? cursor,
+    int? start,
+    V6QueryFilter? filter,
+  }) {
+    lastFilter = filter;
+    return fetchQueries(
+      from: from,
+      until: until,
+      length: length,
+      cursor: cursor,
+      start: start,
+    );
+  }
 }
 
 /// Builds a minimal [Log] with the given id.
@@ -270,5 +297,29 @@ void main() {
         expect(svc.finished, LoadStatus.error);
       },
     );
+  });
+  group('LogsPaginationService – optional server filter capability', () {
+    test('forwards filters to capable repositories', () async {
+      final repo = _FakeFilteredMetricsRepository([
+        Success(_v6Logs([_log(1)], cursor: 42)),
+      ]);
+      final svc = LogsPaginationService(repository: repo);
+      const filter = V6QueryFilter(domain: 'example.com', status: 'FORWARDED');
+      svc.setFilter(filter);
+      svc.reset(start, end);
+      await svc.loadNextPage();
+      expect(repo.lastFilter, same(filter));
+    });
+
+    test('keeps existing path for repositories without capability', () async {
+      final repo = _FakeMetricsRepository([
+        Success(_v5Logs([_log(1)])),
+      ]);
+      final svc = LogsPaginationService(repository: repo);
+      svc.setFilter(const V6QueryFilter(domain: 'example.com'));
+      svc.reset(start, end);
+      expect(await svc.loadNextPage(), hasLength(1));
+      expect(svc.finished, LoadStatus.loaded);
+    });
   });
 }

@@ -72,6 +72,7 @@ The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPS
 - [x] Model the FTL-supported server-side query filters (`domain`, `client_ip`, `status`, `type`, `reply`) as `V6QueryFilter`, including normalization and empty-value handling.
 - [x] Wire `V6QueryFilter` into `PiholeV6ApiClient.getQueries` using the existing query-string builder, keeping v5 behavior unchanged.
 - [x] Thread `V6QueryFilter` through `MetricsRepositoryV6` while preserving the shared pagination contract (`start` included); focused v6 model/repository/API regression tests validate the integration.
-- [ ] Map the Logs screen's existing v6 filter state to server-side request filters, pushing only semantically equivalent filters and retaining client-side handling for complex/multi-value cases; add parity/regression tests.
+- [x] Push semantically safe Logs v6 filters server-side: exact `domain` and exactly one concrete `status`; multi-status/grouped filters remain client-side, v5 remains unchanged, and pagination/filter-capability regression tests cover the transport path.
+- [ ] Audit `type` and `reply` mappings and resolve `client_ip` only when the selected client is provably an IP; keep grouped/multi-value filters client-side unless FTL supports equivalent OR semantics.
 
 Completion status remains **not fully complete**.

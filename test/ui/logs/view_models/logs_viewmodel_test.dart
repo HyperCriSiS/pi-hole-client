@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pi_hole_client/data/model/v6/metrics/query_filter.dart';
 import 'package:pi_hole_client/data/repositories/api/interfaces/metrics_repository.dart';
 import 'package:pi_hole_client/domain/model/enums.dart';
 import 'package:pi_hole_client/domain/model/metrics/clients.dart';
@@ -102,6 +103,13 @@ class _CountingPaginationService extends _ControlledPaginationService {
 
   int loadNextPageCallCount = 0;
   int resetCallCount = 0;
+  V6QueryFilter? lastFilter;
+
+  @override
+  void setFilter(V6QueryFilter? filter) {
+    lastFilter = filter;
+    super.setFilter(filter);
+  }
 
   @override
   void reset(DateTime start, DateTime until) {
@@ -836,10 +844,7 @@ void main() {
       vm.updateSortStatus(0);
       await vm.enqueueLoadMore();
 
-      expect(
-        historyService.loadNextPageCallCount,
-        equals(callsBefore + 1),
-      );
+      expect(historyService.loadNextPageCallCount, equals(callsBefore + 1));
       expect(liveService.tickCount, equals(0));
       vm.dispose();
     });
@@ -863,12 +868,11 @@ void main() {
         late _CountingLiveLogsService liveService;
 
         final vm = LogsViewModel(
-          paginationServiceFactory:
-              ({required MetricsRepository repository}) {
-                final service = _CountingPaginationService([initialLog]);
-                paginationServices.add(service);
-                return service;
-              },
+          paginationServiceFactory: ({required MetricsRepository repository}) {
+            final service = _CountingPaginationService([initialLog]);
+            paginationServices.add(service);
+            return service;
+          },
           liveLogsServiceFactory:
               ({
                 required LogsPaginationService paginationService,
@@ -977,6 +981,65 @@ void main() {
       expect(service.loadNextPageCallCount, equals(callsBefore));
       vm.dispose();
     });
+
+    test('v6 exact domain is pushed server-side and reloads', () async {
+      final vm = _buildVm(
+        apiVersion: 'v6',
+        overrideFactory: ({required MetricsRepository repository}) => service,
+      );
+      await _initAndLoad(vm);
+      final callsBefore = service.loadNextPageCallCount;
+      vm.setSelectedDomain('example.com');
+      await vm.applyFilterAndLoad();
+      expect(service.loadNextPageCallCount, callsBefore + 1);
+      expect(service.lastFilter?.domain, 'example.com');
+      expect(service.lastFilter?.status, isNull);
+      vm.dispose();
+    });
+
+    test('v6 single concrete status is pushed server-side', () async {
+      final vm = _buildVm(
+        apiVersion: 'v6',
+        overrideFactory: ({required MetricsRepository repository}) => service,
+      );
+      await _initAndLoad(vm);
+      vm.setStatusSelected([2]);
+      await vm.applyFilterAndLoad();
+      expect(service.lastFilter?.status, 'GRAVITY');
+      vm.dispose();
+    });
+
+    test('v6 multiple statuses retain client-side semantics', () async {
+      final vm = _buildVm(
+        apiVersion: 'v6',
+        overrideFactory: ({required MetricsRepository repository}) => service,
+      );
+      await _initAndLoad(vm);
+      vm.setStatusSelected([2, 3]);
+      await vm.applyFilterAndLoad();
+      expect(service.lastFilter?.status, isNull);
+      vm.dispose();
+    });
+
+    test(
+      'v6 chip reset reloads after clearing a server-side domain filter',
+      () async {
+        final vm = _buildVm(
+          apiVersion: 'v6',
+          overrideFactory: ({required MetricsRepository repository}) => service,
+        );
+        await _initAndLoad(vm);
+        vm.setSelectedDomain('example.com');
+        await vm.applyFilterAndLoad();
+        final callsBeforeReset = service.loadNextPageCallCount;
+        vm.setSelectedDomain(null);
+        vm.resetLogs();
+        await Future<void>.delayed(Duration.zero);
+        expect(service.loadNextPageCallCount, greaterThan(callsBeforeReset));
+        expect(service.lastFilter, isNull);
+        vm.dispose();
+      },
+    );
 
     test('isFiltering is true after call', () async {
       final vm = buildTrackedVm();

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:pi_hole_client/data/model/v6/metrics/query_filter.dart';
 import 'package:pi_hole_client/data/repositories/api/interfaces/domain_repository.dart';
 import 'package:pi_hole_client/data/repositories/api/interfaces/metrics_repository.dart';
 import 'package:pi_hole_client/domain/model/domain/domain.dart';
@@ -468,6 +469,21 @@ class LogsViewModel extends ChangeNotifier {
     _stopLiveTimer();
   }
 
+  V6QueryFilter? _buildServerQueryFilter() {
+    if (_apiVersion != SupportedApiVersions.v6) return null;
+
+    String? status;
+    if (statusSelected.length == 1) {
+      final selectedIndex = statusSelected.single;
+      status = queryStatusesV6
+          .firstWhere((entry) => entry.index == selectedIndex)
+          .key;
+    }
+
+    final filter = V6QueryFilter(domain: selectedDomain, status: status);
+    return filter.isEmpty ? null : filter;
+  }
+
   // ------------------------------------------
   // Load management
   // ------------------------------------------
@@ -505,7 +521,9 @@ class LogsViewModel extends ChangeNotifier {
 
     final now = DateTime.now();
     final start = _getWindowStart(now);
-    _paginationService!.reset(start, now);
+    _paginationService!
+      ..setFilter(_buildServerQueryFilter())
+      ..reset(start, now);
 
     if (hasCache) {
       await _collectAndReplace(serverEpoch: serverEpoch);
@@ -558,9 +576,15 @@ class LogsViewModel extends ChangeNotifier {
     final endTime = inEndTime ?? DateTime.now();
     final startTime = inStartTime ?? _getWindowStart(endTime);
 
-    if (inStartTime != null || inEndTime != null) {
-      _enableNextWindow = false;
-      _paginationService!.reset(startTime, endTime);
+    final hasExplicitTimeRange = inStartTime != null || inEndTime != null;
+    final shouldReloadFromServer =
+        hasExplicitTimeRange || _apiVersion == SupportedApiVersions.v6;
+
+    if (shouldReloadFromServer) {
+      _enableNextWindow = !hasExplicitTimeRange;
+      _paginationService!
+        ..setFilter(_buildServerQueryFilter())
+        ..reset(startTime, endTime);
       _resetLogsCache();
 
       final newLogs = await _paginationService!.loadNextPage();
@@ -582,10 +606,14 @@ class LogsViewModel extends ChangeNotifier {
 
   /// Resets the filtering state so that window expansion resumes normally.
   void resetLogs() {
+    _paginationService?.setFilter(null);
     _enableNextWindow = true;
     _loadStatus = LoadStatus.loaded;
     _isFiltering = false;
     notifyListeners();
+    if (_apiVersion == SupportedApiVersions.v6 && _screenActive) {
+      unawaited(initializeLoad());
+    }
   }
 
   Future<void> _enqueueLoad({required int serverEpoch}) async {
@@ -704,10 +732,7 @@ class LogsViewModel extends ChangeNotifier {
       if (_liveLogsService != liveLogsService) return;
       if (newLogs.isNotEmpty) _addLogs(newLogs);
     } catch (error, stackTrace) {
-      logger.e(
-        'Failed to load newer logs: $error',
-        stackTrace: stackTrace,
-      );
+      logger.e('Failed to load newer logs: $error', stackTrace: stackTrace);
     } finally {
       if (_isCurrentServerEpoch(serverEpoch) &&
           _liveLogsService == liveLogsService) {
