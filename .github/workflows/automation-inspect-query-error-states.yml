@@ -22,6 +22,7 @@ jobs:
       - name: Migrate query charts to shared ErrorMessage
         run: |
           python3 - <<'PY'
+          import re
           from pathlib import Path
 
           files = [
@@ -30,57 +31,45 @@ jobs:
           ]
           import_line = "import 'package:pi_hole_client/ui/core/ui/components/error_message.dart';\n"
           import_anchor = "import 'package:pi_hole_client/ui/core/l10n/generated/app_localizations.dart';\n"
+          pattern = re.compile(
+              r'(?P<indent>^[ \t]*)return Center\(\s*'
+              r'child:\s*Column\(\s*'
+              r'mainAxisAlignment:\s*MainAxisAlignment\.center,\s*'
+              r'children:\s*\[\s*'
+              r'const Icon\(Icons\.error,\s*size:\s*50,\s*color:\s*Colors\.red\),\s*'
+              r'const SizedBox\(height:\s*50\),\s*'
+              r'Text\(\s*'
+              r'AppLocalizations\.of\(context\)!\.chartsNotLoaded,\s*'
+              r'style:\s*TextStyle\(\s*'
+              r'color:\s*Theme\.of\(context\)\.colorScheme\.onSurfaceVariant,\s*'
+              r'fontSize:\s*22,\s*'
+              r'\),\s*'
+              r'\),\s*'
+              r'\],\s*'
+              r'\),\s*'
+              r'\);',
+              re.MULTILINE,
+          )
 
-          line_old = """      return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.error, size: 50, color: Colors.red),
-                const SizedBox(height: 50),
-                Text(
-                  AppLocalizations.of(context)!.chartsNotLoaded,
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    fontSize: 22,
-                  ),
-                ),
-              ],
-            ),
-          );"""
-          line_new = """      return ErrorMessage(
-            message: AppLocalizations.of(context)!.chartsNotLoaded,
-          );"""
-
-          bar_old = """            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error, size: 50, color: Colors.red),
-                  const SizedBox(height: 50),
-                  Text(
-                    AppLocalizations.of(context)!.chartsNotLoaded,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      fontSize: 22,
-                    ),
-                  ),
-                ],
-              ),
-            );"""
-          bar_new = """            return ErrorMessage(
-              message: AppLocalizations.of(context)!.chartsNotLoaded,
-            );"""
-
-          replacements = [(files[0], line_old, line_new), (files[1], bar_old, bar_new)]
-          for path, old, new in replacements:
+          for path in files:
               source = path.read_text()
+              matches = list(pattern.finditer(source))
+              if len(matches) != 1:
+                  raise SystemExit(f'expected exactly one legacy query-chart error block in {path}, found {len(matches)}')
               if import_line not in source:
                   if import_anchor not in source:
                       raise SystemExit(f'localization import anchor not found in {path}')
                   source = source.replace(import_anchor, import_anchor + import_line, 1)
-              if source.count(old) != 1:
-                  raise SystemExit(f'expected exactly one legacy query-chart error block in {path}, found {source.count(old)}')
-              source = source.replace(old, new, 1)
+              def replacement(match):
+                  indent = match.group('indent')
+                  return (
+                      f'{indent}return ErrorMessage(\n'
+                      f'{indent}  message: AppLocalizations.of(context)!.chartsNotLoaded,\n'
+                      f'{indent});'
+                  )
+              source, count = pattern.subn(replacement, source, count=1)
+              if count != 1:
+                  raise SystemExit(f'failed to migrate {path}')
               path.write_text(source)
 
           roadmap = Path('ROADMAP.md')
