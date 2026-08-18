@@ -15,25 +15,31 @@ jobs:
         with:
           ref: dev
           fetch-depth: 0
-      - name: Audit error-state implementations
+      - name: Print roadmap
+        run: cat ROADMAP.md
+      - name: Validate remaining direct error icons
         run: |
           python3 - <<'PY'
           from pathlib import Path
 
-          needles = ('Icons.error', 'ErrorDataChart(', 'ErrorMessage(')
+          allowed = {
+              'lib/ui/core/ui/components/error_data_chart.dart',
+              'lib/ui/core/ui/components/error_message.dart',
+              'lib/ui/settings/server_settings/adlists/widgets/adlist_tile.dart',
+              'lib/ui/settings/server_settings/adlists/widgets/gravity_update.dart',
+              'lib/ui/servers/widgets/transport_security_indicator.dart',
+          }
+          hits = []
           for path in sorted(Path('lib').rglob('*.dart')):
-              lines = path.read_text().splitlines()
-              hits = [i for i, line in enumerate(lines) if any(n in line for n in needles)]
-              if not hits:
-                  continue
-              print(f'=== {path} ===')
-              shown = set()
-              for i in hits:
-                  start = max(0, i - 10)
-                  end = min(len(lines), i + 16)
-                  for n in range(start, end):
-                      if n not in shown:
-                          print(f'{n+1:4}: {lines[n]}')
-                          shown.add(n)
-                  print('---')
+              text = path.read_text()
+              if 'Icons.error' in text:
+                  hits.append(str(path))
+          print('Direct Icons.error hits:')
+          for hit in hits:
+              print(hit)
+          unexpected = set(hits) - allowed
+          if unexpected:
+              raise SystemExit(f'Unexpected direct error icon implementations: {sorted(unexpected)}')
           PY
+      - name: Check patch whitespace
+        run: git diff --check HEAD^ HEAD
