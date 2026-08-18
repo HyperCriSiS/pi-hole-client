@@ -1,6 +1,7 @@
 name: Temporary v6 query filter migration
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - dev
