@@ -1,0 +1,28 @@
+name: Temporary v6 log filter inspection
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect relevant sources
+        shell: bash
+        run: |
+          echo '=== filters_interface.dart ==='
+          cat lib/ui/logs/view_models/filters/filters_interface.dart
+          echo '=== filters_v6.dart ==='
+          cat lib/ui/logs/view_models/filters/filters_v6.dart
+          echo '=== logs_pagination_service.dart ==='
+          cat lib/domain/services/logs_pagination_service.dart
+          echo '=== metrics_repository.dart ==='
+          cat lib/data/repositories/api/interfaces/metrics_repository.dart
+          echo '=== LogsViewModel filter/load references ==='
+          grep -n -E 'applyFilterAndLoad|fetchQueries|pagination|selectedDomain|selectedClients|statusSelected|requestStatus|_filters|logsListDisplay' lib/ui/logs/view_models/logs_viewmodel.dart || true
+          echo '=== candidate tests ==='
+          find test -type f | grep -E 'logs|filter|pagination|metrics_repository' | sort
