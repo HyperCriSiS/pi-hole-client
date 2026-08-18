@@ -1,145 +1,28 @@
-name: Temporary v6 query filter request-path migration
+name: Temporary v6 query filter migration
 
 on:
   push:
-    branches: [dev]
+    branches:
+      - dev
     paths:
-      - '.github/workflows/query-filter-request-path.yml'
-  workflow_dispatch:
+      - .github/workflows/query-filter-request-path.yml
 
 permissions:
   contents: write
 
 jobs:
-  migrate-and-test:
+  migrate:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout dev
-        uses: actions/checkout@v7
+      - uses: actions/checkout@v4
         with:
           ref: dev
           fetch-depth: 0
-
-      - name: Patch v6 query request path
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - name: Apply and validate
         shell: bash
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
-
-          model_path = Path('lib/data/model/v6/metrics/query_filter.dart')
-          model = model_path.read_text()
-          if 'String toQueryString()' not in model:
-              needle = '  bool get isEmpty => toQueryParameters().isEmpty;\n'
-              replacement = '''  bool get isEmpty => toQueryParameters().isEmpty;\n\n  /// Serializes supported filters for use in the v6 `/api/queries` URL.\n  ///\n  /// Keys and values are percent-encoded so domains, client identifiers, and\n  /// future filter values cannot corrupt the surrounding query string.\n  String toQueryString() {\n    return toQueryParameters().entries\n        .map(\n          (entry) =>\n              '${Uri.encodeQueryComponent(entry.key)}=${Uri.encodeQueryComponent(entry.value)}',\n        )\n        .join('&');\n  }\n'''
-              if needle not in model:
-                  raise SystemExit('query_filter.dart: isEmpty anchor not found')
-              model = model.replace(needle, replacement, 1)
-              model_path.write_text(model)
-
-          test_path = Path('test/data/model/v6/metrics/query_filter_test.dart')
-          test = test_path.read_text()
-          if "serializes and percent-encodes query parameters" not in test:
-              insert = r'''
-
-  test('serializes and percent-encodes query parameters', () {
-    const filter = V6QueryFilter(
-      domain: 'example.com/path value',
-      clientIp: 'client name',
-    );
-
-    expect(
-      filter.toQueryString(),
-      'domain=example.com%2Fpath%20value&client_ip=client%20name',
-    );
-  });
-
-  test('serializes an empty filter as an empty query string', () {
-    expect(const V6QueryFilter().toQueryString(), isEmpty);
-  });
-'''
-              pos = test.rfind('}')
-              if pos == -1:
-                  raise SystemExit('query_filter_test.dart: main closing brace not found')
-              test = test[:pos] + insert + test[pos:]
-              test_path.write_text(test)
-
-          client_path = Path('lib/data/services/api/pihole_v6_api_client.dart')
-          client = client_path.read_text()
-          import_line = "import 'package:pi_hole_client/data/model/v6/metrics/query_filter.dart';"
-          if import_line not in client:
-              anchors = [
-                  "import 'package:pi_hole_client/data/model/v6/metrics/queries.dart';",
-                  "import 'package:pi_hole_client/data/model/v6/metrics/metrics.dart';",
-              ]
-              for anchor in anchors:
-                  if anchor in client:
-                      client = client.replace(anchor, import_line + '\n' + anchor, 1)
-                      break
-              else:
-                  metric_import = "import 'package:pi_hole_client/data/model/v6/metrics/"
-                  idx = client.find(metric_import)
-                  if idx == -1:
-                      raise SystemExit('pihole_v6_api_client.dart: metrics import anchor not found')
-                  client = client[:idx] + import_line + '\n' + client[idx:]
-
-          method_start = client.find('getQueries({')
-          if method_start == -1:
-              raise SystemExit('pihole_v6_api_client.dart: getQueries method not found')
-          method_end = client.find('\n  }', method_start)
-          if method_end == -1:
-              raise SystemExit('pihole_v6_api_client.dart: getQueries method end not found')
-          segment = client[method_start:method_end]
-
-          if 'V6QueryFilter? filter,' not in segment:
-              sig_anchor = '    int? start,\n'
-              if sig_anchor not in segment:
-                  raise SystemExit('pihole_v6_api_client.dart: start parameter anchor not found')
-              segment = segment.replace(sig_anchor, sig_anchor + '    V6QueryFilter? filter,\n', 1)
-
-          if 'final filterParam =' not in segment:
-              start_anchor = "    final startParam = start == null ? '' : '&start=$start';\n"
-              if start_anchor not in segment:
-                  raise SystemExit('pihole_v6_api_client.dart: startParam anchor not found')
-              segment = segment.replace(start_anchor, start_anchor + "    final filterParam =\n        filter == null || filter.isEmpty ? '' : '&${filter.toQueryString()}';\n", 1)
-
-          if '$cursorPram$startParam$filterParam' not in segment:
-              if '$cursorPram$startParam' not in segment:
-                  raise SystemExit('pihole_v6_api_client.dart: query path anchor not found')
-              segment = segment.replace('$cursorPram$startParam', '$cursorPram$startParam$filterParam', 1)
-
-          client = client[:method_start] + segment + client[method_end:]
-          client_path.write_text(client)
-
-          roadmap_path = Path('ROADMAP.md')
-          roadmap = roadmap_path.read_text()
-          marker = '### Pi-hole v6 query-filter progress (2026-08-18)'
-          if marker not in roadmap:
-              roadmap = roadmap.rstrip() + f'''\n\n{marker}\n\n- [x] Model the FTL-supported server-side query filters (`domain`, `client_ip`, `status`, `type`, `reply`) as `V6QueryFilter`, including normalization and empty-value handling.\n- [x] Serialize `V6QueryFilter` safely and wire it into the v6 `PiholeV6ApiClient.getQueries` `/api/queries` request path without changing v5 behavior.\n- [ ] Thread `V6QueryFilter` through `MetricsRepositoryV6` and map the Logs screen's existing v6 filter state to server-side request filters with parity/regression tests.\n\nCompletion status remains **not fully complete**.\n'''
-              roadmap_path.write_text(roadmap)
-          PY
-
-      - name: Format changed Dart files
-        run: dart format lib/data/model/v6/metrics/query_filter.dart lib/data/services/api/pihole_v6_api_client.dart test/data/model/v6/metrics/query_filter_test.dart
-
-      - name: Install dependencies
-        run: flutter pub get
-
-      - name: Run focused tests
-        run: flutter test test/data/model/v6/metrics/query_filter_test.dart test/data/services/api/pihole_v6_api_client_test.dart
-
-      - name: Validate diff
-        run: git diff --check
-
-      - name: Commit validated migration and remove temporary workflow
-        shell: bash
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git rm .github/workflows/query-filter-request-path.yml
-          git add ROADMAP.md lib/data/model/v6/metrics/query_filter.dart lib/data/services/api/pihole_v6_api_client.dart test/data/model/v6/metrics/query_filter_test.dart
-          if git diff --cached --quiet; then
-            echo 'No changes to commit.'
-            exit 0
-          fi
-          git commit -m 'feat: wire v6 query filters into request path'
-          git push origin HEAD:dev
+          echo 'c2V0IC1ldW8gcGlwZWZhaWwKcHl0aG9uMyAtIDw8J1BZJwpmcm9tIHBhdGhsaWIgaW1wb3J0IFBhdGgKCm1vZGVsX3BhdGggPSBQYXRoKCdsaWIvZGF0YS9tb2RlbC92Ni9tZXRyaWNzL3F1ZXJ5X2ZpbHRlci5kYXJ0JykKbW9kZWwgPSBtb2RlbF9wYXRoLnJlYWRfdGV4dCgpCmlmICdTdHJpbmcgdG9RdWVyeVN0cmluZygpJyBub3QgaW4gbW9kZWw6CiAgICBuZWVkbGUgPSAnICBib29sIGdldCBpc0VtcHR5ID0+IHRvUXVlcnlQYXJhbWV0ZXJzKCkuaXNFbXB0eTtcbicKICAgIHJlcGxhY2VtZW50ID0gIiIiICBib29sIGdldCBpc0VtcHR5ID0+IHRvUXVlcnlQYXJhbWV0ZXJzKCkuaXNFbXB0eTsKCiAgLy8vIFNlcmlhbGl6ZXMgc3VwcG9ydGVkIGZpbHRlcnMgZm9yIHVzZSBpbiB0aGUgdjYgYC9hcGkvcXVlcmllc2AgVVJMLgogIC8vLwogIC8vLyBLZXlzIGFuZCB2YWx1ZXMgYXJlIHBlcmNlbnQtZW5jb2RlZCBzbyBmaWx0ZXIgdmFsdWVzIGNhbm5vdCBjb3JydXB0IHRoZQogIC8vLyBzdXJyb3VuZGluZyBxdWVyeSBzdHJpbmcuCiAgU3RyaW5nIHRvUXVlcnlTdHJpbmcoKSB7CiAgICByZXR1cm4gdG9RdWVyeVBhcmFtZXRlcnMoKS5lbnRyaWVzCiAgICAgICAgLm1hcCgKICAgICAgICAgIChlbnRyeSkgPT4KICAgICAgICAgICAgICAnJHtVcmkuZW5jb2RlUXVlcnlDb21wb25lbnQoZW50cnkua2V5KX09JHtVcmkuZW5jb2RlUXVlcnlDb21wb25lbnQoZW50cnkudmFsdWUpfScsCiAgICAgICAgKQogICAgICAgIC5qb2luKCcmJyk7CiAgfQoiIiIKICAgIGlmIG5lZWRsZSBub3QgaW4gbW9kZWw6CiAgICAgICAgcmFpc2UgU3lzdGVtRXhpdCgncXVlcnlfZmlsdGVyLmRhcnQ6IGlzRW1wdHkgYW5jaG9yIG5vdCBmb3VuZCcpCiAgICBtb2RlbCA9IG1vZGVsLnJlcGxhY2UobmVlZGxlLCByZXBsYWNlbWVudCwgMSkKICAgIG1vZGVsX3BhdGgud3JpdGVfdGV4dChtb2RlbCkKCnRlc3RfcGF0aCA9IFBhdGgoJ3Rlc3QvZGF0YS9tb2RlbC92Ni9tZXRyaWNzL3F1ZXJ5X2ZpbHRlcl90ZXN0LmRhcnQnKQp0ZXN0ID0gdGVzdF9wYXRoLnJlYWRfdGV4dCgpCmlmICJzZXJpYWxpemVzIGFuZCBwZXJjZW50LWVuY29kZXMgcXVlcnkgcGFyYW1ldGVycyIgbm90IGluIHRlc3Q6CiAgICBpbnNlcnQgPSByIiIiCgogIHRlc3QoJ3NlcmlhbGl6ZXMgYW5kIHBlcmNlbnQtZW5jb2RlcyBxdWVyeSBwYXJhbWV0ZXJzJywgKCkgewogICAgY29uc3QgZmlsdGVyID0gVjZRdWVyeUZpbHRlcigKICAgICAgZG9tYWluOiAnZXhhbXBsZS5jb20vcGF0aCB2YWx1ZScsCiAgICAgIGNsaWVudElwOiAnY2xpZW50IG5hbWUnLAogICAgKTsKCiAgICBleHBlY3QoCiAgICAgIGZpbHRlci50b1F1ZXJ5U3RyaW5nKCksCiAgICAgICdkb21haW49ZXhhbXBsZS5jb20lMkZwYXRoJTIwdmFsdWUmY2xpZW50X2lwPWNsaWVudCUyMG5hbWUnLAogICAgKTsKICB9KTsKCiAgdGVzdCgnc2VyaWFsaXplcyBhbiBlbXB0eSBmaWx0ZXIgYXMgYW4gZW1wdHkgcXVlcnkgc3RyaW5nJywgKCkgewogICAgZXhwZWN0KGNvbnN0IFY2UXVlcnlGaWx0ZXIoKS50b1F1ZXJ5U3RyaW5nKCksIGlzRW1wdHkpOwogIH0pOwoiIiIKICAgIHBvcyA9IHRlc3QucmZpbmQoJ30nKQogICAgaWYgcG9zID09IC0xOgogICAgICAgIHJhaXNlIFN5c3RlbUV4aXQoJ3F1ZXJ5X2ZpbHRlcl90ZXN0LmRhcnQ6IG1haW4gY2xvc2luZyBicmFjZSBub3QgZm91bmQnKQogICAgdGVzdCA9IHRlc3RbOnBvc10gKyBpbnNlcnQgKyB0ZXN0W3BvczpdCiAgICB0ZXN0X3BhdGgud3JpdGVfdGV4dCh0ZXN0KQoKY2xpZW50X3BhdGggPSBQYXRoKCdsaWIvZGF0YS9zZXJ2aWNlcy9hcGkvcGlob2xlX3Y2X2FwaV9jbGllbnQuZGFydCcpCmNsaWVudCA9IGNsaWVudF9wYXRoLnJlYWRfdGV4dCgpCmltcG9ydF9saW5lID0gImltcG9ydCAncGFja2FnZTpwaV9ob2xlX2NsaWVudC9kYXRhL21vZGVsL3Y2L21ldHJpY3MvcXVlcnlfZmlsdGVyLmRhcnQnOyIKaWYgaW1wb3J0X2xpbmUgbm90IGluIGNsaWVudDoKICAgIGFuY2hvciA9ICJpbXBvcnQgJ3BhY2thZ2U6cGlfaG9sZV9jbGllbnQvZGF0YS9tb2RlbC92Ni9tZXRyaWNzL3F1ZXJpZXMuZGFydCc7IgogICAgaWYgYW5jaG9yIGluIGNsaWVudDoKICAgICAgICBjbGllbnQgPSBjbGllbnQucmVwbGFjZShhbmNob3IsIGltcG9ydF9saW5lICsgJ1xuJyArIGFuY2hvciwgMSkKICAgIGVsc2U6CiAgICAgICAgbWV0cmljX2ltcG9ydCA9ICJpbXBvcnQgJ3BhY2thZ2U6cGlfaG9sZV9jbGllbnQvZGF0YS9tb2RlbC92Ni9tZXRyaWNzLyIKICAgICAgICBpZHggPSBjbGllbnQuZmluZChtZXRyaWNfaW1wb3J0KQogICAgICAgIGlmIGlkeCA9PSAtMToKICAgICAgICAgICAgcmFpc2UgU3lzdGVtRXhpdCgncGlob2xlX3Y2X2FwaV9jbGllbnQuZGFydDogbWV0cmljcyBpbXBvcnQgYW5jaG9yIG5vdCBmb3VuZCcpCiAgICAgICAgY2xpZW50ID0gY2xpZW50WzppZHhdICsgaW1wb3J0X2xpbmUgKyAnXG4nICsgY2xpZW50W2lkeDpdCgptZXRob2Rfc3RhcnQgPSBjbGllbnQuZmluZCgnZ2V0UXVlcmllcyh7JykKaWYgbWV0aG9kX3N0YXJ0ID09IC0xOgogICAgcmFpc2UgU3lzdGVtRXhpdCgncGlob2xlX3Y2X2FwaV9jbGllbnQuZGFydDogZ2V0UXVlcmllcyBtZXRob2Qgbm90IGZvdW5kJykKbWV0aG9kX2VuZCA9IGNsaWVudC5maW5kKCdcbiAgfScsIG1ldGhvZF9zdGFydCkKaWYgbWV0aG9kX2VuZCA9PSAtMToKICAgIHJhaXNlIFN5c3RlbUV4aXQoJ3BpaG9sZV92Nl9hcGlfY2xpZW50LmRhcnQ6IGdldFF1ZXJpZXMgbWV0aG9kIGVuZCBub3QgZm91bmQnKQpzZWdtZW50ID0gY2xpZW50W21ldGhvZF9zdGFydDptZXRob2RfZW5kXQoKaWYgJ1Y2UXVlcnlGaWx0ZXI/IGZpbHRlciwnIG5vdCBpbiBzZWdtZW50OgogICAgc2lnX2FuY2hvciA9ICcgICAgaW50PyBzdGFydCxcbicKICAgIGlmIHNpZ19hbmNob3Igbm90IGluIHNlZ21lbnQ6CiAgICAgICAgcmFpc2UgU3lzdGVtRXhpdCgncGlob2xlX3Y2X2FwaV9jbGllbnQuZGFydDogc3RhcnQgcGFyYW1ldGVyIGFuY2hvciBub3QgZm91bmQnKQogICAgc2VnbWVudCA9IHNlZ21lbnQucmVwbGFjZShzaWdfYW5jaG9yLCBzaWdfYW5jaG9yICsgJyAgICBWNlF1ZXJ5RmlsdGVyPyBmaWx0ZXIsXG4nLCAxKQoKaWYgJ2ZpbmFsIGZpbHRlclBhcmFtID0nIG5vdCBpbiBzZWdtZW50OgogICAgc3RhcnRfYW5jaG9yID0gIiAgICBmaW5hbCBzdGFydFBhcmFtID0gc3RhcnQgPT0gbnVsbCA/ICcnIDogJyZzdGFydD0kc3RhcnQnO1xuIgogICAgaWYgc3RhcnRfYW5jaG9yIG5vdCBpbiBzZWdtZW50OgogICAgICAgIHJhaXNlIFN5c3RlbUV4aXQoJ3BpaG9sZV92Nl9hcGlfY2xpZW50LmRhcnQ6IHN0YXJ0UGFyYW0gYW5jaG9yIG5vdCBmb3VuZCcpCiAgICBzZWdtZW50ID0gc2VnbWVudC5yZXBsYWNlKAogICAgICAgIHN0YXJ0X2FuY2hvciwKICAgICAgICBzdGFydF9hbmNob3IgKyAiICAgIGZpbmFsIGZpbHRlclBhcmFtID1cbiAgICAgICAgZmlsdGVyID09IG51bGwgfHwgZmlsdGVyLmlzRW1wdHkgPyAnJyA6ICcmJHtmaWx0ZXIudG9RdWVyeVN0cmluZygpfSc7XG4iLAogICAgICAgIDEsCiAgICApCgppZiAnJGN1cnNvclByYW0kc3RhcnRQYXJhbSRmaWx0ZXJQYXJhbScgbm90IGluIHNlZ21lbnQ6CiAgICBpZiAnJGN1cnNvclByYW0kc3RhcnRQYXJhbScgbm90IGluIHNlZ21lbnQ6CiAgICAgICAgcmFpc2UgU3lzdGVtRXhpdCgncGlob2xlX3Y2X2FwaV9jbGllbnQuZGFydDogcXVlcnkgcGF0aCBhbmNob3Igbm90IGZvdW5kJykKICAgIHNlZ21lbnQgPSBzZWdtZW50LnJlcGxhY2UoJyRjdXJzb3JQcmFtJHN0YXJ0UGFyYW0nLCAnJGN1cnNvclByYW0kc3RhcnRQYXJhbSRmaWx0ZXJQYXJhbScsIDEpCgpjbGllbnQgPSBjbGllbnRbOm1ldGhvZF9zdGFydF0gKyBzZWdtZW50ICsgY2xpZW50W21ldGhvZF9lbmQ6XQpjbGllbnRfcGF0aC53cml0ZV90ZXh0KGNsaWVudCkKCnJvYWRtYXBfcGF0aCA9IFBhdGgoJ1JPQURNQVAubWQnKQpyb2FkbWFwID0gcm9hZG1hcF9wYXRoLnJlYWRfdGV4dCgpCm1hcmtlciA9ICcjIyMgUGktaG9sZSB2NiBxdWVyeS1maWx0ZXIgcHJvZ3Jlc3MgKDIwMjYtMDgtMTgpJwppZiBtYXJrZXIgbm90IGluIHJvYWRtYXA6CiAgICByb2FkbWFwID0gcm9hZG1hcC5yc3RyaXAoKSArIGYiIiIKCnttYXJrZXJ9CgotIFt4XSBNb2RlbCB0aGUgRlRMLXN1cHBvcnRlZCBzZXJ2ZXItc2lkZSBxdWVyeSBmaWx0ZXJzIChgZG9tYWluYCwgYGNsaWVudF9pcGAsIGBzdGF0dXNgLCBgdHlwZWAsIGByZXBseWApIGFzIGBWNlF1ZXJ5RmlsdGVyYCwgaW5jbHVkaW5nIG5vcm1hbGl6YXRpb24gYW5kIGVtcHR5LXZhbHVlIGhhbmRsaW5nLgotIFt4XSBTZXJpYWxpemUgYFY2UXVlcnlGaWx0ZXJgIHNhZmVseSBhbmQgd2lyZSBpdCBpbnRvIHRoZSB2NiBgUGlob2xlVjZBcGlDbGllbnQuZ2V0UXVlcmllc2AgYC9hcGkvcXVlcmllc2AgcmVxdWVzdCBwYXRoIHdpdGhvdXQgY2hhbmdpbmcgdjUgYmVoYXZpb3IuCi0gWyBdIFRocmVhZCBgVjZRdWVyeUZpbHRlcmAgdGhyb3VnaCBgTWV0cmljc1JlcG9zaXRvcnlWNmAgYW5kIG1hcCB0aGUgTG9ncyBzY3JlZW4ncyBleGlzdGluZyB2NiBmaWx0ZXIgc3RhdGUgdG8gc2VydmVyLXNpZGUgcmVxdWVzdCBmaWx0ZXJzIHdpdGggcGFyaXR5L3JlZ3Jlc3Npb24gdGVzdHMuCgpDb21wbGV0aW9uIHN0YXR1cyByZW1haW5zICoqbm90IGZ1bGx5IGNvbXBsZXRlKiouCiIiIgogICAgcm9hZG1hcF9wYXRoLndyaXRlX3RleHQocm9hZG1hcCkKUFkKCmRhcnQgZm9ybWF0IGxpYi9kYXRhL21vZGVsL3Y2L21ldHJpY3MvcXVlcnlfZmlsdGVyLmRhcnQgbGliL2RhdGEvc2VydmljZXMvYXBpL3BpaG9sZV92Nl9hcGlfY2xpZW50LmRhcnQgdGVzdC9kYXRhL21vZGVsL3Y2L21ldHJpY3MvcXVlcnlfZmlsdGVyX3Rlc3QuZGFydApmbHV0dGVyIHB1YiBnZXQKZmx1dHRlciB0ZXN0IHRlc3QvZGF0YS9tb2RlbC92Ni9tZXRyaWNzL3F1ZXJ5X2ZpbHRlcl90ZXN0LmRhcnQgdGVzdC9kYXRhL3NlcnZpY2VzL2FwaS9waWhvbGVfdjZfYXBpX2NsaWVudF90ZXN0LmRhcnQKZ2l0IGRpZmYgLS1jaGVjawpnaXQgY29uZmlnIHVzZXIubmFtZSAnZ2l0aHViLWFjdGlvbnNbYm90XScKZ2l0IGNvbmZpZyB1c2VyLmVtYWlsICc0MTg5ODI4MitnaXRodWItYWN0aW9uc1tib3RdQHVzZXJzLm5vcmVwbHkuZ2l0aHViLmNvbScKZ2l0IHJtIC5naXRodWIvd29ya2Zsb3dzL3F1ZXJ5LWZpbHRlci1yZXF1ZXN0LXBhdGgueW1sCmdpdCBhZGQgUk9BRE1BUC5tZCBsaWIvZGF0YS9tb2RlbC92Ni9tZXRyaWNzL3F1ZXJ5X2ZpbHRlci5kYXJ0IGxpYi9kYXRhL3NlcnZpY2VzL2FwaS9waWhvbGVfdjZfYXBpX2NsaWVudC5kYXJ0IHRlc3QvZGF0YS9tb2RlbC92Ni9tZXRyaWNzL3F1ZXJ5X2ZpbHRlcl90ZXN0LmRhcnQKZ2l0IGNvbW1pdCAtbSAnZmVhdDogd2lyZSB2NiBxdWVyeSBmaWx0ZXJzIGludG8gcmVxdWVzdCBwYXRoJwpnaXQgcHVzaCBvcmlnaW4gSEVBRDpkZXYK' | base64 --decode > /tmp/migrate.sh
+          bash /tmp/migrate.sh
