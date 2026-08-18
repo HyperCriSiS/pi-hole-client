@@ -8,6 +8,23 @@ import 'package:flutter/material.dart';
 /// - Suggestions list is shown inside the bordered container when focused.
 /// - Supports custom matching logic for filtering items.
 /// - Uses an external [TextEditingController] to integrate with forms.
+///
+/// Example:
+/// ```dart
+/// AutoCompleteField<Device>(
+///   items: devices,
+///   controller: ipController,
+///   onChanged: (value) => validateIp(value),
+///   textOf: (d) => d.ip,
+///   titleOf: (d) => d.name ?? d.ip,
+///   subtitleOf: (d) => '${d.hwaddr} (${d.vendor})',
+///   matches: (d, q) =>
+///       d.ip.contains(q) || (d.name ?? '').toLowerCase().contains(q),
+///   labelText: 'IP Address',
+///   hintText: 'Enter or select an IP',
+///   icon: Icons.location_on,
+/// )
+/// ```
 class AutoCompleteField<T> extends StatefulWidget {
   const AutoCompleteField({
     required this.items,
@@ -31,23 +48,60 @@ class AutoCompleteField<T> extends StatefulWidget {
     super.key,
   });
 
+  /// Items used as suggestions.
   final List<T> items;
+
+  /// Controller for the text field (external).
   final TextEditingController controller;
+
+  /// Callback when the text value changes.
   final ValueChanged<String> onChanged;
+
+  /// Converts an item to the text value inserted into the field.
   final String Function(T item) textOf;
+
+  /// Title text shown in suggestion rows.
+  /// Defaults to [textOf] if not provided.
   final String Function(T item)? titleOf;
+
+  /// Subtitle text shown below the title in suggestion rows.
   final String Function(T item)? subtitleOf;
+
+  /// Custom matcher function to filter items based on query.
+  /// Defaults to searching in text/title/subtitle.
   final bool Function(T item, String query)? matches;
+
+  /// Floating label for the field.
   final String labelText;
+
+  /// Hint text when field is empty.
   final String hintText;
+
+  /// Leading icon for the text field.
   final IconData? icon;
+
+  /// Maximum height of the suggestions list.
   final double maxPopupHeight;
+
+  /// Initial text for the field.
   final String? initialText;
+
+  /// Keyboard type for the text field.
   final TextInputType? keyboardType;
+
+  /// Padding inside the text field.
   final EdgeInsetsGeometry contentPadding;
+
+  /// Duration for the expand/collapse animation.
   final int expandAnimationDurationMilliseconds;
+
+  /// Whether the expand/collapse animation is enabled.
   final bool isAnimated;
+
+  /// Visual density for suggestion list tiles.
   final VisualDensity? visualDensity;
+
+  /// Error text shown below the field when validation fails.
   final String? errorText;
 
   @override
@@ -68,25 +122,31 @@ class _AutoCompleteFieldState<T> extends State<AutoCompleteField<T>> {
     _textCtrl = widget.controller;
     _isExpanded = false;
 
+    // Initialize with initial text if provided
     if ((widget.initialText ?? '').isNotEmpty) {
       _textCtrl.text = widget.initialText!;
       _selectedText = widget.initialText;
     }
 
+    // Expand/collapse suggestions when focus changes
     _focusNode.addListener(() {
       setState(() => _isExpanded = _focusNode.hasFocus);
     });
 
+    // Handle text changes
     _textCtrl.addListener(() {
       widget.onChanged(_textCtrl.text);
       if (_focusNode.hasFocus && !_isExpanded) {
+        // Expand suggestions if focused and not already expanded
         setState(() => _isExpanded = true);
       } else if (!_focusNode.hasFocus &&
           _textCtrl.text.isEmpty &&
           _isExpanded) {
+        // Collapse suggestions if not focused and empty
         setState(() => _isExpanded = false);
       }
 
+      // Clear selection if text no longer matches
       if (_selectedText != null && _selectedText != _textCtrl.text) {
         _selectedText = null;
       }
@@ -99,6 +159,7 @@ class _AutoCompleteFieldState<T> extends State<AutoCompleteField<T>> {
     super.dispose();
   }
 
+  /// Filters items based on query.
   List<T> _filteredItems() {
     final q = _textCtrl.text.toLowerCase();
     if (q.isEmpty) return widget.items;
@@ -106,6 +167,7 @@ class _AutoCompleteFieldState<T> extends State<AutoCompleteField<T>> {
       return widget.items.where((it) => widget.matches!(it, q)).toList();
     }
 
+    // Fallback to title and subtitle matching
     final titleOf = widget.titleOf;
     final subtitleOf = widget.subtitleOf;
     return widget.items.where((it) {
@@ -137,7 +199,7 @@ class _AutoCompleteFieldState<T> extends State<AutoCompleteField<T>> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              margin: const EdgeInsets.only(top: 12),
+              margin: const EdgeInsets.only(top: 12), // adjust label overlap
               decoration: BoxDecoration(
                 border: Border.all(
                   color: borderColor,
@@ -147,6 +209,7 @@ class _AutoCompleteFieldState<T> extends State<AutoCompleteField<T>> {
               ),
               child: Column(
                 children: [
+                  // Input field
                   TextField(
                     textAlignVertical: TextAlignVertical.center,
                     controller: _textCtrl,
@@ -186,6 +249,7 @@ class _AutoCompleteFieldState<T> extends State<AutoCompleteField<T>> {
               ),
           ],
         ),
+
         if (labelVisible)
           Positioned(
             left: 12,
@@ -210,6 +274,7 @@ class _AutoCompleteFieldState<T> extends State<AutoCompleteField<T>> {
     );
   }
 
+  /// Build the suggestions list
   Widget _buildSuggestions(List<T> items) {
     final listView = ConstrainedBox(
       constraints: BoxConstraints(maxHeight: widget.maxPopupHeight),
