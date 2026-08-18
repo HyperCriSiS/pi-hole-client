@@ -8,7 +8,7 @@ Maintain and improve the unofficial Pi-hole client while upstream activity is li
 
 **Status: in progress**
 
-The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPSTREAM_TRIAGE.md` remains the detailed issue/PR triage reference; this file is the project-level execution roadmap and source of truth for future work. Work on #638 is underway with twelve verified migrations to the shared `ErrorMessage` component; the remaining specialized error presentations must be reviewed before closing the broader incremental migration.
+The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPSTREAM_TRIAGE.md` remains the detailed issue/PR triage reference; this file is the project-level execution roadmap and source of truth for future work. #638 is complete with twelve verified migrations to the shared `ErrorMessage` component. A final audit confirms that the remaining direct error icons belong to shared/specialized components or status indicators rather than duplicated generic error-state layouts. #397 is the next deterministic Phase 1 item.
 
 ## Completed foundation
 
@@ -25,7 +25,8 @@ The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPS
   - [x] Confirm the existing log-detail tests already cover URL/details and the current allow/block/search behavior, defining the regression surface for the new actions.
   - [x] Implement copy-domain and filter-by-domain against the current complete screen source, then add focused widget tests (14/14 `LogDetailsScreen` widget tests green).
 - [x] #404: document the current translation contribution workflow (`docs/translations.md`): existing languages are edited in `lib/ui/core/l10n/*.arb` and submitted by PR; new languages start with an issue; no Weblate/Crowdin project is currently in use.
-- [ ] #638: introduce/reuse a shared error-state widget and migrate screens incrementally.
+- [x] #638: introduce/reuse a shared error-state widget and migrate screens incrementally.
+  - [x] Audit the remaining direct error presentations; only shared components and specialized status indicators remain, so no additional generic `ErrorMessage` migration is warranted.
 - [x] Migrate the Find Domains in Lists error result to the shared `ErrorMessage` component and keep the focused screen test green (`809ba6cc`).
 - [x] Migrate `ClientsList` to the shared `ErrorMessage` component and validate the focused group/client widget coverage (`280cf3d2`).
 - [x] Migrate `GroupsList` to the shared `ErrorMessage` component and keep the focused group/client test suite green (`bf673810`).
@@ -61,7 +62,7 @@ The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPS
 
 ## Completion status
 
-**Not fully completed.** #604 and #404 are implemented and validated. #638 is in progress with twelve verified shared-error-state migrations complete. `LegalScreen` is migrated and validated; review the remaining specialized error presentations before closing #638.
+**Not fully completed.** #604, #404, and #638 are implemented and validated. #397 is the next deterministic Phase 1 item.
 
 ## Automation-validated maintenance
 
