@@ -1021,6 +1021,71 @@ void main() {
       vm.dispose();
     });
 
+    test('v6 single IPv4 client is pushed server-side', () async {
+      final vm = _buildVm(
+        apiVersion: 'v6',
+        overrideFactory: ({required MetricsRepository repository}) => service,
+      );
+      await _initAndLoad(vm);
+      vm.setClients(['192.168.1.10', '192.168.1.11']);
+      vm.setSelectedClients(['192.168.1.10']);
+      await vm.applyFilterAndLoad();
+      expect(service.lastFilter?.clientIp, '192.168.1.10');
+      vm.dispose();
+    });
+
+    test('v6 single IPv6 client is pushed server-side', () async {
+      final vm = _buildVm(
+        apiVersion: 'v6',
+        overrideFactory: ({required MetricsRepository repository}) => service,
+      );
+      await _initAndLoad(vm);
+      vm.setClients(['2001:db8::10', '2001:db8::11']);
+      vm.setSelectedClients(['2001:db8::10']);
+      await vm.applyFilterAndLoad();
+      expect(service.lastFilter?.clientIp, '2001:db8::10');
+      vm.dispose();
+    });
+
+    test('v6 hostname client retains client-side semantics', () async {
+      final vm = _buildVm(
+        apiVersion: 'v6',
+        overrideFactory: ({required MetricsRepository repository}) => service,
+      );
+      await _initAndLoad(vm);
+      vm.setClients(['router.lan', '192.168.1.11']);
+      vm.setSelectedClients(['router.lan']);
+      await vm.applyFilterAndLoad();
+      expect(service.lastFilter?.clientIp, isNull);
+      vm.dispose();
+    });
+
+    test('v6 multiple clients retain client-side semantics', () async {
+      final vm = _buildVm(
+        apiVersion: 'v6',
+        overrideFactory: ({required MetricsRepository repository}) => service,
+      );
+      await _initAndLoad(vm);
+      vm.setClients(['192.168.1.10', '192.168.1.11', '192.168.1.12']);
+      vm.setSelectedClients(['192.168.1.10', '192.168.1.11']);
+      await vm.applyFilterAndLoad();
+      expect(service.lastFilter?.clientIp, isNull);
+      vm.dispose();
+    });
+
+    test('v6 all-selected single client is not pushed server-side', () async {
+      final vm = _buildVm(
+        apiVersion: 'v6',
+        overrideFactory: ({required MetricsRepository repository}) => service,
+      );
+      await _initAndLoad(vm);
+      vm.setClients(['192.168.1.10']);
+      vm.setSelectedClients(['192.168.1.10']);
+      await vm.applyFilterAndLoad();
+      expect(service.lastFilter?.clientIp, isNull);
+      vm.dispose();
+    });
+
     test(
       'v6 chip reset reloads after clearing a server-side domain filter',
       () async {

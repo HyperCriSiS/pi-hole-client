@@ -74,6 +74,6 @@ The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPS
 - [x] Thread `V6QueryFilter` through `MetricsRepositoryV6` while preserving the shared pagination contract (`start` included); focused v6 model/repository/API regression tests validate the integration.
 - [x] Push semantically safe Logs v6 filters server-side: exact `domain` and exactly one concrete `status`; multi-status/grouped filters remain client-side, v5 remains unchanged, and pagination/filter-capability regression tests cover the transport path.
 - [x] Audit `type` and `reply` mappings: the current Logs UI exposes no independent type/reply filter state, so there is no semantically equivalent UI filter to push server-side yet.
-- [ ] Push `client_ip` only for exactly one selected client whose value is a valid IPv4/IPv6 literal; hostnames and multi-client selections must remain client-side, with focused regression coverage.
+- [x] Push `client_ip` only for exactly one actively selected client whose value is a valid IPv4/IPv6 literal; hostnames, the all-selected state, and multi-client selections remain client-side; focused regression coverage added.
 
 Completion status remains **not fully complete**.

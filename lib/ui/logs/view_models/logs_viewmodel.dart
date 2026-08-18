@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -480,7 +481,22 @@ class LogsViewModel extends ChangeNotifier {
           .key;
     }
 
-    final filter = V6QueryFilter(domain: selectedDomain, status: status);
+    String? clientIp;
+    final hasActiveClientFilter =
+        selectedClients.isNotEmpty &&
+        selectedClients.length < totalClients.length;
+    if (hasActiveClientFilter && selectedClients.length == 1) {
+      final selectedClient = selectedClients.single;
+      if (InternetAddress.tryParse(selectedClient) != null) {
+        clientIp = selectedClient;
+      }
+    }
+
+    final filter = V6QueryFilter(
+      domain: selectedDomain,
+      clientIp: clientIp,
+      status: status,
+    );
     return filter.isEmpty ? null : filter;
   }
 
