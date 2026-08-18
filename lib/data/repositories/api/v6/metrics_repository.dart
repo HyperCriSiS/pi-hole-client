@@ -53,6 +53,7 @@ class MetricsRepositoryV6 extends BaseV6SidRepository
     required DateTime until,
     int? length = 100,
     int? cursor,
+    int? start,
     V6QueryFilter? filter,
   }) async {
     return runWithResultRetry(
@@ -64,6 +65,7 @@ class MetricsRepositoryV6 extends BaseV6SidRepository
           until: until,
           length: length,
           cursor: cursor,
+          start: start,
           filter: filter,
         );
 
