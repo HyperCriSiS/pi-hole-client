@@ -1,4 +1,4 @@
-name: Automation inspect query chart error states
+name: Automation migrate query chart error states
 "on":
   push:
     branches:
@@ -9,30 +9,112 @@ name: Automation inspect query chart error states
 permissions:
   contents: write
 jobs:
-  inspect:
+  migrate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           ref: dev
           fetch-depth: 0
-      - name: Inspect current query chart error states
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - name: Migrate query charts to shared ErrorMessage
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          for path in [
+
+          files = [
               Path('lib/ui/home/widgets/home_charts/queries/queries_last_hours_line.dart'),
               Path('lib/ui/home/widgets/home_charts/queries/queries_last_hours_bar.dart'),
-          ]:
-              text = path.read_text()
-              print(f'===== {path} =====')
-              for i, line in enumerate(text.splitlines(), 1):
-                  if 'error' in line.lower() or 'formattedData' in line or 'formatData' in line or 'Icons.' in line:
-                      start = max(1, i - 5)
-                      end = min(len(text.splitlines()), i + 12)
-                      lines = text.splitlines()
-                      print(f'--- lines {start}-{end} ---')
-                      for n in range(start, end + 1):
-                          print(f'{n:04d}: {lines[n-1]}')
-          raise SystemExit('inspection complete')
+          ]
+          import_line = "import 'package:pi_hole_client/ui/core/ui/components/error_message.dart';\n"
+          import_anchor = "import 'package:pi_hole_client/ui/core/l10n/generated/app_localizations.dart';\n"
+
+          line_old = """      return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error, size: 50, color: Colors.red),
+                const SizedBox(height: 50),
+                Text(
+                  AppLocalizations.of(context)!.chartsNotLoaded,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontSize: 22,
+                  ),
+                ),
+              ],
+            ),
+          );"""
+          line_new = """      return ErrorMessage(
+            message: AppLocalizations.of(context)!.chartsNotLoaded,
+          );"""
+
+          bar_old = """            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error, size: 50, color: Colors.red),
+                  const SizedBox(height: 50),
+                  Text(
+                    AppLocalizations.of(context)!.chartsNotLoaded,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontSize: 22,
+                    ),
+                  ),
+                ],
+              ),
+            );"""
+          bar_new = """            return ErrorMessage(
+              message: AppLocalizations.of(context)!.chartsNotLoaded,
+            );"""
+
+          replacements = [(files[0], line_old, line_new), (files[1], bar_old, bar_new)]
+          for path, old, new in replacements:
+              source = path.read_text()
+              if import_line not in source:
+                  if import_anchor not in source:
+                      raise SystemExit(f'localization import anchor not found in {path}')
+                  source = source.replace(import_anchor, import_anchor + import_line, 1)
+              if source.count(old) != 1:
+                  raise SystemExit(f'expected exactly one legacy query-chart error block in {path}, found {source.count(old)}')
+              source = source.replace(old, new, 1)
+              path.write_text(source)
+
+          roadmap = Path('ROADMAP.md')
+          text = roadmap.read_text()
+          anchor = '- [x] Migrate `AdlistsList` to the shared `ErrorMessage` component and keep `adlists_test.dart` green.\n'
+          entries = (
+              '- [x] Migrate `QueriesLastHoursLine` to the shared `ErrorMessage` component and keep `queries_last_hours_line_test.dart` green.\n'
+              '- [x] Migrate `QueriesLastHoursBar` to the shared `ErrorMessage` component and keep `home_charts_test.dart` green.\n'
+          )
+          if entries not in text:
+              if anchor not in text:
+                  raise SystemExit('ROADMAP insertion anchor not found')
+              text = text.replace(anchor, anchor + entries, 1)
+
+          old_status = '**Not fully completed.** #604 and #404 are implemented and validated. #638 is in progress with nine verified shared-error-state migrations complete. `AdlistsList` is migrated and validated; identify the next duplicated error-state candidate before the next refactor.'
+          new_status = '**Not fully completed.** #604 and #404 are implemented and validated. #638 is in progress with eleven verified shared-error-state migrations complete. `QueriesLastHoursLine` and `QueriesLastHoursBar` are migrated and validated; identify the next duplicated error-state candidate before the next refactor.'
+          if old_status not in text:
+              raise SystemExit('expected ROADMAP completion status not found')
+          text = text.replace(old_status, new_status, 1)
+          roadmap.write_text(text)
           PY
+      - name: Run focused Flutter tests
+        run: |
+          cp .env.sample .env
+          flutter pub get
+          flutter test test/ui/home/widgets/queries_last_hours_line_test.dart
+          flutter test test/ui/home/widgets/home_charts_test.dart
+      - name: Commit validated migration and self-remove
+        run: |
+          rm .github/workflows/automation-inspect-query-error-states.yml
+          git checkout -- pubspec.lock analysis_options.yaml || true
+          git config user.name 'HyperCriSiS'
+          git config user.email 'dev.github@w3b.world'
+          git add lib/ui/home/widgets/home_charts/queries/queries_last_hours_line.dart lib/ui/home/widgets/home_charts/queries/queries_last_hours_bar.dart ROADMAP.md .github/workflows/automation-inspect-query-error-states.yml
+          git diff --cached --check
+          git commit -m 'refactor: reuse shared error state in query charts'
+          git push origin HEAD:dev
