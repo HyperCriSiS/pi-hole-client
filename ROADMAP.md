@@ -61,7 +61,7 @@ The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPS
 
 ## Completion status
 
-**Not fully completed.** #604 and #404 are implemented and validated. #638 is in progress with nine verified shared-error-state migrations complete. `AdlistsList` is migrated and validated; identify the next duplicated error-state candidate before the next refactor.
+**Not fully completed.** #604 and #404 are implemented and validated. #638 is in progress with eleven verified shared-error-state migrations complete. `QueriesLastHoursLine` and `QueriesLastHoursBar` are migrated and validated; identify the next duplicated error-state candidate before the next refactor.
 
 ## Automation-validated maintenance
 
@@ -69,3 +69,5 @@ The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPS
 - [x] Migrate `StatisticsTripleColumn` to the shared `ErrorMessage` component and keep `statistics_test.dart` green.
 - [x] Migrate `DomainsList` to the shared `ErrorMessage` component and keep `domains_test.dart` green.
 - [x] Migrate `AdlistsList` to the shared `ErrorMessage` component and keep `adlists_test.dart` green.
+- [x] Migrate `QueriesLastHoursLine` to the shared `ErrorMessage` component and keep `queries_last_hours_line_test.dart` green.
+- [x] Migrate `QueriesLastHoursBar` to the shared `ErrorMessage` component and keep `home_charts_test.dart` green.
