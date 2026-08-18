@@ -1,16 +1,76 @@
-name: Temporary v6 client filter inspection
+name: Temporary v6 client filter validation
+
 on:
   push:
     branches: [dev]
-    paths: ['.github/workflows/tmp-v6-log-filter-inspect.yml']
+    paths:
+      - '.github/workflows/tmp-v6-log-filter-inspect.yml'
+
 permissions:
-  contents: read
+  contents: write
+
 jobs:
-  inspect:
+  validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - run: |
-          grep -n -A20 -B20 "lastFilter" test/ui/logs/view_models/logs_viewmodel_test.dart || true
-          grep -n -A30 -B20 "_buildServerQueryFilter" lib/ui/logs/view_models/logs_viewmodel.dart || true
-          grep -n -A15 -B15 "setClientsFilter" lib/ui/logs/view_models/logs_viewmodel.dart || true
+        with:
+          ref: dev
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+          flutter-version: 3.44.1
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y sqlite3 libsqlite3-dev
+          flutter pub get
+          cp .env.sample .env
+          dart run tools/generate_git_commit.dart
+      - name: Apply client IP pushdown and regression tests
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          source = Path('lib/ui/logs/view_models/logs_viewmodel.dart')
+          text = source.read_text()
+          if "import 'dart:io';" not in text:
+              text = text.replace("import 'dart:async';\n", "import 'dart:async';\nimport 'dart:io';\n", 1)
+
+          old = """    final filter = V6QueryFilter(domain: selectedDomain, status: status);\n    return filter.isEmpty ? null : filter;\n"""
+          new = """    String? clientIp;\n    final hasActiveClientFilter =\n        clientsSelected.length != clients.length ||\n        clients.any((client) => !clientsSelected.contains(client));\n    if (hasActiveClientFilter && clientsSelected.length == 1) {\n      final selectedClient = clientsSelected.single;\n      if (InternetAddress.tryParse(selectedClient) != null) {\n        clientIp = selectedClient;\n      }\n    }\n\n    final filter = V6QueryFilter(\n      domain: selectedDomain,\n      clientIp: clientIp,\n      status: status,\n    );\n    return filter.isEmpty ? null : filter;\n"""
+          if old not in text:
+              raise SystemExit('source anchor not found')
+          source.write_text(text.replace(old, new, 1))
+
+          tests = Path('test/ui/logs/view_models/logs_viewmodel_test.dart')
+          text = tests.read_text()
+          anchor = """    test(\n      'v6 chip reset reloads after clearing a server-side domain filter',\n"""
+          block = """    test('v6 single IPv4 client is pushed server-side', () async {\n      final vm = _buildVm(\n        apiVersion: 'v6',\n        overrideFactory: ({required MetricsRepository repository}) => service,\n      );\n      await _initAndLoad(vm);\n      vm.setClientsFilter({'192.168.1.10'});\n      await vm.applyFilterAndLoad();\n      expect(service.lastFilter?.clientIp, '192.168.1.10');\n      vm.dispose();\n    });\n\n    test('v6 single IPv6 client is pushed server-side', () async {\n      final vm = _buildVm(\n        apiVersion: 'v6',\n        overrideFactory: ({required MetricsRepository repository}) => service,\n      );\n      await _initAndLoad(vm);\n      vm.setClientsFilter({'2001:db8::10'});\n      await vm.applyFilterAndLoad();\n      expect(service.lastFilter?.clientIp, '2001:db8::10');\n      vm.dispose();\n    });\n\n    test('v6 hostname client retains client-side semantics', () async {\n      final vm = _buildVm(\n        apiVersion: 'v6',\n        overrideFactory: ({required MetricsRepository repository}) => service,\n      );\n      await _initAndLoad(vm);\n      vm.setClientsFilter({'router.lan'});\n      await vm.applyFilterAndLoad();\n      expect(service.lastFilter?.clientIp, isNull);\n      vm.dispose();\n    });\n\n    test('v6 multiple clients retain client-side semantics', () async {\n      final vm = _buildVm(\n        apiVersion: 'v6',\n        overrideFactory: ({required MetricsRepository repository}) => service,\n      );\n      await _initAndLoad(vm);\n      vm.setClientsFilter({'192.168.1.10', '192.168.1.11'});\n      await vm.applyFilterAndLoad();\n      expect(service.lastFilter?.clientIp, isNull);\n      vm.dispose();\n    });\n\n    test('v6 all-selected single client is not pushed server-side', () async {\n      final vm = _buildVm(\n        apiVersion: 'v6',\n        overrideFactory: ({required MetricsRepository repository}) => service,\n      );\n      await _initAndLoad(vm);\n      vm.setClients(['192.168.1.10']);\n      vm.setClientsFilter({'192.168.1.10'});\n      await vm.applyFilterAndLoad();\n      expect(service.lastFilter?.clientIp, isNull);\n      vm.dispose();\n    });\n\n"""
+          if anchor not in text:
+              raise SystemExit('test anchor not found')
+          if "v6 single IPv4 client is pushed server-side" not in text:
+              text = text.replace(anchor, block + anchor, 1)
+          tests.write_text(text)
+
+          roadmap = Path('ROADMAP.md')
+          text = roadmap.read_text()
+          old_line = "- [ ] Push `client_ip` only for exactly one selected client whose value is a valid IPv4/IPv6 literal; hostnames and multi-client selections must remain client-side, with focused regression coverage."
+          new_line = "- [x] Push `client_ip` only for exactly one actively selected client whose value is a valid IPv4/IPv6 literal; hostnames, the all-selected state, and multi-client selections remain client-side; focused regression coverage added."
+          if old_line not in text:
+              raise SystemExit('roadmap anchor not found')
+          roadmap.write_text(text.replace(old_line, new_line, 1))
+          PY
+          dart format lib/ui/logs/view_models/logs_viewmodel.dart test/ui/logs/view_models/logs_viewmodel_test.dart
+          git diff --check
+      - name: Run focused regression tests
+        run: flutter test test/ui/logs/view_models/logs_viewmodel_test.dart
+      - name: Commit verified changes
+        run: |
+          git config user.name 'HyperCriSiS'
+          git config user.email 'dev.github@w3b.world'
+          git add lib/ui/logs/view_models/logs_viewmodel.dart test/ui/logs/view_models/logs_viewmodel_test.dart ROADMAP.md
+          git diff --cached --check
+          git commit -m 'feat: push single IP client filter server-side'
+          git push origin HEAD:dev
