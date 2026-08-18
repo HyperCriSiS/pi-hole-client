@@ -56,7 +56,7 @@ The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPS
 - [ ] #570: add Local CNAME management only on API paths whose behavior is verified.
   - [x] Verify the current API/repository support boundary: Pi-hole v6 already models `dns.cnameRecords` in `Dns`, while the v5 Local DNS repository/gateway path remains explicitly unsupported.
   - [x] Add v6 CNAME repository/domain operations over `dns/cnameRecords`; implementation committed (`d7c6b6e3`) with optional TTL preservation and shared v6 session/retry behavior. Repository-wide Flutter tests and Codecov completed successfully on the implementation; v5 remains explicitly unsupported.
-  - [ ] Add focused v6 API/repository regression tests for reading, adding, updating and deleting CNAME records, including restart/error handling. Basic fetch/add/delete success and CRUD error paths were added in `3b9d9ac`; successful update/TTL parsing and explicit restart assertions remain before this item can be closed.
+  - [ ] Add focused v6 API/repository regression tests for reading, adding, updating and deleting CNAME records, including restart/error handling. Fetch/add/delete success and CRUD error paths are covered by `3b9d9ac`; successful update, TTL parsing/preservation and explicit DNS-restart assertions were added in `6f224932` and await the active Dart test run before this item is closed.
   - [ ] Integrate CNAME management into the Local DNS UI only after the repository contract is covered by tests.
 - [ ] #134: establish reproducible F-Droid-compatible build metadata and release packaging.
 
