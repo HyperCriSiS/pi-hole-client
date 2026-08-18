@@ -1,0 +1,71 @@
+name: Automation v6 client IP filter
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: dev
+          fetch-depth: 0
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Apply semantically safe client_ip pushdown
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          vm = Path('lib/ui/logs/view_models/logs_viewmodel.dart')
+          text = vm.read_text()
+          text = text.replace("import 'dart:async';\n", "import 'dart:async';\nimport 'dart:io';\n", 1)
+          old = """    final filter = V6QueryFilter(domain: selectedDomain, status: status);\n    return filter.isEmpty ? null : filter;\n  }\n"""
+          new = """    String? clientIp;\n    if (selectedClients.length == 1) {\n      final candidate = selectedClients.single.trim();\n      if (InternetAddress.tryParse(candidate) != null) {\n        clientIp = candidate;\n      }\n    }\n\n    final filter = V6QueryFilter(\n      domain: selectedDomain,\n      clientIp: clientIp,\n      status: status,\n    );\n    return filter.isEmpty ? null : filter;\n  }\n"""
+          if old not in text:
+              raise SystemExit('server filter construction anchor not found')
+          text = text.replace(old, new, 1)
+          vm.write_text(text)
+
+          test = Path('test/ui/logs/view_models/logs_viewmodel_test.dart')
+          text = test.read_text()
+          anchor = """    test('v6 multiple statuses retain client-side semantics', () async {\n      final vm = _buildVm(\n        apiVersion: 'v6',\n        overrideFactory: ({required MetricsRepository repository}) => service,\n      );\n      await _initAndLoad(vm);\n      vm.setStatusSelected([2, 3]);\n      await vm.applyFilterAndLoad();\n      expect(service.lastFilter?.status, isNull);\n      vm.dispose();\n    });\n\n"""
+          addition = anchor + """    test('v6 single IPv4 client is pushed server-side', () async {\n      final vm = _buildVm(\n        apiVersion: 'v6',\n        overrideFactory: ({required MetricsRepository repository}) => service,\n      );\n      await _initAndLoad(vm);\n      vm.setSelectedClients(['192.0.2.42']);\n      await vm.applyFilterAndLoad();\n      expect(service.lastFilter?.clientIp, '192.0.2.42');\n      vm.dispose();\n    });\n\n    test('v6 single IPv6 client is pushed server-side', () async {\n      final vm = _buildVm(\n        apiVersion: 'v6',\n        overrideFactory: ({required MetricsRepository repository}) => service,\n      );\n      await _initAndLoad(vm);\n      vm.setSelectedClients(['2001:db8::42']);\n      await vm.applyFilterAndLoad();\n      expect(service.lastFilter?.clientIp, '2001:db8::42');\n      vm.dispose();\n    });\n\n    test('v6 hostname client remains client-side', () async {\n      final vm = _buildVm(\n        apiVersion: 'v6',\n        overrideFactory: ({required MetricsRepository repository}) => service,\n      );\n      await _initAndLoad(vm);\n      vm.setSelectedClients(['desktop.lan']);\n      await vm.applyFilterAndLoad();\n      expect(service.lastFilter?.clientIp, isNull);\n      vm.dispose();\n    });\n\n    test('v6 multiple clients remain client-side', () async {\n      final vm = _buildVm(\n        apiVersion: 'v6',\n        overrideFactory: ({required MetricsRepository repository}) => service,\n      );\n      await _initAndLoad(vm);\n      vm.setSelectedClients(['192.0.2.42', '192.0.2.43']);\n      await vm.applyFilterAndLoad();\n      expect(service.lastFilter?.clientIp, isNull);\n      vm.dispose();\n    });\n\n"""
+          if anchor not in text:
+              raise SystemExit('test insertion anchor not found')
+          text = text.replace(anchor, addition, 1)
+          test.write_text(text)
+
+          roadmap = Path('ROADMAP.md')
+          text = roadmap.read_text()
+          old = "- [ ] Audit `type` and `reply` mappings and resolve `client_ip` only when the selected client is provably an IP; keep grouped/multi-value filters client-side unless FTL supports equivalent OR semantics."
+          new = "- [x] Audit `type` and `reply` mappings: the current Logs UI exposes no independent type/reply filter state, so there is no semantically equivalent UI filter to push server-side yet.\n- [x] Push `client_ip` only for exactly one selected client whose value is a valid IPv4/IPv6 literal; hostnames and multi-client selections remain client-side, with focused regression coverage."
+          if old not in text:
+              raise SystemExit('roadmap anchor not found')
+          roadmap.write_text(text.replace(old, new, 1))
+          PY
+      - name: Format
+        run: dart format lib/ui/logs/view_models/logs_viewmodel.dart test/ui/logs/view_models/logs_viewmodel_test.dart
+      - name: Resolve dependencies
+        run: flutter pub get
+      - name: Focused tests
+        run: |
+          flutter test test/ui/logs/view_models/logs_viewmodel_test.dart
+          flutter test test/domain/services/logs_pagination_service_test.dart
+          flutter test test/data/model/v6/metrics/query_filter_test.dart
+          flutter test test/data/repositories/api/v6/metrics_repository_test.dart
+          flutter test test/data/services/api/v6/pihole_v6_api_client_test.dart
+      - name: Commit changes
+        run: |
+          git diff --check
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add ROADMAP.md lib/ui/logs/view_models/logs_viewmodel.dart test/ui/logs/view_models/logs_viewmodel_test.dart
+          git commit -m "feat: push literal v6 client filters server-side"
+          git push origin HEAD:dev
