@@ -8,7 +8,7 @@ Maintain and improve the unofficial Pi-hole client while upstream activity is li
 
 **Status: in progress**
 
-The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPSTREAM_TRIAGE.md` remains the detailed upstream issue/PR triage reference; this file is the project-level execution roadmap and source of truth for future work. #604, #404 and #638 are complete. #397 now has a targeted desktop-focus fix and mouse regression coverage committed on `dev`; it remains open until CI validates the change.
+The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPSTREAM_TRIAGE.md` remains the detailed upstream issue/PR triage reference; this file is the project-level execution roadmap and source of truth for future work. #604, #404, #638 and #397 are complete. #442 is now the active Phase 1 item; the original report is from v1.7.0 on Android 16 and must be reproduced against current `dev` before a lifecycle fix can be justified.
 
 ## Completed foundation
 
@@ -25,12 +25,17 @@ The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPS
 - [x] #638: introduce/reuse a shared error-state widget and migrate duplicated generic error states incrementally.
   - [x] Twelve migrations to the shared `ErrorMessage` component were verified.
   - [x] Final repository audit completed: remaining direct error icons are shared/specialized components or status indicators, not duplicated generic error layouts.
-- [ ] #397: reproduce and fix the Windows LocalDNS suggestion focus-dismissal behavior.
+- [x] #397: reproduce and fix the Windows LocalDNS suggestion focus-dismissal behavior.
   - [x] Root cause isolated to desktop mouse taps on suggestion-list descendants being outside the `TextField` tap region.
   - [x] Keep suggestions and their scrollbar in the `TextField` tap group with `TextFieldTapRegion` while preserving normal outside-click dismissal.
   - [x] Add focused mouse-pointer regression coverage for suggestion selection and outside-click dismissal.
-  - [ ] Validate the focused autocomplete test and existing Local DNS widget suite in CI; mark #397 complete only after green checks.
-- [ ] #442: investigate the currently triaged deterministic issue and define/implement the smallest verified fix.
+  - [x] Validate the focused autocomplete test and existing Local DNS widget suite in CI; full `Dart Tests` is green on commit `2444b03c`.
+- [ ] #442: reproduce the PopupMenu/Navigator crash on current `dev` and implement only a verified lifecycle fix.
+  - [x] Confirm the upstream report: v1.7.0 on Android 16 crashes in `PopupMenuButtonState._positionBuilder` because `Navigator.of` encounters a detached/null context while laying out the popup route.
+  - [x] Confirm there is no upstream closing PR or follow-up stack, and the issue remains open.
+  - [x] Audit relevant current code history: Home server navigation was migrated from direct `Navigator.push` to GoRouter in upstream #548, but `ServerActionsMenu` still uses `PopupMenuButton`; this is a material lifecycle change but not proof that the old crash is fixed.
+  - [ ] Reproduce on the current `dev` build on Android 16 while opening/closing the Home server actions popup and navigating/changing server; capture a current stack before changing menu behavior.
+  - [ ] If reproduced, add the smallest regression test that exercises the failing popup lifecycle and implement the corresponding mounted/navigation fix.
 
 ## Phase 2 — device-dependent regressions
 
@@ -54,10 +59,10 @@ The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPS
 
 ## Blockers / dependencies
 
-- No code-level blocker is known for #397; CI validation is pending for the committed desktop-focus fix.
+- #442 cannot be safely marked fixed from the 2025 v1.7.0 stack alone; a current Android 16 reproduction/log is required because routing and Flutter dependencies have changed substantially since the report.
 - Android 17, widget, and secure-storage items require real-device reproduction and logs before they can be considered resolved.
 - Larger v6 API work depends on preserving authentication and behavior parity during migration.
 
 ## Completion status
 
-**Not fully completed.** #397 is the active deterministic Phase 1 item. If its focused and existing Local DNS tests are green, close #397 and continue with #442.
+**Not fully completed.** #397 is implemented and fully CI-validated. #442 is the active item and currently requires a fresh Android 16 reproduction/current stack before a code change is justified.
