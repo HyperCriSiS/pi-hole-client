@@ -1,6 +1,10 @@
 name: Temporary v6 query filter request-path migration
 
 on:
+  push:
+    branches: [dev]
+    paths:
+      - '.github/workflows/query-filter-request-path.yml'
   workflow_dispatch:
 
 permissions:
@@ -90,31 +94,18 @@ jobs:
               sig_anchor = '    int? start,\n'
               if sig_anchor not in segment:
                   raise SystemExit('pihole_v6_api_client.dart: start parameter anchor not found')
-              segment = segment.replace(
-                  sig_anchor,
-                  sig_anchor + '    V6QueryFilter? filter,\n',
-                  1,
-              )
+              segment = segment.replace(sig_anchor, sig_anchor + '    V6QueryFilter? filter,\n', 1)
 
           if 'final filterParam =' not in segment:
               start_anchor = "    final startParam = start == null ? '' : '&start=$start';\n"
               if start_anchor not in segment:
                   raise SystemExit('pihole_v6_api_client.dart: startParam anchor not found')
-              segment = segment.replace(
-                  start_anchor,
-                  start_anchor + "    final filterParam =\n        filter == null || filter.isEmpty ? '' : '&${filter.toQueryString()}';\n",
-                  1,
-              )
+              segment = segment.replace(start_anchor, start_anchor + "    final filterParam =\n        filter == null || filter.isEmpty ? '' : '&${filter.toQueryString()}';\n", 1)
 
-          old_path_tail = '$cursorPram$startParam'
           if '$cursorPram$startParam$filterParam' not in segment:
-              if old_path_tail not in segment:
+              if '$cursorPram$startParam' not in segment:
                   raise SystemExit('pihole_v6_api_client.dart: query path anchor not found')
-              segment = segment.replace(
-                  old_path_tail,
-                  '$cursorPram$startParam$filterParam',
-                  1,
-              )
+              segment = segment.replace('$cursorPram$startParam', '$cursorPram$startParam$filterParam', 1)
 
           client = client[:method_start] + segment + client[method_end:]
           client_path.write_text(client)
