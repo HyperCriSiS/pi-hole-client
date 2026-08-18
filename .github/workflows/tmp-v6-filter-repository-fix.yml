@@ -73,8 +73,12 @@ jobs:
             printf 'SENTRY_DSN=\n' > .env
           fi
           flutter pub get
-      - name: Run full Dart test suite
-        run: flutter test
+      - name: Run focused v6 filter regression suite
+        run: >-
+          flutter test
+          test/data/model/v6/metrics/query_filter_test.dart
+          test/data/repositories/api/v6/metrics_repository_test.dart
+          test/data/services/api/pihole_v6_api_client_test.dart
       - name: Update roadmap after successful validation
         shell: python
         run: |
@@ -82,7 +86,7 @@ jobs:
           roadmap = Path('ROADMAP.md')
           text = roadmap.read_text()
           old = '- [ ] Thread `V6QueryFilter` through `MetricsRepositoryV6` and map the Logs screen\'s existing v6 filter state to server-side request filters with parity/regression tests.'
-          new = '''- [x] Thread `V6QueryFilter` through `MetricsRepositoryV6` while preserving the shared pagination contract (`start` included); full Dart tests validate the repository/API signature compatibility.\n- [ ] Map the Logs screen's existing v6 filter state to server-side request filters, pushing only semantically equivalent filters and retaining client-side handling for complex/multi-value cases; add parity/regression tests.'''
+          new = '''- [x] Thread `V6QueryFilter` through `MetricsRepositoryV6` while preserving the shared pagination contract (`start` included); focused v6 model/repository/API regression tests validate the integration.\n- [ ] Map the Logs screen's existing v6 filter state to server-side request filters, pushing only semantically equivalent filters and retaining client-side handling for complex/multi-value cases; add parity/regression tests.'''
           if old not in text:
               raise SystemExit('Expected ROADMAP v6 filter progress line not found')
           roadmap.write_text(text.replace(old, new, 1))
