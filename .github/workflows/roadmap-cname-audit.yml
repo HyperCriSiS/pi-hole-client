@@ -1,6 +1,9 @@
 name: Temporary CNAME roadmap audit
 
 on:
+  push:
+    branches:
+      - dev
   workflow_dispatch:
 
 permissions:
