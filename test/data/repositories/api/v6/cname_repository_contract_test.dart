@@ -22,9 +22,14 @@ class _RecordingPiholeV6ApiClient extends FakePiholeV6ApiClient {
   @override
   Future<Result<Config>> getConfigElement(
     String sid, {
-    required String element,
+    String? element,
+    bool? isDetailed,
   }) async {
-    final result = await super.getConfigElement(sid, element: element);
+    final result = await super.getConfigElement(
+      sid,
+      element: element,
+      isDetailed: isDetailed,
+    );
     if (configData == null) return result;
     return result.map((config) => config.copyWith(config: configData));
   }
