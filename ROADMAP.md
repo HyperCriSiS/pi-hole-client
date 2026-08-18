@@ -55,8 +55,8 @@ The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPS
   - [x] Push `client_ip` only for exactly one actively selected client whose value is a valid IPv4/IPv6 literal; hostnames, the all-selected state, and multi-client selections remain client-side; focused regression coverage added.
 - [ ] #570: add Local CNAME management only on API paths whose behavior is verified.
   - [x] Verify the current API/repository support boundary: Pi-hole v6 already models `dns.cnameRecords` in `Dns`, while the v5 Local DNS repository/gateway path remains explicitly unsupported.
-  - [ ] Add v6 CNAME repository/domain operations over `dns/cnameRecords`; implementation committed (`d7c6b6e3`) with optional TTL preservation and shared v6 session/retry behavior; mark complete after CI verification. v5 remains explicitly unsupported.
-  - [ ] Add focused v6 API/repository regression tests for reading, adding, updating and deleting CNAME records, including restart/error handling.
+  - [x] Add v6 CNAME repository/domain operations over `dns/cnameRecords`; implementation committed (`d7c6b6e3`) with optional TTL preservation and shared v6 session/retry behavior. Repository-wide Flutter tests and Codecov completed successfully on the implementation; v5 remains explicitly unsupported.
+  - [ ] Add focused v6 API/repository regression tests for reading, adding, updating and deleting CNAME records, including restart/error handling. Basic fetch/add/delete success and CRUD error paths were added in `3b9d9ac`; successful update/TTL parsing and explicit restart assertions remain before this item can be closed.
   - [ ] Integrate CNAME management into the Local DNS UI only after the repository contract is covered by tests.
 - [ ] #134: establish reproducible F-Droid-compatible build metadata and release packaging.
 
@@ -76,4 +76,4 @@ The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPS
 
 ## Completion status
 
-**Not fully completed.** #442 remains blocked on a fresh Android 16 reproduction/current stack. The next unblocked prioritized work is #570: implement the v6 CNAME repository/domain operations over `dns/cnameRecords` with focused regression coverage.
+**Not fully completed.** #442 remains blocked on a fresh Android 16 reproduction/current stack. The next unblocked prioritized work is #570: complete focused CNAME repository regression coverage (successful update/TTL parsing and explicit restart assertions), then integrate the tested v6 contract into the Local DNS UI.
