@@ -18,15 +18,23 @@ jobs:
       - name: Inspect relevant sources
         shell: bash
         run: |
-          echo '=== filters_interface.dart ==='
-          cat lib/ui/logs/view_models/filters/filters_interface.dart
-          echo '=== filters_v6.dart ==='
-          cat lib/ui/logs/view_models/filters/filters_v6.dart
-          echo '=== logs_pagination_service.dart ==='
-          cat lib/domain/services/logs_pagination_service.dart
-          echo '=== metrics_repository.dart ==='
-          cat lib/data/repositories/api/interfaces/metrics_repository.dart
-          echo '=== LogsViewModel filter/load references ==='
-          grep -n -E 'applyFilterAndLoad|fetchQueries|pagination|selectedDomain|selectedClients|statusSelected|requestStatus|_filters|logsListDisplay' lib/ui/logs/view_models/logs_viewmodel.dart || true
-          echo '=== candidate tests ==='
-          find test -type f | grep -E 'logs|filter|pagination|metrics_repository' | sort
+          echo '=== ROADMAP.md ==='
+          cat ROADMAP.md
+          echo '=== query_filter.dart ==='
+          cat lib/data/model/v6/metrics/query_filter.dart
+          echo '=== metrics_repository_v6 fetchQueries ==='
+          grep -R -n -A40 -B10 'Future.*fetchQueries' lib/data/repositories/api/v6 || true
+          echo '=== metrics_repository_v5 fetchQueries ==='
+          grep -R -n -A35 -B10 'Future.*fetchQueries' lib/data/repositories/api/v5 || true
+          echo '=== query status model ==='
+          cat lib/domain/model/query_status.dart
+          echo '=== query types/status definitions ==='
+          sed -n '1,260p' lib/domain/model/query_types.dart
+          echo '=== LogsViewModel core ==='
+          sed -n '1,620p' lib/ui/logs/view_models/logs_viewmodel.dart
+          echo '=== Logs pagination tests ==='
+          cat test/domain/services/logs_pagination_service_test.dart
+          echo '=== LogsViewModel filter-related tests ==='
+          grep -n -A35 -B20 -E 'setSelectedDomain|setSelectedClients|setStatusSelected|applyFilterAndLoad|RequestStatus' test/ui/logs/view_models/logs_viewmodel_test.dart || true
+          echo '=== MetricsRepository implementations/fakes ==='
+          grep -R -l 'implements MetricsRepository' lib test | sort
