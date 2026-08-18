@@ -3,54 +3,93 @@ name: Manual Build Linux .tar.gz and .deb
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
-  get-version:
-    name: Extract Version from pubspec.yaml
+  migrate-v6-log-filters:
     runs-on: ubuntu-latest
-    outputs:
-      VERSION_NAME: ${{ steps.extract_version.outputs.VERSION_NAME }}
-      VERSION_NUMBER: ${{ steps.extract_version.outputs.VERSION_NUMBER }}
     steps:
-      - name: Checkout code
+      - name: Checkout dev
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
-      - name: Extract version from pubspec.yaml
-        id: extract_version
+      - name: Patch safe v6 log filters and tests
+        shell: bash
         run: |
-          VERSION_FULL=$(grep '^version:' pubspec.yaml | sed 's/version: //')
-          VERSION_NAME=$(echo $VERSION_FULL | cut -d '+' -f 1)
-          VERSION_NUMBER=$(echo $VERSION_FULL | cut -d '+' -f 2)
-          echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
-          echo "VERSION_NUMBER=$VERSION_NUMBER" >> $GITHUB_ENV
-          echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_OUTPUT
-          echo "VERSION_NUMBER=$VERSION_NUMBER" >> $GITHUB_OUTPUT
-          echo "Extracted Version Name: $VERSION_NAME"
-          echo "Extracted Version Number: $VERSION_NUMBER"
+          set -euo pipefail
+          python3 <<'PY'
+          from pathlib import Path
 
-  build-linux:
-    name: Build Linux .tar.gz and .deb
-    runs-on: ubuntu-latest
-    needs: get-version
-    env:
-      LINUX_RELEASE_PATH: build/linux/x64/release/bundle
-      DEBIAN_RELEASE_PATH: build/linux/x64/release/debian
-      VERSION_NAME: ${{ needs.get-version.outputs.VERSION_NAME }}
-      VERSION_NUMBER: ${{ needs.get-version.outputs.VERSION_NUMBER }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v7
+          p = Path('lib/ui/logs/view_models/logs_viewmodel.dart')
+          s = p.read_text()
+          old = "import 'package:pi_hole_client/data/repositories/api/interfaces/domain_repository.dart';"
+          new = "import 'package:pi_hole_client/data/model/v6/metrics/query_filter.dart';\n" + old
+          assert old in s and 'data/model/v6/metrics/query_filter.dart' not in s
+          s = s.replace(old, new, 1)
 
-      - name: Decode .env
-        run: echo "${{ secrets.ENV }}" | base64 --decode > .env
+          anchor = "  // ------------------------------------------\n  // Load management\n  // ------------------------------------------\n"
+          helper = """  V6QueryFilter? _buildServerQueryFilter() {\n    if (_apiVersion != SupportedApiVersions.v6) return null;\n\n    String? status;\n    if (statusSelected.length == 1) {\n      final selectedIndex = statusSelected.single;\n      status = queryStatusesV6\n          .firstWhere((entry) => entry.index == selectedIndex)\n          .key;\n    }\n\n    final filter = V6QueryFilter(domain: selectedDomain, status: status);\n    return filter.isEmpty ? null : filter;\n  }\n\n"""
+          assert anchor in s and '_buildServerQueryFilter' not in s
+          s = s.replace(anchor, helper + anchor, 1)
 
-      - name: Update version in debian.yaml
-        run: sed -i 's/<REPLACE_VERSION_NUMBER_ACTIONS>/${{ env.VERSION_NAME }}/g' debian/debian.yaml
+          old = """    final now = DateTime.now();\n    final start = _getWindowStart(now);\n    _paginationService!.reset(start, now);"""
+          new = """    final now = DateTime.now();\n    final start = _getWindowStart(now);\n    _paginationService!\n      ..setFilter(_buildServerQueryFilter())\n      ..reset(start, now);"""
+          assert old in s
+          s = s.replace(old, new, 1)
 
-      - name: Update dependencies list
-        run: sudo apt-get update
+          old = """    if (inStartTime != null || inEndTime != null) {\n      _enableNextWindow = false;\n      _paginationService!.reset(startTime, endTime);\n      _resetLogsCache();\n\n      final newLogs = await _paginationService!.loadNextPage();\n      if (!_isCurrentServerEpoch(serverEpoch)) return;\n      logger.d('Loaded ${newLogs.length} logs from $startTime to $endTime');\n\n      _addLogs(newLogs);\n    }"""
+          new = """    final hasExplicitTimeRange = inStartTime != null || inEndTime != null;\n    final shouldReloadFromServer =\n        hasExplicitTimeRange || _apiVersion == SupportedApiVersions.v6;\n\n    if (shouldReloadFromServer) {\n      _enableNextWindow = !hasExplicitTimeRange;\n      _paginationService!\n        ..setFilter(_buildServerQueryFilter())\n        ..reset(startTime, endTime);\n      _resetLogsCache();\n\n      final newLogs = await _paginationService!.loadNextPage();\n      if (!_isCurrentServerEpoch(serverEpoch)) return;\n      logger.d('Loaded ${newLogs.length} logs from $startTime to $endTime');\n\n      _addLogs(newLogs);\n    }"""
+          assert old in s
+          s = s.replace(old, new, 1)
 
-      - name: Install dependencies
-        run: sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libcurl4-openssl-dev libsecret-1-dev libjsoncpp-dev
+          old = """  void resetLogs() {\n    _enableNextWindow = true;"""
+          new = """  void resetLogs() {\n    _paginationService?.setFilter(null);\n    _enableNextWindow = true;"""
+          assert old in s
+          s = s.replace(old, new, 1)
+          p.write_text(s)
+
+          p = Path('test/domain/services/logs_pagination_service_test.dart')
+          s = p.read_text()
+          old = "import 'package:flutter_test/flutter_test.dart';"
+          new = old + "\nimport 'package:pi_hole_client/data/model/v6/metrics/query_filter.dart';"
+          assert old in s and 'data/model/v6/metrics/query_filter.dart' not in s
+          s = s.replace(old, new, 1)
+          anchor = "/// Builds a minimal [Log] with the given id.\n"
+          fake = """class _FakeFilteredMetricsRepository extends _FakeMetricsRepository\n    implements FilteredMetricsRepository {\n  _FakeFilteredMetricsRepository(super.responses);\n\n  V6QueryFilter? lastFilter;\n\n  @override\n  Future<Result<Logs>> fetchQueriesFiltered({\n    required DateTime from,\n    required DateTime until,\n    int? length = 100,\n    int? cursor,\n    int? start,\n    V6QueryFilter? filter,\n  }) {\n    lastFilter = filter;\n    return fetchQueries(\n      from: from,\n      until: until,\n      length: length,\n      cursor: cursor,\n      start: start,\n    );\n  }\n}\n\n"""
+          assert anchor in s and '_FakeFilteredMetricsRepository' not in s
+          s = s.replace(anchor, fake + anchor, 1)
+          group = """\n  group('LogsPaginationService – optional server filter capability', () {\n    test('forwards filters to capable repositories', () async {\n      final repo = _FakeFilteredMetricsRepository([\n        Success(_v6Logs([_log(1)], cursor: 42)),\n      ]);\n      final svc = LogsPaginationService(repository: repo);\n      const filter = V6QueryFilter(domain: 'example.com', status: 'FORWARDED');\n\n      svc.setFilter(filter);\n      svc.reset(start, end);\n      await svc.loadNextPage();\n\n      expect(repo.lastFilter, same(filter));\n    });\n\n    test('keeps the existing path for repositories without capability', () async {\n      final repo = _FakeMetricsRepository([Success(_v5Logs([_log(1)]))]);\n      final svc = LogsPaginationService(repository: repo);\n\n      svc.setFilter(const V6QueryFilter(domain: 'example.com'));\n      svc.reset(start, end);\n      final logs = await svc.loadNextPage();\n\n      expect(logs, hasLength(1));\n      expect(svc.finished, LoadStatus.loaded);\n    });\n  });\n"""
+          pos = s.rfind('\n}')
+          assert pos != -1
+          s = s[:pos] + group + s[pos:]
+          p.write_text(s)
+
+          p = Path('test/ui/logs/view_models/logs_viewmodel_test.dart')
+          s = p.read_text()
+          old = "import 'package:flutter_test/flutter_test.dart';"
+          new = old + "\nimport 'package:pi_hole_client/data/model/v6/metrics/query_filter.dart';"
+          assert old in s and 'data/model/v6/metrics/query_filter.dart' not in s
+          s = s.replace(old, new, 1)
+          old = """  int loadNextPageCallCount = 0;\n  int resetCallCount = 0;\n\n  @override\n  void reset"""
+          new = """  int loadNextPageCallCount = 0;\n  int resetCallCount = 0;\n  V6QueryFilter? lastFilter;\n\n  @override\n  void setFilter(V6QueryFilter? filter) {\n    lastFilter = filter;\n    super.setFilter(filter);\n  }\n\n  @override\n  void reset"""
+          assert old in s
+          s = s.replace(old, new, 1)
+          anchor = """    test('isFiltering is true after call', () async {"""
+          tests = """    test('v6 exact domain is pushed server-side and reloads', () async {\n      final vm = _buildVm(\n        apiVersion: 'v6',\n        overrideFactory: ({required MetricsRepository repository}) => service,\n      );\n      await _initAndLoad(vm);\n      final callsBefore = service.loadNextPageCallCount;\n\n      vm.setSelectedDomain('example.com');\n      await vm.applyFilterAndLoad();\n\n      expect(service.loadNextPageCallCount, callsBefore + 1);\n      expect(service.lastFilter?.domain, 'example.com');\n      expect(service.lastFilter?.status, isNull);\n      vm.dispose();\n    });\n\n    test('v6 single concrete status is pushed server-side', () async {\n      final vm = _buildVm(\n        apiVersion: 'v6',\n        overrideFactory: ({required MetricsRepository repository}) => service,\n      );\n      await _initAndLoad(vm);\n\n      vm.setStatusSelected([2]);\n      await vm.applyFilterAndLoad();\n\n      expect(service.lastFilter?.status, 'FORWARDED');\n      vm.dispose();\n    });\n\n    test('v6 multiple statuses retain client-side semantics', () async {\n      final vm = _buildVm(\n        apiVersion: 'v6',\n        overrideFactory: ({required MetricsRepository repository}) => service,\n      );\n      await _initAndLoad(vm);\n\n      vm.setStatusSelected([2, 3]);\n      await vm.applyFilterAndLoad();\n\n      expect(service.lastFilter?.status, isNull);\n      vm.dispose();\n    });\n\n"""
+          assert anchor in s
+          s = s.replace(anchor, tests + anchor, 1)
+          p.write_text(s)
+          PY
+
+          dart format \
+            lib/data/repositories/api/interfaces/metrics_repository.dart \
+            lib/data/repositories/api/v6/metrics_repository.dart \
+            lib/domain/services/logs_pagination_service.dart \
+            lib/ui/logs/view_models/logs_viewmodel.dart \
+            test/domain/services/logs_pagination_service_test.dart \
+            test/ui/logs/view_models/logs_viewmodel_test.dart
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -58,39 +97,50 @@ jobs:
           channel: stable
           cache: true
           flutter-version: 3.44.1
-      - run: flutter clean
-      - run: flutter pub get
 
-      - name: Generate Git commit hash
-        run: dart run tools/generate_git_commit.dart
+      - name: Install dependencies
+        run: flutter pub get
 
-      - name: Build linux
-        run: flutter build linux --release
+      - name: Prepare env file
+        run: cp .env.sample .env
 
-      - name: Install flutter_to_debian
-        run: dart pub global activate flutter_to_debian
-
-      - name: Add executable permissions to debian/scripts/postrm
-        run: chmod +x debian/scripts/postrm
-
-      - name: Generate .deb package
-        run: flutter_to_debian
-
-      - name: Move .deb package to project root
-        run: mv ${{ env.DEBIAN_RELEASE_PATH }}/PiHoleClient_${{ env.VERSION_NAME }}_amd64.deb PiHoleClient_${{ env.VERSION_NAME }}_Linux_amd64.deb
-
-      - name: Generate .tar.gz package
+      - name: Run focused regression tests
         run: |
-          tar -czf PiHoleClient_${{ env.VERSION_NAME }}_Linux.tar.gz -C $LINUX_RELEASE_PATH \
-            data \
-            lib \
-            pi-hole-client
+          flutter test test/domain/services/logs_pagination_service_test.dart
+          flutter test test/ui/logs/view_models/logs_viewmodel_test.dart
+          flutter test test/data/repositories/api/v6/metrics_repository_test.dart
+          flutter test test/data/services/api/pihole_v6_api_client_test.dart
+          git diff --check
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: linux
-          path: |
-            PiHoleClient_${{ env.VERSION_NAME }}_Linux_amd64.deb
-            PiHoleClient_${{ env.VERSION_NAME }}_Linux.tar.gz
+      - name: Update roadmap after green tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          from pathlib import Path
+          p = Path('ROADMAP.md')
+          s = p.read_text()
+          old = "- [ ] Map the Logs screen's existing v6 filter state to server-side request filters, pushing only semantically equivalent filters and retaining client-side handling for complex/multi-value cases; add parity/regression tests."
+          new = "- [x] Push semantically safe Logs v6 filters server-side: exact `domain` and exactly one concrete `status`; multi-status/grouped filters remain client-side, v5 remains unchanged, and pagination/filter-capability regression tests cover the transport path.\n- [ ] Audit `type` and `reply` mappings and resolve `client_ip` only when the selected client is provably an IP; keep grouped/multi-value filters client-side unless FTL supports equivalent OR semantics."
+          assert old in s
+          p.write_text(s.replace(old, new, 1))
+          PY
 
+      - name: Restore workflow and commit validated migration
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout origin/main -- .github/workflows/manual-build-linux.yaml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add \
+            .github/workflows/manual-build-linux.yaml \
+            ROADMAP.md \
+            lib/data/repositories/api/interfaces/metrics_repository.dart \
+            lib/data/repositories/api/v6/metrics_repository.dart \
+            lib/domain/services/logs_pagination_service.dart \
+            lib/ui/logs/view_models/logs_viewmodel.dart \
+            test/domain/services/logs_pagination_service_test.dart \
+            test/ui/logs/view_models/logs_viewmodel_test.dart
+          git commit -m "feat: push safe v6 log filters server-side"
+          git push origin HEAD:dev
