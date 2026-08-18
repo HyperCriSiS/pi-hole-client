@@ -1,13 +1,15 @@
 import 'package:pi_hole_client/data/model/v6/config/config.dart';
+import 'package:pi_hole_client/data/repositories/api/interfaces/cname_repository.dart';
 import 'package:pi_hole_client/data/repositories/api/interfaces/local_dns_repository.dart';
 import 'package:pi_hole_client/data/repositories/api/v6/base_v6_sid_repository.dart';
 import 'package:pi_hole_client/data/repositories/utils/call_with_retry.dart';
 import 'package:pi_hole_client/data/services/api/pihole_v6_api_client.dart';
+import 'package:pi_hole_client/domain/model/local_dns/cname_record.dart';
 import 'package:pi_hole_client/domain/model/local_dns/local_dns.dart';
 import 'package:result_dart/result_dart.dart';
 
 class LocalDnsRepositoryV6 extends BaseV6SidRepository
-    implements LocalDnsRepository {
+    implements LocalDnsRepository, CnameRepository {
   LocalDnsRepositoryV6({
     required PiholeV6ApiClient client,
     required super.sessionCache,
@@ -75,7 +77,6 @@ class LocalDnsRepositoryV6 extends BaseV6SidRepository
       action: () async {
         final sid = await getSid();
 
-        // 1. Fetch current hosts list
         final configResult = await _client.getConfigElement(
           sid,
           element: 'dns/hosts',
@@ -83,7 +84,6 @@ class LocalDnsRepositoryV6 extends BaseV6SidRepository
         final config = configResult.getOrThrow();
         final hosts = List<String>.from(config.config?.dns?.hosts ?? []);
 
-        // 2. Find and replace the entry matching oldIp
         final oldEntry = hosts.indexWhere(
           (h) => h.trim().split(RegExp(r'\s+')).first == oldIp,
         );
@@ -92,7 +92,6 @@ class LocalDnsRepositoryV6 extends BaseV6SidRepository
         }
         hosts[oldEntry] = '${record.ip} ${record.name}';
 
-        // 3. Patch config with updated hosts list
         final patchResult = await _client.patchConfig(
           sid,
           body: ConfigData(dns: Dns(hosts: hosts)),
@@ -101,6 +100,112 @@ class LocalDnsRepositoryV6 extends BaseV6SidRepository
       },
       onRetry: (_, e) => renewSidIfExpired(e),
     );
+  }
+
+  @override
+  Future<Result<List<CnameRecord>>> fetchCnameRecords() async {
+    return runWithResultRetry<List<CnameRecord>>(
+      action: () async {
+        final sid = await getSid();
+        final result = await _client.getConfigElement(
+          sid,
+          element: 'dns/cnameRecords',
+        );
+        return result.map(
+          (config) => _parseCnameRecords(config.config?.dns?.cnameRecords),
+        );
+      },
+      onRetry: (_, e) => renewSidIfExpired(e),
+    );
+  }
+
+  @override
+  Future<Result<Unit>> addCnameRecord({required CnameRecord record}) async {
+    return runWithResultRetry<Unit>(
+      action: () async {
+        final sid = await getSid();
+        return _client.putConfigElement(
+          sid,
+          element: 'dns/cnameRecords',
+          value: _serializeCnameRecord(record),
+          isRestart: true,
+        );
+      },
+      onRetry: (_, e) => renewSidIfExpired(e),
+    );
+  }
+
+  @override
+  Future<Result<Unit>> deleteCnameRecord({required CnameRecord record}) async {
+    return runWithResultRetry<Unit>(
+      action: () async {
+        final sid = await getSid();
+        return _client.deleteConfigElement(
+          sid,
+          element: 'dns/cnameRecords',
+          value: _serializeCnameRecord(record),
+          isRestart: true,
+        );
+      },
+      onRetry: (_, e) => renewSidIfExpired(e),
+    );
+  }
+
+  @override
+  Future<Result<Unit>> updateCnameRecord({
+    required CnameRecord oldRecord,
+    required CnameRecord record,
+  }) async {
+    return runWithResultRetry<Unit>(
+      action: () async {
+        final sid = await getSid();
+        final configResult = await _client.getConfigElement(
+          sid,
+          element: 'dns/cnameRecords',
+        );
+        final config = configResult.getOrThrow();
+        final records = List<String>.from(
+          config.config?.dns?.cnameRecords ?? const <String>[],
+        );
+
+        final oldIndex = records.indexWhere(
+          (entry) => _parseCnameRecord(entry) == oldRecord,
+        );
+        if (oldIndex == -1) {
+          throw Exception(
+            'CNAME record ${_serializeCnameRecord(oldRecord)} not found',
+          );
+        }
+        records[oldIndex] = _serializeCnameRecord(record);
+
+        final patchResult = await _client.patchConfig(
+          sid,
+          body: ConfigData(dns: Dns(cnameRecords: records)),
+          isRestart: true,
+        );
+        return patchResult.map((_) => unit);
+      },
+      onRetry: (_, e) => renewSidIfExpired(e),
+    );
+  }
+
+  String _serializeCnameRecord(CnameRecord record) {
+    final base = '${record.alias},${record.target}';
+    return record.ttl == null ? base : '$base,${record.ttl}';
+  }
+
+  CnameRecord _parseCnameRecord(String entry) {
+    final parts = entry.split(',').map((part) => part.trim()).toList();
+    return CnameRecord(
+      alias: parts.isNotEmpty ? parts[0] : '',
+      target: parts.length > 1 ? parts[1] : '',
+      ttl: parts.length > 2 ? int.tryParse(parts[2]) : null,
+    );
+  }
+
+  List<CnameRecord> _parseCnameRecords(List<String>? records) {
+    if (records == null || records.isEmpty) return const [];
+    return records.map(_parseCnameRecord).toList();
   }
 
   List<LocalDns> _parseHosts(List<String>? hosts) {
