@@ -19,49 +19,54 @@ jobs:
           channel: stable
           cache: true
       - name: Prepare test environment
-        shell: bash
         run: |
           cp .env.example .env
           flutter pub get
       - name: Apply safe server-side v6 log filters
-        shell: python
+        shell: bash
         run: |
+          python3 <<'PY'
           from pathlib import Path
 
+          def read(path):
+              return Path(path).read_text()
+
+          def write(path, text):
+              Path(path).write_text(text)
+
           def replace_once(path, old, new):
-              p = Path(path)
-              text = p.read_text()
-              if old not in text:
-                  raise SystemExit(f'pattern not found in {path}: {old[:120]!r}')
-              if text.count(old) != 1:
-                  raise SystemExit(f'pattern count != 1 in {path}: {text.count(old)}')
-              p.write_text(text.replace(old, new, 1))
+              text = read(path)
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{path}: expected one match, got {count}: {old[:100]!r}')
+              write(path, text.replace(old, new, 1))
 
-          # Keep v6-specific mapping in FiltersV6 rather than leaking it into the
-          # shared Filters UI contract.
-          path = 'lib/ui/logs/view_models/filters/filters_v6.dart'
-          p = Path(path)
-          text = p.read_text()
-          import_anchor = "import 'package:pi_hole_client/domain/model/query_types.dart';\n"
-          if "data/model/v6/metrics/query_filter.dart" not in text:
-              if import_anchor not in text:
-                  raise SystemExit('FiltersV6 import anchor missing')
-              text = text.replace(
-                  import_anchor,
-                  "import 'package:pi_hole_client/data/model/v6/metrics/query_filter.dart';\n" + import_anchor,
-                  1,
-              )
-          class_end = text.rfind('\n}')
-          if class_end < 0:
-              raise SystemExit('FiltersV6 class end missing')
+          def ensure_import(path, import_line):
+              text = read(path)
+              if import_line in text:
+                  return
+              lines = text.splitlines(keepends=True)
+              import_indexes = [i for i, line in enumerate(lines) if line.startswith('import ')]
+              if not import_indexes:
+                  raise SystemExit(f'{path}: no import block found')
+              lines.insert(import_indexes[-1] + 1, import_line + '\n')
+              write(path, ''.join(lines))
+
+          # Keep the v6 mapping in FiltersV6 so the shared Logs filter contract
+          # remains API-version agnostic.
+          filters_path = 'lib/ui/logs/view_models/filters/filters_v6.dart'
+          ensure_import(filters_path, "import 'package:pi_hole_client/data/model/v6/metrics/query_filter.dart';")
+          text = read(filters_path)
           if 'V6QueryFilter? get serverQueryFilter' not in text:
-              getter = r'''
+              pos = text.rfind('\n}')
+              if pos < 0:
+                  raise SystemExit('FiltersV6 class terminator not found')
+              getter = '''
 
-  /// Returns only filters that can be represented exactly by `/api/queries`.
+  /// Returns only filters that `/api/queries` can represent exactly.
   ///
-  /// Domain equality and a single v6 status are safe to push down. Client
-  /// selections and multi-status groups keep their existing client-side
-  /// semantics until they can be mapped 1:1 to the FTL API.
+  /// Domain equality and one concrete v6 status are safe to push down. Client
+  /// selections and status groups keep their existing client-side semantics.
   V6QueryFilter? get serverQueryFilter {
     String? status;
     if (_statusSelected.length == 1) {
@@ -78,143 +83,160 @@ jobs:
     return filter.toQueryParameters().isEmpty ? null : filter;
   }
 '''
-              text = text[:class_end] + getter + text[class_end:]
-          p.write_text(text)
+              write(filters_path, text[:pos] + getter + text[pos:])
 
-          # The repository contract transports an optional v6 filter. V5 accepts
-          # and ignores it, preserving existing behavior.
-          path = 'lib/data/repositories/api/interfaces/metrics_repository.dart'
-          p = Path(path)
-          text = p.read_text()
-          import_anchor = "import '../../../model/v6/info/ftl.dart';\n"
-          if "model/v6/metrics/query_filter.dart" not in text:
-              if import_anchor not in text:
-                  raise SystemExit('MetricsRepository import anchor missing')
-              text = text.replace(
-                  import_anchor,
-                  import_anchor + "import '../../../model/v6/metrics/query_filter.dart';\n",
-                  1,
-              )
-          old = '''    int? cursor,\n    int? start,\n  });'''
-          new = '''    int? cursor,\n    int? start,\n    V6QueryFilter? filter,\n  });'''
+          # Widen the common repository contract. V5 accepts the optional v6
+          # filter and intentionally ignores it.
+          interface_path = 'lib/data/repositories/api/interfaces/metrics_repository.dart'
+          ensure_import(interface_path, "import 'package:pi_hole_client/data/model/v6/metrics/query_filter.dart';")
+          text = read(interface_path)
           if 'V6QueryFilter? filter' not in text:
-              if old not in text:
-                  raise SystemExit('MetricsRepository fetchQueries signature missing')
-              text = text.replace(old, new, 1)
-          p.write_text(text)
+              old = '''    int? cursor,
+    int? start,
+  });'''
+              new = '''    int? cursor,
+    int? start,
+    V6QueryFilter? filter,
+  });'''
+              if text.count(old) != 1:
+                  raise SystemExit('MetricsRepository fetchQueries signature not found uniquely')
+              write(interface_path, text.replace(old, new, 1))
 
-          path = 'lib/data/repositories/api/v5/metrics_repository.dart'
-          p = Path(path)
-          text = p.read_text()
-          import_anchor = "import 'package:pi_hole_client/data/model/v5/metrics/server_info.dart';\n"
-          if "data/model/v6/metrics/query_filter.dart" not in text:
-              if import_anchor not in text:
-                  raise SystemExit('MetricsRepositoryV5 import anchor missing')
-              text = text.replace(
-                  import_anchor,
-                  import_anchor + "import 'package:pi_hole_client/data/model/v6/metrics/query_filter.dart';\n",
-                  1,
-              )
-          sig = '''    int? cursor,\n    int? start,\n  }) async {'''
+          v5_path = 'lib/data/repositories/api/v5/metrics_repository.dart'
+          ensure_import(v5_path, "import 'package:pi_hole_client/data/model/v6/metrics/query_filter.dart';")
+          text = read(v5_path)
           if 'V6QueryFilter? filter' not in text:
-              if sig not in text:
-                  raise SystemExit('MetricsRepositoryV5 fetchQueries signature missing')
-              text = text.replace(sig, '''    int? cursor,\n    int? start,\n    V6QueryFilter? filter,\n  }) async {''', 1)
-          p.write_text(text)
+              old = '''    int? cursor,
+    int? start,
+  }) async {'''
+              new = '''    int? cursor,
+    int? start,
+    V6QueryFilter? filter,
+  }) async {'''
+              if text.count(old) != 1:
+                  raise SystemExit('MetricsRepositoryV5 fetchQueries signature not found uniquely')
+              write(v5_path, text.replace(old, new, 1))
 
-          # Preserve the filter across every page in a pagination cycle.
-          path = 'lib/domain/services/logs_pagination_service.dart'
-          p = Path(path)
-          text = p.read_text()
-          first_import = "import 'package:pi_hole_client/data/repositories/api/interfaces/metrics_repository.dart';\n"
-          if "data/model/v6/metrics/query_filter.dart" not in text:
-              if first_import not in text:
-                  raise SystemExit('LogsPaginationService import anchor missing')
-              text = text.replace(
-                  first_import,
-                  "import 'package:pi_hole_client/data/model/v6/metrics/query_filter.dart';\n" + first_import,
-                  1,
-              )
+          # Preserve the exact server filter across pagination pages.
+          pagination_path = 'lib/domain/services/logs_pagination_service.dart'
+          ensure_import(pagination_path, "import 'package:pi_hole_client/data/model/v6/metrics/query_filter.dart';")
+          text = read(pagination_path)
           if 'V6QueryFilter? _filter;' not in text:
-              field_anchor = '  int _currentOffset = 0;\n'
-              if field_anchor not in text:
-                  raise SystemExit('pagination field anchor missing')
-              text = text.replace(field_anchor, field_anchor + '  V6QueryFilter? _filter;\n', 1)
-          old_reset = '''  void reset(DateTime start, DateTime until) {\n    _startTime = start;\n    _endTime = until;\n    _finished = LoadStatus.loading;\n    _fixedCursor = null;\n    _currentOffset = 0;\n  }'''
-          new_reset = '''  void reset(DateTime start, DateTime until, {V6QueryFilter? filter}) {\n    _startTime = start;\n    _endTime = until;\n    _finished = LoadStatus.loading;\n    _fixedCursor = null;\n    _currentOffset = 0;\n    _filter = filter;\n  }'''
+              anchor = '  int _currentOffset = 0;\n'
+              if text.count(anchor) != 1:
+                  raise SystemExit('LogsPaginationService offset field anchor not found uniquely')
+              text = text.replace(anchor, anchor + '  V6QueryFilter? _filter;\n', 1)
+          old_reset = '''  void reset(DateTime start, DateTime until) {
+    _startTime = start;
+    _endTime = until;
+    _finished = LoadStatus.loading;
+    _fixedCursor = null;
+    _currentOffset = 0;
+  }'''
+          new_reset = '''  void reset(DateTime start, DateTime until, {V6QueryFilter? filter}) {
+    _startTime = start;
+    _endTime = until;
+    _finished = LoadStatus.loading;
+    _fixedCursor = null;
+    _currentOffset = 0;
+    _filter = filter;
+  }'''
           if old_reset in text:
               text = text.replace(old_reset, new_reset, 1)
-          elif 'V6QueryFilter? filter' not in text:
-              raise SystemExit('pagination reset signature missing')
-          fetch_anchor = '''      cursor: _fixedCursor,\n      start: _currentOffset,\n    );'''
-          if 'filter: _filter' not in text:
-              if fetch_anchor not in text:
-                  raise SystemExit('pagination fetch anchor missing')
-              text = text.replace(fetch_anchor, '''      cursor: _fixedCursor,\n      start: _currentOffset,\n      filter: _filter,\n    );''', 1)
-          p.write_text(text)
+          elif 'void reset(DateTime start, DateTime until, {V6QueryFilter? filter})' not in text:
+              raise SystemExit('LogsPaginationService reset method anchor not found')
+          fetch_anchor = '''      cursor: _fixedCursor,
+      start: _currentOffset,
+    );'''
+          if 'filter: _filter,' not in text:
+              if text.count(fetch_anchor) != 1:
+                  raise SystemExit('LogsPaginationService fetch anchor not found uniquely')
+              text = text.replace(fetch_anchor, '''      cursor: _fixedCursor,
+      start: _currentOffset,
+      filter: _filter,
+    );''', 1)
+          write(pagination_path, text)
 
-          # Every fresh pagination window uses the current v6 server filter.
-          path = 'lib/ui/logs/view_models/logs_viewmodel.dart'
-          p = Path(path)
-          text = p.read_text()
-          helper_anchor = '''  static LiveLogsService _defaultLiveLogsFactory({\n    required LogsPaginationService paginationService,\n    required DateTime endTime,\n  }) => LogsLiveService'''
-          # No brittle helper insertion: replace each reset call directly.
-          filter_expr = '''filter: _filters is FiltersV6\n          ? (_filters as FiltersV6).serverQueryFilter\n          : null'''
-          replacements = [
-              ('    _paginationService!.reset(start, now);', '''    _paginationService!.reset(\n      start,\n      now,\n      filter: _filters is FiltersV6\n          ? (_filters as FiltersV6).serverQueryFilter\n          : null,\n    );'''),
-              ('      _paginationService!.reset(startTime, endTime);', '''      _paginationService!.reset(\n        startTime,\n        endTime,\n        filter: _filters is FiltersV6\n            ? (_filters as FiltersV6).serverQueryFilter\n            : null,\n      );'''),
-              ('    _paginationService!.reset(start, end);', '''    _paginationService!.reset(\n      start,\n      end,\n      filter: _filters is FiltersV6\n          ? (_filters as FiltersV6).serverQueryFilter\n          : null,\n    );'''),
+          # Every fresh v6 pagination window captures the current safe pushdown.
+          vm_path = 'lib/ui/logs/view_models/logs_viewmodel.dart'
+          text = read(vm_path)
+          reset_replacements = [
+              ('    _paginationService!.reset(start, now);', '''    _paginationService!.reset(
+      start,
+      now,
+      filter: _filters is FiltersV6
+          ? (_filters as FiltersV6).serverQueryFilter
+          : null,
+    );'''),
+              ('      _paginationService!.reset(startTime, endTime);', '''      _paginationService!.reset(
+        startTime,
+        endTime,
+        filter: _filters is FiltersV6
+            ? (_filters as FiltersV6).serverQueryFilter
+            : null,
+      );'''),
+              ('    _paginationService!.reset(start, end);', '''    _paginationService!.reset(
+      start,
+      end,
+      filter: _filters is FiltersV6
+          ? (_filters as FiltersV6).serverQueryFilter
+          : null,
+    );'''),
           ]
-          for old, new in replacements:
-              if old in text:
+          if 'serverQueryFilter' not in text:
+              for old, new in reset_replacements:
+                  count = text.count(old)
+                  if count != 1:
+                      raise SystemExit(f'LogsViewModel reset anchor count {count}: {old!r}')
                   text = text.replace(old, new, 1)
-              elif 'serverQueryFilter' not in text:
-                  raise SystemExit(f'LogsViewModel reset anchor missing: {old}')
-          p.write_text(text)
+              write(vm_path, text)
 
-          # Update both test fakes for the widened repository contract.
-          for path in [
+          # Update repository fakes for the widened contract.
+          fake_paths = [
               'test/domain/services/logs_pagination_service_test.dart',
               'test/domain/services/live_logs_service_test.dart',
-          ]:
-              p = Path(path)
-              text = p.read_text()
-              import_anchor = "import 'package:pi_hole_client/data/repositories/api/interfaces/metrics_repository.dart';\n"
-              if "data/model/v6/metrics/query_filter.dart" not in text:
-                  if import_anchor not in text:
-                      raise SystemExit(f'test import anchor missing in {path}')
-                  text = text.replace(
-                      import_anchor,
-                      "import 'package:pi_hole_client/data/model/v6/metrics/query_filter.dart';\n" + import_anchor,
-                      1,
-                  )
-              sig = '''    int? cursor,\n    int? start,\n  }) async {'''
+          ]
+          for path in fake_paths:
+              ensure_import(path, "import 'package:pi_hole_client/data/model/v6/metrics/query_filter.dart';")
+              text = read(path)
               if 'V6QueryFilter? filter' not in text:
-                  if sig not in text:
-                      raise SystemExit(f'test fetch signature missing in {path}')
-                  text = text.replace(sig, '''    int? cursor,\n    int? start,\n    V6QueryFilter? filter,\n  }) async {''', 1)
-              p.write_text(text)
+                  old = '''    int? cursor,
+    int? start,
+  }) async {'''
+                  new = '''    int? cursor,
+    int? start,
+    V6QueryFilter? filter,
+  }) async {'''
+                  if text.count(old) != 1:
+                      raise SystemExit(f'{path}: fake fetchQueries signature count {text.count(old)}')
+                  write(path, text.replace(old, new, 1))
 
-          # Record the filter in the pagination fake and prove it survives pages.
-          path = 'test/domain/services/logs_pagination_service_test.dart'
-          p = Path(path)
-          text = p.read_text()
+          # Prove the filter is retained on every v6 pagination request.
+          pagination_test = 'test/domain/services/logs_pagination_service_test.dart'
+          text = read(pagination_test)
           if 'V6QueryFilter? lastFilter;' not in text:
-              anchor = '''  /// The `cursor` argument from the most recent [fetchQueries] call.\n  int? lastCursor;\n'''
-              if anchor not in text:
-                  raise SystemExit('pagination fake field anchor missing')
-              text = text.replace(anchor, anchor + '''\n  /// The server filter from the most recent [fetchQueries] call.\n  V6QueryFilter? lastFilter;\n''', 1)
-          assignment_anchor = '''    lastStart = start;\n    lastCursor = cursor;\n'''
+              anchor = '''  /// The `cursor` argument from the most recent [fetchQueries] call.
+  int? lastCursor;
+'''
+              if text.count(anchor) != 1:
+                  raise SystemExit('pagination fake lastCursor anchor missing')
+              text = text.replace(anchor, anchor + '''
+  /// The server filter from the most recent [fetchQueries] call.
+  V6QueryFilter? lastFilter;
+''', 1)
           if 'lastFilter = filter;' not in text:
-              if assignment_anchor not in text:
+              anchor = '''    lastStart = start;
+    lastCursor = cursor;
+'''
+              if text.count(anchor) != 1:
                   raise SystemExit('pagination fake assignment anchor missing')
-              text = text.replace(assignment_anchor, assignment_anchor + '    lastFilter = filter;\n', 1)
-          test_anchor = "    test('single page (fewer than pageSize) transitions to loaded', () async {"
+              text = text.replace(anchor, anchor + '    lastFilter = filter;\n', 1)
           if 'forwards exact v6 filter across pagination pages' not in text:
-              idx = text.find(test_anchor)
-              if idx < 0:
-                  raise SystemExit('pagination V6 test anchor missing')
-              new_test = r'''    test('forwards exact v6 filter across pagination pages', () async {
+              anchor = "    test('single page (fewer than pageSize) transitions to loaded', () async {"
+              pos = text.find(anchor)
+              if pos < 0:
+                  raise SystemExit('pagination test insertion anchor missing')
+              new_test = '''    test('forwards exact v6 filter across pagination pages', () async {
       const pageSize = 1;
       const filter = V6QueryFilter(domain: 'example.com', status: 'FORWARDED');
       final repo = _FakeMetricsRepository([
@@ -236,18 +258,17 @@ jobs:
     });
 
 '''
-              text = text[:idx] + new_test + text[idx:]
-          p.write_text(text)
+              text = text[:pos] + new_test + text[pos:]
+          write(pagination_test, text)
 
-          # Parity tests for empty/single/multiple selections.
-          path = 'test/ui/logs/view_models/filters/filters_v6_test.dart'
-          p = Path(path)
-          text = p.read_text()
-          end = text.rfind('\n}')
-          if end < 0:
-              raise SystemExit('filters test end missing')
+          # Parity tests: exact values push down, OR/multi-status stays client-side.
+          filters_test = 'test/ui/logs/view_models/filters/filters_v6_test.dart'
+          text = read(filters_test)
           if 'serverQueryFilter is null for default multi-status selection' not in text:
-              tests = r'''
+              pos = text.rfind('\n}')
+              if pos < 0:
+                  raise SystemExit('FiltersV6 test terminator missing')
+              tests = '''
 
   test('serverQueryFilter is null for default multi-status selection', () {
     expect(filters.serverQueryFilter, isNull);
@@ -275,7 +296,7 @@ jobs:
     expect(filters.serverQueryFilter, isNull);
   });
 
-  test('serverQueryFilter pushes domain but not a multi-status selection', () {
+  test('serverQueryFilter pushes domain but not multi-status selection', () {
     filters.setSelectedDomain('example.com');
     filters.setStatusSelected([1, 2]);
 
@@ -284,20 +305,28 @@ jobs:
     });
   });
 '''
-              text = text[:end] + tests + text[end:]
-          p.write_text(text)
+              text = text[:pos] + tests + text[pos:]
+              write(filters_test, text)
 
-          # Update Roadmap using the exact verified section from the repository.
-          path = 'ROADMAP.md'
-          p = Path(path)
-          text = p.read_text()
-          old = '''- [ ] Bestehenden Logs-v6-Filterzustand auf die serverseitigen `domain`, `client_ip`, `status`, `type` und `reply`-Parameter abbilden, ohne v6-Details in das gemeinsame Logs-UI-Modell zu leaken.\n- [ ] Nur semantisch aequivalente Filter serverseitig pushen; Mehrfachauswahl-/Komplexfilter, die der FTL-Endpunkt nicht 1:1 darstellen kann, behalten ihre aktuelle clientseitige Semantik.\n- [ ] Paritaetstests fuer leere Filter, Einzelwerte, Mehrfachauswahl-Fallback und Pagination hinzufuegen.\n'''
-          new = '''- [ ] Bestehenden Logs-v6-Filterzustand auf die serverseitigen `domain`, `client_ip`, `status`, `type` und `reply`-Parameter abbilden, ohne v6-Details in das gemeinsame Logs-UI-Modell zu leaken.\n  - [x] Domain und exakt einen v6-Status serverseitig pushen; das gemeinsame Logs-UI-Modell bleibt unveraendert und der bestehende clientseitige Paritaetsfilter bleibt aktiv.\n  - [ ] Client-Auswahl nur als `client_ip` pushen, wenn die bestehende UI-Auswahl 1:1 auf eine IP aufgeloest werden kann; andernfalls clientseitig lassen.\n  - [ ] `type`/`reply` gegen den bestehenden Logs-Filterzustand pruefen und Nicht-Anwendbarkeit dokumentieren, falls dort keine entsprechenden UI-Filter existieren.\n- [x] Nur semantisch aequivalente Filter serverseitig pushen; Mehrfachauswahl-/Komplexfilter, die der FTL-Endpunkt nicht 1:1 darstellen kann, behalten ihre aktuelle clientseitige Semantik. Domain und exakt ein v6-Status werden gepusht; Statusgruppen und Mehrfachauswahl bleiben clientseitig.\n- [x] Paritaetstests fuer leere Filter, Einzelwerte, Mehrfachauswahl-Fallback und Pagination hinzufuegen.\n'''
-          if old not in text:
-              raise SystemExit('ROADMAP v6 filter section did not match verified content')
-          p.write_text(text.replace(old, new, 1))
+          # Advance only the portions the implementation and tests prove.
+          roadmap = 'ROADMAP.md'
+          text = read(roadmap)
+          old = '''- [ ] Bestehenden Logs-v6-Filterzustand auf die serverseitigen `domain`, `client_ip`, `status`, `type` und `reply`-Parameter abbilden, ohne v6-Details in das gemeinsame Logs-UI-Modell zu leaken.
+- [ ] Nur semantisch aequivalente Filter serverseitig pushen; Mehrfachauswahl-/Komplexfilter, die der FTL-Endpunkt nicht 1:1 darstellen kann, behalten ihre aktuelle clientseitige Semantik.
+- [ ] Paritaetstests fuer leere Filter, Einzelwerte, Mehrfachauswahl-Fallback und Pagination hinzufuegen.
+'''
+          new = '''- [ ] Bestehenden Logs-v6-Filterzustand auf die serverseitigen `domain`, `client_ip`, `status`, `type` und `reply`-Parameter abbilden, ohne v6-Details in das gemeinsame Logs-UI-Modell zu leaken.
+  - [x] Domain und exakt einen v6-Status serverseitig pushen; das gemeinsame Logs-UI-Modell bleibt unveraendert und der bestehende clientseitige Paritaetsfilter bleibt aktiv.
+  - [ ] Client-Auswahl nur als `client_ip` pushen, wenn die bestehende UI-Auswahl 1:1 auf eine IP aufgeloest werden kann; andernfalls clientseitig lassen.
+  - [ ] `type`/`reply` gegen den bestehenden Logs-Filterzustand pruefen und Nicht-Anwendbarkeit dokumentieren, falls dort keine entsprechenden UI-Filter existieren.
+- [x] Nur semantisch aequivalente Filter serverseitig pushen; Mehrfachauswahl-/Komplexfilter, die der FTL-Endpunkt nicht 1:1 darstellen kann, behalten ihre aktuelle clientseitige Semantik. Domain und exakt ein v6-Status werden gepusht; Statusgruppen und Mehrfachauswahl bleiben clientseitig.
+- [x] Paritaetstests fuer leere Filter, Einzelwerte, Mehrfachauswahl-Fallback und Pagination hinzufuegen.
+'''
+          if text.count(old) != 1:
+              raise SystemExit(f'ROADMAP v6 filter section count {text.count(old)}')
+          write(roadmap, text.replace(old, new, 1))
+          PY
       - name: Format and validate
-        shell: bash
         run: |
           dart format \
             lib/ui/logs/view_models/filters/filters_v6.dart \
@@ -314,20 +343,10 @@ jobs:
           flutter test test/ui/logs/view_models/logs_viewmodel_test.dart
           git diff --check
       - name: Commit implementation
-        shell: bash
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add \
-            ROADMAP.md \
-            lib/ui/logs/view_models/filters/filters_v6.dart \
-            lib/data/repositories/api/interfaces/metrics_repository.dart \
-            lib/data/repositories/api/v5/metrics_repository.dart \
-            lib/domain/services/logs_pagination_service.dart \
-            lib/ui/logs/view_models/logs_viewmodel.dart \
-            test/domain/services/logs_pagination_service_test.dart \
-            test/domain/services/live_logs_service_test.dart \
-            test/ui/logs/view_models/filters/filters_v6_test.dart
+          git add ROADMAP.md lib test
           git diff --cached --check
           git commit -m 'feat: push safe v6 log filters server-side'
           git push origin HEAD:dev
