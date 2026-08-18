@@ -1,0 +1,35 @@
+name: Automation audit remaining error states
+"on":
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: dev
+          fetch-depth: 0
+      - name: Audit error-state implementations
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          needles = ('Icons.error', 'ErrorDataChart(', 'ErrorMessage(')
+          for path in sorted(Path('lib').rglob('*.dart')):
+              lines = path.read_text().splitlines()
+              hits = [i for i, line in enumerate(lines) if any(n in line for n in needles)]
+              if not hits:
+                  continue
+              print(f'=== {path} ===')
+              shown = set()
+              for i in hits:
+                  start = max(0, i - 10)
+                  end = min(len(lines), i + 16)
+                  for n in range(start, end):
+                      if n not in shown:
+                          print(f'{n+1:4}: {lines[n]}')
+                          shown.add(n)
+                  print('---')
+          PY
