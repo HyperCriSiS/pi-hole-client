@@ -1,6 +1,7 @@
 name: Temporary #397 validation
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - dev
