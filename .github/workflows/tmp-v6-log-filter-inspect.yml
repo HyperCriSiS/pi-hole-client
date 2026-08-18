@@ -1,18 +1,17 @@
 name: Temporary v6 client filter inspection
-
 on:
   push:
     branches: [dev]
-    paths:
-      - '.github/workflows/tmp-v6-log-filter-inspect.yml'
-
+    paths: ['.github/workflows/tmp-v6-log-filter-inspect.yml']
 permissions:
   contents: read
-
 jobs:
   inspect:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - name: Inspect test workflow
-        run: cat .github/workflows/test.yaml
+      - run: |
+          grep -n -A35 -B10 "v6 domain filter" test/ui/logs/view_models/logs_viewmodel_test.dart
+          grep -n -A35 -B10 "v6 chip reset" test/ui/logs/view_models/logs_viewmodel_test.dart
+          grep -n -A25 -B25 "_buildServerQueryFilter" lib/ui/logs/view_models/logs_viewmodel.dart
+          grep -n -A12 -B12 "setClientsFilter" lib/ui/logs/view_models/logs_viewmodel.dart
