@@ -14,16 +14,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - name: Inspect exact test seams
+      - name: Inspect pagination and view model
         shell: bash
         run: |
-          echo '=== filters_v6.dart ==='
-          cat lib/ui/logs/view_models/filters/filters_v6.dart
-          echo '=== filters_v6_test.dart ==='
-          cat test/ui/logs/view_models/filters/filters_v6_test.dart
-          echo '=== live_logs_service_test fake ==='
-          grep -n -A45 -B5 'implements MetricsRepository' test/domain/services/live_logs_service_test.dart
-          echo '=== metrics v5 fetch ==='
-          grep -n -A30 -B8 'fetchQueries' lib/data/repositories/api/v5/metrics_repository.dart
-          echo '=== metrics interface imports/fetch ==='
-          sed -n '1,100p' lib/data/repositories/api/interfaces/metrics_repository.dart
+          echo '=== logs_pagination_service_test.dart ==='
+          cat test/domain/services/logs_pagination_service_test.dart
+          echo '=== logs_viewmodel imports + reset calls ==='
+          sed -n '1,90p' lib/ui/logs/view_models/logs_viewmodel.dart
+          grep -n -A10 -B10 '_paginationService.*reset' lib/ui/logs/view_models/logs_viewmodel.dart
