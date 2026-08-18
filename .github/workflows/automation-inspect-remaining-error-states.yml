@@ -1,4 +1,4 @@
-name: Automation inspect legal error state migration
+name: Automation inspect roadmap error migration section
 "on":
   push:
     branches:
@@ -15,11 +15,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: dev
-      - name: Show legal screen and focused test
+      - name: Show roadmap shared-error section
         run: |
-          echo '=== legal_screen.dart ==='
-          cat lib/ui/settings/about/widgets/legal_screen.dart
-          echo '=== legal_screen_test.dart ==='
-          cat test/ui/settings/about/legal_screen_test.dart
-          echo '=== ErrorMessage imports/usages nearby ==='
-          grep -R -n "error_message.dart\|ErrorMessage(" lib/ui/settings/about lib/ui/settings | head -80 || true
+          grep -n -B 8 -A 45 "eleven verified\|QueriesLastHoursBar\|#638" ROADMAP.md | head -220
