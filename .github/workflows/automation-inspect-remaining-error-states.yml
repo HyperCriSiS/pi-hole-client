@@ -1,4 +1,4 @@
-name: Automation inspect remaining shared error candidates
+name: Automation inspect legal error state migration
 "on":
   push:
     branches:
@@ -15,32 +15,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: dev
-      - name: Find remaining custom error-state candidates
+      - name: Show legal screen and focused test
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
-
-          needles = (
-              'Icons.error',
-              'Icons.error_outline',
-              'Colors.red',
-          )
-          found = 0
-          for path in sorted(Path('lib/ui').rglob('*.dart')):
-              lines = path.read_text().splitlines()
-              hits = [i for i, line in enumerate(lines) if any(n in line for n in needles)]
-              if not hits:
-                  continue
-              found += len(hits)
-              print(f'\n=== {path} ===')
-              emitted = set()
-              for hit in hits:
-                  start = max(0, hit - 10)
-                  end = min(len(lines), hit + 16)
-                  for i in range(start, end):
-                      if i in emitted:
-                          continue
-                      emitted.add(i)
-                      print(f'{i + 1:4}: {lines[i]}')
-          print(f'\nTOTAL_HITS={found}')
-          PY
+          echo '=== legal_screen.dart ==='
+          cat lib/ui/settings/about/widgets/legal_screen.dart
+          echo '=== legal_screen_test.dart ==='
+          cat test/ui/settings/about/legal_screen_test.dart
+          echo '=== ErrorMessage imports/usages nearby ==='
+          grep -R -n "error_message.dart\|ErrorMessage(" lib/ui/settings/about lib/ui/settings | head -80 || true
