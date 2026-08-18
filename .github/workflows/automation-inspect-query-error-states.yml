@@ -1,0 +1,38 @@
+name: Automation inspect query chart error states
+"on":
+  push:
+    branches:
+      - dev
+    paths:
+      - .github/workflows/automation-inspect-query-error-states.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: dev
+          fetch-depth: 0
+      - name: Inspect current query chart error states
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          for path in [
+              Path('lib/ui/home/widgets/home_charts/queries/queries_last_hours_line.dart'),
+              Path('lib/ui/home/widgets/home_charts/queries/queries_last_hours_bar.dart'),
+          ]:
+              text = path.read_text()
+              print(f'===== {path} =====')
+              for i, line in enumerate(text.splitlines(), 1):
+                  if 'error' in line.lower() or 'formattedData' in line or 'formatData' in line or 'Icons.' in line:
+                      start = max(1, i - 5)
+                      end = min(len(text.splitlines()), i + 12)
+                      lines = text.splitlines()
+                      print(f'--- lines {start}-{end} ---')
+                      for n in range(start, end + 1):
+                          print(f'{n:04d}: {lines[n-1]}')
+          raise SystemExit('inspection complete')
+          PY
