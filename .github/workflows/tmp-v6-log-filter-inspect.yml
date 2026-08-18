@@ -1,6 +1,10 @@
 name: Temporary v6 log filter inspection
 
 on:
+  push:
+    branches: [dev]
+    paths:
+      - '.github/workflows/tmp-v6-log-filter-inspect.yml'
   workflow_dispatch:
 
 permissions:
