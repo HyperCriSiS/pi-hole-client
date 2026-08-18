@@ -1,0 +1,35 @@
+name: Update CNAME roadmap
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: dev
+          fetch-depth: 0
+      - name: Update roadmap and remove this workflow
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('ROADMAP.md')
+          text = path.read_text()
+          old = '- [ ] Add v6 CNAME repository/domain operations over `dns/cnameRecords`; keep v5 behavior explicitly `NotSupported` rather than inventing unsupported parity.'
+          new = '- [ ] Add v6 CNAME repository/domain operations over `dns/cnameRecords`; implementation committed (`d7c6b6e3`) with optional TTL preservation and shared v6 session/retry behavior; mark complete after CI verification. v5 remains explicitly unsupported.'
+          if old not in text:
+              raise SystemExit('Expected CNAME roadmap item not found; refusing unsafe edit')
+          path.write_text(text.replace(old, new, 1))
+          PY
+          rm .github/workflows/update-cname-roadmap.yml
+          git config user.name 'HyperCriSiS'
+          git config user.email 'dev.github@w3b.world'
+          git add ROADMAP.md .github/workflows/update-cname-roadmap.yml
+          git diff --cached --check
+          git commit -m 'docs: record pending CNAME repository validation'
+          git push origin dev
