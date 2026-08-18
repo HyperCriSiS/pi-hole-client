@@ -55,7 +55,7 @@ The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPS
   - [x] Push `client_ip` only for exactly one actively selected client whose value is a valid IPv4/IPv6 literal; hostnames, the all-selected state, and multi-client selections remain client-side; focused regression coverage added.
 - [ ] #570: add Local CNAME management only on API paths whose behavior is verified.
   - [x] Verify the current API/repository support boundary: Pi-hole v6 already models `dns.cnameRecords` in `Dns`, while the v5 Local DNS repository/gateway path remains explicitly unsupported.
-  - [ ] Add v6 CNAME repository/domain operations over `dns/cnameRecords`; keep v5 behavior explicitly `NotSupported` rather than inventing unsupported parity.
+  - [ ] Add v6 CNAME repository/domain operations over `dns/cnameRecords`; implementation committed (`d7c6b6e3`) with optional TTL preservation and shared v6 session/retry behavior; mark complete after CI verification. v5 remains explicitly unsupported.
   - [ ] Add focused v6 API/repository regression tests for reading, adding, updating and deleting CNAME records, including restart/error handling.
   - [ ] Integrate CNAME management into the Local DNS UI only after the repository contract is covered by tests.
 - [ ] #134: establish reproducible F-Droid-compatible build metadata and release packaging.
