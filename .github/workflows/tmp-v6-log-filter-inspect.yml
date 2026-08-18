@@ -5,7 +5,6 @@ on:
     branches: [dev]
     paths:
       - '.github/workflows/tmp-v6-log-filter-inspect.yml'
-  workflow_dispatch:
 
 permissions:
   contents: read
@@ -14,27 +13,17 @@ jobs:
   inspect:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Inspect relevant sources
+      - uses: actions/checkout@v7
+      - name: Inspect exact test seams
         shell: bash
         run: |
-          echo '=== ROADMAP.md ==='
-          cat ROADMAP.md
-          echo '=== query_filter.dart ==='
-          cat lib/data/model/v6/metrics/query_filter.dart
-          echo '=== metrics_repository_v6 fetchQueries ==='
-          grep -R -n -A40 -B10 'Future.*fetchQueries' lib/data/repositories/api/v6 || true
-          echo '=== metrics_repository_v5 fetchQueries ==='
-          grep -R -n -A35 -B10 'Future.*fetchQueries' lib/data/repositories/api/v5 || true
-          echo '=== query status model ==='
-          cat lib/domain/model/query_status.dart
-          echo '=== query types/status definitions ==='
-          sed -n '1,260p' lib/domain/model/query_types.dart
-          echo '=== LogsViewModel core ==='
-          sed -n '1,620p' lib/ui/logs/view_models/logs_viewmodel.dart
-          echo '=== Logs pagination tests ==='
-          cat test/domain/services/logs_pagination_service_test.dart
-          echo '=== LogsViewModel filter-related tests ==='
-          grep -n -A35 -B20 -E 'setSelectedDomain|setSelectedClients|setStatusSelected|applyFilterAndLoad|RequestStatus' test/ui/logs/view_models/logs_viewmodel_test.dart || true
-          echo '=== MetricsRepository implementations/fakes ==='
-          grep -R -l 'implements MetricsRepository' lib test | sort
+          echo '=== filters_v6.dart ==='
+          cat lib/ui/logs/view_models/filters/filters_v6.dart
+          echo '=== filters_v6_test.dart ==='
+          cat test/ui/logs/view_models/filters/filters_v6_test.dart
+          echo '=== live_logs_service_test fake ==='
+          grep -n -A45 -B5 'implements MetricsRepository' test/domain/services/live_logs_service_test.dart
+          echo '=== metrics v5 fetch ==='
+          grep -n -A30 -B8 'fetchQueries' lib/data/repositories/api/v5/metrics_repository.dart
+          echo '=== metrics interface imports/fetch ==='
+          sed -n '1,100p' lib/data/repositories/api/interfaces/metrics_repository.dart
