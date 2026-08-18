@@ -8,7 +8,7 @@ Maintain and improve the unofficial Pi-hole client while upstream activity is li
 
 **Status: in progress**
 
-The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPSTREAM_TRIAGE.md` remains the detailed upstream issue/PR triage reference; this file is the project-level execution roadmap and source of truth for future work. #604, #404, #638 and #397 are complete. #442 is now the active Phase 1 item; the original report is from v1.7.0 on Android 16 and must be reproduced against current `dev` before a lifecycle fix can be justified.
+The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPSTREAM_TRIAGE.md` remains the detailed upstream issue/PR triage reference; this file is the project-level execution roadmap and source of truth for future work.
 
 ## Completed foundation
 
@@ -20,8 +20,8 @@ The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPS
 
 ## Phase 1 — deterministic UI and diagnostics work
 
-- [x] #604: add Domain Log Details actions for filtering by domain and copying the domain while retaining the browser action; focused widget coverage is green.
-- [x] #404: document the translation contribution workflow in `docs/translations.md`; existing languages use `lib/ui/core/l10n/*.arb`, new languages start with an issue, and no hosted translation platform is currently used.
+- [x] #604: add Domain Log Details actions for filtering by domain and copying the domain while retaining the browser action.
+- [x] #404: complete the deterministic documentation/UI item tracked in `UPSTREAM_TRIAGE.md`.
 - [x] #638: introduce/reuse a shared error-state widget and migrate duplicated generic error states incrementally.
   - [x] Twelve migrations to the shared `ErrorMessage` component were verified.
   - [x] Final repository audit completed: remaining direct error icons are shared/specialized components or status indicators, not duplicated generic error layouts.
@@ -29,11 +29,11 @@ The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPS
   - [x] Root cause isolated to desktop mouse taps on suggestion-list descendants being outside the `TextField` tap region.
   - [x] Keep suggestions and their scrollbar in the `TextField` tap group with `TextFieldTapRegion` while preserving normal outside-click dismissal.
   - [x] Add focused mouse-pointer regression coverage for suggestion selection and outside-click dismissal.
-  - [x] Validate the focused autocomplete test and existing Local DNS widget suite in CI; full `Dart Tests` is green on commit `2444b03c`.
+  - [x] Validate the focused autocomplete test and existing Local DNS widget suite in CI; full `Dart Tests` was green for the validated fix.
 - [ ] #442: reproduce the PopupMenu/Navigator crash on current `dev` and implement only a verified lifecycle fix.
   - [x] Confirm the upstream report: v1.7.0 on Android 16 crashes in `PopupMenuButtonState._positionBuilder` because `Navigator.of` encounters a detached/null context while laying out the popup route.
-  - [x] Confirm there is no upstream closing PR or follow-up stack, and the issue remains open.
-  - [x] Audit relevant current code history: Home server navigation was migrated from direct `Navigator.push` to GoRouter in upstream #548, but `ServerActionsMenu` still uses `PopupMenuButton`; this is a material lifecycle change but not proof that the old crash is fixed.
+  - [x] Confirm there is no upstream closing PR or follow-up stack in the repository triage evidence.
+  - [x] Audit relevant current code history: Home server navigation was migrated from direct `Navigator.push` to GoRouter, while `ServerActionsMenu` still uses `PopupMenuButton`; this is a material lifecycle change but not proof that the old crash is fixed.
   - [ ] Reproduce on the current `dev` build on Android 16 while opening/closing the Home server actions popup and navigating/changing server; capture a current stack before changing menu behavior.
   - [ ] If reproduced, add the smallest regression test that exercises the failing popup lifecycle and implement the corresponding mounted/navigation fix.
 
@@ -47,7 +47,17 @@ The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPS
 ## Phase 3 — larger architecture and distribution work
 
 - [ ] #639 / #352: incrementally improve Pi-hole v6 API support and server-side log filtering with parity tests; keep the proven handwritten/auth path until generated API support is sufficient.
-- [ ] #570: implement the larger feature only after the preceding compatibility work is stable.
+  - [x] Model the FTL-supported server-side query filters (`domain`, `client_ip`, `status`, `type`, `reply`) as `V6QueryFilter`, including normalization and empty-value handling.
+  - [x] Wire `V6QueryFilter` into `PiholeV6ApiClient.getQueries` using the existing query-string builder, keeping v5 behavior unchanged.
+  - [x] Thread `V6QueryFilter` through `MetricsRepositoryV6` while preserving the shared pagination contract (`start` included); focused v6 model/repository/API regression tests validate the integration.
+  - [x] Push semantically safe Logs v6 filters server-side: exact `domain` and exactly one concrete `status`; multi-status/grouped filters remain client-side, v5 remains unchanged, and pagination/filter-capability regression tests cover the transport path.
+  - [x] Audit `type` and `reply` mappings: the current Logs UI exposes no independent type/reply filter state, so there is no semantically equivalent UI filter to push server-side yet.
+  - [x] Push `client_ip` only for exactly one actively selected client whose value is a valid IPv4/IPv6 literal; hostnames, the all-selected state, and multi-client selections remain client-side; focused regression coverage added.
+- [ ] #570: add Local CNAME management only on API paths whose behavior is verified.
+  - [x] Verify the current API/repository support boundary: Pi-hole v6 already models `dns.cnameRecords` in `Dns`, while the v5 Local DNS repository/gateway path remains explicitly unsupported.
+  - [ ] Add v6 CNAME repository/domain operations over `dns/cnameRecords`; keep v5 behavior explicitly `NotSupported` rather than inventing unsupported parity.
+  - [ ] Add focused v6 API/repository regression tests for reading, adding, updating and deleting CNAME records, including restart/error handling.
+  - [ ] Integrate CNAME management into the Local DNS UI only after the repository contract is covered by tests.
 - [ ] #134: establish reproducible F-Droid-compatible build metadata and release packaging.
 
 ## Validation and completion criteria
@@ -59,21 +69,11 @@ The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPS
 
 ## Blockers / dependencies
 
-- #442 cannot be safely marked fixed from the 2025 v1.7.0 stack alone; a current Android 16 reproduction/log is required because routing and Flutter dependencies have changed substantially since the report.
+- #442 cannot be safely marked fixed from the old v1.7.0 stack alone; a current Android 16 reproduction/log is required because routing and Flutter dependencies have changed substantially since the report.
 - Android 17, widget, and secure-storage items require real-device reproduction and logs before they can be considered resolved.
 - Larger v6 API work depends on preserving authentication and behavior parity during migration.
+- #570 has no repository-level blocker for the v6 repository-layer work; v5 CNAME parity must not be assumed because the current v5 Local DNS path is unsupported.
 
 ## Completion status
 
-**Not fully completed.** #397 is implemented and fully CI-validated. #442 is the active item and currently requires a fresh Android 16 reproduction/current stack before a code change is justified.
-
-### Pi-hole v6 query-filter progress (2026-08-18)
-
-- [x] Model the FTL-supported server-side query filters (`domain`, `client_ip`, `status`, `type`, `reply`) as `V6QueryFilter`, including normalization and empty-value handling.
-- [x] Wire `V6QueryFilter` into `PiholeV6ApiClient.getQueries` using the existing query-string builder, keeping v5 behavior unchanged.
-- [x] Thread `V6QueryFilter` through `MetricsRepositoryV6` while preserving the shared pagination contract (`start` included); focused v6 model/repository/API regression tests validate the integration.
-- [x] Push semantically safe Logs v6 filters server-side: exact `domain` and exactly one concrete `status`; multi-status/grouped filters remain client-side, v5 remains unchanged, and pagination/filter-capability regression tests cover the transport path.
-- [x] Audit `type` and `reply` mappings: the current Logs UI exposes no independent type/reply filter state, so there is no semantically equivalent UI filter to push server-side yet.
-- [x] Push `client_ip` only for exactly one actively selected client whose value is a valid IPv4/IPv6 literal; hostnames, the all-selected state, and multi-client selections remain client-side; focused regression coverage added.
-
-Completion status remains **not fully complete**.
+**Not fully completed.** #442 remains blocked on a fresh Android 16 reproduction/current stack. The next unblocked prioritized work is #570: implement the v6 CNAME repository/domain operations over `dns/cnameRecords` with focused regression coverage.
