@@ -40,6 +40,10 @@ jobs:
           old = "  void resetLogs() {\n    _enableNextWindow = true;"
           new = "  void resetLogs() {\n    _paginationService?.setFilter(null);\n    _enableNextWindow = true;"
           assert old in s
+          s = s.replace(old, new, 1)
+          old = "    notifyListeners();\n  }\n\n  Future<void> _enqueueLoad"
+          new = "    notifyListeners();\n    if (_apiVersion == SupportedApiVersions.v6 && _screenActive) {\n      unawaited(initializeLoad());\n    }\n  }\n\n  Future<void> _enqueueLoad"
+          assert old in s
           p.write_text(s.replace(old, new, 1))
 
           p = Path('test/domain/services/logs_pagination_service_test.dart')
@@ -66,16 +70,17 @@ jobs:
           assert old in s
           s = s.replace(old, new, 1)
           anchor = "    test('isFiltering is true after call', () async {"
-          tests = """    test('v6 exact domain is pushed server-side and reloads', () async {\n      final vm = _buildVm(apiVersion: 'v6', overrideFactory: ({required MetricsRepository repository}) => service);\n      await _initAndLoad(vm);\n      final callsBefore = service.loadNextPageCallCount;\n      vm.setSelectedDomain('example.com');\n      await vm.applyFilterAndLoad();\n      expect(service.loadNextPageCallCount, callsBefore + 1);\n      expect(service.lastFilter?.domain, 'example.com');\n      expect(service.lastFilter?.status, isNull);\n      vm.dispose();\n    });\n\n    test('v6 single concrete status is pushed server-side', () async {\n      final vm = _buildVm(apiVersion: 'v6', overrideFactory: ({required MetricsRepository repository}) => service);\n      await _initAndLoad(vm);\n      vm.setStatusSelected([2]);\n      await vm.applyFilterAndLoad();\n      expect(service.lastFilter?.status, 'FORWARDED');\n      vm.dispose();\n    });\n\n    test('v6 multiple statuses retain client-side semantics', () async {\n      final vm = _buildVm(apiVersion: 'v6', overrideFactory: ({required MetricsRepository repository}) => service);\n      await _initAndLoad(vm);\n      vm.setStatusSelected([2, 3]);\n      await vm.applyFilterAndLoad();\n      expect(service.lastFilter?.status, isNull);\n      vm.dispose();\n    });\n\n"""
+          tests = """    test('v6 exact domain is pushed server-side and reloads', () async {\n      final vm = _buildVm(apiVersion: 'v6', overrideFactory: ({required MetricsRepository repository}) => service);\n      await _initAndLoad(vm);\n      final callsBefore = service.loadNextPageCallCount;\n      vm.setSelectedDomain('example.com');\n      await vm.applyFilterAndLoad();\n      expect(service.loadNextPageCallCount, callsBefore + 1);\n      expect(service.lastFilter?.domain, 'example.com');\n      expect(service.lastFilter?.status, isNull);\n      vm.dispose();\n    });\n\n    test('v6 single concrete status is pushed server-side', () async {\n      final vm = _buildVm(apiVersion: 'v6', overrideFactory: ({required MetricsRepository repository}) => service);\n      await _initAndLoad(vm);\n      vm.setStatusSelected([2]);\n      await vm.applyFilterAndLoad();\n      expect(service.lastFilter?.status, 'FORWARDED');\n      vm.dispose();\n    });\n\n    test('v6 multiple statuses retain client-side semantics', () async {\n      final vm = _buildVm(apiVersion: 'v6', overrideFactory: ({required MetricsRepository repository}) => service);\n      await _initAndLoad(vm);\n      vm.setStatusSelected([2, 3]);\n      await vm.applyFilterAndLoad();\n      expect(service.lastFilter?.status, isNull);\n      vm.dispose();\n    });\n\n    test('v6 chip reset reloads after clearing a server-side domain filter', () async {\n      final vm = _buildVm(apiVersion: 'v6', overrideFactory: ({required MetricsRepository repository}) => service);\n      await _initAndLoad(vm);\n      vm.setSelectedDomain('example.com');\n      await vm.applyFilterAndLoad();\n      final callsBeforeReset = service.loadNextPageCallCount;\n      vm.setSelectedDomain(null);\n      vm.resetLogs();\n      await Future<void>.delayed(Duration.zero);\n      expect(service.loadNextPageCallCount, greaterThan(callsBeforeReset));\n      expect(service.lastFilter, isNull);\n      vm.dispose();\n    });\n\n"""
           assert anchor in s
           p.write_text(s.replace(anchor, tests + anchor, 1))
           PY
-          dart format lib/data/repositories/api/interfaces/metrics_repository.dart lib/data/repositories/api/v6/metrics_repository.dart lib/domain/services/logs_pagination_service.dart lib/ui/logs/view_models/logs_viewmodel.dart test/domain/services/logs_pagination_service_test.dart test/ui/logs/view_models/logs_viewmodel_test.dart
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
           flutter-version: 3.44.1
+      - name: Format patched files
+        run: dart format lib/data/repositories/api/interfaces/metrics_repository.dart lib/data/repositories/api/v6/metrics_repository.dart lib/domain/services/logs_pagination_service.dart lib/ui/logs/view_models/logs_viewmodel.dart test/domain/services/logs_pagination_service_test.dart test/ui/logs/view_models/logs_viewmodel_test.dart
       - run: flutter pub get
       - run: cp .env.sample .env
       - name: Focused regression tests
