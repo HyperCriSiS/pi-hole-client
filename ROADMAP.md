@@ -8,7 +8,7 @@ Maintain and improve the unofficial Pi-hole client while upstream activity is li
 
 **Status: in progress**
 
-The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPSTREAM_TRIAGE.md` remains the detailed issue/PR triage reference; this file is the project-level execution roadmap and source of truth for future work. #638 is complete with twelve verified migrations to the shared `ErrorMessage` component. A final audit confirms that the remaining direct error icons belong to shared/specialized components or status indicators rather than duplicated generic error-state layouts. #397 is the next deterministic Phase 1 item.
+The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPSTREAM_TRIAGE.md` remains the detailed upstream issue/PR triage reference; this file is the project-level execution roadmap and source of truth for future work. #604, #404 and #638 are complete. #397 now has a targeted desktop-focus fix and mouse regression coverage committed on `dev`; it remains open until CI validates the change.
 
 ## Completed foundation
 
@@ -20,19 +20,16 @@ The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPS
 
 ## Phase 1 — deterministic UI and diagnostics work
 
-- [x] #604: add Domain Log Details actions for filtering by domain and copying the domain while retaining the browser action.
-  - [x] Confirm the current detail route uses `LogDetailsScreen` through GoRouter and preserves the existing Allow/Block action callback.
-  - [x] Confirm the existing log-detail tests already cover URL/details and the current allow/block/search behavior, defining the regression surface for the new actions.
-  - [x] Implement copy-domain and filter-by-domain against the current complete screen source, then add focused widget tests (14/14 `LogDetailsScreen` widget tests green).
-- [x] #404: document the current translation contribution workflow (`docs/translations.md`): existing languages are edited in `lib/ui/core/l10n/*.arb` and submitted by PR; new languages start with an issue; no Weblate/Crowdin project is currently in use.
-- [x] #638: introduce/reuse a shared error-state widget and migrate screens incrementally.
-  - [x] Audit the remaining direct error presentations; only shared components and specialized status indicators remain, so no additional generic `ErrorMessage` migration is warranted.
-- [x] Migrate the Find Domains in Lists error result to the shared `ErrorMessage` component and keep the focused screen test green (`809ba6cc`).
-- [x] Migrate `ClientsList` to the shared `ErrorMessage` component and validate the focused group/client widget coverage (`280cf3d2`).
-- [x] Migrate `GroupsList` to the shared `ErrorMessage` component and keep the focused group/client test suite green (`bf673810`).
-- [x] Migrate `StatisticsList` to the shared `ErrorMessage` component and keep `statistics_test.dart` green (`03864ddb`).
-- [x] Migrate `DnsTab` to the shared `ErrorMessage` component and validate the statistics regression surface (`024b8d46`).
-- [ ] #397: reproduce and fix the Windows LocalDNS suggestion overlay/focus dismissal behavior.
+- [x] #604: add Domain Log Details actions for filtering by domain and copying the domain while retaining the browser action; focused widget coverage is green.
+- [x] #404: document the translation contribution workflow in `docs/translations.md`; existing languages use `lib/ui/core/l10n/*.arb`, new languages start with an issue, and no hosted translation platform is currently used.
+- [x] #638: introduce/reuse a shared error-state widget and migrate duplicated generic error states incrementally.
+  - [x] Twelve migrations to the shared `ErrorMessage` component were verified.
+  - [x] Final repository audit completed: remaining direct error icons are shared/specialized components or status indicators, not duplicated generic error layouts.
+- [ ] #397: reproduce and fix the Windows LocalDNS suggestion focus-dismissal behavior.
+  - [x] Root cause isolated to desktop mouse taps on suggestion-list descendants being outside the `TextField` tap region.
+  - [x] Keep suggestions and their scrollbar in the `TextField` tap group with `TextFieldTapRegion` while preserving normal outside-click dismissal.
+  - [x] Add focused mouse-pointer regression coverage for suggestion selection and outside-click dismissal.
+  - [ ] Validate the focused autocomplete test and existing Local DNS widget suite in CI; mark #397 complete only after green checks.
 - [ ] #442: investigate the currently triaged deterministic issue and define/implement the smallest verified fix.
 
 ## Phase 2 — device-dependent regressions
@@ -57,19 +54,10 @@ The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPS
 
 ## Blockers / dependencies
 
+- No code-level blocker is known for #397; CI validation is pending for the committed desktop-focus fix.
 - Android 17, widget, and secure-storage items require real-device reproduction and logs before they can be considered resolved.
 - Larger v6 API work depends on preserving authentication and behavior parity during migration.
 
 ## Completion status
 
-**Not fully completed.** #604, #404, and #638 are implemented and validated. #397 is the next deterministic Phase 1 item.
-
-## Automation-validated maintenance
-
-- [x] Migrate `QueriesServersTab` to the shared `ErrorMessage` component and keep `statistics_test.dart` green.
-- [x] Migrate `StatisticsTripleColumn` to the shared `ErrorMessage` component and keep `statistics_test.dart` green.
-- [x] Migrate `DomainsList` to the shared `ErrorMessage` component and keep `domains_test.dart` green.
-- [x] Migrate `AdlistsList` to the shared `ErrorMessage` component and keep `adlists_test.dart` green.
-- [x] Migrate `QueriesLastHoursLine` to the shared `ErrorMessage` component and keep `queries_last_hours_line_test.dart` green.
-- [x] Migrate `QueriesLastHoursBar` to the shared `ErrorMessage` component and keep `home_charts_test.dart` green.
-- [x] Migrate `LegalScreen` to the shared `ErrorMessage` component and keep `legal_screen_test.dart` green.
+**Not fully completed.** #397 is the active deterministic Phase 1 item. If its focused and existing Local DNS tests are green, close #397 and continue with #442.
