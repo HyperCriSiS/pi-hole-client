@@ -2,11 +2,6 @@ name: Temporary v6 query filter migration
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - dev
-    paths:
-      - .github/workflows/query-filter-request-path.yml
 
 permissions:
   contents: write
@@ -19,14 +14,10 @@ jobs:
         with:
           ref: dev
           fetch-depth: 0
-      - name: Inspect v6 query request path
+      - name: Inspect v6 query API tests
         shell: bash
         run: |
           set -euo pipefail
-          echo '=== methods containing quer ==='
-          grep -n -i -C 12 'quer' lib/data/services/api/pihole_v6_api_client.dart || true
-          echo '=== repository v6 query call ==='
-          grep -n -i -C 12 'quer' lib/data/repositories/api/v6/metrics_repository.dart || true
-          echo '=== interface query signature ==='
-          grep -n -i -C 12 'quer' lib/data/repositories/api/interfaces/metrics_repository.dart || true
+          grep -n -C 35 'getQueries' test/data/services/api/pihole_v6_api_client_test.dart || true
+          grep -n -C 35 '/api/queries' test/data/services/api/pihole_v6_api_client_test.dart || true
           exit 1
