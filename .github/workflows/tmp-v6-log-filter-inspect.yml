@@ -11,7 +11,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - run: |
-          grep -n -A35 -B10 "v6 domain filter" test/ui/logs/view_models/logs_viewmodel_test.dart
-          grep -n -A35 -B10 "v6 chip reset" test/ui/logs/view_models/logs_viewmodel_test.dart
-          grep -n -A25 -B25 "_buildServerQueryFilter" lib/ui/logs/view_models/logs_viewmodel.dart
-          grep -n -A12 -B12 "setClientsFilter" lib/ui/logs/view_models/logs_viewmodel.dart
+          grep -n -A20 -B20 "lastFilter" test/ui/logs/view_models/logs_viewmodel_test.dart || true
+          grep -n -A30 -B20 "_buildServerQueryFilter" lib/ui/logs/view_models/logs_viewmodel.dart || true
+          grep -n -A15 -B15 "setClientsFilter" lib/ui/logs/view_models/logs_viewmodel.dart || true
