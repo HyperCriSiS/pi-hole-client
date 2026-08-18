@@ -1,3 +1,4 @@
+import 'package:pi_hole_client/data/model/v6/metrics/query_filter.dart';
 import 'package:pi_hole_client/domain/model/metrics/clients.dart';
 import 'package:pi_hole_client/domain/model/metrics/history.dart';
 import 'package:pi_hole_client/domain/model/metrics/queries.dart';
@@ -42,4 +43,17 @@ abstract interface class MetricsRepository {
   });
 
   Future<Result<OverTime>> fetchOverTime({int? count = 10});
+}
+
+/// Optional capability for repositories that support Pi-hole v6 server-side
+/// query filtering.
+abstract interface class FilteredMetricsRepository {
+  Future<Result<Logs>> fetchQueriesFiltered({
+    required DateTime from,
+    required DateTime until,
+    int? length = 100,
+    int? cursor,
+    int? start,
+    V6QueryFilter? filter,
+  });
 }

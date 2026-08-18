@@ -1,3 +1,4 @@
+import 'package:pi_hole_client/data/model/v6/metrics/query_filter.dart';
 import 'package:pi_hole_client/data/repositories/api/interfaces/metrics_repository.dart';
 import 'package:pi_hole_client/domain/model/enums.dart';
 import 'package:pi_hole_client/domain/model/metrics/queries.dart';
@@ -38,6 +39,8 @@ class LogsPaginationService {
   /// Current offset for pagination (0, 500, 1000, ...).
   int _currentOffset = 0;
 
+  V6QueryFilter? _filter;
+
   LoadStatus _finished = LoadStatus.loading;
 
   /// Current pagination status.
@@ -53,7 +56,15 @@ class LogsPaginationService {
   /// The end of the current time window (set by [reset]).
   DateTime? get endTime => _endTime;
 
+  /// Sets an optional server-side query filter. Repositories without the
+  /// filtering capability (including Pi-hole v5) continue using the existing
+  /// unfiltered request path.
+  void setFilter(V6QueryFilter? filter) {
+    _filter = filter?.isEmpty == true ? null : filter;
+  }
+
   /// Resets the pagination service with a new start and end time.
+  /// The currently configured filter is preserved across pagination windows.
   void reset(DateTime start, DateTime until) {
     _startTime = start;
     _endTime = until;
@@ -84,13 +95,23 @@ class LogsPaginationService {
     var retryCount = 0;
 
     while (retryCount <= maxRetries) {
-      final result = await _repository.fetchQueries(
-        from: _startTime!,
-        until: _endTime!,
-        length: _pageSize,
-        cursor: _fixedCursor,
-        start: _currentOffset,
-      );
+      final result = _repository is FilteredMetricsRepository
+          ? await (_repository as FilteredMetricsRepository)
+                .fetchQueriesFiltered(
+                  from: _startTime!,
+                  until: _endTime!,
+                  length: _pageSize,
+                  cursor: _fixedCursor,
+                  start: _currentOffset,
+                  filter: _filter,
+                )
+          : await _repository.fetchQueries(
+              from: _startTime!,
+              until: _endTime!,
+              length: _pageSize,
+              cursor: _fixedCursor,
+              start: _currentOffset,
+            );
 
       final logs = result.fold((success) => success, (failure) => null);
 

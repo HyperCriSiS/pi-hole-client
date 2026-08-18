@@ -15,7 +15,7 @@ import 'package:pi_hole_client/domain/model/overtime/overtime.dart';
 import 'package:result_dart/result_dart.dart';
 
 class MetricsRepositoryV6 extends BaseV6SidRepository
-    implements MetricsRepository {
+    implements MetricsRepository, FilteredMetricsRepository {
   MetricsRepositoryV6({
     required PiholeV6ApiClient client,
     required super.sessionCache,
@@ -49,6 +49,21 @@ class MetricsRepositoryV6 extends BaseV6SidRepository
 
   @override
   Future<Result<Logs>> fetchQueries({
+    required DateTime from,
+    required DateTime until,
+    int? length = 100,
+    int? cursor,
+    int? start,
+  }) => fetchQueriesFiltered(
+    from: from,
+    until: until,
+    length: length,
+    cursor: cursor,
+    start: start,
+  );
+
+  @override
+  Future<Result<Logs>> fetchQueriesFiltered({
     required DateTime from,
     required DateTime until,
     int? length = 100,
