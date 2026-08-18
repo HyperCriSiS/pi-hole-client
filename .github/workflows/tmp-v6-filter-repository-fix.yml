@@ -1,7 +1,11 @@
 name: Temporary v6 filter repository fix
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - dev
+    paths:
+      - '.github/workflows/tmp-v6-filter-repository-fix.yml'
 
 permissions:
   contents: write
@@ -43,10 +47,10 @@ jobs:
           if query_filter_import not in text:
               marker = "import 'package:pi_hole_client/data/services/api/pihole_v6_api_client.dart';\n"
               if marker not in text:
-                  # Keep the import with the other v6 model imports if the concrete client import is absent.
-                  match = re.search(r"(?:import 'package:pi_hole_client/data/model/v6/metrics/[^']+';\n)", text)
-                  if not match:
+                  matches = list(re.finditer(r"import 'package:pi_hole_client/data/model/v6/metrics/[^']+';\n", text))
+                  if not matches:
                       raise SystemExit('Could not locate an import insertion point in fake client')
+                  match = matches[-1]
                   text = text[:match.end()] + query_filter_import + text[match.end():]
               else:
                   text = text.replace(marker, query_filter_import + marker, 1)
