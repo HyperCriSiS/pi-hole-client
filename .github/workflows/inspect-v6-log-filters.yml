@@ -1,0 +1,44 @@
+name: Temporary inspect v6 log filters
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: dev
+          fetch-depth: 0
+      - name: Inspect relevant sources
+        shell: bash
+        run: |
+          echo '===== metrics interface ====='
+          cat lib/data/repositories/api/interfaces/metrics_repository.dart
+          echo '===== metrics v6 ====='
+          cat lib/data/repositories/api/v6/metrics_repository.dart
+          echo '===== logs viewmodel ====='
+          cat lib/ui/logs/view_models/logs_viewmodel.dart
+          echo '===== filters interface ====='
+          cat lib/ui/logs/view_models/filters/filters_interface.dart
+          echo '===== filters v6 ====='
+          cat lib/ui/logs/view_models/filters/filters_v6.dart
+          echo '===== filters v5 ====='
+          cat lib/ui/logs/view_models/filters/filters_v5.dart
+          echo '===== query filter ====='
+          cat lib/data/model/v6/metrics/query_filter.dart
+          echo '===== relevant tests ====='
+          find test -type f \( -iname '*logs*test.dart' -o -iname '*metrics_repository*test.dart' -o -iname '*filters*v6*test.dart' \) -print | sort
+      - name: Remove temporary workflow
+        if: always()
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/inspect-v6-log-filters.yml
+          git commit -m 'chore: remove temporary log-filter inspection'
+          git push origin HEAD:dev
