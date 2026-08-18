@@ -1,0 +1,154 @@
+name: Temporary v6 query filter request-path migration
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  migrate-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout dev
+        uses: actions/checkout@v7
+        with:
+          ref: dev
+          fetch-depth: 0
+
+      - name: Patch v6 query request path
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          model_path = Path('lib/data/model/v6/metrics/query_filter.dart')
+          model = model_path.read_text()
+          if 'String toQueryString()' not in model:
+              needle = '  bool get isEmpty => toQueryParameters().isEmpty;\n'
+              replacement = '''  bool get isEmpty => toQueryParameters().isEmpty;\n\n  /// Serializes supported filters for use in the v6 `/api/queries` URL.\n  ///\n  /// Keys and values are percent-encoded so domains, client identifiers, and\n  /// future filter values cannot corrupt the surrounding query string.\n  String toQueryString() {\n    return toQueryParameters().entries\n        .map(\n          (entry) =>\n              '${Uri.encodeQueryComponent(entry.key)}=${Uri.encodeQueryComponent(entry.value)}',\n        )\n        .join('&');\n  }\n'''
+              if needle not in model:
+                  raise SystemExit('query_filter.dart: isEmpty anchor not found')
+              model = model.replace(needle, replacement, 1)
+              model_path.write_text(model)
+
+          test_path = Path('test/data/model/v6/metrics/query_filter_test.dart')
+          test = test_path.read_text()
+          if "serializes and percent-encodes query parameters" not in test:
+              insert = r'''
+
+  test('serializes and percent-encodes query parameters', () {
+    const filter = V6QueryFilter(
+      domain: 'example.com/path value',
+      clientIp: 'client name',
+    );
+
+    expect(
+      filter.toQueryString(),
+      'domain=example.com%2Fpath%20value&client_ip=client%20name',
+    );
+  });
+
+  test('serializes an empty filter as an empty query string', () {
+    expect(const V6QueryFilter().toQueryString(), isEmpty);
+  });
+'''
+              pos = test.rfind('}')
+              if pos == -1:
+                  raise SystemExit('query_filter_test.dart: main closing brace not found')
+              test = test[:pos] + insert + test[pos:]
+              test_path.write_text(test)
+
+          client_path = Path('lib/data/services/api/pihole_v6_api_client.dart')
+          client = client_path.read_text()
+          import_line = "import 'package:pi_hole_client/data/model/v6/metrics/query_filter.dart';"
+          if import_line not in client:
+              anchors = [
+                  "import 'package:pi_hole_client/data/model/v6/metrics/queries.dart';",
+                  "import 'package:pi_hole_client/data/model/v6/metrics/metrics.dart';",
+              ]
+              for anchor in anchors:
+                  if anchor in client:
+                      client = client.replace(anchor, import_line + '\n' + anchor, 1)
+                      break
+              else:
+                  metric_import = "import 'package:pi_hole_client/data/model/v6/metrics/"
+                  idx = client.find(metric_import)
+                  if idx == -1:
+                      raise SystemExit('pihole_v6_api_client.dart: metrics import anchor not found')
+                  client = client[:idx] + import_line + '\n' + client[idx:]
+
+          method_start = client.find('getQueries({')
+          if method_start == -1:
+              raise SystemExit('pihole_v6_api_client.dart: getQueries method not found')
+          method_end = client.find('\n  }', method_start)
+          if method_end == -1:
+              raise SystemExit('pihole_v6_api_client.dart: getQueries method end not found')
+          segment = client[method_start:method_end]
+
+          if 'V6QueryFilter? filter,' not in segment:
+              sig_anchor = '    int? start,\n'
+              if sig_anchor not in segment:
+                  raise SystemExit('pihole_v6_api_client.dart: start parameter anchor not found')
+              segment = segment.replace(
+                  sig_anchor,
+                  sig_anchor + '    V6QueryFilter? filter,\n',
+                  1,
+              )
+
+          if 'final filterParam =' not in segment:
+              start_anchor = "    final startParam = start == null ? '' : '&start=$start';\n"
+              if start_anchor not in segment:
+                  raise SystemExit('pihole_v6_api_client.dart: startParam anchor not found')
+              segment = segment.replace(
+                  start_anchor,
+                  start_anchor + "    final filterParam =\n        filter == null || filter.isEmpty ? '' : '&${filter.toQueryString()}';\n",
+                  1,
+              )
+
+          old_path_tail = '$cursorPram$startParam'
+          if '$cursorPram$startParam$filterParam' not in segment:
+              if old_path_tail not in segment:
+                  raise SystemExit('pihole_v6_api_client.dart: query path anchor not found')
+              segment = segment.replace(
+                  old_path_tail,
+                  '$cursorPram$startParam$filterParam',
+                  1,
+              )
+
+          client = client[:method_start] + segment + client[method_end:]
+          client_path.write_text(client)
+
+          roadmap_path = Path('ROADMAP.md')
+          roadmap = roadmap_path.read_text()
+          marker = '### Pi-hole v6 query-filter progress (2026-08-18)'
+          if marker not in roadmap:
+              roadmap = roadmap.rstrip() + f'''\n\n{marker}\n\n- [x] Model the FTL-supported server-side query filters (`domain`, `client_ip`, `status`, `type`, `reply`) as `V6QueryFilter`, including normalization and empty-value handling.\n- [x] Serialize `V6QueryFilter` safely and wire it into the v6 `PiholeV6ApiClient.getQueries` `/api/queries` request path without changing v5 behavior.\n- [ ] Thread `V6QueryFilter` through `MetricsRepositoryV6` and map the Logs screen's existing v6 filter state to server-side request filters with parity/regression tests.\n\nCompletion status remains **not fully complete**.\n'''
+              roadmap_path.write_text(roadmap)
+          PY
+
+      - name: Format changed Dart files
+        run: dart format lib/data/model/v6/metrics/query_filter.dart lib/data/services/api/pihole_v6_api_client.dart test/data/model/v6/metrics/query_filter_test.dart
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run focused tests
+        run: flutter test test/data/model/v6/metrics/query_filter_test.dart test/data/services/api/pihole_v6_api_client_test.dart
+
+      - name: Validate diff
+        run: git diff --check
+
+      - name: Commit validated migration and remove temporary workflow
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/query-filter-request-path.yml
+          git add ROADMAP.md lib/data/model/v6/metrics/query_filter.dart lib/data/services/api/pihole_v6_api_client.dart test/data/model/v6/metrics/query_filter_test.dart
+          if git diff --cached --quiet; then
+            echo 'No changes to commit.'
+            exit 0
+          fi
+          git commit -m 'feat: wire v6 query filters into request path'
+          git push origin HEAD:dev
