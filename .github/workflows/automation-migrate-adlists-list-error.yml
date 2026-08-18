@@ -1,0 +1,93 @@
+name: Automation migrate AdlistsList error state
+"on":
+  push:
+    branches:
+      - dev
+    paths:
+      - .github/workflows/automation-migrate-adlists-list-error.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: dev
+          fetch-depth: 0
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - name: Migrate AdlistsList to shared ErrorMessage
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          target = Path('lib/ui/settings/server_settings/adlists/widgets/adlists_list.dart')
+          roadmap = Path('ROADMAP.md')
+          source = target.read_text()
+
+          imp = "import 'package:pi_hole_client/ui/core/ui/components/error_message.dart';\n"
+          anchor = "import 'package:pi_hole_client/ui/core/l10n/generated/app_localizations.dart';\n"
+          if imp not in source:
+              if anchor not in source:
+                  raise SystemExit('localization import anchor not found')
+              source = source.replace(anchor, anchor + imp, 1)
+
+          pattern = re.compile(
+              r"(?P<indent>\s*)child: Column\(\n"
+              r"(?P=indent)  mainAxisAlignment: MainAxisAlignment\.center,\n"
+              r"(?P=indent)  children: \[\n"
+              r"(?P=indent)    const Icon\(Icons\.error, size: 50, color: Colors\.red\),\n"
+              r"(?P=indent)    const SizedBox\(height: 50\),\n"
+              r"(?P=indent)    Text\(\n"
+              r"(?P=indent)      (?P<message>AppLocalizations\.of\(context\)!\.[A-Za-z0-9_]+),\n"
+              r".*?"
+              r"(?P=indent)    \),\n"
+              r"(?P=indent)  \],\n"
+              r"(?P=indent)\),",
+              re.S,
+          )
+          matches = list(pattern.finditer(source))
+          if len(matches) != 1:
+              raise SystemExit(f'expected one legacy AdlistsList error block, found {len(matches)}')
+          match = matches[0]
+          indent = match.group('indent')
+          replacement = (
+              f"{indent}child: ErrorMessage(\n"
+              f"{indent}  message: {match.group('message')},\n"
+              f"{indent}),"
+          )
+          target.write_text(pattern.sub(replacement, source, count=1))
+
+          text = roadmap.read_text()
+          entry = '- [x] Migrate `AdlistsList` to the shared `ErrorMessage` component and keep `adlists_test.dart` green.\n'
+          if entry not in text:
+              anchor_line = '- [x] Migrate `DomainsList` to the shared `ErrorMessage` component and keep `domains_test.dart` green.\n'
+              if anchor_line not in text:
+                  raise SystemExit('ROADMAP insertion anchor not found')
+              text = text.replace(anchor_line, anchor_line + entry, 1)
+          old_status = '**Not fully completed.** #604 and #404 are implemented and validated. #638 is in progress with eight verified shared-error-state migrations complete. `DomainsList` is migrated and validated; identify the next duplicated error-state candidate before the next refactor.'
+          new_status = '**Not fully completed.** #604 and #404 are implemented and validated. #638 is in progress with nine verified shared-error-state migrations complete. `AdlistsList` is migrated and validated; identify the next duplicated error-state candidate before the next refactor.'
+          if old_status not in text:
+              raise SystemExit('expected ROADMAP completion status not found')
+          text = text.replace(old_status, new_status, 1)
+          roadmap.write_text(text)
+          PY
+      - name: Run focused Flutter test
+        run: |
+          cp .env.sample .env
+          flutter pub get
+          flutter test test/ui/settings/server_settings/adlists/adlists_test.dart
+      - name: Commit validated migration and self-remove
+        run: |
+          rm .github/workflows/automation-migrate-adlists-list-error.yml
+          git checkout -- pubspec.lock analysis_options.yaml || true
+          git config user.name 'HyperCriSiS'
+          git config user.email 'dev.github@w3b.world'
+          git add lib/ui/settings/server_settings/adlists/widgets/adlists_list.dart ROADMAP.md .github/workflows/automation-migrate-adlists-list-error.yml
+          git diff --cached --check
+          git commit -m 'refactor: reuse shared error state in adlists list'
+          git push origin HEAD:dev
