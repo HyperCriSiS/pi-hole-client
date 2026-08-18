@@ -1,4 +1,5 @@
 import 'package:pi_hole_client/data/mapper/v6/metrics_mapper.dart';
+import 'package:pi_hole_client/data/model/v6/metrics/query_filter.dart';
 import 'package:pi_hole_client/data/repositories/api/interfaces/metrics_repository.dart';
 import 'package:pi_hole_client/data/repositories/api/v6/base_v6_sid_repository.dart';
 import 'package:pi_hole_client/data/repositories/utils/call_with_retry.dart';
@@ -52,7 +53,7 @@ class MetricsRepositoryV6 extends BaseV6SidRepository
     required DateTime until,
     int? length = 100,
     int? cursor,
-    int? start,
+    V6QueryFilter? filter,
   }) async {
     return runWithResultRetry(
       action: () async {
@@ -63,7 +64,7 @@ class MetricsRepositoryV6 extends BaseV6SidRepository
           until: until,
           length: length,
           cursor: cursor,
-          start: start,
+          filter: filter,
         );
 
         return result.map((e) => e.toDomain());
