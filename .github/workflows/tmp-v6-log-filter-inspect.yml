@@ -14,10 +14,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - name: Inspect IP validation helpers
-        run: |
-          grep -RInE 'InternetAddress|IPv4|IPv6|isIp|isIP|ipAddress|validate.*ip|RegExp.*[Ii][Pp]' lib test | head -n 400 || true
-          echo '===== pubspec environment ====='
-          grep -n -A8 '^environment:' pubspec.yaml
-          echo '===== workflow list ====='
-          ls .github/workflows
+      - name: Inspect test workflow
+        run: cat .github/workflows/test.yaml
