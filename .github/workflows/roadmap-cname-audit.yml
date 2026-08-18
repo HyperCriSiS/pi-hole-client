@@ -1,0 +1,49 @@
+name: Temporary CNAME roadmap audit
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-roadmap:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: dev
+          fetch-depth: 0
+      - name: Record verified CNAME support boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('ROADMAP.md')
+          text = path.read_text()
+          heading = '### Local CNAME management progress (#570)'
+          marker = 'Completion status remains **not fully complete**.'
+          if heading not in text:
+              section = '''### Local CNAME management progress (#570)
+
+- [x] Verify the current API/repository support boundary: Pi-hole v6 already models `dns.cnameRecords` in `Dns`, while the v5 Local DNS repository/gateway path remains explicitly unsupported.
+- [ ] Add v6 CNAME repository/domain operations over `dns/cnameRecords`; keep v5 behavior explicitly `NotSupported` rather than inventing unsupported parity.
+- [ ] Add focused v6 API/repository regression tests for reading, adding, updating and deleting CNAME records, including restart/error handling.
+- [ ] Integrate CNAME management into the Local DNS UI only after the repository contract is covered by tests.
+
+'''
+              if marker in text:
+                  text = text.replace(marker, section + marker, 1)
+              else:
+                  text = text.rstrip() + '\n\n' + section
+              path.write_text(text)
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/roadmap-cname-audit.yml
+          git add ROADMAP.md
+          git diff --check
+          git commit -m 'docs: record CNAME API support audit'
+          git push origin HEAD:dev
