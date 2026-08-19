@@ -42,7 +42,7 @@ The dependency update from upstream #660 also moves Dio from 5.9.2 to 5.11.0. Di
 | #598 | Android widgets no data | Needs Android reproduction/logging. Verify widget update channel/session restore after #660 secure-storage update. |
 | #593 | v5 navigation | **Already addressed by current code** (`dc683828`, upstream #591): Adlists/Network expose explicit Back buttons with Home fallback and Home tiles push destinations directly. No duplicate production change needed. |
 | #592 | Tablet navigation | **Already addressed by current code** (`dc683828`, upstream #591): Settings root uses `PopScope` to route Back to Home; AppShell handles root-tab Back consistently. No duplicate production change needed. |
-| #570 | Local CNAME | Feature/API work. Add CNAME domain model/repository operations and UI tab after confirming v5/v6 API support. |
+| #570 | Local CNAME | **Implemented in `dev` for Pi-hole v6.** Added verified CNAME domain/repository CRUD with optional TTL preservation plus a capability-gated Host/CNAME Local DNS UI with add/edit/delete flows and focused regression coverage. Pi-hole v5 remains unchanged because its Local DNS API path does not expose CNAME support. |
 | #501 | Android widget layout | Device/density-specific UI work; needs widget size tests across Android display scales. |
 | #442 | PopupMenu/Navigator crash | **Current reproduction required.** The only known stack is from v1.7.0 on Android 16. Current `dev` uses GoRouter-based Home navigation but still has `ServerActionsMenu` on `PopupMenuButton`; capture a fresh Android 16 stack before changing popup lifecycle behavior. |
 | #438 | disableServer Provider/context crash | Current code already obtains providers before awaiting and checks `context.mounted` before post-request UI work, so the reported v1.7.0 stack appears mitigated in current `main`; retain regression monitoring. |
@@ -61,4 +61,4 @@ The dependency update from upstream #660 also moves Dio from 5.9.2 to 5.11.0. Di
 3. #632 diagnostics and #178 App Lock (implemented in `dev`).
 4. Deterministic UI/docs work (#604, #404, #638, #397) is implemented and validated; #442 is the remaining Phase 1 item and requires a fresh Android 16 reproduction before any lifecycle change.
 5. Reproduce/fix device-dependent #636, #598, #501 and #293 on current dependencies.
-6. #639/#352 and #570: larger API architecture/features; #134 release packaging.
+6. #639/#352: larger API architecture/features; #570 is implemented on the verified v6 path. #134 is the next unblocked release-packaging item after #570 CI validation.
