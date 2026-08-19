@@ -56,8 +56,8 @@ The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPS
 - [ ] #570: add Local CNAME management only on API paths whose behavior is verified.
   - [x] Verify the current API/repository support boundary: Pi-hole v6 already models `dns.cnameRecords` in `Dns`, while the v5 Local DNS repository/gateway path remains explicitly unsupported.
   - [x] Add v6 CNAME repository/domain operations over `dns/cnameRecords`; implementation committed (`d7c6b6e3`) with optional TTL preservation and shared v6 session/retry behavior. Repository-wide Flutter tests and Codecov completed successfully on the implementation; v5 remains explicitly unsupported.
-  - [ ] Add focused v6 API/repository regression tests for reading, adding, updating and deleting CNAME records, including restart/error handling. Fetch/add/delete success and CRUD error paths are covered by `3b9d9ac`; successful update, TTL parsing/preservation and explicit DNS-restart assertions were added in `6f224932`. The first full CI run exposed an incompatible `getConfigElement` override in the recording fake; `1ae8e1a5` aligns the test double with the real client signature and the regular Dart test rerun is pending completion.
-  - [ ] Integrate CNAME management into the Local DNS UI only after the repository contract is covered by tests.
+  - [x] Add focused v6 API/repository regression tests for reading, adding, updating and deleting CNAME records, including restart/error handling. Fetch/add/delete success and CRUD error paths are covered by `3b9d9ac`; successful update, TTL parsing/preservation and explicit DNS-restart assertions were added in `6f224932`. The recording fake signature was corrected in `1ae8e1a5`; the subsequent Dart Tests job and Codecov upload completed successfully. The workflow-level failure came from the separate SonarQube scan, not the CNAME regression suite.
+  - [x] Integrate tested v6 CNAME management into the Local DNS UI: capability-gated Host/CNAME switcher, CNAME list, add/edit/delete dialog, optional TTL handling, local state updates, and focused ViewModel regression coverage. Pi-hole v5 remains unchanged because it does not expose the CNAME repository capability.
 - [ ] #134: establish reproducible F-Droid-compatible build metadata and release packaging.
 
 ## Validation and completion criteria
@@ -76,4 +76,4 @@ The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPS
 
 ## Completion status
 
-**Not fully completed.** #442 remains blocked on a fresh Android 16 reproduction/current stack. The next unblocked prioritized work is #570: finish CI validation of the CNAME repository regression coverage after the recording-fake signature fix, then integrate the tested v6 contract into the Local DNS UI.
+**Not fully completed.** #442 remains blocked on a fresh Android 16 reproduction/current stack. #570 is implemented through the v6 repository and Local DNS UI layers; the next step is CI validation of the UI integration and then the next unblocked roadmap item (#134 F-Droid-compatible build metadata/release packaging) if that validation stays green.
