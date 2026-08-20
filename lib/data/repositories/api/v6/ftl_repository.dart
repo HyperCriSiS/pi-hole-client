@@ -104,22 +104,22 @@ class FtlRepositoryV6 extends BaseV6SidRepository implements FtlRepository {
   }
 
   @override
-Future<Result<FtlSensor>> fetchInfoSensors() {
-  return runWithResultRetry(
-    action: () async {
-      final sid = await getSid();
-      _service.setSid(sid);
-      final result = await _service.getInfoSensors();
-      return result.map(
-        (e) => legacy_sensors.InfoSensors.fromJson(e.toJson()).toDomain(),
-      );
-    },
-    onRetry: (_, e) => renewSidIfExpired(e),
-  );
-}
+  Future<Result<FtlSensor>> fetchInfoSensors() {
+    return runWithResultRetry(
+      action: () async {
+        final sid = await getSid();
+        _service.setSid(sid);
+        final result = await _service.getInfoSensors();
+        return result.map(
+          (e) => legacy_sensors.InfoSensors.fromJson(e.toJson()).toDomain(),
+        );
+      },
+      onRetry: (_, e) => renewSidIfExpired(e),
+    );
+  }
 
-@override
-Future<Result<FtlSystem>> fetchInfoSystem() {
+  @override
+  Future<Result<FtlSystem>> fetchInfoSystem() {
     return runWithResultRetry(
       action: () async {
         final sid = await getSid();
