@@ -3,7 +3,7 @@ import 'package:pi_hole_client/data/repositories/api/v6/ftl_repository.dart';
 import 'package:pi_hole_client/data/repositories/api/v6/v6_session_cache.dart';
 import 'package:pi_hole_client/data/services/api/utils/api_exception.dart';
 import 'package:pi_hole_client/data/services/api/wrappers/pihole_v6_service.dart';
-import 'package:pihole_v6_api/pihole_v6_api.dart';
+import 'package:pihole_v6_api/pihole_v6_api.dart' hide Success;
 import 'package:result_dart/result_dart.dart';
 
 import '../../../../../testing/fakes/services/fake_pihole_v6_api_client.dart';
