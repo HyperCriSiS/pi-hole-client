@@ -1,0 +1,41 @@
+name: Diagnose generated v6 migration
+
+on:
+  push:
+    branches: [dev]
+    paths:
+      - .github/workflows/diagnose-v6-generated-migration.yaml
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y sqlite3 libsqlite3-dev
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.1'
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Prepare env file
+        run: cp .env.sample .env
+
+      - name: Generate Git commit hash
+        run: dart run tools/generate_git_commit.dart
+
+      - name: Run focused generated-v6 tests
+        run: >-
+          flutter test --reporter expanded
+          test/data/services/api/wrappers/pihole_v6_service_test.dart
+          test/data/repositories/api/v6/base_v6_sid_repository_test.dart
+          test/data/repositories/api/v6/ftl_repository_test.dart
