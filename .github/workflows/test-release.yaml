@@ -123,6 +123,9 @@ jobs:
       - name: Generate Git commit hash
         run: dart run tools/generate_git_commit.dart
 
+      - name: Prepare F-Droid-compatible native assets
+        run: dart run tools/prepare_fdroid_source_build.dart
+
       - name: Build unsigned release APK
         run: flutter build apk --release
 
