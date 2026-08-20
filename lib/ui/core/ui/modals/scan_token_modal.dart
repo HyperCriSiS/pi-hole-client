@@ -21,12 +21,31 @@ Future<void> showScanTokenModal(
     barrierDismissible: false,
     context: context,
     builder: (context) {
-      return _ScanTokenDialog(
-        onScanned: onScanned,
+      return ScanTokenModal(
+        qrScanned: onScanned,
         scannerBuilder: scannerBuilder,
       );
     },
   );
+}
+
+class ScanTokenModal extends StatelessWidget {
+  const ScanTokenModal({
+    super.key,
+    required this.qrScanned,
+    this.scannerBuilder = _buildQrScanner,
+  });
+
+  final Function(String) qrScanned;
+  final ScanTokenScannerBuilder scannerBuilder;
+
+  @override
+  Widget build(BuildContext context) {
+    return _ScanTokenDialog(
+      onScanned: qrScanned,
+      scannerBuilder: scannerBuilder,
+    );
+  }
 }
 
 class _ScanTokenDialog extends StatelessWidget {
