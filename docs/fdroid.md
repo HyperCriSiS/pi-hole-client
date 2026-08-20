@@ -23,7 +23,8 @@ flutter build apk --release
 
 The CI source-build job pins the currently supported build environment to
 Java 17 and Flutter 3.44.1 and verifies that the produced release APK is
-unsigned. `tools/prepare_fdroid_source_build.dart` modifies only that ephemeral
+unsigned. This path was validated on `3d3e3d74`: both the release build and
+the `apksigner` unsigned-artifact check completed successfully. `tools/prepare_fdroid_source_build.dart` modifies only that ephemeral
 source-build checkout so the `sqlite3` native-asset hook uses Android system
 SQLite instead of downloading a precompiled `.so` from a GitHub release. The
 normal signed release path and Windows/Linux FFI builds keep their existing
@@ -77,7 +78,7 @@ document intentionally does not invent the new product name or package ID.
 - [x] Secret-free `.env` input is available via `.env.sample`.
 - [x] Release signing is optional for clean source builds.
 - [x] Signed release builds still require the complete existing signing config.
-- [ ] Unsigned source-build CI passes on `dev`.
+- [x] Unsigned source-build CI passes on `dev` (`3d3e3d74`).
 - [x] Google ML Kit is removed from the Android QR-scanner path.
 - [x] QR token scanning has focused regression coverage after the scanner swap.
 - [x] The F-Droid source-build path avoids `sqlite3` precompiled-binary downloads.
