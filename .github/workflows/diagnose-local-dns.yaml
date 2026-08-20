@@ -30,5 +30,8 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Create test environment file
+        run: touch .env
+
       - name: Run Local DNS tests
         run: flutter test test/ui/settings/server_settings/advanced_settings/local_dns --reporter expanded
