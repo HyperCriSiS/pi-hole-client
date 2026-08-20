@@ -1,7 +1,12 @@
 name: Resolve Android 36 lockfile
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - dev
+    paths:
+      - pubspec.yaml
+      - .github/workflows/resolve-android36-lock.yaml
 
 permissions:
   contents: write
