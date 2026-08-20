@@ -33,7 +33,7 @@ The dependency update from upstream #660 also moves Dio from 5.9.2 to 5.11.0. Di
 
 | Issue | Area | Triage / next action |
 |---|---|---|
-| #639 | Pi-hole v6 API | Large refactor. Keep handwritten auth path until generated OpenAPI schema supports `totp`; migrate repository calls incrementally and add parity tests. |
+| #639 | Pi-hole v6 API | **In progress in `dev`.** `/api/info/version` is the first full-suite-validated production path on the generated OpenAPI service, preserving TLS/pinning, shared SID injection and generated-401 renewal. `/api/info/sensors` is the next parity-safe read-only migration with focused regression coverage. Keep `/api/info/client` handwritten because its generated schema omits current request metadata, and keep auth handwritten until generated `POST /auth` supports TOTP. |
 | #638 | Error UI | **Implemented in `dev`**. Twelve duplicated generic error states were migrated to the shared `ErrorMessage` component; a final repository audit found no further generic duplicates requiring migration. |
 | #636 | Android 17 connectivity | Needs device/log reproduction. Dependency refresh in #660 is relevant; collect App Log around connection/auth and verify network/TLS behavior on Android 17. |
 | #632 | App Log diagnostics | **Implemented in `dev`**. Added a shared App Log service with central secret redaction, diagnostics for connection/auth/v6 session/secure-storage failures, and persistence-result handling so password/token/SID write errors are no longer silently ignored. Added regression tests for redaction and storage/session failures. |
@@ -61,4 +61,4 @@ The dependency update from upstream #660 also moves Dio from 5.9.2 to 5.11.0. Di
 3. #632 diagnostics and #178 App Lock (implemented in `dev`).
 4. Deterministic UI/docs work (#604, #404, #638, #397) is implemented and validated; #442 is the remaining Phase 1 item and requires a fresh Android 16 reproduction before any lifecycle change.
 5. Reproduce/fix device-dependent #636, #598, #501 and #293 on current dependencies.
-6. #639/#352: larger API architecture/features; #570 is implemented and CI-validated on the verified v6 path. #134 is active: scanner compliance and the secret-free/download-free source-build path are CI-validated; resolve the required independent-fork package identity, then prepare downstream F-Droid metadata/submission.
+6. #639/#352: incremental generated-v6 migration is active; `/api/info/version` is full-suite validated and `/api/info/sensors` is the next parity-safe read-only path. #570 is complete. #134 source-build work is CI-validated but downstream submission remains blocked on the required independent-fork package identity.

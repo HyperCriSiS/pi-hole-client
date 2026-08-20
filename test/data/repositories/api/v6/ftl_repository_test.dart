@@ -16,6 +16,7 @@ class _FakePiholeV6Service extends PiholeV6Service {
     : super(api: PiholeV6Api(basePathOverride: 'http://localhost/api'));
 
   bool shouldFail = false;
+  bool shouldFailSensors = false;
   bool shouldGetInfoVersionWithDocker = false;
   bool shouldReturnUnauthorizedOnce = false;
   int getInfoVersionCallCount = 0;
@@ -39,6 +40,14 @@ class _FakePiholeV6Service extends PiholeV6Service {
         ? kSrvGetInfoVersionWithDocker
         : kSrvGetInfoVersion;
     return Success(GetVersion200Response.fromJson(fixture.toJson()));
+  }
+
+  @override
+  Future<Result<GetSensors200Response>> getInfoSensors() async {
+    if (shouldFailSensors) {
+      return Failure(Exception('Forced getInfoSensors failure'));
+    }
+    return Success(GetSensors200Response.fromJson(kSrvGetInfoSensors.toJson()));
   }
 }
 
@@ -205,31 +214,32 @@ void main() {
   });
 
   group('fetchInfoSensors', () {
-    setUp(() {
-      client = FakePiholeV6ApiClient();
-      creds = FakeSessionCredentialService();
-      service = _FakePiholeV6Service();
-      repository = FtlRepositoryV6(
-        client: client,
-        service: service,
-        sessionCache: V6SessionCache(creds: creds, client: client),
-      );
-    });
-
-    test('should fetch all sensors successfully', () async {
-      final result = await repository.fetchInfoSensors();
-      expect(result.getOrNull(), kRepoFetchFtlSensors);
-    });
-
-    test('should fail when fetching all sensors fails', () async {
-      client.shouldFail = true;
-
-      final result = await repository.fetchInfoSensors();
-      expectError(result, messageContains: 'Forced getInfoSensors failure');
-    });
+  setUp(() {
+    client = FakePiholeV6ApiClient();
+    creds = FakeSessionCredentialService();
+    service = _FakePiholeV6Service();
+    repository = FtlRepositoryV6(
+      client: client,
+      service: service,
+      sessionCache: V6SessionCache(creds: creds, client: client),
+    );
   });
 
-  group('fetchInfoSystem', () {
+  test('should fetch all sensors successfully through generated service', () async {
+    final result = await repository.fetchInfoSensors();
+    expect(result.getOrNull(), kRepoFetchFtlSensors);
+    expect(service.lastSid, 'sid123');
+  });
+
+  test('should fail when generated sensor request fails', () async {
+    service.shouldFailSensors = true;
+
+    final result = await repository.fetchInfoSensors();
+    expectError(result, messageContains: 'Forced getInfoSensors failure');
+  });
+});
+
+group('fetchInfoSystem', () {
     setUp(() {
       client = FakePiholeV6ApiClient();
       creds = FakeSessionCredentialService();
