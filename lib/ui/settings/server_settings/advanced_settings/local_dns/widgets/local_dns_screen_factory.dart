@@ -6,13 +6,15 @@ import 'package:pi_hole_client/ui/settings/server_settings/advanced_settings/loc
 
 Widget createLocalDnsScreen(RepositoryBundle bundle) {
   final localDnsRepository = bundle.localDns;
+  final CnameRepository? cnameRepository = localDnsRepository is CnameRepository
+      ? localDnsRepository as CnameRepository
+      : null;
+
   return LocalDnsScreen(
     viewModel: LocalDnsViewModel(
       localDnsRepository: localDnsRepository,
       networkRepository: bundle.network,
-      cnameRepository: localDnsRepository is CnameRepository
-          ? localDnsRepository
-          : null,
+      cnameRepository: cnameRepository,
     )..loadRecords.run(),
   );
 }
