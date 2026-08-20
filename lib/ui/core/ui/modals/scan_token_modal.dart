@@ -1,151 +1,67 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:pi_hole_client/ui/core/l10n/generated/app_localizations.dart';
+import 'package:pi_hole_client/l10n/app_localizations.dart';
 
-class ScanTokenModal extends StatefulWidget {
-  const ScanTokenModal({required this.qrScanned, super.key});
+typedef ScanTokenScannerBuilder = Widget Function(ValueChanged<String> onScanned);
 
-  final void Function(String) qrScanned;
-
-  @override
-  State<ScanTokenModal> createState() => _ScanTokenModalState();
+Widget _buildMobileScanner(ValueChanged<String> onScanned) {
+  return MobileScanner(
+    onDetect: (barcodeCapture) {
+      if (barcodeCapture.barcodes.isNotEmpty) {
+        onScanned(barcodeCapture.barcodes[0].displayValue ?? '');
+      }
+    },
+  );
 }
 
-class _ScanTokenModalState extends State<ScanTokenModal> {
-  bool scanQr = false;
+Future<void> showScanTokenModal(
+  BuildContext context,
+  Function(String) onScanned, {
+  ScanTokenScannerBuilder scannerBuilder = _buildMobileScanner,
+}) async {
+  await showDialog(
+    barrierDismissible: false,
+    context: context,
+    builder: (context) {
+      return _ScanTokenDialog(
+        onScanned: onScanned,
+        scannerBuilder: scannerBuilder,
+      );
+    },
+  );
+}
 
-  final GlobalKey qrKey = GlobalKey(debugLabel: 'QR');
-  int permission = 0;
+class _ScanTokenDialog extends StatelessWidget {
+  const _ScanTokenDialog({
+    required this.onScanned,
+    required this.scannerBuilder,
+  });
 
-  Future<dynamic> managePermission() async {
-    if (await Permission.camera.isGranted) {
-      setState(() {
-        permission = 1;
-      });
-    } else {
-      final status = await Permission.camera.request();
-      if (mounted) {
-        if (status.isGranted == false) {
-          setState(() {
-            permission = 2;
-          });
-        } else {
-          setState(() {
-            permission = 1;
-          });
-        }
-      }
-    }
-  }
-
-  @override
-  void initState() {
-    managePermission();
-    super.initState();
-  }
+  final Function(String) onScanned;
+  final ScanTokenScannerBuilder scannerBuilder;
 
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
+    final navigator = Navigator.of(context);
 
-    void handleBarcode(BarcodeCapture codes) {
-      if (codes.barcodes.isNotEmpty && codes.barcodes[0].rawValue != null) {
-        widget.qrScanned(codes.barcodes[0].rawValue!);
-        Navigator.maybePop(context);
-      }
-    }
-
-    Widget getPermissionStatus() {
-      switch (permission) {
-        case 0:
-          return SizedBox(
-            height: 170,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const CircularProgressIndicator(),
-                const SizedBox(height: 30),
-                Text(
-                  AppLocalizations.of(context)!.gettingPermission,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          );
-
-        case 1:
-          return SizedBox(
-            width: width,
-            height: width,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(28),
-              child: MobileScanner(onDetect: handleBarcode),
-            ),
-          );
-
-        case 2:
-          return Container(
-            width: double.maxFinite,
-            height: 300,
-            padding: const EdgeInsets.all(30),
-            decoration: BoxDecoration(
-              border: Border.all(
-                width: 2,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.no_photography,
-                  size: 40,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-                const SizedBox(height: 25),
-                Text(
-                  AppLocalizations.of(context)!.cameraPermission,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          );
-
-        default:
-          return const SizedBox();
-      }
+    void handleScanned(String token) {
+      navigator.pop();
+      onScanned(token);
     }
 
     return AlertDialog(
-      backgroundColor: Theme.of(context).dialogTheme.backgroundColor,
-      title: Column(
-        children: [
-          const Icon(Icons.qr_code_rounded, size: 26),
-          Padding(
-            padding: const EdgeInsets.only(top: 20),
-            child: Text(
-              AppLocalizations.of(context)!.qrScanner,
-              style: const TextStyle(fontSize: 24),
-            ),
-          ),
-        ],
+      title: Text(AppLocalizations.of(context)!.scanQrCode),
+      content: ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: SizedBox(
+          height: 250,
+          width: 250,
+          child: scannerBuilder(handleScanned),
+        ),
       ),
-      content: getPermissionStatus(),
       actions: [
         TextButton(
-          onPressed: () => Navigator.maybePop(context),
+          onPressed: () => navigator.pop(),
           child: Text(AppLocalizations.of(context)!.cancel),
         ),
       ],
