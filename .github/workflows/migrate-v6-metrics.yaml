@@ -66,10 +66,8 @@ jobs:
               raise SystemExit('Fake service flag anchor mismatch')
           s = s.replace(flag_anchor, flag_anchor + '  bool shouldFailMetrics = false;\n', 1)
 
-          method_anchor = '''  @override
-          Future<Result<GetSensors200Response>> getInfoSensors() async {
-          '''
-          metrics_method = '''  @override
+          method_pattern = r"  @override\n  Future<Result<GetSensors200Response>> getInfoSensors\(\) async \{"
+          metrics_method = """  @override
           Future<Result<GetMetricsinfo200Response>> getInfoMetrics() async {
             if (shouldFailMetrics) {
               return Failure(Exception('Forced getInfoMetrics failure'));
@@ -77,10 +75,11 @@ jobs:
             return Success(GetMetricsinfo200Response.fromJson(kSrvGetInfoMetrics.toJson()));
           }
 
-          ''' + method_anchor
-          if s.count(method_anchor) != 1:
-              raise SystemExit('Fake service sensor anchor mismatch')
-          s = s.replace(method_anchor, metrics_method, 1)
+          @override
+          Future<Result<GetSensors200Response>> getInfoSensors() async {"""
+          s, n = re.subn(method_pattern, metrics_method, s, count=1)
+          if n != 1:
+              raise SystemExit('Fake service sensor regex mismatch')
 
           metrics_pattern = r"  group\('fetchInfoMetrics', \(\) \{.*?\n  \}\);\n\n  group\('fetchInfoSensors'"
           metrics_replacement = """  group('fetchInfoMetrics', () {
