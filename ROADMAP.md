@@ -62,9 +62,12 @@ The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPS
   - [x] Make Android release signing conditional: normal signed GitHub releases still use `android/key.properties`, while clean source builds can produce an unsigned release APK without private signing material.
   - [x] Add a secret-free unsigned Android source-build smoke job to the existing release-test workflow using Java 17, Flutter 3.44.1, `.env.sample`, and the generated Git commit hash.
   - [x] Document the F-Droid source-build boundary and keep downstream `fdroiddata` metadata separate from this application repository.
-  - [ ] Replace `mobile_scanner`/Google ML Kit on Android with a FLOSS scanner backend (ZXing-class implementation) while preserving the QR token-import flow and adding focused regression coverage.
-  - [ ] Resolve package identity before an independent fork submission: this maintenance fork currently retains the upstream Android application ID, while current F-Droid policy requires a distinct application ID/name for a separately published fork.
-  - [ ] Draft and validate the downstream F-Droid build metadata after the scanner and package-identity gates are resolved.
+  - [x] Replace `mobile_scanner`/Google ML Kit on Android with a FLOSS scanner backend while preserving the QR token-import flow and focused regression coverage. The Android path now uses Flutter `camera` plus the pure-Dart `zxing2` decoder; the existing `ScanTokenModal`/navigation contract remains intact.
+  - [x] Keep the F-Droid/source-build dependency path compatible with Android compileSdk 36: constrain `flutter_secure_storage` and `permission_handler` to the last compatible majors instead of forcing an unrelated SDK/AGP migration.
+  - [x] Remove the `sqlite3` native-asset binary download from the F-Droid/unsigned Android build path by switching that isolated build checkout to Android system SQLite; regular signed/desktop builds keep their existing bundled SQLite behavior.
+  - [ ] Confirm the final unsigned source-build CI gate on the download-free path and keep the APK signature verification green.
+  - [ ] Resolve package identity before an independent fork submission: this maintenance fork currently retains `io.github.tsutsu3.pi_hole_client`; F-Droid policy requires a fork to use a fresh Android Application ID plus corresponding name, icon and translated string changes. The rename affects Gradle namespace/applicationId, the Kotlin package tree (main/debug/release/tests/widgets) and release metadata, so it must be handled as a dedicated migration.
+  - [ ] Draft and validate the downstream F-Droid build metadata after the package-identity gate is resolved.
 
 ## Validation and completion criteria
 
@@ -79,8 +82,8 @@ The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPS
 - Android 17, widget, and secure-storage items require real-device reproduction and logs before they can be considered resolved.
 - Larger v6 API work depends on preserving authentication and behavior parity during migration.
 - #570 is CI-validated for the v6 repository and Local DNS UI path; v5 CNAME parity must not be assumed because the current v5 Local DNS path is unsupported.
-- #134 source-build packaging can proceed in this repository, but F-Droid main-repository eligibility still requires replacing the Android `mobile_scanner`/Google ML Kit dependency with a FLOSS scanner backend. A separate publication of this maintenance fork also requires an application-ID/name decision before downstream metadata submission.
+- #134 scanner compliance is resolved: Android no longer uses `mobile_scanner`/Google ML Kit. The source-build path is also isolated from private signing material and from `sqlite3` precompiled-binary downloads; final CI validation of that download-free path is pending. A separate F-Droid publication of this maintenance fork still requires a fresh application ID plus corresponding name/icon/string changes before downstream metadata submission.
 
 ## Completion status
 
-**Not fully completed.** #442 remains blocked on a fresh Android 16 reproduction/current stack. #570 is implemented and CI-validated through the v6 repository and Local DNS UI layers. #134 is now the active unblocked distribution item: unsigned source-build packaging is implemented, while Android scanner compliance and package identity remain before a real F-Droid submission.
+**Not fully completed.** #442 remains blocked on a fresh Android 16 reproduction/current stack. #570 is implemented and CI-validated through the v6 repository and Local DNS UI layers. #134 is the active distribution item: secret-free unsigned packaging, Android scanner compliance and the download-free native-asset path are implemented; final source-build CI validation and the required independent-fork package identity remain before downstream F-Droid metadata can be submitted.
