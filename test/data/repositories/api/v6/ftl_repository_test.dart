@@ -16,6 +16,7 @@ class _FakePiholeV6Service extends PiholeV6Service {
     : super(api: PiholeV6Api(basePathOverride: 'http://localhost/api'));
 
   bool shouldFail = false;
+  bool shouldFailMetrics = false;
   bool shouldFailSensors = false;
   bool shouldGetInfoVersionWithDocker = false;
   bool shouldReturnUnauthorizedOnce = false;
@@ -40,6 +41,16 @@ class _FakePiholeV6Service extends PiholeV6Service {
         ? kSrvGetInfoVersionWithDocker
         : kSrvGetInfoVersion;
     return Success(GetVersion200Response.fromJson(fixture.toJson()));
+  }
+
+  @override
+  Future<Result<GetMetricsinfo200Response>> getInfoMetrics() async {
+    if (shouldFailMetrics) {
+      return Failure(Exception('Forced getInfoMetrics failure'));
+    }
+    return Success(
+      GetMetricsinfo200Response.fromJson(kSrvGetInfoMetrics.toJson()),
+    );
   }
 
   @override
@@ -200,13 +211,17 @@ void main() {
       );
     });
 
-    test('should fetch info metrics successfully', () async {
-      final result = await repository.fetchInfoMetrics();
-      expect(result.getOrNull(), kRepoFetchFtlMetrics);
-    });
+    test(
+      'should fetch info metrics successfully through generated service',
+      () async {
+        final result = await repository.fetchInfoMetrics();
+        expect(result.getOrNull(), kRepoFetchFtlMetrics);
+        expect(service.lastSid, 'sid123');
+      },
+    );
 
-    test('should fail when fetching info metrics fails', () async {
-      client.shouldFail = true;
+    test('should fail when generated metrics request fails', () async {
+      service.shouldFailMetrics = true;
 
       final result = await repository.fetchInfoMetrics();
       expectError(result, messageContains: 'Forced getInfoMetrics failure');
@@ -285,11 +300,14 @@ void main() {
       );
     });
 
-    test('should fetch info version successfully through generated service', () async {
-      final result = await repository.fetchInfoVersion();
-      expect(result.getOrNull(), kRepoFetchFtlVersion);
-      expect(service.lastSid, 'sid123');
-    });
+    test(
+      'should fetch info version successfully through generated service',
+      () async {
+        final result = await repository.fetchInfoVersion();
+        expect(result.getOrNull(), kRepoFetchFtlVersion);
+        expect(service.lastSid, 'sid123');
+      },
+    );
 
     test('should fetch info version successfully (with Docker)', () async {
       service.shouldGetInfoVersionWithDocker = true;

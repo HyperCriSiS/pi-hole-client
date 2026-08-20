@@ -1,5 +1,8 @@
 import 'package:pi_hole_client/data/mapper/v6/ftl_mapper.dart';
-import 'package:pi_hole_client/data/model/v6/ftl/sensors.dart' as legacy_sensors;
+import 'package:pi_hole_client/data/model/v6/ftl/metrics.dart'
+    as legacy_metrics;
+import 'package:pi_hole_client/data/model/v6/ftl/sensors.dart'
+    as legacy_sensors;
 import 'package:pi_hole_client/data/model/v6/ftl/version.dart' as legacy;
 import 'package:pi_hole_client/data/repositories/api/interfaces/ftl_repository.dart';
 import 'package:pi_hole_client/data/repositories/api/v6/base_v6_sid_repository.dart';
@@ -96,8 +99,11 @@ class FtlRepositoryV6 extends BaseV6SidRepository implements FtlRepository {
     return runWithResultRetry(
       action: () async {
         final sid = await getSid();
-        final result = await _client.getInfoMetrics(sid);
-        return result.map((e) => e.toDomain());
+        _service.setSid(sid);
+        final result = await _service.getInfoMetrics();
+        return result.map(
+          (e) => legacy_metrics.InfoMetrics.fromJson(e.toJson()).toDomain(),
+        );
       },
       onRetry: (_, e) => renewSidIfExpired(e),
     );
