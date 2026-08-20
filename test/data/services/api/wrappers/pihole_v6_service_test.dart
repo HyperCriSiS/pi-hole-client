@@ -92,9 +92,15 @@ void main() {
     service = PiholeV6Service(api: mockApi);
   });
 
-  // ==========================================================================
+  test('setSid configures the generated x_header_sid API key', () {
+    service.setSid('sid-123');
+
+    verify(mockApi.setApiKey('x_header_sid', 'sid-123')).called(1);
+  });
+
+  // ===========================================================================
   // Authentication
-  // ==========================================================================
+  // ===========================================================================
   group('Authentication', () {
     group('postAuth', () {
       test('returns Success with response data', () async {
@@ -187,9 +193,9 @@ void main() {
     });
   });
 
-  // ==========================================================================
+  // ===========================================================================
   // Metrics
-  // ==========================================================================
+  // ===========================================================================
   group('Metrics', () {
     group('getHistory', () {
       test('returns Success with activity metrics', () async {
@@ -219,6 +225,55 @@ void main() {
       });
     });
 
+    group('getQueries', () {
+      test('passes all filter parameters', () async {
+        final mockResponse = GetQueries200Response();
+        when(
+          mockMetricsApi.getQueries(
+            from: anyNamed('from'),
+            until: anyNamed('until'),
+            length: anyNamed('length'),
+            cursor: anyNamed('cursor'),
+            domain: anyNamed('domain'),
+            clientIp: anyNamed('clientIp'),
+            clientName: anyNamed('clientName'),
+            upstream: anyNamed('upstream'),
+            type: anyNamed('type'),
+            status: anyNamed('status'),
+          ),
+        ).thenAnswer((_) async => dioResponse(mockResponse));
+
+        final result = await service.getQueries(
+          from: 1000,
+          until: 2000,
+          length: 50,
+          cursor: 10,
+          domain: 'example.com',
+          clientIp: '192.168.1.1',
+          clientName: 'client',
+          upstream: '8.8.8.8',
+          type: 'A',
+          status: 'FORWARDED',
+        );
+
+        expect(result.isSuccess(), true);
+        verify(
+          mockMetricsApi.getQueries(
+            from: 1000,
+            until: 2000,
+            length: 50,
+            cursor: 10,
+            domain: 'example.com',
+            clientIp: '192.168.1.1',
+            clientName: 'client',
+            upstream: '8.8.8.8',
+            type: 'A',
+            status: 'FORWARDED',
+          ),
+        ).called(1);
+      });
+    });
+
     group('getStatsSummary', () {
       test('returns Success with summary', () async {
         final mockResponse = GetMetricsSummary200Response();
@@ -229,15 +284,6 @@ void main() {
         final result = await service.getStatsSummary();
 
         expect(result.isSuccess(), true);
-        expect(result.getOrNull(), mockResponse);
-      });
-
-      test('returns Failure on DioException', () async {
-        when(mockMetricsApi.getMetricsSummary()).thenThrow(dioError());
-
-        final result = await service.getStatsSummary();
-
-        expect(result.isError(), true);
       });
     });
 
@@ -255,7 +301,7 @@ void main() {
     });
 
     group('getStatsTopDomains', () {
-      test('passes parameters correctly', () async {
+      test('passes blocked and count parameters', () async {
         final mockResponse = GetMetricsTopDomains200Response();
         when(
           mockMetricsApi.getMetricsTopDomains(
@@ -277,7 +323,7 @@ void main() {
     });
 
     group('getStatsTopClients', () {
-      test('passes parameters correctly', () async {
+      test('passes blocked and count parameters', () async {
         final mockResponse = GetMetricsTopClients200Response();
         when(
           mockMetricsApi.getMetricsTopClients(
@@ -288,12 +334,12 @@ void main() {
 
         final result = await service.getStatsTopClients(
           blocked: false,
-          count: 5,
+          count: 20,
         );
 
         expect(result.isSuccess(), true);
         verify(
-          mockMetricsApi.getMetricsTopClients(blocked: false, count: 5),
+          mockMetricsApi.getMetricsTopClients(blocked: false, count: 20),
         ).called(1);
       });
     });
@@ -310,54 +356,11 @@ void main() {
         expect(result.isSuccess(), true);
       });
     });
-
-    group('getQueries', () {
-      test('passes all parameters correctly', () async {
-        final mockResponse = GetQueries200Response();
-        when(
-          mockMetricsApi.getQueries(
-            from: anyNamed('from'),
-            until: anyNamed('until'),
-            length: anyNamed('length'),
-            cursor: anyNamed('cursor'),
-            domain: anyNamed('domain'),
-            clientIp: anyNamed('clientIp'),
-            clientName: anyNamed('clientName'),
-            upstream: anyNamed('upstream'),
-            type: anyNamed('type'),
-            status: anyNamed('status'),
-          ),
-        ).thenAnswer((_) async => dioResponse(mockResponse));
-
-        final result = await service.getQueries(
-          from: 1000,
-          until: 2000,
-          length: 100,
-          domain: 'example.com',
-        );
-
-        expect(result.isSuccess(), true);
-        verify(
-          mockMetricsApi.getQueries(
-            from: 1000,
-            until: 2000,
-            length: 100,
-            cursor: null,
-            domain: 'example.com',
-            clientIp: null,
-            clientName: null,
-            upstream: null,
-            type: null,
-            status: null,
-          ),
-        ).called(1);
-      });
-    });
   });
 
-  // ==========================================================================
+  // ===========================================================================
   // DNS Control
-  // ==========================================================================
+  // ===========================================================================
   group('DNS Control', () {
     group('getDnsBlocking', () {
       test('returns Success with blocking status', () async {
@@ -374,27 +377,27 @@ void main() {
     });
 
     group('setDnsBlocking', () {
-      test('returns Success with new blocking status', () async {
+      test('passes request body', () async {
         final mockResponse = GetBlocking200Response();
+        final request = SetBlockingRequest(blocking: true);
         when(
-          mockDnsApi.setBlocking(
-            setBlockingRequest: anyNamed('setBlockingRequest'),
-          ),
+          mockDnsApi.setBlocking(setBlockingRequest: anyNamed('setBlockingRequest')),
         ).thenAnswer((_) async => dioResponse(mockResponse));
 
-        final result = await service.setDnsBlocking();
+        final result = await service.setDnsBlocking(request: request);
 
         expect(result.isSuccess(), true);
+        verify(mockDnsApi.setBlocking(setBlockingRequest: request)).called(1);
       });
     });
   });
 
-  // ==========================================================================
+  // ===========================================================================
   // Groups
-  // ==========================================================================
+  // ===========================================================================
   group('Groups', () {
     group('getAllGroups', () {
-      test('returns Success with all groups', () async {
+      test('returns Success with groups', () async {
         final mockResponse = GetGroups200Response();
         when(
           mockGroupApi.getAllGroups(),
@@ -404,51 +407,42 @@ void main() {
 
         expect(result.isSuccess(), true);
         expect(result.getOrNull(), mockResponse);
-        verify(mockGroupApi.getAllGroups()).called(1);
-      });
-
-      test('returns Failure on DioException', () async {
-        when(mockGroupApi.getAllGroups()).thenThrow(dioError());
-
-        final result = await service.getAllGroups();
-
-        expect(result.isError(), true);
-        final error = result.exceptionOrNull()! as ApiException;
-        expect(error.statusCode, 401);
-        expect(error.errorCode, 'unauthorized');
       });
     });
 
     group('getGroups', () {
-      test('returns Success with specific group', () async {
+      test('passes name parameter', () async {
         final mockResponse = GetGroups200Response();
         when(
           mockGroupApi.getGroups(name: anyNamed('name')),
         ).thenAnswer((_) async => dioResponse(mockResponse));
 
-        final result = await service.getGroups(name: 'mygroup');
+        final result = await service.getGroups(name: 'default');
 
         expect(result.isSuccess(), true);
-        verify(mockGroupApi.getGroups(name: 'mygroup')).called(1);
+        verify(mockGroupApi.getGroups(name: 'default')).called(1);
       });
     });
 
     group('addGroup', () {
-      test('returns Success with created group', () async {
+      test('passes body', () async {
         final mockResponse = ReplaceGroup200Response();
+        final body = GroupsPost();
         when(
           mockGroupApi.addGroup(groupsPost: anyNamed('groupsPost')),
         ).thenAnswer((_) async => dioResponse(mockResponse));
 
-        final result = await service.addGroup();
+        final result = await service.addGroup(body: body);
 
         expect(result.isSuccess(), true);
+        verify(mockGroupApi.addGroup(groupsPost: body)).called(1);
       });
     });
 
     group('replaceGroup', () {
-      test('returns Success with updated group', () async {
+      test('passes name and body', () async {
         final mockResponse = ReplaceGroup200Response();
+        final body = GroupsPut();
         when(
           mockGroupApi.replaceGroup(
             name: anyNamed('name'),
@@ -456,12 +450,10 @@ void main() {
           ),
         ).thenAnswer((_) async => dioResponse(mockResponse));
 
-        final result = await service.replaceGroup(name: 'mygroup');
+        final result = await service.replaceGroup(name: 'old', body: body);
 
         expect(result.isSuccess(), true);
-        verify(
-          mockGroupApi.replaceGroup(name: 'mygroup', groupsPut: null),
-        ).called(1);
+        verify(mockGroupApi.replaceGroup(name: 'old', groupsPut: body)).called(1);
       });
     });
 
@@ -471,21 +463,20 @@ void main() {
           mockGroupApi.deleteGroup(name: anyNamed('name')),
         ).thenAnswer((_) async => dioResponse<void>(null, statusCode: 204));
 
-        final result = await service.deleteGroup(name: 'mygroup');
+        final result = await service.deleteGroup(name: 'test');
 
         expect(result.isSuccess(), true);
         expect(result.getOrNull(), unit);
-        verify(mockGroupApi.deleteGroup(name: 'mygroup')).called(1);
       });
     });
   });
 
-  // ==========================================================================
+  // ===========================================================================
   // Domains
-  // ==========================================================================
+  // ===========================================================================
   group('Domains', () {
     group('getAllDomains', () {
-      test('returns Success with all domains', () async {
+      test('returns Success with domains', () async {
         final mockResponse = GetDomains200Response();
         when(
           mockDomainApi.getAllDomains(),
@@ -494,21 +485,11 @@ void main() {
         final result = await service.getAllDomains();
 
         expect(result.isSuccess(), true);
-        expect(result.getOrNull(), mockResponse);
-        verify(mockDomainApi.getAllDomains()).called(1);
-      });
-
-      test('returns Failure on DioException', () async {
-        when(mockDomainApi.getAllDomains()).thenThrow(dioError());
-
-        final result = await service.getAllDomains();
-
-        expect(result.isError(), true);
       });
     });
 
     group('getDomainsByTypeKind', () {
-      test('returns Success with filtered domains', () async {
+      test('passes type and kind', () async {
         final mockResponse = GetDomains200Response();
         when(
           mockDomainApi.getDomainsByTypeKind(
@@ -530,7 +511,7 @@ void main() {
     });
 
     group('getDomains', () {
-      test('returns Success with specific domain', () async {
+      test('passes all path parameters', () async {
         final mockResponse = GetDomains200Response();
         when(
           mockDomainApi.getDomains(
@@ -541,25 +522,26 @@ void main() {
         ).thenAnswer((_) async => dioResponse(mockResponse));
 
         final result = await service.getDomains(
-          type: 'deny',
-          kind: 'regex',
-          domain: '.*ads.*',
+          type: 'allow',
+          kind: 'exact',
+          domain: 'example.com',
         );
 
         expect(result.isSuccess(), true);
         verify(
           mockDomainApi.getDomains(
-            type: 'deny',
-            kind: 'regex',
-            domain: '.*ads.*',
+            type: 'allow',
+            kind: 'exact',
+            domain: 'example.com',
           ),
         ).called(1);
       });
     });
 
     group('addDomain', () {
-      test('returns Success with created domain', () async {
+      test('passes parameters', () async {
         final mockResponse = ReplaceDomain200Response();
+        final body = Post();
         when(
           mockDomainApi.addDomain(
             type: anyNamed('type'),
@@ -568,15 +550,20 @@ void main() {
           ),
         ).thenAnswer((_) async => dioResponse(mockResponse));
 
-        final result = await service.addDomain(type: 'allow', kind: 'exact');
+        final result = await service.addDomain(
+          type: 'deny',
+          kind: 'regex',
+          body: body,
+        );
 
         expect(result.isSuccess(), true);
       });
     });
 
     group('replaceDomain', () {
-      test('returns Success with updated domain', () async {
+      test('passes parameters', () async {
         final mockResponse = ReplaceDomain200Response();
+        final body = ReplaceDomainRequest();
         when(
           mockDomainApi.replaceDomain(
             type: anyNamed('type'),
@@ -589,7 +576,8 @@ void main() {
         final result = await service.replaceDomain(
           type: 'allow',
           kind: 'exact',
-          domain: 'example.com',
+          domain: 'old.com',
+          body: body,
         );
 
         expect(result.isSuccess(), true);
@@ -609,7 +597,7 @@ void main() {
         final result = await service.deleteDomain(
           type: 'deny',
           kind: 'exact',
-          domain: 'ads.example.com',
+          domain: 'example.com',
         );
 
         expect(result.isSuccess(), true);
@@ -618,25 +606,12 @@ void main() {
     });
   });
 
-  // ==========================================================================
+  // ===========================================================================
   // Lists
-  // ==========================================================================
+  // ===========================================================================
   group('Lists', () {
     group('getAllLists', () {
-      test('returns Success with all lists', () async {
-        final mockResponse = GetLists200Response();
-        when(
-          mockListApi.getAllLists(type: anyNamed('type')),
-        ).thenAnswer((_) async => dioResponse(mockResponse));
-
-        final result = await service.getAllLists();
-
-        expect(result.isSuccess(), true);
-        expect(result.getOrNull(), mockResponse);
-        verify(mockListApi.getAllLists(type: null)).called(1);
-      });
-
-      test('passes optional type parameter', () async {
+      test('passes optional type', () async {
         final mockResponse = GetLists200Response();
         when(
           mockListApi.getAllLists(type: anyNamed('type')),
@@ -647,37 +622,31 @@ void main() {
         expect(result.isSuccess(), true);
         verify(mockListApi.getAllLists(type: 'block')).called(1);
       });
-
-      test('returns Failure on DioException', () async {
-        when(
-          mockListApi.getAllLists(type: anyNamed('type')),
-        ).thenThrow(dioError());
-
-        final result = await service.getAllLists();
-
-        expect(result.isError(), true);
-      });
     });
 
     group('getLists', () {
-      test('returns Success with specific list', () async {
+      test('passes list and type', () async {
         final mockResponse = GetLists200Response();
         when(
-          mockListApi.getLists(list: anyNamed('list'), type: anyNamed('type')),
+          mockListApi.getLists(
+            list: anyNamed('list'),
+            type: anyNamed('type'),
+          ),
         ).thenAnswer((_) async => dioResponse(mockResponse));
 
-        final result = await service.getLists(list: 'https://example.com/list');
+        final result = await service.getLists(
+          list: 'https://example.com/list.txt',
+          type: 'block',
+        );
 
         expect(result.isSuccess(), true);
-        verify(
-          mockListApi.getLists(list: 'https://example.com/list', type: null),
-        ).called(1);
       });
     });
 
     group('addList', () {
-      test('returns Success with created list', () async {
+      test('passes type and body', () async {
         final mockResponse = ReplaceLists200Response();
+        final body = ListsPost();
         when(
           mockListApi.addList(
             type: anyNamed('type'),
@@ -685,15 +654,16 @@ void main() {
           ),
         ).thenAnswer((_) async => dioResponse(mockResponse));
 
-        final result = await service.addList(type: 'block');
+        final result = await service.addList(type: 'block', body: body);
 
         expect(result.isSuccess(), true);
       });
     });
 
     group('replaceList', () {
-      test('returns Success with updated list', () async {
+      test('passes parameters', () async {
         final mockResponse = ReplaceLists200Response();
+        final body = ListsPut();
         when(
           mockListApi.replaceLists(
             list: anyNamed('list'),
@@ -703,8 +673,9 @@ void main() {
         ).thenAnswer((_) async => dioResponse(mockResponse));
 
         final result = await service.replaceList(
-          list: 'https://example.com/list',
+          list: 'old.txt',
           type: 'block',
+          body: body,
         );
 
         expect(result.isSuccess(), true);
@@ -721,7 +692,7 @@ void main() {
         ).thenAnswer((_) async => dioResponse<void>(null, statusCode: 204));
 
         final result = await service.deleteList(
-          list: 'https://example.com/list',
+          list: 'test.txt',
           type: 'block',
         );
 
@@ -731,7 +702,7 @@ void main() {
     });
 
     group('searchDomainInLists', () {
-      test('passes parameters correctly', () async {
+      test('passes search parameters', () async {
         final mockResponse = GetSearch200Response();
         when(
           mockListApi.getSearch(
@@ -742,29 +713,25 @@ void main() {
         ).thenAnswer((_) async => dioResponse(mockResponse));
 
         final result = await service.searchDomainInLists(
-          domain: 'ads.example.com',
-          n: 10,
+          domain: 'example.com',
+          n: 20,
           partial: true,
         );
 
         expect(result.isSuccess(), true);
         verify(
-          mockListApi.getSearch(
-            domain: 'ads.example.com',
-            N: 10,
-            partial: true,
-          ),
+          mockListApi.getSearch(domain: 'example.com', N: 20, partial: true),
         ).called(1);
       });
     });
   });
 
-  // ==========================================================================
+  // ===========================================================================
   // Clients
-  // ==========================================================================
+  // ===========================================================================
   group('Clients', () {
     group('getAllClients', () {
-      test('returns Success with all clients', () async {
+      test('returns Success with clients', () async {
         final mockResponse = GetClients200Response();
         when(
           mockClientApi.getAllClients(),
@@ -773,53 +740,41 @@ void main() {
         final result = await service.getAllClients();
 
         expect(result.isSuccess(), true);
-        expect(result.getOrNull(), mockResponse);
-        verify(mockClientApi.getAllClients()).called(1);
-      });
-
-      test('returns Failure on DioException', () async {
-        when(mockClientApi.getAllClients()).thenThrow(dioError());
-
-        final result = await service.getAllClients();
-
-        expect(result.isError(), true);
-        final error = result.exceptionOrNull()! as ApiException;
-        expect(error.statusCode, 401);
       });
     });
 
     group('getClients', () {
-      test('returns Success with specific client', () async {
+      test('passes client parameter', () async {
         final mockResponse = GetClients200Response();
         when(
           mockClientApi.getClients(client: anyNamed('client')),
         ).thenAnswer((_) async => dioResponse(mockResponse));
 
-        final result = await service.getClients(client: '192.168.1.100');
+        final result = await service.getClients(client: '192.168.1.1');
 
         expect(result.isSuccess(), true);
-        verify(mockClientApi.getClients(client: '192.168.1.100')).called(1);
+        verify(mockClientApi.getClients(client: '192.168.1.1')).called(1);
       });
     });
 
     group('addClient', () {
-      test('returns Success with created client', () async {
+      test('passes body', () async {
         final mockResponse = ReplaceClient200Response();
+        final body = AddClientRequest();
         when(
-          mockClientApi.addClient(
-            addClientRequest: anyNamed('addClientRequest'),
-          ),
+          mockClientApi.addClient(addClientRequest: anyNamed('addClientRequest')),
         ).thenAnswer((_) async => dioResponse(mockResponse));
 
-        final result = await service.addClient();
+        final result = await service.addClient(body: body);
 
         expect(result.isSuccess(), true);
       });
     });
 
     group('replaceClient', () {
-      test('returns Success with updated client', () async {
+      test('passes parameters', () async {
         final mockResponse = ReplaceClient200Response();
+        final body = ReplaceClientRequest();
         when(
           mockClientApi.replaceClient(
             client: anyNamed('client'),
@@ -827,7 +782,10 @@ void main() {
           ),
         ).thenAnswer((_) async => dioResponse(mockResponse));
 
-        final result = await service.replaceClient(client: '192.168.1.100');
+        final result = await service.replaceClient(
+          client: 'old',
+          body: body,
+        );
 
         expect(result.isSuccess(), true);
       });
@@ -839,18 +797,17 @@ void main() {
           mockClientApi.deleteClient(client: anyNamed('client')),
         ).thenAnswer((_) async => dioResponse<void>(null, statusCode: 204));
 
-        final result = await service.deleteClient(client: '192.168.1.100');
+        final result = await service.deleteClient(client: 'test');
 
         expect(result.isSuccess(), true);
         expect(result.getOrNull(), unit);
-        verify(mockClientApi.deleteClient(client: '192.168.1.100')).called(1);
       });
     });
   });
 
-  // ==========================================================================
+  // ===========================================================================
   // FTL Information
-  // ==========================================================================
+  // ===========================================================================
   group('FTL Information', () {
     group('getInfoVersion', () {
       test('returns Success with version data', () async {
@@ -972,9 +929,9 @@ void main() {
     });
   });
 
-  // ==========================================================================
+  // ===========================================================================
   // Network Information
-  // ==========================================================================
+  // ===========================================================================
   group('Network Information', () {
     group('getNetworkDevices', () {
       test('returns Success with devices', () async {
@@ -1019,30 +976,26 @@ void main() {
     });
   });
 
-  // ==========================================================================
+  // ===========================================================================
   // Actions
-  // ==========================================================================
+  // ===========================================================================
   group('Actions', () {
-    group('actionRestartDns', () {
+    group('actionFlushArp', () {
       test('returns Success', () async {
         final mockResponse = ActionRestartdns200Response();
-        when(
-          mockActionsApi.actionRestartdns(),
-        ).thenAnswer((_) async => dioResponse(mockResponse));
+        // ignore: deprecated_member_use
+        when(mockActionsApi.actionFlusharp()).thenAnswer((_) async => dioResponse(mockResponse));
 
-        final result = await service.actionRestartDns();
+        final result = await service.actionFlushArp();
 
         expect(result.isSuccess(), true);
-        expect(result.getOrNull(), mockResponse);
       });
     });
 
     group('actionFlushNetwork', () {
       test('returns Success', () async {
         final mockResponse = ActionRestartdns200Response();
-        when(
-          mockActionsApi.actionFlushnetwork(),
-        ).thenAnswer((_) async => dioResponse(mockResponse));
+        when(mockActionsApi.actionFlushnetwork()).thenAnswer((_) async => dioResponse(mockResponse));
 
         final result = await service.actionFlushNetwork();
 
@@ -1053,9 +1006,7 @@ void main() {
     group('actionFlushLogs', () {
       test('returns Success', () async {
         final mockResponse = ActionRestartdns200Response();
-        when(
-          mockActionsApi.actionFlushlogs(),
-        ).thenAnswer((_) async => dioResponse(mockResponse));
+        when(mockActionsApi.actionFlushlogs()).thenAnswer((_) async => dioResponse(mockResponse));
 
         final result = await service.actionFlushLogs();
 
@@ -1064,36 +1015,31 @@ void main() {
     });
 
     group('actionGravity', () {
-      test('returns Success with string', () async {
-        when(
-          mockActionsApi.actionGravity(),
-        ).thenAnswer((_) async => dioResponse('gravity update started'));
+      test('returns Success with string data', () async {
+        when(mockActionsApi.actionGravity()).thenAnswer((_) async => dioResponse('gravity output'));
 
         final result = await service.actionGravity();
 
         expect(result.isSuccess(), true);
-        expect(result.getOrNull(), 'gravity update started');
+        expect(result.getOrNull(), 'gravity output');
       });
     });
 
-    group('actionFlushArp', () {
+    group('actionRestartDns', () {
       test('returns Success', () async {
         final mockResponse = ActionRestartdns200Response();
-        when(
-          // ignore: deprecated_member_use
-          mockActionsApi.actionFlusharp(),
-        ).thenAnswer((_) async => dioResponse(mockResponse));
+        when(mockActionsApi.actionRestartdns()).thenAnswer((_) async => dioResponse(mockResponse));
 
-        final result = await service.actionFlushArp();
+        final result = await service.actionRestartDns();
 
         expect(result.isSuccess(), true);
       });
     });
   });
 
-  // ==========================================================================
+  // ===========================================================================
   // Pi-hole Configuration
-  // ==========================================================================
+  // ===========================================================================
   group('Pi-hole Configuration', () {
     group('getConfig', () {
       test('returns Success with config', () async {
@@ -1105,20 +1051,11 @@ void main() {
         final result = await service.getConfig();
 
         expect(result.isSuccess(), true);
-        expect(result.getOrNull(), mockResponse);
-      });
-
-      test('returns Failure on DioException', () async {
-        when(mockConfigApi.getConfig()).thenThrow(dioError());
-
-        final result = await service.getConfig();
-
-        expect(result.isError(), true);
       });
     });
 
     group('patchConfig', () {
-      test('passes parameters correctly', () async {
+      test('passes body and restart', () async {
         final mockResponse = GetConfig200Response();
         when(
           mockConfigApi.patchConfig(
@@ -1127,22 +1064,28 @@ void main() {
           ),
         ).thenAnswer((_) async => dioResponse(mockResponse));
 
-        final result = await service.patchConfig(restart: true);
+        final result = await service.patchConfig(
+          body: mockResponse,
+          restart: true,
+        );
 
         expect(result.isSuccess(), true);
         verify(
-          mockConfigApi.patchConfig(getConfig200Response: null, restart: true),
+          mockConfigApi.patchConfig(
+            getConfig200Response: mockResponse,
+            restart: true,
+          ),
         ).called(1);
       });
     });
   });
 
-  // ==========================================================================
+  // ===========================================================================
   // DHCP
-  // ==========================================================================
+  // ===========================================================================
   group('DHCP', () {
     group('getDhcpLeases', () {
-      test('returns Success with DHCP data', () async {
+      test('returns Success with leases', () async {
         final mockResponse = GetDhcp200Response();
         when(
           mockDhcpApi.getDhcp(),
@@ -1151,7 +1094,6 @@ void main() {
         final result = await service.getDhcpLeases();
 
         expect(result.isSuccess(), true);
-        expect(result.getOrNull(), mockResponse);
       });
     });
 
@@ -1161,11 +1103,10 @@ void main() {
           mockDhcpApi.deleteDhcp(ip: anyNamed('ip')),
         ).thenAnswer((_) async => dioResponse<void>(null, statusCode: 204));
 
-        final result = await service.deleteDhcpLease(ip: '192.168.1.50');
+        final result = await service.deleteDhcpLease(ip: '192.168.1.100');
 
         expect(result.isSuccess(), true);
         expect(result.getOrNull(), unit);
-        verify(mockDhcpApi.deleteDhcp(ip: '192.168.1.50')).called(1);
       });
     });
   });

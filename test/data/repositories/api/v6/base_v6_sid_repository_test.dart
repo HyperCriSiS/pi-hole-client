@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pi_hole_client/data/repositories/api/v6/base_v6_sid_repository.dart';
 import 'package:pi_hole_client/data/repositories/api/v6/v6_session_cache.dart';
+import 'package:pi_hole_client/data/services/api/utils/api_exception.dart';
 import 'package:pi_hole_client/utils/exceptions.dart';
 
 import '../../../../../testing/fakes/services/fake_pihole_v6_api_client.dart';
@@ -33,6 +34,13 @@ void main() {
 
     test('calls clearAndRenewSid when error is SidNotFoundException', () async {
       await repo.renewSidIfExpired(SidNotFoundException());
+      expect(client.postAuthCallCount, 1);
+    });
+
+    test('calls clearAndRenewSid for generated-client 401 errors', () async {
+      await repo.renewSidIfExpired(
+        ApiException(message: 'Unauthorized', statusCode: 401),
+      );
       expect(client.postAuthCallCount, 1);
     });
 

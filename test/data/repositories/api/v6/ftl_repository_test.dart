@@ -1,23 +1,61 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pi_hole_client/data/repositories/api/v6/ftl_repository.dart';
 import 'package:pi_hole_client/data/repositories/api/v6/v6_session_cache.dart';
+import 'package:pi_hole_client/data/services/api/utils/api_exception.dart';
+import 'package:pi_hole_client/data/services/api/wrappers/pihole_v6_service.dart';
+import 'package:pihole_v6_api/pihole_v6_api.dart';
+import 'package:result_dart/result_dart.dart';
 
 import '../../../../../testing/fakes/services/fake_pihole_v6_api_client.dart';
 import '../../../../../testing/fakes/services/fake_session_credential_service.dart';
 import '../../../../../testing/helper/test_helper.dart';
 import '../../../../../testing/models/v6/ftl.dart';
 
+class _FakePiholeV6Service extends PiholeV6Service {
+  _FakePiholeV6Service()
+    : super(api: PiholeV6Api(basePathOverride: 'http://localhost/api'));
+
+  bool shouldFail = false;
+  bool shouldGetInfoVersionWithDocker = false;
+  bool shouldReturnUnauthorizedOnce = false;
+  int getInfoVersionCallCount = 0;
+  String? lastSid;
+
+  @override
+  void setSid(String sid) {
+    lastSid = sid;
+  }
+
+  @override
+  Future<Result<GetVersion200Response>> getInfoVersion() async {
+    getInfoVersionCallCount++;
+    if (shouldReturnUnauthorizedOnce && getInfoVersionCallCount == 1) {
+      return Failure(ApiException(message: 'Unauthorized', statusCode: 401));
+    }
+    if (shouldFail) {
+      return Failure(Exception('Forced getInfoVersion failure'));
+    }
+    final fixture = shouldGetInfoVersionWithDocker
+        ? kSrvGetInfoVersionWithDocker
+        : kSrvGetInfoVersion;
+    return Success(GetVersion200Response.fromJson(fixture.toJson()));
+  }
+}
+
 void main() {
   late FtlRepositoryV6 repository;
   late FakePiholeV6ApiClient client;
   late FakeSessionCredentialService creds;
+  late _FakePiholeV6Service service;
 
   group('fetchInfoClient', () {
     setUp(() {
       client = FakePiholeV6ApiClient();
       creds = FakeSessionCredentialService();
+      service = _FakePiholeV6Service();
       repository = FtlRepositoryV6(
         client: client,
+        service: service,
         sessionCache: V6SessionCache(creds: creds, client: client),
       );
     });
@@ -39,8 +77,10 @@ void main() {
     setUp(() {
       client = FakePiholeV6ApiClient();
       creds = FakeSessionCredentialService();
+      service = _FakePiholeV6Service();
       repository = FtlRepositoryV6(
         client: client,
+        service: service,
         sessionCache: V6SessionCache(creds: creds, client: client),
       );
     });
@@ -68,8 +108,10 @@ void main() {
     setUp(() {
       client = FakePiholeV6ApiClient();
       creds = FakeSessionCredentialService();
+      service = _FakePiholeV6Service();
       repository = FtlRepositoryV6(
         client: client,
+        service: service,
         sessionCache: V6SessionCache(creds: creds, client: client),
       );
     });
@@ -91,8 +133,10 @@ void main() {
     setUp(() {
       client = FakePiholeV6ApiClient();
       creds = FakeSessionCredentialService();
+      service = _FakePiholeV6Service();
       repository = FtlRepositoryV6(
         client: client,
+        service: service,
         sessionCache: V6SessionCache(creds: creds, client: client),
       );
     });
@@ -114,8 +158,10 @@ void main() {
     setUp(() {
       client = FakePiholeV6ApiClient();
       creds = FakeSessionCredentialService();
+      service = _FakePiholeV6Service();
       repository = FtlRepositoryV6(
         client: client,
+        service: service,
         sessionCache: V6SessionCache(creds: creds, client: client),
       );
     });
@@ -137,8 +183,10 @@ void main() {
     setUp(() {
       client = FakePiholeV6ApiClient();
       creds = FakeSessionCredentialService();
+      service = _FakePiholeV6Service();
       repository = FtlRepositoryV6(
         client: client,
+        service: service,
         sessionCache: V6SessionCache(creds: creds, client: client),
       );
     });
@@ -160,8 +208,10 @@ void main() {
     setUp(() {
       client = FakePiholeV6ApiClient();
       creds = FakeSessionCredentialService();
+      service = _FakePiholeV6Service();
       repository = FtlRepositoryV6(
         client: client,
+        service: service,
         sessionCache: V6SessionCache(creds: creds, client: client),
       );
     });
@@ -183,8 +233,10 @@ void main() {
     setUp(() {
       client = FakePiholeV6ApiClient();
       creds = FakeSessionCredentialService();
+      service = _FakePiholeV6Service();
       repository = FtlRepositoryV6(
         client: client,
+        service: service,
         sessionCache: V6SessionCache(creds: creds, client: client),
       );
     });
@@ -212,25 +264,39 @@ void main() {
     setUp(() {
       client = FakePiholeV6ApiClient();
       creds = FakeSessionCredentialService();
+      service = _FakePiholeV6Service();
       repository = FtlRepositoryV6(
         client: client,
+        service: service,
         sessionCache: V6SessionCache(creds: creds, client: client),
       );
     });
 
-    test('should fetch info version successfully', () async {
+    test('should fetch info version successfully through generated service', () async {
       final result = await repository.fetchInfoVersion();
       expect(result.getOrNull(), kRepoFetchFtlVersion);
+      expect(service.lastSid, 'sid123');
     });
 
     test('should fetch info version successfully (with Docker)', () async {
-      client.shouldGetInfoVersionWithDocker = true;
+      service.shouldGetInfoVersionWithDocker = true;
       final result = await repository.fetchInfoVersion();
       expect(result.getOrNull(), kRepoFetchFtlVersionWithDocker);
     });
 
+    test('renews SID and retries generated service after 401', () async {
+      service.shouldReturnUnauthorizedOnce = true;
+
+      final result = await repository.fetchInfoVersion();
+
+      expect(result.getOrNull(), kRepoFetchFtlVersion);
+      expect(client.postAuthCallCount, 1);
+      expect(service.getInfoVersionCallCount, 2);
+      expect(service.lastSid, 'n9n9f6c3umrumfq2ese1lvu2pg');
+    });
+
     test('should fail when fetching info version fails', () async {
-      client.shouldFail = true;
+      service.shouldFail = true;
 
       final result = await repository.fetchInfoVersion();
       expectError(result, messageContains: 'Forced getInfoVersion failure');
@@ -241,8 +307,10 @@ void main() {
     setUp(() {
       client = FakePiholeV6ApiClient();
       creds = FakeSessionCredentialService();
+      service = _FakePiholeV6Service();
       repository = FtlRepositoryV6(
         client: client,
+        service: service,
         sessionCache: V6SessionCache(creds: creds, client: client),
       );
     });

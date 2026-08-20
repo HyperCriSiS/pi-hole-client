@@ -1,4 +1,7 @@
+import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
 import 'package:pi_hole_client/data/services/api/utils/safe_dio_call.dart';
+import 'package:pi_hole_client/utils/misc.dart';
 import 'package:pihole_v6_api/pihole_v6_api.dart';
 import 'package:result_dart/result_dart.dart';
 
@@ -17,7 +20,36 @@ import 'package:result_dart/result_dart.dart';
 class PiholeV6Service {
   PiholeV6Service({required PiholeV6Api api}) : _api = api;
 
+  factory PiholeV6Service.fromConnection({
+    required String url,
+    bool allowUntrustedCert = true,
+    bool ignoreCertificateErrors = false,
+    String? pinnedCertificateSha256,
+  }) {
+    final normalizedUrl = url.replaceFirst(RegExp(r'/+$'), '');
+    final dio = Dio(
+      BaseOptions(
+        baseUrl: '$normalizedUrl/api',
+        connectTimeout: const Duration(milliseconds: 5000),
+        receiveTimeout: const Duration(milliseconds: 3000),
+      ),
+    );
+    dio.httpClientAdapter = IOHttpClientAdapter(
+      createHttpClient: () => createHttpClient(
+        allowUntrustedCert: allowUntrustedCert,
+        ignoreCertificateErrors: ignoreCertificateErrors,
+        pinnedCertificateSha256: pinnedCertificateSha256,
+      ),
+    );
+
+    return PiholeV6Service(api: PiholeV6Api(dio: dio));
+  }
+
   final PiholeV6Api _api;
+
+  void setSid(String sid) {
+    _api.setApiKey('x_header_sid', sid);
+  }
 
   // Lazy API instances
   late final _authApi = _api.getAuthenticationApi();
@@ -33,9 +65,9 @@ class PiholeV6Service {
   late final _networkApi = _api.getNetworkInformationApi();
   late final _configApi = _api.getPiHoleConfigurationApi();
 
-  // ==========================================================================
+  // ===========================================================================
   // Authentication
-  // ==========================================================================
+  // ===========================================================================
 
   Future<Result<GetAuth200Response>> postAuth({required String password}) {
     return safeDioCall(() async {
@@ -74,9 +106,9 @@ class PiholeV6Service {
     });
   }
 
-  // ==========================================================================
+  // ===========================================================================
   // Metrics
-  // ==========================================================================
+  // ===========================================================================
 
   Future<Result<GetActivityMetrics200Response>> getHistory() {
     return safeDioCall(() async {
@@ -168,9 +200,9 @@ class PiholeV6Service {
     });
   }
 
-  // ==========================================================================
+  // ===========================================================================
   // DNS Control
-  // ==========================================================================
+  // ===========================================================================
 
   Future<Result<GetBlocking200Response>> getDnsBlocking() {
     return safeDioCall(() async {
@@ -188,9 +220,9 @@ class PiholeV6Service {
     });
   }
 
-  // ==========================================================================
+  // ===========================================================================
   // Groups
-  // ==========================================================================
+  // ===========================================================================
 
   Future<Result<GetGroups200Response>> getAllGroups() {
     return safeDioCall(() async {
@@ -233,9 +265,9 @@ class PiholeV6Service {
     });
   }
 
-  // ==========================================================================
+  // ===========================================================================
   // Domains
-  // ==========================================================================
+  // ===========================================================================
 
   Future<Result<GetDomains200Response>> getAllDomains() {
     return safeDioCall(() async {
@@ -315,9 +347,9 @@ class PiholeV6Service {
     });
   }
 
-  // ==========================================================================
+  // ===========================================================================
   // Lists (Adlists/Subscriptions)
-  // ==========================================================================
+  // ===========================================================================
 
   Future<Result<GetLists200Response>> getAllLists({String? type}) {
     return safeDioCall(() async {
@@ -386,9 +418,9 @@ class PiholeV6Service {
     });
   }
 
-  // ==========================================================================
+  // ===========================================================================
   // Clients
-  // ==========================================================================
+  // ===========================================================================
 
   Future<Result<GetClients200Response>> getAllClients() {
     return safeDioCall(() async {
@@ -431,9 +463,9 @@ class PiholeV6Service {
     });
   }
 
-  // ==========================================================================
+  // ===========================================================================
   // FTL Information
-  // ==========================================================================
+  // ===========================================================================
 
   Future<Result<GetClient200Response>> getInfoClient() {
     return safeDioCall(() async {
@@ -498,9 +530,9 @@ class PiholeV6Service {
     });
   }
 
-  // ==========================================================================
+  // ===========================================================================
   // Network Information
-  // ==========================================================================
+  // ===========================================================================
 
   Future<Result<GetNetwork200Response>> getNetworkDevices() {
     return safeDioCall(() async {
@@ -523,9 +555,9 @@ class PiholeV6Service {
     });
   }
 
-  // ==========================================================================
+  // ===========================================================================
   // Actions
-  // ==========================================================================
+  // ===========================================================================
 
   Future<Result<ActionRestartdns200Response>> actionFlushArp() {
     return safeDioCall(() async {
@@ -563,9 +595,9 @@ class PiholeV6Service {
     });
   }
 
-  // ==========================================================================
+  // ===========================================================================
   // Pi-hole Configuration
-  // ==========================================================================
+  // ===========================================================================
 
   Future<Result<GetConfig200Response>> getConfig() {
     return safeDioCall(() async {
@@ -587,9 +619,9 @@ class PiholeV6Service {
     });
   }
 
-  // ==========================================================================
+  // ===========================================================================
   // DHCP
-  // ==========================================================================
+  // ===========================================================================
 
   Future<Result<GetDhcp200Response>> getDhcpLeases() {
     return safeDioCall(() async {
