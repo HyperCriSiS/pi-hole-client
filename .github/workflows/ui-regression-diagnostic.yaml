@@ -1,8 +1,10 @@
-name: Full Test Regression Diagnostic
+name: Focused PR Test Diagnostic
 
 on:
   push:
     branches: [dev]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 jobs:
@@ -26,46 +28,14 @@ jobs:
         run: flutter pub get
 
       - name: Prepare env file
-        run: printf 'SENTRY_DSN=\n' > .env
+        run: cp .env.sample .env
 
-      - name: Run full test suite and print failure context
-        shell: bash
+      - name: Generate Git commit hash
+        run: dart run tools/generate_git_commit.dart
+
+      - name: Run focused failing tests
         run: |
-          set +e
-          flutter test test --reporter expanded > /tmp/tests.log 2>&1
-          status=$?
-          set -e
-          if [ "$status" -ne 0 ]; then
-            echo '=== Full-suite failure context ==='
-            python3 - <<'PY'
-          from pathlib import Path
-
-          lines = Path('/tmp/tests.log').read_text(errors='replace').splitlines()
-          needles = (
-              'Expected:',
-              'Actual:',
-              'TestFailure',
-              'EXCEPTION CAUGHT',
-              'Some tests failed',
-              'Test failed',
-          )
-          matches = [i for i, line in enumerate(lines) if any(n in line for n in needles)]
-          windows = []
-          for index in matches:
-              start = max(0, index - 40)
-              end = min(len(lines), index + 81)
-              if windows and start <= windows[-1][1]:
-                  windows[-1] = (windows[-1][0], max(windows[-1][1], end))
-              else:
-                  windows.append((start, end))
-          if not windows:
-              windows = [(max(0, len(lines) - 350), len(lines))]
-          for n, (start, end) in enumerate(windows, 1):
-              print(f'--- failure window {n} (lines {start + 1}-{end}) ---')
-              for line in lines[start:end]:
-                  print(line)
-          PY
-          else
-            echo 'All tests passed.'
-          fi
-          exit "$status"
+          flutter test --reporter expanded \
+            test/ui/settings/about/about_screens_test.dart \
+            test/ui/shell/base_test.dart \
+            test/ui/shell/pi_hole_client_test.dart
