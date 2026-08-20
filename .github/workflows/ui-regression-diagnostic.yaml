@@ -1,0 +1,42 @@
+name: UI Regression Diagnostic
+
+on:
+  workflow_dispatch:
+
+jobs:
+  ui-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y libsqlite3-0 libsqlite3-dev
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.1'
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Prepare env file
+        run: printf 'SENTRY_DSN=\n' > .env
+
+      - name: Run UI tests and print only failure context
+        shell: bash
+        run: |
+          set +e
+          flutter test test/ui --reporter expanded > /tmp/ui-tests.log 2>&1
+          status=$?
+          set -e
+          if [ "$status" -ne 0 ]; then
+            echo '=== UI failure context ==='
+            grep -n -E -B 20 -A 60 'Expected:|Actual:|TestFailure|EXCEPTION CAUGHT|Some tests failed|Test failed' /tmp/ui-tests.log || tail -n 300 /tmp/ui-tests.log
+          else
+            echo 'All UI tests passed.'
+          fi
+          exit "$status"
