@@ -8,7 +8,7 @@ This file tracks the open upstream pull requests and issues reviewed while maint
 
 | Upstream | Topic | Dev status | Notes |
 |---|---|---|---|
-| #660 | Dart/Flutter dependency group update | Imported | Upstream test job passes. Imported into `dev` through fork PR #1. Includes Dio 5.11.0 and flutter_secure_storage 11.0.0 among other updates. |
+| #660 | Dart/Flutter dependency group update | Imported with compatibility adjustment | Upstream test job passes and the dependency group was imported into `dev` through fork PR #1. The later F-Droid Android release-build gate showed that `flutter_secure_storage` 11.x and `permission_handler` 13.x require compileSdk 37, so those two direct dependencies are intentionally constrained to the last Android-36-compatible majors while the rest of the imported update remains. |
 | #659 | actions/setup-node v6 -> v7 | Imported | Applied directly to both docs workflows. Upstream test/deploy checks pass; upstream Sonar is unrelated/failing. |
 | #646 | TLS certificate inspection/cache refactor | Hold / rework | Upstream PR is still a draft, based on an older `main`, with coverage gates failing. Do not merge wholesale. Rebase/rework before adoption. |
 | #484 | ESLint 8 -> 9 | Hold / fix first | Upstream website deployment check fails. Requires ESLint/Docusaurus compatibility work before import. |
@@ -39,7 +39,7 @@ The dependency update from upstream #660 also moves Dio from 5.9.2 to 5.11.0. Di
 | #632 | App Log diagnostics | **Implemented in `dev`**. Added a shared App Log service with central secret redaction, diagnostics for connection/auth/v6 session/secure-storage failures, and persistence-result handling so password/token/SID write errors are no longer silently ignored. Added regression tests for redaction and storage/session failures. |
 | #622 | Group/Client sheets | **Implemented in `dev` (`c2765e31`)**. Add sheets are content-sized; edit sheets use centered content with `minHeight: 360` and `maxHeight: 480`, matching Adlist/Domain/Local DNS patterns. |
 | #604 | Domain Log Details | **Implemented in `dev`**. Added filter-by-domain and copy-domain actions while retaining the browser action, with focused widget coverage. |
-| #598 | Android widgets no data | Needs Android reproduction/logging. Verify widget update channel/session restore after #660 secure-storage update. |
+| #598 | Android widgets no data | Needs Android reproduction/logging. Verify widget update channel/session restore on the current pinned secure-storage stack. |
 | #593 | v5 navigation | **Already addressed by current code** (`dc683828`, upstream #591): Adlists/Network expose explicit Back buttons with Home fallback and Home tiles push destinations directly. No duplicate production change needed. |
 | #592 | Tablet navigation | **Already addressed by current code** (`dc683828`, upstream #591): Settings root uses `PopScope` to route Back to Home; AppShell handles root-tab Back consistently. No duplicate production change needed. |
 | #570 | Local CNAME | **Implemented and CI-validated in `dev` for Pi-hole v6.** Added verified CNAME domain/repository CRUD with optional TTL preservation plus a capability-gated Host/CNAME Local DNS UI with add/edit/delete flows and focused regression coverage. The clean `dev` test job is green; Pi-hole v5 remains unchanged because its Local DNS API path does not expose CNAME support. |
@@ -50,9 +50,9 @@ The dependency update from upstream #660 also moves Dio from 5.9.2 to 5.11.0. Di
 | #404 | Translation docs | **Implemented in `dev`**. Added `docs/translations.md` documenting ARB-based translation contributions and the process for adding new locales. |
 | #397 | Windows LocalDNS suggestions | **Implemented and CI-validated in `dev`**. `TextFieldTapRegion` keeps suggestion-list mouse interaction inside the field tap group while outside clicks still dismiss; focused regression tests cover both behaviors. |
 | #352 | v6 server-side log filtering | Performance feature. Depends on v6 API capabilities and overlaps #639; keep v5 local filtering. |
-| #293 | Android auth/secure-storage crash | Current code already moved to flutter_secure_storage 10.x; #660 moves to 11.0.0. Re-test affected Galaxy devices and migration from older app versions before considering resolved. |
+| #293 | Android auth/secure-storage crash | Current `dev` deliberately remains on `flutter_secure_storage` 10.x because 11.x requires compileSdk 37 while the project is on 36. Re-test affected Galaxy devices and migration from older app versions before considering resolved; do not conflate that device validation with the F-Droid build-compatibility pin. |
 | #178 | App Lock after passcode removal | **Implemented in `dev` (`cc501770`, tests `e6bb9311`)**. Removing the passcode now immediately unlocks the in-memory app state, and loading persisted config synchronizes the lock state with whether a passcode actually exists. |
-| #134 | F-Droid | **In progress in `dev`.** Clean source builds are being separated from private release signing and validated in CI. Current Android `mobile_scanner` uses Google ML Kit, so a FLOSS scanner replacement is required before main-repository eligibility. This maintenance fork also retains the upstream application ID, so an independent fork submission requires a package-identity/name decision before downstream `fdroiddata` metadata is proposed. |
+| #134 | F-Droid | **In progress in `dev`.** Secret-free unsigned Android packaging is isolated from private release signing. `mobile_scanner`/Google ML Kit has been removed and replaced by `camera` + pure-Dart `zxing2`; the F-Droid source-build checkout also switches `sqlite3` to Android system SQLite so it does not fetch a precompiled native library during the build. Final download-free unsigned-build CI validation is pending. F-Droid policy requires this fork to use a fresh Android ID plus corresponding name/icon/string changes for an independent submission, so package identity remains the final product-level gate before downstream `fdroiddata` metadata. |
 
 ## Priority order
 
@@ -61,4 +61,4 @@ The dependency update from upstream #660 also moves Dio from 5.9.2 to 5.11.0. Di
 3. #632 diagnostics and #178 App Lock (implemented in `dev`).
 4. Deterministic UI/docs work (#604, #404, #638, #397) is implemented and validated; #442 is the remaining Phase 1 item and requires a fresh Android 16 reproduction before any lifecycle change.
 5. Reproduce/fix device-dependent #636, #598, #501 and #293 on current dependencies.
-6. #639/#352: larger API architecture/features; #570 is implemented and CI-validated on the verified v6 path. #134 is now active: complete the secret-free source-build path, then remove the ML-Kit scanner dependency and resolve package identity before downstream F-Droid metadata/submission.
+6. #639/#352: larger API architecture/features; #570 is implemented and CI-validated on the verified v6 path. #134 is active: scanner compliance and the secret-free/download-free source-build path are implemented; confirm the final unsigned-build gate, then resolve the required independent-fork package identity before downstream F-Droid metadata/submission.
