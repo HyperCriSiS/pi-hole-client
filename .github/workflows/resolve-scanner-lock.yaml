@@ -1,0 +1,32 @@
+name: Resolve scanner lockfile
+
+on:
+  push:
+    branches:
+      - dev
+
+permissions:
+  contents: read
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.1'
+          channel: stable
+          cache: true
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Print resolved lockfile
+        run: |
+          echo '---LOCKFILE-BEGIN---'
+          cat pubspec.lock
+          echo '---LOCKFILE-END---'
