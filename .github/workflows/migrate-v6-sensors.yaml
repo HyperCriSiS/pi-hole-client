@@ -1,0 +1,178 @@
+name: Migrate generated v6 sensors
+
+on:
+  push:
+    branches: [dev]
+    paths:
+      - .github/workflows/migrate-v6-sensors.yaml
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Apply sensors migration and roadmap sync
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          repo = Path('lib/data/repositories/api/v6/ftl_repository.dart')
+          s = repo.read_text()
+          old_import = "import 'package:pi_hole_client/data/model/v6/ftl/version.dart' as legacy;\n"
+          new_import = "import 'package:pi_hole_client/data/model/v6/ftl/sensors.dart' as legacy_sensors;\nimport 'package:pi_hole_client/data/model/v6/ftl/version.dart' as legacy;\n"
+          if s.count(old_import) != 1:
+              raise SystemExit('FTL sensor import anchor mismatch')
+          s = s.replace(old_import, new_import)
+          old_method = '''  @override
+          Future<Result<FtlSensor>> fetchInfoSensors() {
+            return runWithResultRetry(
+              action: () async {
+                final sid = await getSid();
+                final result = await _client.getInfoSensors(sid);
+                return result.map((e) => e.toDomain());
+              },
+              onRetry: (_, e) => renewSidIfExpired(e),
+            );
+          }
+          '''
+          new_method = '''  @override
+          Future<Result<FtlSensor>> fetchInfoSensors() {
+            return runWithResultRetry(
+              action: () async {
+                final sid = await getSid();
+                _service.setSid(sid);
+                final result = await _service.getInfoSensors();
+                return result.map(
+                  (e) => legacy_sensors.InfoSensors.fromJson(e.toJson()).toDomain(),
+                );
+              },
+              onRetry: (_, e) => renewSidIfExpired(e),
+            );
+          }
+          '''
+          if s.count(old_method) != 1:
+              raise SystemExit('FTL fetchInfoSensors anchor mismatch')
+          repo.write_text(s.replace(old_method, new_method))
+
+          test = Path('test/data/repositories/api/v6/ftl_repository_test.dart')
+          s = test.read_text()
+          flag_anchor = '  bool shouldFail = false;\n'
+          if s.count(flag_anchor) != 1:
+              raise SystemExit('Fake service flag anchor mismatch')
+          s = s.replace(flag_anchor, '  bool shouldFail = false;\n  bool shouldFailSensors = false;\n')
+          method_anchor = '''    return Success(GetVersion200Response.fromJson(fixture.toJson()));
+          }
+          }
+          '''
+          sensor_method = '''    return Success(GetVersion200Response.fromJson(fixture.toJson()));
+          }
+
+          @override
+          Future<Result<GetSensors200Response>> getInfoSensors() async {
+            if (shouldFailSensors) {
+              return Failure(Exception('Forced getInfoSensors failure'));
+            }
+            return Success(GetSensors200Response.fromJson(kSrvGetInfoSensors.toJson()));
+          }
+          }
+          '''
+          if s.count(method_anchor) != 1:
+              raise SystemExit('Fake service method anchor mismatch')
+          s = s.replace(method_anchor, sensor_method)
+          success_anchor = '''    test('should fetch all sensors successfully', () async {
+              final result = await repository.fetchInfoSensors();
+              expect(result.getOrNull(), kRepoFetchFtlSensors);
+            });
+          '''
+          success_replacement = '''    test('should fetch all sensors successfully through generated service', () async {
+              final result = await repository.fetchInfoSensors();
+              expect(result.getOrNull(), kRepoFetchFtlSensors);
+              expect(service.lastSid, 'sid123');
+            });
+          '''
+          if s.count(success_anchor) != 1:
+              raise SystemExit('Sensor success test anchor mismatch')
+          s = s.replace(success_anchor, success_replacement)
+          failure_anchor = '''    test('should fail when fetching all sensors fails', () async {
+              client.shouldFail = true;
+
+              final result = await repository.fetchInfoSensors();
+              expectError(result, messageContains: 'Forced getInfoSensors failure');
+            });
+          '''
+          failure_replacement = '''    test('should fail when generated sensor request fails', () async {
+              service.shouldFailSensors = true;
+
+              final result = await repository.fetchInfoSensors();
+              expectError(result, messageContains: 'Forced getInfoSensors failure');
+            });
+          '''
+          if s.count(failure_anchor) != 1:
+              raise SystemExit('Sensor failure test anchor mismatch')
+          test.write_text(s.replace(failure_anchor, failure_replacement))
+
+          roadmap = Path('ROADMAP.md')
+          s = roadmap.read_text()
+          anchor = '- [x] Push `client_ip` only for exactly one actively selected client whose value is a valid IPv4/IPv6 literal; hostnames, the all-selected state, and multi-client selections remain client-side; focused regression coverage added.\n'
+          addition = anchor + '- [x] Start #639 production migration to the generated OpenAPI client with `/api/info/version`: the generated service now uses the same TLS/pinning policy as the handwritten client, receives the shared SID before each request, and generated HTTP 401 errors participate in the existing SID renewal/retry path. The focused migration tests and the clean full Dart suite are green.\n- [x] Migrate `/api/info/sensors` to the same generated service after verifying JSON contract parity; focused FTL/service/SID regression coverage is required before commit and the clean full-suite gate remains pending after this migration.\n- [ ] Continue #639 only endpoint-by-endpoint where the generated schema preserves behavior. Keep `/api/info/client` on the handwritten client because the generated schema omits request metadata used by the current model, and keep authentication on the handwritten path while the generated `POST /auth` schema lacks TOTP support.\n'
+          if s.count(anchor) != 1:
+              raise SystemExit('ROADMAP #639 anchor mismatch')
+          roadmap.write_text(s.replace(anchor, addition))
+
+          triage = Path('UPSTREAM_TRIAGE.md')
+          s = triage.read_text()
+          old = '| #639 | Pi-hole v6 API | Large refactor. Keep handwritten auth path until generated OpenAPI schema supports `totp`; migrate repository calls incrementally and add parity tests. |'
+          new = '| #639 | Pi-hole v6 API | **In progress in `dev`.** `/api/info/version` is the first CI-validated production path on the generated OpenAPI service, with existing TLS/pinning behavior, shared SID injection and generated-401 session renewal preserved. `/api/info/sensors` is the next parity-verified read-only migration with focused regression coverage. Keep `/api/info/client` handwritten because its generated schema omits current request metadata, and keep auth handwritten until generated `POST /auth` supports TOTP. |'
+          if s.count(old) != 1:
+              raise SystemExit('UPSTREAM_TRIAGE #639 anchor mismatch')
+          s = s.replace(old, new)
+          old_priority = '6. #639/#352: larger API architecture/features; #570 is implemented and CI-validated on the verified v6 path. #134 is active: scanner compliance and the secret-free/download-free source-build path are CI-validated; resolve the required independent-fork package identity, then prepare downstream F-Droid metadata/submission.'
+          new_priority = '6. #639/#352: incremental generated-v6 migration is active; `/api/info/version` is CI-validated and `/api/info/sensors` is the next parity-safe read-only path. #570 is complete. #134 source-build work is CI-validated but downstream submission remains blocked on the required independent-fork package identity.'
+          if s.count(old_priority) != 1:
+              raise SystemExit('UPSTREAM_TRIAGE priority anchor mismatch')
+          triage.write_text(s.replace(old_priority, new_priority))
+          PY
+
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y sqlite3 libsqlite3-dev
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.1'
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Prepare env file
+        run: cp .env.sample .env
+
+      - name: Generate Git commit hash
+        run: dart run tools/generate_git_commit.dart
+
+      - name: Run focused generated-v6 tests
+        run: >-
+          flutter test --reporter expanded
+          test/data/services/api/wrappers/pihole_v6_service_test.dart
+          test/data/repositories/api/v6/base_v6_sid_repository_test.dart
+          test/data/repositories/api/v6/ftl_repository_test.dart
+
+      - name: Commit validated sensors migration
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib/data/repositories/api/v6/ftl_repository.dart test/data/repositories/api/v6/ftl_repository_test.dart ROADMAP.md UPSTREAM_TRIAGE.md
+          git diff --cached --quiet && exit 0
+          git commit -m "refactor: migrate FTL sensors to generated v6 service"
+          git push origin HEAD:dev
