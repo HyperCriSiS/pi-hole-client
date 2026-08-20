@@ -53,12 +53,18 @@ The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPS
   - [x] Push semantically safe Logs v6 filters server-side: exact `domain` and exactly one concrete `status`; multi-status/grouped filters remain client-side, v5 remains unchanged, and pagination/filter-capability regression tests cover the transport path.
   - [x] Audit `type` and `reply` mappings: the current Logs UI exposes no independent type/reply filter state, so there is no semantically equivalent UI filter to push server-side yet.
   - [x] Push `client_ip` only for exactly one actively selected client whose value is a valid IPv4/IPv6 literal; hostnames, the all-selected state, and multi-client selections remain client-side; focused regression coverage added.
-- [ ] #570: add Local CNAME management only on API paths whose behavior is verified.
+- [x] #570: add Local CNAME management only on API paths whose behavior is verified.
   - [x] Verify the current API/repository support boundary: Pi-hole v6 already models `dns.cnameRecords` in `Dns`, while the v5 Local DNS repository/gateway path remains explicitly unsupported.
   - [x] Add v6 CNAME repository/domain operations over `dns/cnameRecords`; implementation committed (`d7c6b6e3`) with optional TTL preservation and shared v6 session/retry behavior. Repository-wide Flutter tests and Codecov completed successfully on the implementation; v5 remains explicitly unsupported.
   - [x] Add focused v6 API/repository regression tests for reading, adding, updating and deleting CNAME records, including restart/error handling. Fetch/add/delete success and CRUD error paths are covered by `3b9d9ac`; successful update, TTL parsing/preservation and explicit DNS-restart assertions were added in `6f224932`. The recording fake signature was corrected in `1ae8e1a5`; the subsequent Dart Tests job and Codecov upload completed successfully. The workflow-level failure came from the separate SonarQube scan, not the CNAME regression suite.
   - [x] Integrate tested v6 CNAME management into the Local DNS UI: capability-gated Host/CNAME switcher, CNAME list, add/edit/delete dialog, optional TTL handling, local state updates, and focused ViewModel regression coverage. Pi-hole v5 remains unchanged because it does not expose the CNAME repository capability.
 - [ ] #134: establish reproducible F-Droid-compatible build metadata and release packaging.
+  - [x] Make Android release signing conditional: normal signed GitHub releases still use `android/key.properties`, while clean source builds can produce an unsigned release APK without private signing material.
+  - [x] Add a secret-free unsigned Android source-build smoke job to the existing release-test workflow using Java 17, Flutter 3.44.1, `.env.sample`, and the generated Git commit hash.
+  - [x] Document the F-Droid source-build boundary and keep downstream `fdroiddata` metadata separate from this application repository.
+  - [ ] Replace `mobile_scanner`/Google ML Kit on Android with a FLOSS scanner backend (ZXing-class implementation) while preserving the QR token-import flow and adding focused regression coverage.
+  - [ ] Resolve package identity before an independent fork submission: this maintenance fork currently retains the upstream Android application ID, while current F-Droid policy requires a distinct application ID/name for a separately published fork.
+  - [ ] Draft and validate the downstream F-Droid build metadata after the scanner and package-identity gates are resolved.
 
 ## Validation and completion criteria
 
@@ -72,8 +78,9 @@ The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPS
 - #442 cannot be safely marked fixed from the old v1.7.0 stack alone; a current Android 16 reproduction/log is required because routing and Flutter dependencies have changed substantially since the report.
 - Android 17, widget, and secure-storage items require real-device reproduction and logs before they can be considered resolved.
 - Larger v6 API work depends on preserving authentication and behavior parity during migration.
-- #570 has no repository-level blocker for the v6 repository-layer work; v5 CNAME parity must not be assumed because the current v5 Local DNS path is unsupported.
+- #570 is CI-validated for the v6 repository and Local DNS UI path; v5 CNAME parity must not be assumed because the current v5 Local DNS path is unsupported.
+- #134 source-build packaging can proceed in this repository, but F-Droid main-repository eligibility still requires replacing the Android `mobile_scanner`/Google ML Kit dependency with a FLOSS scanner backend. A separate publication of this maintenance fork also requires an application-ID/name decision before downstream metadata submission.
 
 ## Completion status
 
-**Not fully completed.** #442 remains blocked on a fresh Android 16 reproduction/current stack. #570 is implemented through the v6 repository and Local DNS UI layers; the next step is CI validation of the UI integration and then the next unblocked roadmap item (#134 F-Droid-compatible build metadata/release packaging) if that validation stays green.
+**Not fully completed.** #442 remains blocked on a fresh Android 16 reproduction/current stack. #570 is implemented and CI-validated through the v6 repository and Local DNS UI layers. #134 is now the active unblocked distribution item: unsigned source-build packaging is implemented, while Android scanner compliance and package identity remain before a real F-Droid submission.

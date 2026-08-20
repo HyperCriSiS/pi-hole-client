@@ -93,6 +93,61 @@ jobs:
             PiHoleClient_${{ env.VERSION_NAME }}_Android.apk
             PiHoleClient_${{ env.VERSION_NAME }}_Android.aab
 
+  build-android-source:
+    name: Build unsigned Android source APK
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Prepare non-secret environment
+        run: cp .env.sample .env
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+          flutter-version: 3.44.1
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate Git commit hash
+        run: dart run tools/generate_git_commit.dart
+
+      - name: Build unsigned release APK
+        run: flutter build apk --release
+
+      - name: Verify unsigned release artifact
+        shell: bash
+        run: |
+          APK="$(find build/app/outputs/apk/release -maxdepth 1 -type f -name '*.apk' -print -quit)"
+          if [ -z "$APK" ]; then
+            echo "::error::No release APK was produced."
+            exit 1
+          fi
+
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          if [ -z "$APKSIGNER" ]; then
+            echo "::error::apksigner was not found in the Android SDK."
+            exit 1
+          fi
+
+          if "$APKSIGNER" verify "$APK" >/dev/null 2>&1; then
+            echo "::error::Source-build APK is signed; expected an unsigned release artifact."
+            exit 1
+          fi
+
+          echo "Verified unsigned release APK: $APK"
+
   test-build-google-play:
     name: Release Android test build to the Google Play Store
     runs-on: ubuntu-latest
