@@ -27,6 +27,6 @@ jobs:
 
       - name: Print resolved lockfile
         run: |
-          echo '---LOCKFILE-BEGIN---'
-          cat pubspec.lock
-          echo '---LOCKFILE-END---'
+          printf 'LOCKFILE_BASE64='
+          base64 -w0 pubspec.lock
+          printf '\n'
