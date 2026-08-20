@@ -31,7 +31,7 @@ jobs:
         run: flutter pub get
 
       - name: Create test environment file
-        run: touch .env
+        run: echo 'TEST_ENV=1' > .env
 
       - name: Run Local DNS tests
         run: flutter test test/ui/settings/server_settings/advanced_settings/local_dns --reporter expanded
