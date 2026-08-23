@@ -18,6 +18,8 @@ class _FakePiholeV6Service extends PiholeV6Service {
   bool shouldFail = false;
   bool shouldFailMetrics = false;
   bool shouldFailSensors = false;
+  bool shouldFailSystem = false;
+  bool shouldGetInfoSystemOld = false;
   bool shouldGetInfoVersionWithDocker = false;
   bool shouldReturnUnauthorizedOnce = false;
   int getInfoVersionCallCount = 0;
@@ -59,6 +61,17 @@ class _FakePiholeV6Service extends PiholeV6Service {
       return Failure(Exception('Forced getInfoSensors failure'));
     }
     return Success(GetSensors200Response.fromJson(kSrvGetInfoSensors.toJson()));
+  }
+
+  @override
+  Future<Result<GetSysteminfo200Response>> getInfoSystem() async {
+    if (shouldFailSystem) {
+      return Failure(Exception('Forced getInfoSystem failure'));
+    }
+    final fixture = shouldGetInfoSystemOld
+        ? kSrvGetInfoSystemOld
+        : kSrvGetInfoSystem;
+    return Success(GetSysteminfo200Response.fromJson(fixture.toJson()));
   }
 }
 
@@ -269,19 +282,23 @@ void main() {
       );
     });
 
-    test('should fetch info system successfully', () async {
-      final result = await repository.fetchInfoSystem();
-      expect(result.getOrNull(), kRepoFetchFtlSystem);
-    });
+    test(
+      'should fetch info system successfully through generated service',
+      () async {
+        final result = await repository.fetchInfoSystem();
+        expect(result.getOrNull(), kRepoFetchFtlSystem);
+        expect(service.lastSid, 'sid123');
+      },
+    );
 
     test('should fetch info system successfully (FTL < 6.1)', () async {
-      client.shouldGetInfoSystemOld = true;
+      service.shouldGetInfoSystemOld = true;
       final result = await repository.fetchInfoSystem();
       expect(result.getOrNull(), kRepoFetchFtlSystemOld);
     });
 
-    test('should fail when fetching info system fails', () async {
-      client.shouldFail = true;
+    test('should fail when generated system request fails', () async {
+      service.shouldFailSystem = true;
 
       final result = await repository.fetchInfoSystem();
       expectError(result, messageContains: 'Forced getInfoSystem failure');
