@@ -1,5 +1,7 @@
 import 'package:pi_hole_client/data/mapper/v6/ftl_mapper.dart';
 import 'package:pi_hole_client/data/model/v6/ftl/host.dart' as legacy_host;
+import 'package:pi_hole_client/data/model/v6/ftl/messages.dart'
+    as legacy_messages;
 import 'package:pi_hole_client/data/model/v6/ftl/metrics.dart'
     as legacy_metrics;
 import 'package:pi_hole_client/data/model/v6/ftl/sensors.dart'
@@ -77,8 +79,11 @@ class FtlRepositoryV6 extends BaseV6SidRepository implements FtlRepository {
     return runWithResultRetry(
       action: () async {
         final sid = await getSid();
-        final result = await _client.getInfoMessages(sid);
-        return result.map((e) => e.toDomain());
+        _service.setSid(sid);
+        final result = await _service.getInfoMessages();
+        return result.map(
+          (e) => legacy_messages.InfoMessages.fromJson(e.toJson()).toDomain(),
+        );
       },
       onRetry: (_, e) => renewSidIfExpired(e),
     );
@@ -89,11 +94,8 @@ class FtlRepositoryV6 extends BaseV6SidRepository implements FtlRepository {
     return runWithResultRetry(
       action: () async {
         final sid = await getSid();
-        final result = await _client.deleteInfoMessages(
-          sid,
-          messageId: messageId,
-        );
-        return result.map((_) => unit);
+        _service.setSid(sid);
+        return _service.deleteInfoMessage(messageId: messageId);
       },
       onRetry: (_, e) => renewSidIfExpired(e),
     );

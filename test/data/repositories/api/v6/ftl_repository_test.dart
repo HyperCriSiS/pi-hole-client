@@ -17,6 +17,8 @@ class _FakePiholeV6Service extends PiholeV6Service {
 
   bool shouldFail = false;
   bool shouldFailHost = false;
+  bool shouldFailMessages = false;
+  bool shouldFailDeleteMessage = false;
   bool shouldFailMetrics = false;
   bool shouldFailSensors = false;
   bool shouldFailSystem = false;
@@ -52,6 +54,24 @@ class _FakePiholeV6Service extends PiholeV6Service {
       return Failure(Exception('Forced getInfoHost failure'));
     }
     return Success(GetHostinfo200Response.fromJson(kSrvGetInfoHost.toJson()));
+  }
+
+  @override
+  Future<Result<GetMessages200Response>> getInfoMessages() async {
+    if (shouldFailMessages) {
+      return Failure(Exception('Forced getInfoMessages failure'));
+    }
+    return Success(
+      GetMessages200Response.fromJson(kSrvGetInfoMessages.toJson()),
+    );
+  }
+
+  @override
+  Future<Result<Unit>> deleteInfoMessage({required int messageId}) async {
+    if (shouldFailDeleteMessage) {
+      return Failure(Exception('Forced deleteInfoMessage failure'));
+    }
+    return Success(unit);
   }
 
   @override
@@ -187,13 +207,17 @@ void main() {
       );
     });
 
-    test('should fetch gravity messages successfully', () async {
-      final result = await repository.fetchInfoMessages();
-      expect(result.getOrNull(), kRepoFetchFtlMessages);
-    });
+    test(
+      'should fetch gravity messages successfully through generated service',
+      () async {
+        final result = await repository.fetchInfoMessages();
+        expect(result.getOrNull(), kRepoFetchFtlMessages);
+        expect(service.lastSid, 'sid123');
+      },
+    );
 
-    test('should fail when fetching gravity messages fails', () async {
-      client.shouldFail = true;
+    test('should fail when generated messages request fails', () async {
+      service.shouldFailMessages = true;
 
       final result = await repository.fetchInfoMessages();
       expectError(result, messageContains: 'Forced getInfoMessages failure');
@@ -212,16 +236,20 @@ void main() {
       );
     });
 
-    test('should delete info message successfully', () async {
-      final result = await repository.deleteInfoMessage(1);
-      expectSuccess(result);
-    });
+    test(
+      'should delete info message successfully through generated service',
+      () async {
+        final result = await repository.deleteInfoMessage(1);
+        expectSuccess(result);
+        expect(service.lastSid, 'sid123');
+      },
+    );
 
-    test('should fail when deleting info message fails', () async {
-      client.shouldFail = true;
+    test('should fail when generated message deletion fails', () async {
+      service.shouldFailDeleteMessage = true;
 
       final result = await repository.deleteInfoMessage(1);
-      expectError(result, messageContains: 'Forced deleteInfoMessages failure');
+      expectError(result, messageContains: 'Forced deleteInfoMessage failure');
     });
   });
 
