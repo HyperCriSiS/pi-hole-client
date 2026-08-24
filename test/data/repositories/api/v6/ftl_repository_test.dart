@@ -16,6 +16,7 @@ class _FakePiholeV6Service extends PiholeV6Service {
     : super(api: PiholeV6Api(basePathOverride: 'http://localhost/api'));
 
   bool shouldFail = false;
+  bool shouldFailHost = false;
   bool shouldFailMetrics = false;
   bool shouldFailSensors = false;
   bool shouldFailSystem = false;
@@ -43,6 +44,14 @@ class _FakePiholeV6Service extends PiholeV6Service {
         ? kSrvGetInfoVersionWithDocker
         : kSrvGetInfoVersion;
     return Success(GetVersion200Response.fromJson(fixture.toJson()));
+  }
+
+  @override
+  Future<Result<GetHostinfo200Response>> getInfoHost() async {
+    if (shouldFailHost) {
+      return Failure(Exception('Forced getInfoHost failure'));
+    }
+    return Success(GetHostinfo200Response.fromJson(kSrvGetInfoHost.toJson()));
   }
 
   @override
@@ -149,13 +158,17 @@ void main() {
       );
     });
 
-    test('should fetch info host successfully', () async {
-      final result = await repository.fetchInfoHost();
-      expect(result.getOrNull(), kRepoFetchFtlHost);
-    });
+    test(
+      'should fetch info host successfully through generated service',
+      () async {
+        final result = await repository.fetchInfoHost();
+        expect(result.getOrNull(), kRepoFetchFtlHost);
+        expect(service.lastSid, 'sid123');
+      },
+    );
 
-    test('should fail when fetching info host fails', () async {
-      client.shouldFail = true;
+    test('should fail when generated host request fails', () async {
+      service.shouldFailHost = true;
 
       final result = await repository.fetchInfoHost();
       expectError(result, messageContains: 'Forced getInfoHost failure');
@@ -369,7 +382,7 @@ void main() {
     });
 
     test('should fail when fetching all server info fails', () async {
-      client.shouldFail = true;
+      service.shouldFailHost = true;
       final result = await repository.fetchAllServerInfo();
       expectError(result, messageContains: 'Forced getInfoHost failure');
     });

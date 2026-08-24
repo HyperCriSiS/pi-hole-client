@@ -155,18 +155,23 @@ jobs:
     needs: [test]
     runs-on: ubuntu-latest
     if: always()
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
     steps:
       - uses: actions/checkout@v7
+        if: env.SONAR_TOKEN != ''
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
 
       - name: Install system dependencies
+        if: env.SONAR_TOKEN != ''
         run: |
           sudo apt-get update
           sudo apt-get install -y sqlite3 libsqlite3-dev
 
       - name: Setup Flutter (use cache)
+        if: env.SONAR_TOKEN != ''
         uses: subosito/flutter-action@v2
         with:
           channel: stable
@@ -174,12 +179,15 @@ jobs:
           flutter-version: 3.44.1
 
       - name: Install dependencies
+        if: env.SONAR_TOKEN != ''
         run: flutter pub get
 
       - name: Prepare env file
+        if: env.SONAR_TOKEN != ''
         run: cp .env.sample .env
 
       - name: Download unit test coverage artifact
+        if: env.SONAR_TOKEN != ''
         uses: actions/download-artifact@v8
         with:
           name: unit-test-coverage
@@ -192,8 +200,8 @@ jobs:
       #     path: coverage
 
       - name: SonarQube Scan
+        if: env.SONAR_TOKEN != ''
         uses: SonarSource/sonarqube-scan-action@v8
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
