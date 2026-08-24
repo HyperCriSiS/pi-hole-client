@@ -18,6 +18,7 @@ The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPS
 - [x] Implement #632 structured App Log diagnostics with central secret redaction and regression tests for connection/auth/session/secure-storage failures.
 - [x] Implement #178 so removing the app-lock passcode immediately clears in-memory lock state, with regression coverage.
 - [x] Make the optional SonarQube CI stage skip cleanly when `SONAR_TOKEN` is not configured, avoiding a false-red validation workflow and unnecessary Flutter/analyzer setup.
+- [x] Add PR-scoped Actions concurrency to the Dart-test, test-release and docs-deployment workflows so newer commits automatically cancel stale runs without cancelling `main`/release pushes.
 
 ## Phase 1 — deterministic UI and diagnostics work
 
@@ -56,11 +57,16 @@ The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPS
   - [x] Push `client_ip` only for exactly one actively selected client whose value is a valid IPv4/IPv6 literal; hostnames, the all-selected state, and multi-client selections remain client-side; focused regression coverage added.
 - [x] Start #639 production migration to the generated OpenAPI client with `/api/info/version`: the generated service now uses the same TLS/pinning policy as the handwritten client, receives the shared SID before each request, and generated HTTP 401 errors participate in the existing SID renewal/retry path. Focused migration tests and the clean full Dart suite are green.
 - [x] Migrate `/api/info/sensors` to the same generated service after verifying JSON contract parity; focused FTL/service/SID regression coverage and the full Dart suite are green.
-- [x] Migrate `/api/info/metrics` after verifying DNS cache/reply and DHCP payload parity; focused generated-service/FTL regression coverage is green before commit, with the clean full-suite gate still required on the resulting head.
+- [x] Migrate `/api/info/metrics` after verifying DNS cache/reply and DHCP payload parity; the repository-wide test job and Codecov upload are green (the historical workflow-level red status came only from the now-optional Sonar stage).
 - [x] Migrate `/api/info/system` after verifying generated-schema parity for uptime, memory, process and CPU/load fields; preserve compatibility with pre-FTL-6.1 payloads where `%cpu` is absent, and route SID handling through the generated service.
 - [x] Migrate `/api/info/host` after verifying parity for uname, model and DMI payloads; keep the existing domain mapper by round-tripping the generated response into the proven legacy transport model, with focused SID/error regression coverage.
 - [x] Migrate `/api/info/messages` read/delete after verifying parity for message IDs, timestamps, types, plain/HTML payloads and delete semantics; preserve existing message-domain filtering while routing SID/error handling through the generated service.
 - [ ] Keep `/api/info/ftl` on the handwritten client for now: the generated schema models v6.3 domain/regex counters only as `{total, enabled}` objects, while the existing transport model intentionally accepts the v6.2 integer representation as well.
+- [x] Migrate `/api/network/devices/{device_id}` deletion to the generated service with shared SID/retry handling and focused error/ID regression coverage.
+- [ ] Keep `/api/network/devices` reads on the handwritten client until the generated-service wrapper forwards the existing `max_devices`/`max_addresses` limits; the generated response schema itself has device/IP field parity.
+- [ ] Keep `/api/network/gateway` on the handwritten client for now: the generated response omits `interfaces` and `routes`, which are required to preserve the existing `detailed=true` behavior.
+- [x] Migrate `/api/action/flush/logs` and `/api/action/restartdns` to the generated service; both keep the shared SID renewal/retry path and map their generated responses back to the repository's `Unit` contract.
+- [ ] Keep ARP/network flushing on the handwritten path for now because the repository intentionally falls back from the v6.3+ `/api/action/flush/network` endpoint to deprecated `/api/action/flush/arp` on HTTP 404; keep gravity update handwritten because the current client exposes the streaming progress contract while the generated endpoint does not.
 - [ ] Continue #639 only endpoint-by-endpoint where the generated schema preserves behavior. Keep `/api/info/client` on the handwritten client because the generated schema omits request metadata used by the current model, and keep authentication on the handwritten path while generated `POST /auth` lacks TOTP support.
 - [x] #570: add Local CNAME management only on API paths whose behavior is verified.
   - [x] Verify the current API/repository support boundary: Pi-hole v6 already models `dns.cnameRecords` in `Dns`, while the v5 Local DNS repository/gateway path remains explicitly unsupported.

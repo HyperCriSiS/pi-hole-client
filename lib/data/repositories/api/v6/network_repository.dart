@@ -3,6 +3,7 @@ import 'package:pi_hole_client/data/repositories/api/interfaces/network_reposito
 import 'package:pi_hole_client/data/repositories/api/v6/base_v6_sid_repository.dart';
 import 'package:pi_hole_client/data/repositories/utils/call_with_retry.dart';
 import 'package:pi_hole_client/data/services/api/pihole_v6_api_client.dart';
+import 'package:pi_hole_client/data/services/api/wrappers/pihole_v6_service.dart';
 import 'package:pi_hole_client/domain/model/network/network.dart';
 import 'package:result_dart/result_dart.dart';
 
@@ -10,10 +11,13 @@ class NetworkRepositoryV6 extends BaseV6SidRepository
     implements NetworkRepository {
   NetworkRepositoryV6({
     required PiholeV6ApiClient client,
+    required PiholeV6Service service,
     required super.sessionCache,
-  }) : _client = client;
+  }) : _client = client,
+       _service = service;
 
   final PiholeV6ApiClient _client;
+  final PiholeV6Service _service;
 
   @override
   Future<Result<List<Device>>> fetchDevices({
@@ -39,11 +43,8 @@ class NetworkRepositoryV6 extends BaseV6SidRepository
     return runWithResultRetry<Unit>(
       action: () async {
         final sid = await getSid();
-        final result = await _client.deleteNetworkDevices(
-          sid,
-          deviceId: deviceId,
-        );
-        return result.map((_) => unit);
+        _service.setSid(sid);
+        return _service.deleteNetworkDevice(deviceId: deviceId);
       },
       onRetry: (_, e) => renewSidIfExpired(e),
     );

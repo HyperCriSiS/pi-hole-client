@@ -71,6 +71,7 @@ class RepositoryBundleFactory {
         return RepositoryBundle(
           actions: ActionsRepositoryV6(
             client: client,
+            service: generatedService,
             sessionCache: sessionCache,
           ),
           adlist: AdlistRepositoryV6(
@@ -108,6 +109,7 @@ class RepositoryBundleFactory {
           ),
           network: NetworkRepositoryV6(
             client: client,
+            service: generatedService,
             sessionCache: sessionCache,
           ),
           realtimeStatus: v6.RealtimeStatusRepositoryV6(
