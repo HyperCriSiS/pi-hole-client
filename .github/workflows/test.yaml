@@ -125,28 +125,34 @@ jobs:
     needs: [test]
     runs-on: ubuntu-latest
     if: needs.test.result == 'success'
+    env:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
     steps:
     - name: Checkout
+      if: env.CODECOV_TOKEN != ''
       uses: actions/checkout@v7
 
     - name: Download unit test coverage artifact
+      if: env.CODECOV_TOKEN != ''
       uses: actions/download-artifact@v8
       with:
         name: unit-test-coverage
         path: coverage/unit
 
     # - name: Download integration test coverage artifact
+    #   if: env.CODECOV_TOKEN != ''
     #   uses: actions/download-artifact@v8
     #   with:
     #     name: integration-test-coverage
     #     path: coverage/integration
 
     - name: Upload coverage to Codecov
+      if: env.CODECOV_TOKEN != ''
       uses: codecov/codecov-action@v7
       with:
         files: coverage/unit/lcov.info
-        token: ${{ secrets.CODECOV_TOKEN }}
+        token: ${{ env.CODECOV_TOKEN }}
         fail_ci_if_error: true
 
   sonar:
