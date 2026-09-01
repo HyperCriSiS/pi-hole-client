@@ -19,6 +19,8 @@ The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPS
 - [x] Implement #178 so removing the app-lock passcode immediately clears in-memory lock state, with regression coverage.
 - [x] Make the optional SonarQube CI stage skip cleanly when `SONAR_TOKEN` is not configured, avoiding a false-red validation workflow and unnecessary Flutter/analyzer setup.
 - [x] Add PR-scoped Actions concurrency to the Dart-test, test-release and docs-deployment workflows so newer commits automatically cancel stale runs without cancelling `main`/release pushes.
+- [x] Apply explicit least-privilege `GITHUB_TOKEN` permissions across all current workflows: read-only by default, with narrowly scoped write permissions only for release creation, release preparation, Winget PR creation and version updates; preserve Google Play OIDC requirements.
+- [x] Extend Dependabot coverage to the Docusaurus/pnpm website dependency tree so website security and version updates are maintained alongside Dart and GitHub Actions dependencies.
 
 ## Phase 1 — deterministic UI and diagnostics work
 
