@@ -69,21 +69,28 @@ Maintain and improve the unofficial Pi-hole client while upstream activity is li
 - [x] Migrate `/api/network/devices/{device_id}` deletion to the generated service with shared SID/retry handling and focused error/ID regression coverage.
 - [x] Migrate `/api/network/devices` reads after extending the generated-service wrapper to preserve the existing `max_devices`/`max_addresses` limits; focused repository and wrapper tests verify SID handling, default/custom limit forwarding, response parity and failures.
 - [ ] Keep `/api/network/gateway` on the handwritten client for now: the generated response omits `interfaces` and `routes`, which are required to preserve the existing `detailed=true` behavior.
-- [x] Migrate `/api/action/flush/logs` and `/api/action/restartdns` to the generated service after verifying action/response parity; preserve handwritten `/api/action/flush/arp`, `/api/action/gravity` and `/api/action/restartdns` streaming/event behavior where generated parity is insufficient.
-- [ ] Keep `/api/info/client` on the handwritten client for now: the generated response schema omits metadata required by the current domain model.
-- [ ] Keep authentication on the handwritten client for now: the generated POST `/api/auth` model does not expose TOTP, so switching would regress existing authentication behavior.
-- [x] #570: implement Local CNAME management for Pi-hole v6 using the generated config API while keeping v5 explicitly unsupported rather than inventing parity.
-- [ ] #134: prepare an independently distributable F-Droid-compatible fork.
-  - [x] Make release signing conditional so source builds do not require private signing material.
-  - [x] Add an unsigned Android source-build CI smoke path.
-  - [x] Document the F-Droid boundary and source-build expectations.
-  - [x] Replace `mobile_scanner`/Google ML Kit with Flutter `camera` + pure-Dart `zxing2` for the Android QR-token scanner.
-  - [x] Keep the source build compatible with compileSdk 36 by constraining secure-storage/permission dependencies instead of silently requiring Android 37 tooling.
-  - [x] Isolate the unsigned source build from `sqlite3` precompiled native-binary downloads by using Android system SQLite for that build mode.
-  - [x] Validate the unsigned source build in CI and verify with `apksigner` that the release APK is actually unsigned.
-  - [ ] Assign a fresh Android Application ID and align name/icon/translations for the independent maintenance fork before creating downstream F-Droid metadata.
+- [x] Migrate `/api/action/flush/logs` and `/api/action/restartdns` to the generated service; both keep the shared SID renewal/retry path and map their generated responses back to the repository's `Unit` contract.
+- [x] Migrate `/api/dhcp` lease reads and `/api/dhcp/{ip}` deletion after verifying generated-schema parity for expiry, host/client identifiers, addresses and timing; preserve the existing domain mapping while moving SID/retry handling to the generated service.
+- [x] Migrate `/api/dns/blocking` reads and updates to the generated service; preserve `skipRenewal` behavior, enable/disable semantics and the disable timer while keeping the existing domain mapping.
+- [ ] Keep ARP/network flushing on the handwritten path for now because the repository intentionally falls back from the v6.3+ `/api/action/flush/network` endpoint to deprecated `/api/action/flush/arp` on HTTP 404; keep gravity update handwritten because the current client exposes the streaming progress contract while the generated endpoint does not.
+- [ ] Continue #639 only endpoint-by-endpoint where the generated schema preserves behavior. Keep `/api/info/client` on the handwritten client because the generated schema omits request metadata used by the current model, and keep authentication on the handwritten path while generated `POST /auth` lacks TOTP support.
+- [x] #570: add Local CNAME management only on API paths whose behavior is verified.
+  - [x] Verify the current API/repository support boundary: Pi-hole v6 already models `dns.cnameRecords` in `Dns`, while the v5 Local DNS repository/gateway path remains explicitly unsupported.
+  - [x] Add v6 CNAME repository/domain operations over `dns/cnameRecords`; implementation committed (`d7c6b6e3`) with optional TTL preservation and shared v6 session/retry behavior. Repository-wide Flutter tests and Codecov completed successfully on the implementation; v5 remains explicitly unsupported.
+  - [x] Add focused v6 API/repository regression tests for reading, adding, updating and deleting CNAME records, including restart/error handling. Fetch/add/delete success and CRUD error paths are covered by `3b9d9ac`; successful update, TTL parsing/preservation and explicit DNS-restart assertions were added in `6f224932`. The recording fake signature was corrected in `1ae8e1a5`; the subsequent Dart Tests job and Codecov upload completed successfully. The workflow-level failure came from the separate SonarQube scan, not the CNAME regression suite.
+  - [x] Integrate tested v6 CNAME management into the Local DNS UI: capability-gated Host/CNAME switcher, CNAME list, add/edit/delete dialog, optional TTL handling, local state updates, and focused ViewModel regression coverage. Pi-hole v5 remains unchanged because it does not expose the CNAME repository capability.
+- [ ] #134: establish reproducible F-Droid-compatible build metadata and release packaging.
+  - [x] Make Android release signing conditional: normal signed GitHub releases still use `android/key.properties`, while clean source builds can produce an unsigned release APK without private signing material.
+  - [x] Add a secret-free unsigned Android source-build smoke job to the existing release-test workflow using Java 17, Flutter 3.44.1, `.env.sample`, and the generated Git commit hash.
+  - [x] Document the F-Droid source-build boundary and keep downstream `fdroiddata` metadata separate from this application repository.
+  - [x] Replace `mobile_scanner`/Google ML Kit on Android with a FLOSS scanner backend while preserving the QR token-import flow and focused regression coverage. The Android path now uses Flutter `camera` plus the pure-Dart `zxing2` decoder; the existing `ScanTokenModal`/navigation contract remains intact.
+  - [x] Keep the F-Droid/source-build dependency path compatible with Android compileSdk 36: constrain `flutter_secure_storage` and `permission_handler` to the last compatible majors instead of forcing an unrelated SDK/AGP migration.
+  - [x] Remove the `sqlite3` native-asset binary download from the F-Droid/unsigned Android build path by switching that isolated build checkout to Android system SQLite; regular signed/desktop builds keep their existing bundled SQLite behavior.
+  - [x] Confirm the final unsigned source-build CI gate on the download-free path; CI on `3d3e3d74` completed successfully and `apksigner` verified that the produced release APK is unsigned.
+  - [ ] Resolve package identity before an independent fork submission: this maintenance fork currently retains `io.github.tsutsu3.pi_hole_client`; F-Droid policy requires a fork to use a fresh Android Application ID plus corresponding name, icon and translated string changes. The rename affects Gradle namespace/applicationId, the Kotlin package tree (main/debug/release/tests/widgets) and release metadata, so it must be handled as a dedicated migration.
+  - [ ] Draft and validate the downstream F-Droid build metadata after the package-identity gate is resolved.
 
-## Completion criteria
+## Validation and completion criteria
 
 - [ ] Keep regression tests/builds green for each deterministic change.
 - [ ] Validate device-dependent fixes on affected devices before marking them complete.
