@@ -87,8 +87,14 @@ class RepositoryBundleFactory {
             client: client,
             sessionCache: sessionCache,
           ),
-          dhcp: DhcpRepositoryV6(client: client, sessionCache: sessionCache),
-          dns: DnsRepositoryV6(client: client, sessionCache: sessionCache),
+          dhcp: DhcpRepositoryV6(
+            service: generatedService,
+            sessionCache: sessionCache,
+          ),
+          dns: DnsRepositoryV6(
+            service: generatedService,
+            sessionCache: sessionCache,
+          ),
           domain: DomainRepositoryV6(
             client: client,
             sessionCache: sessionCache,
