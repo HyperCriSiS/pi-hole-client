@@ -36,11 +36,11 @@ Maintain and improve the unofficial Pi-hole client while upstream activity is li
   - [x] Keep suggestions and their scrollbar in the `TextField` tap group with `TextFieldTapRegion` while preserving normal outside-click dismissal.
   - [x] Add focused mouse-pointer regression coverage for suggestion selection and outside-click dismissal.
   - [x] Validate the focused autocomplete test and existing Local DNS widget suite in CI; full `Dart Tests` was green for the validated fix.
-- [ ] #442: reproduce the PopupMenu/Navigator crash on current `dev` and implement only a verified lifecycle fix.
+- [ ] #442: reproduce the PopupMenu/Navigator crash on current `main` and implement only a verified lifecycle fix.
   - [x] Confirm the upstream report: v1.7.0 on Android 16 crashes in `PopupMenuButtonState._positionBuilder` because `Navigator.of` encounters a detached/null context while laying out the popup route.
   - [x] Confirm there is no upstream closing PR or follow-up stack in the repository triage evidence.
   - [x] Audit relevant current code history: Home server navigation was migrated from direct `Navigator.push` to GoRouter, while `ServerActionsMenu` still uses `PopupMenuButton`; this is a material lifecycle change but not proof that the old crash is fixed.
-  - [ ] Reproduce on the current `dev` build on Android 16 while opening/closing the Home server actions popup and navigating/changing server; capture a current stack before changing menu behavior.
+  - [ ] Reproduce on the current `main` baseline (or a short-lived branch created from it) on Android 16 while opening/closing the Home server actions popup and navigating/changing server; capture a current stack before changing menu behavior.
   - [ ] If reproduced, add the smallest regression test that exercises the failing popup lifecycle and implement the corresponding mounted/navigation fix.
 
 ## Phase 2 — device-dependent regressions
