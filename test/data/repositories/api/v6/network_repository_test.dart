@@ -14,13 +14,31 @@ class _FakePiholeV6Service extends PiholeV6Service {
   _FakePiholeV6Service()
     : super(api: PiholeV6Api(basePathOverride: 'http://localhost/api'));
 
+  bool shouldFailGetDevices = false;
   bool shouldFailDeleteDevice = false;
   String? lastSid;
   int? lastDeletedDeviceId;
+  int? lastMaxDevices;
+  int? lastMaxAddresses;
 
   @override
   void setSid(String sid) {
     lastSid = sid;
+  }
+
+  @override
+  Future<Result<GetNetwork200Response>> getNetworkDevices({
+    int? maxDevices,
+    int? maxAddresses,
+  }) async {
+    lastMaxDevices = maxDevices;
+    lastMaxAddresses = maxAddresses;
+    if (shouldFailGetDevices) {
+      return Failure(Exception('Forced getNetworkDevices failure'));
+    }
+    return Success(
+      GetNetwork200Response.fromJson(kSrvGetNetworkDevices.toJson()),
+    );
   }
 
   @override
@@ -51,13 +69,28 @@ void main() {
       );
     });
 
-    test('should get devices successfully', () async {
+    test('should get devices successfully through generated service', () async {
       final result = await repository.fetchDevices();
+
       expect(result.getOrNull(), kRepoFetchDevices);
+      expect(service.lastSid, 'sid123');
+      expect(service.lastMaxDevices, 999);
+      expect(service.lastMaxAddresses, 25);
     });
 
-    test('should fail when fetching devices', () async {
-      client.shouldFail = true;
+    test('should forward custom device limits', () async {
+      final result = await repository.fetchDevices(
+        maxDevices: 17,
+        maxAddresses: 4,
+      );
+
+      expect(result.getOrNull(), kRepoFetchDevices);
+      expect(service.lastMaxDevices, 17);
+      expect(service.lastMaxAddresses, 4);
+    });
+
+    test('should fail when generated device fetch fails', () async {
+      service.shouldFailGetDevices = true;
 
       final result = await repository.fetchDevices();
       expectError(result, messageContains: 'Forced getNetworkDevices failure');

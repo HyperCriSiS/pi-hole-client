@@ -1,4 +1,5 @@
 import 'package:pi_hole_client/data/mapper/v6/network_mapper.dart';
+import 'package:pi_hole_client/data/model/v6/network/devices.dart' as legacy_devices;
 import 'package:pi_hole_client/data/repositories/api/interfaces/network_repository.dart';
 import 'package:pi_hole_client/data/repositories/api/v6/base_v6_sid_repository.dart';
 import 'package:pi_hole_client/data/repositories/utils/call_with_retry.dart';
@@ -27,12 +28,14 @@ class NetworkRepositoryV6 extends BaseV6SidRepository
     return runWithResultRetry<List<Device>>(
       action: () async {
         final sid = await getSid();
-        final result = await _client.getNetworkDevices(
-          sid,
+        _service.setSid(sid);
+        final result = await _service.getNetworkDevices(
           maxDevices: maxDevices,
           maxAddresses: maxAddresses,
         );
-        return result.map((e) => e.toDomain());
+        return result.map(
+          (e) => legacy_devices.Devices.fromJson(e.toJson()).toDomain(),
+        );
       },
       onRetry: (_, e) => renewSidIfExpired(e),
     );

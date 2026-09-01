@@ -534,9 +534,15 @@ class PiholeV6Service {
   // Network Information
   // ===========================================================================
 
-  Future<Result<GetNetwork200Response>> getNetworkDevices() {
+  Future<Result<GetNetwork200Response>> getNetworkDevices({
+    int? maxDevices,
+    int? maxAddresses,
+  }) {
     return safeDioCall(() async {
-      final response = await _networkApi.getNetwork();
+      final response = await _networkApi.getNetwork(
+        maxDevices: maxDevices,
+        maxAddresses: maxAddresses,
+      );
       return response.requireData;
     });
   }
