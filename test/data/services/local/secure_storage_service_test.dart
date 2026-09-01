@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:pi_hole_client/data/services/local/secure_storage_service.dart';
+import 'package:pi_hole_client/domain/services/app_log_service.dart';
 import '../utils/mocks.mocks.dart';
 
 void main() {
@@ -32,6 +33,40 @@ void main() {
         contains('Failed to save value: Exception: write error'),
       );
     });
+
+    test(
+      'write failure is added to App Logs without exposing credentials',
+      () async {
+        final appLogs = AppLogService();
+        service = SecureStorageService(
+          secureStorage: mockStorage,
+          appLogService: appLogs,
+        );
+        when(
+          mockStorage.write(key: anyNamed('key'), value: anyNamed('value')),
+        ).thenThrow(Exception('password=super-secret token=api-secret'));
+
+        final result = await service.saveValue(
+          'https://pi.hole_password',
+          'value-that-must-not-be-logged',
+        );
+
+        expect(result.isError(), true);
+        expect(appLogs.logs, hasLength(1));
+        expect(appLogs.logs.single.type, 'secure-storage');
+        expect(appLogs.logs.single.message, contains('password credential'));
+        expect(appLogs.logs.single.message, isNot(contains('super-secret')));
+        expect(appLogs.logs.single.message, isNot(contains('api-secret')));
+        expect(
+          appLogs.logs.single.message,
+          isNot(contains('value-that-must-not-be-logged')),
+        );
+        expect(
+          appLogs.logs.single.message,
+          isNot(contains('https://pi.hole')),
+        );
+      },
+    );
 
     test('getValue returns Success when value exists', () async {
       when(

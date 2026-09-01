@@ -6,12 +6,18 @@ import 'package:pi_hole_client/data/repositories/local/interfaces/app_config_rep
 import 'package:pi_hole_client/domain/model/app/app_config.dart';
 import 'package:pi_hole_client/domain/model/app/app_log.dart';
 import 'package:pi_hole_client/domain/model/enums.dart';
+import 'package:pi_hole_client/domain/services/app_log_service.dart';
 import 'package:pi_hole_client/ui/core/l10n/languages.dart';
 import 'package:pi_hole_client/ui/core/themes/theme.dart';
 import 'package:pi_hole_client/utils/logger.dart';
 
 class AppConfigViewModel with ChangeNotifier {
-  AppConfigViewModel(this._repository);
+  AppConfigViewModel(
+    this._repository, {
+    AppLogService? appLogService,
+  }) : _appLogService = appLogService ?? AppLogService() {
+    _appLogService.addListener(_onAppLogChanged);
+  }
 
   bool _showingSnackbar = false;
   bool _detailScreenOpen = false;
@@ -40,7 +46,7 @@ class AppConfigViewModel with ChangeNotifier {
   bool _liveLog = true;
   bool _isLivelogPaused = true;
 
-  final List<AppLog> _logs = [];
+  final AppLogService _appLogService;
   final AppConfigRepository _repository;
 
   AppColors get colors =>
@@ -158,7 +164,7 @@ class AppConfigViewModel with ChangeNotifier {
   }
 
   List<AppLog> get logs {
-    return _logs;
+    return _appLogService.logs;
   }
 
   int get logAutoRefreshTime {
@@ -225,9 +231,10 @@ class AppConfigViewModel with ChangeNotifier {
     notifyListeners();
   }
 
+  void _onAppLogChanged() => notifyListeners();
+
   void addLog(AppLog log) {
-    _logs.add(log);
-    notifyListeners();
+    _appLogService.addLog(log);
   }
 
   Future<bool> setUseBiometrics(bool biometrics) async {
@@ -263,6 +270,7 @@ class AppConfigViewModel with ChangeNotifier {
         final updated2 = await _repository.updatePassCode(code);
         if (updated2.isSuccess()) {
           _passCode = code;
+          if (code == null) _appUnlocked = true;
           notifyListeners();
           return true;
         } else {
@@ -275,6 +283,7 @@ class AppConfigViewModel with ChangeNotifier {
       final updated = await _repository.updatePassCode(code);
       if (updated.isSuccess()) {
         _passCode = code;
+        if (code == null) _appUnlocked = true;
         notifyListeners();
         return true;
       } else {
@@ -367,9 +376,7 @@ class AppConfigViewModel with ChangeNotifier {
     _homeVisualizationMode = config.homeVisualizationMode;
     _sendCrashReports = config.sendCrashReports ? 1 : 0;
 
-    if (config.passCode != null) {
-      _appUnlocked = false;
-    }
+    _appUnlocked = config.passCode == null;
 
     notifyListeners();
   }
@@ -482,4 +489,11 @@ class AppConfigViewModel with ChangeNotifier {
       return false;
     }
   }
+
+  @override
+  void dispose() {
+    _appLogService.removeListener(_onAppLogChanged);
+    super.dispose();
+  }
+
 }

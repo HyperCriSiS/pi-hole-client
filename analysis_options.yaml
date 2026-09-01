@@ -17,8 +17,8 @@ linter:
   # https://dart-lang.github.io/linter/lints/index.html.
   #
   # Instead of disabling a lint rule for the entire project in the
-  # section below, it can also be suppressed for a single line of code
-  # or a specific dart file by using the `// ignore: name_of_lint` and
+  # section below, it can also be suppressed for a single line of code or
+  # specific dart file by using the `// ignore: name_of_lint` and
   # `// ignore_for_file: name_of_lint` syntax on the line or in the file
   # producing the lint.
   rules:
@@ -237,3 +237,11 @@ analyzer:
     - lib/**/*.g.dart
     - lib/ui/settings/about/widgets/about.dart
     - lib/data/services/api/generated/**
+    - mock_api_server/**
+    - build/**
+    - android/**
+    - ios/**
+    - web/**
+    - windows/**
+    - macos/**
+    - linux/**

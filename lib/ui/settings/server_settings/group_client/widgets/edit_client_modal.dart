@@ -58,94 +58,101 @@ class _EditClientModalState extends State<EditClientModal> {
   @override
   Widget build(BuildContext context) {
     Widget content() {
-      return Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Flexible(
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    widget.icon,
-                    size: 24,
-                    color: Theme.of(context).colorScheme.secondary,
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Text(
-                      widget.title,
-                      style: const TextStyle(fontSize: 24),
-                    ),
-                  ),
-                  if (widget.keyItem == 'comment')
-                    TextField(
-                      controller: commentController,
-                      onChanged: validateComment,
-                      decoration: InputDecoration(
-                        prefixIcon: const Icon(Icons.comment_rounded),
-                        border: const OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(10)),
-                        ),
-                        labelText: AppLocalizations.of(context)!.comment,
+      return Container(
+        constraints: const BoxConstraints(minHeight: 360),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Flexible(
+              child: Center(
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        widget.icon,
+                        size: 24,
+                        color: Theme.of(context).colorScheme.secondary,
                       ),
-                    ),
-                  if (widget.keyItem == 'groups')
-                    LabeledMultiSelectTile(
-                      isExpanded: true,
-                      initiallySelectedItems: widget.client.groups,
-                      labelText: AppLocalizations.of(context)!.groups,
-                      hintText: AppLocalizations.of(
-                        context,
-                      )!.selectGroupsMessage,
-                      icon: Icons.group_rounded,
-                      options: widget.groups,
-                      onSelectionChanged: (list) {
-                        selectedGroups = list;
-                        validateGroups();
-                      },
-                    ),
-                ],
-              ),
-            ),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton(
-                onPressed: () => Navigator.maybePop(context),
-                child: Text(AppLocalizations.of(context)!.cancel),
-              ),
-              const SizedBox(width: 14),
-              TextButton(
-                onPressed: allDataValid
-                    ? () {
-                        if (widget.keyItem == 'comment') {
-                          final comment = commentController.text.trim();
-                          widget.onConfirm((
-                            comment: comment.isEmpty ? null : comment,
-                            groups: widget.client.groups,
-                          ));
-                        }
-                        if (widget.keyItem == 'groups') {
-                          widget.onConfirm((
-                            comment: widget.client.comment,
-                            groups: selectedGroups,
-                          ));
-                        }
-                        Navigator.maybePop(context);
-                      }
-                    : null,
-                style: ButtonStyle(
-                  foregroundColor: WidgetStateProperty.all(
-                    allDataValid ? null : Colors.grey,
+                      Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Text(
+                          widget.title,
+                          style: const TextStyle(fontSize: 24),
+                        ),
+                      ),
+                      if (widget.keyItem == 'comment')
+                        TextField(
+                          controller: commentController,
+                          onChanged: validateComment,
+                          decoration: InputDecoration(
+                            prefixIcon: const Icon(Icons.comment_rounded),
+                            border: const OutlineInputBorder(
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(10),
+                              ),
+                            ),
+                            labelText: AppLocalizations.of(context)!.comment,
+                          ),
+                        ),
+                      if (widget.keyItem == 'groups')
+                        LabeledMultiSelectTile(
+                          isExpanded: true,
+                          initiallySelectedItems: widget.client.groups,
+                          labelText: AppLocalizations.of(context)!.groups,
+                          hintText: AppLocalizations.of(
+                            context,
+                          )!.selectGroupsMessage,
+                          icon: Icons.group_rounded,
+                          options: widget.groups,
+                          onSelectionChanged: (list) {
+                            selectedGroups = list;
+                            validateGroups();
+                          },
+                        ),
+                    ],
                   ),
                 ),
-                child: Text(AppLocalizations.of(context)!.edit),
               ),
-            ],
-          ),
-        ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.maybePop(context),
+                  child: Text(AppLocalizations.of(context)!.cancel),
+                ),
+                const SizedBox(width: 14),
+                TextButton(
+                  onPressed: allDataValid
+                      ? () {
+                          if (widget.keyItem == 'comment') {
+                            final comment = commentController.text.trim();
+                            widget.onConfirm((
+                              comment: comment.isEmpty ? null : comment,
+                              groups: widget.client.groups,
+                            ));
+                          }
+                          if (widget.keyItem == 'groups') {
+                            widget.onConfirm((
+                              comment: widget.client.comment,
+                              groups: selectedGroups,
+                            ));
+                          }
+                          Navigator.maybePop(context);
+                        }
+                      : null,
+                  style: ButtonStyle(
+                    foregroundColor: WidgetStateProperty.all(
+                      allDataValid ? null : Colors.grey,
+                    ),
+                  ),
+                  child: Text(AppLocalizations.of(context)!.edit),
+                ),
+              ],
+            ),
+          ],
+        ),
       );
     }
 

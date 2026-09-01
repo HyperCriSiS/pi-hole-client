@@ -40,7 +40,7 @@ class _AddClientModalState extends State<AddClientModal> {
     final locale = AppLocalizations.of(context)!;
     Widget content() {
       return Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Flexible(
             child: SingleChildScrollView(
@@ -152,7 +152,7 @@ class _AddClientModalState extends State<AddClientModal> {
     if (widget.window) {
       return Dialog(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 600, maxHeight: 560),
+          constraints: const BoxConstraints(maxWidth: 600),
           child: Padding(padding: const EdgeInsets.all(16), child: content()),
         ),
       );
@@ -160,11 +160,9 @@ class _AddClientModalState extends State<AddClientModal> {
 
     return Padding(
       padding: MediaQuery.of(context).viewInsets,
-      child: SafeArea(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxHeight: 560),
-          child: Padding(padding: const EdgeInsets.all(24), child: content()),
-        ),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: SafeArea(child: content()),
       ),
     );
   }

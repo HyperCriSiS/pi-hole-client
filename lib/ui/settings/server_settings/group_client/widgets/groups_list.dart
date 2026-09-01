@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:pi_hole_client/domain/model/group/group.dart';
 import 'package:pi_hole_client/ui/core/l10n/generated/app_localizations.dart';
+import 'package:pi_hole_client/ui/core/ui/components/error_message.dart';
 import 'package:pi_hole_client/ui/core/ui/components/tab_content_list.dart';
 import 'package:pi_hole_client/ui/core/ui/helpers/responsive.dart';
 import 'package:pi_hole_client/ui/core/ui/helpers/snackbar.dart';
@@ -239,20 +240,10 @@ class _GroupsListState extends State<GroupsList> {
           errorGenerator: () => SizedBox(
             width: double.maxFinite,
             height: 300,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.error, size: 50, color: Colors.red),
-                const SizedBox(height: 50),
-                Text(
-                  AppLocalizations.of(context)!.groupsNotLoaded,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    fontSize: 22,
-                  ),
-                ),
-              ],
+            child: ErrorMessage(
+              message: AppLocalizations.of(context)!.groupsNotLoaded,
+              fontSize: 22,
+              fontColor: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
           loadStatus: groupsViewModel.loadingStatus,

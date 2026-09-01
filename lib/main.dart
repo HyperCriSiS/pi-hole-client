@@ -18,6 +18,7 @@ import 'package:pi_hole_client/data/repositories/local/interfaces/app_config_rep
 import 'package:pi_hole_client/data/repositories/local/server_repository.dart';
 import 'package:pi_hole_client/data/services/local/database_service.dart';
 import 'package:pi_hole_client/data/services/local/secure_storage_service.dart';
+import 'package:pi_hole_client/domain/services/app_log_service.dart';
 import 'package:pi_hole_client/pi_hole_client.dart';
 import 'package:pi_hole_client/ui/core/view_models/app_config_viewmodel.dart';
 import 'package:pi_hole_client/ui/core/view_models/servers_viewmodel.dart';
@@ -192,19 +193,24 @@ Future<Widget> bootstrapApp({
   // Services & Repositories
   final dbService = databaseService ?? DatabaseService();
   await dbService.open();
-  final storage = secureStorageService ?? SecureStorageService();
+  final appLogService = AppLogService();
+  final storage =
+      secureStorageService ?? SecureStorageService(appLogService: appLogService);
   final appConfigRepository = LocalAppConfigRepository(dbService, storage);
   final serverRepository = LocalServerRepository(dbService, storage);
 
   // ViewModels
   final gravityRepository = LocalGravityRepository(dbService);
-  final sessionCacheStore = V6SessionCacheStore();
+  final sessionCacheStore = V6SessionCacheStore(appLogService: appLogService);
   final serversViewModel = ServersViewModel(
     serverRepository,
     sessionCacheStore: sessionCacheStore,
   );
-  final configProvider = AppConfigViewModel(appConfigRepository);
-  final statusViewModel = StatusViewModel();
+  final configProvider = AppConfigViewModel(
+    appConfigRepository,
+    appLogService: appLogService,
+  );
+  final statusViewModel = StatusViewModel(appLogService: appLogService);
   final logsViewModel = LogsViewModel();
   final domainsViewModel = DomainsViewModel();
   final gravityUpdateViewModel = GravityUpdateViewModel(

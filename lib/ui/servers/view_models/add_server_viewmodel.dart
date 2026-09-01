@@ -217,6 +217,33 @@ class AddServerViewModel extends ChangeNotifier {
     return result['exists'] == true ? _UrlCheck.duplicate : _UrlCheck.available;
   }
 
+  /// Persists password and token as one logical operation.
+  ///
+  /// Secure-storage operations return [Result], so a caller must not treat a
+  /// failed write as a successful server save.
+  Future<Exception?> _saveCredentials({
+    required String address,
+    required String password,
+    required String token,
+  }) async {
+    final passwordResult = await _serversViewModel.savePassword(
+      address,
+      password,
+    );
+    if (passwordResult.isError()) {
+      return passwordResult.exceptionOrNull() ??
+          Exception('Failed to save password credential');
+    }
+
+    final tokenResult = await _serversViewModel.saveToken(address, token);
+    if (tokenResult.isError()) {
+      return tokenResult.exceptionOrNull() ??
+          Exception('Failed to save token credential');
+    }
+
+    return null;
+  }
+
   /// Adds a new server: checks the URL is not in use, resolves the certificate,
   /// saves the credentials, creates a v6 session if needed and checks the
   /// blocking status. Credentials saved during the attempt are removed on
@@ -255,8 +282,16 @@ class AddServerViewModel extends ChangeNotifier {
     }
     serverObj = resolved;
 
-    await _serversViewModel.savePassword(req.url, req.password);
-    await _serversViewModel.saveToken(req.url, req.token);
+    final credentialError = await _saveCredentials(
+      address: req.url,
+      password: req.password,
+      token: req.token,
+    );
+    if (credentialError != null) {
+      await _serversViewModel.deletePassword(req.url);
+      await _serversViewModel.deleteToken(req.url);
+      return const CreateDbError();
+    }
 
     final bundle = _createBundle(server: serverObj);
     if (serverObj.apiVersion == SupportedApiVersions.v6) {
@@ -439,8 +474,22 @@ class AddServerViewModel extends ChangeNotifier {
     }
     serverObj = updatedServer;
 
-    await _serversViewModel.savePassword(targetAddress, req.password);
-    await _serversViewModel.saveToken(targetAddress, req.token);
+    final credentialError = await _saveCredentials(
+      address: targetAddress,
+      password: req.password,
+      token: req.token,
+    );
+    if (credentialError != null) {
+      if (isAddressChanged) {
+        await _serversViewModel.deletePassword(targetAddress);
+        await _serversViewModel.deleteToken(targetAddress);
+        await _serversViewModel.deleteSid(targetAddress);
+      } else {
+        await restoreSecrets();
+      }
+      restartAutoRefresh();
+      return const UpdateDbError();
+    }
 
     final bundle = _createBundle(server: serverObj);
     final auth = await _authenticate(

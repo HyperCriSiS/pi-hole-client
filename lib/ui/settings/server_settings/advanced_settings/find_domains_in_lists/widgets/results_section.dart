@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pi_hole_client/ui/core/ui/components/error_message.dart';
 import 'package:pi_hole_client/domain/model/domain/domain.dart';
 import 'package:pi_hole_client/domain/model/list/adlist.dart';
 import 'package:pi_hole_client/domain/model/list/list_search_result.dart';
@@ -35,10 +36,7 @@ class ResultsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (errorMessage != null) {
-      return Text(
-        errorMessage!,
-        style: TextStyle(color: Theme.of(context).colorScheme.error),
-      );
+      return ErrorMessage(message: errorMessage!);
     }
 
     if (!hasSearched) {

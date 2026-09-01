@@ -229,8 +229,10 @@ class _AutoCompleteFieldState<T> extends State<AutoCompleteField<T>> {
                       contentPadding: widget.contentPadding,
                     ),
                   ),
-                  // Suggestions list
-                  _buildSuggestions(items),
+                  // The suggestions are visually part of the field. Keep them
+                  // in the same tap group so desktop mouse interactions do not
+                  // dismiss the TextField before a suggestion/scrollbar can act.
+                  TextFieldTapRegion(child: _buildSuggestions(items)),
                 ],
               ),
             ),

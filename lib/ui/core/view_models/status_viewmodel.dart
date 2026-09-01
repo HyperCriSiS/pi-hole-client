@@ -12,6 +12,7 @@ import 'package:pi_hole_client/domain/model/ftl/system.dart';
 import 'package:pi_hole_client/domain/model/overtime/overtime.dart';
 import 'package:pi_hole_client/domain/model/realtime_status/realtime_status.dart';
 import 'package:pi_hole_client/domain/model/server/api_versions.dart';
+import 'package:pi_hole_client/domain/services/app_log_service.dart';
 import 'package:pi_hole_client/domain/use_cases/realtime_status/realtime_status_usecase.dart';
 import 'package:pi_hole_client/domain/use_cases/realtime_status/realtime_status_usecase_v5.dart';
 import 'package:pi_hole_client/domain/use_cases/realtime_status/realtime_status_usecase_v6.dart';
@@ -28,6 +29,20 @@ import 'package:pi_hole_client/utils/widget_channel.dart';
 /// All timer/fetch logic now lives here; ViewModel->ViewModel communication
 /// is eliminated via value + callback injection through [update].
 class StatusViewModel with ChangeNotifier {
+  StatusViewModel({AppLogService? appLogService})
+    : _appLogService = appLogService;
+
+  final AppLogService? _appLogService;
+
+  void _recordConnectionFailure(String stage, Object? error) {
+    _appLogService?.addDiagnostic(
+      type: 'connection',
+      message:
+          '$stage failed: ${error?.runtimeType ?? 'UnknownError'}: '
+          '${error ?? 'No error details available'}',
+    );
+  }
+
   // ---------------------------------------------------------------------------
   // Dependencies (injected via [update] from ProxyProvider)
   // ---------------------------------------------------------------------------
@@ -319,6 +334,7 @@ class StatusViewModel with ChangeNotifier {
     if (!isFatal || selectedUrlBefore != _selectedServerAddress) {
       return false;
     }
+    _recordConnectionFailure('Fatal status refresh', error);
     logger.w(
       'Fatal connection error during status refresh; '
       'stopping auto-refresh: $error',
@@ -439,6 +455,7 @@ class StatusViewModel with ChangeNotifier {
       },
       (error) {
         if (_handleFatalConnectionError(error, selectedUrlBefore)) return false;
+        _recordConnectionFailure('Realtime status request', error);
         _statusLoading = LoadStatus.error;
         notifyListeners();
         return false;
@@ -598,6 +615,7 @@ class StatusViewModel with ChangeNotifier {
           if (selectedUrlBefore == _selectedServerAddress) {
             var changed = false;
             if (_serverStatus == LoadStatus.loaded) {
+              _recordConnectionFailure('Auto-refresh status request', error);
               logger.w(
                 'Server disconnected: $error. '
                 '$_selectedServerAlias ($_selectedServerAddress)',

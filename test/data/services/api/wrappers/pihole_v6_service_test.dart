@@ -92,6 +92,12 @@ void main() {
     service = PiholeV6Service(api: mockApi);
   });
 
+  test('setSid configures the generated x_header_sid API key', () {
+    service.setSid('sid-123');
+
+    verify(mockApi.setApiKey('x_header_sid', 'sid-123')).called(1);
+  });
+
   // ==========================================================================
   // Authentication
   // ==========================================================================

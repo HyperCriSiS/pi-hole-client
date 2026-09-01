@@ -27,6 +27,7 @@ import 'package:pi_hole_client/data/model/v6/lists/lists.dart' show Lists;
 import 'package:pi_hole_client/data/model/v6/lists/search.dart' show Search;
 import 'package:pi_hole_client/data/model/v6/metrics/history.dart'
     show History, HistoryClients;
+import 'package:pi_hole_client/data/model/v6/metrics/query_filter.dart';
 import 'package:pi_hole_client/data/model/v6/metrics/query.dart' show Queries;
 import 'package:pi_hole_client/data/model/v6/metrics/stats.dart'
     show StatsSummary, StatsTopClients, StatsTopDomains, StatsUpstreams;
@@ -253,15 +254,24 @@ class PiholeV6ApiClient {
     int? length = 100,
     int? cursor,
     int? start,
+    V6QueryFilter? filter,
   }) async {
-    final cursorPram = cursor == null ? '' : '&cursor=$cursor';
-    final startParam = start == null ? '' : '&start=$start';
+    final queryParameters = <String, dynamic>{
+      'from': from.millisecondsSinceEpoch ~/ 1000,
+      'until': until.millisecondsSinceEpoch ~/ 1000,
+      'length': length,
+      if (cursor != null) 'cursor': cursor,
+      if (start != null) 'start': start,
+    };
+    if (filter != null) {
+      queryParameters.addAll(filter.toQueryParameters());
+    }
+    final queryString = _buildQueryString(queryParameters);
 
     return safeApiCall<Queries>(() async {
       final resp = await _sendRequest(
         method: HttpMethod.get,
-        path:
-            '/api/queries?from=${from.millisecondsSinceEpoch ~/ 1000}&until=${until.millisecondsSinceEpoch ~/ 1000}&length=$length$cursorPram$startParam',
+        path: '/api/queries?$queryString',
         sid: sid,
       );
 

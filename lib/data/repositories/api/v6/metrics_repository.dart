@@ -1,4 +1,5 @@
 import 'package:pi_hole_client/data/mapper/v6/metrics_mapper.dart';
+import 'package:pi_hole_client/data/model/v6/metrics/query_filter.dart';
 import 'package:pi_hole_client/data/repositories/api/interfaces/metrics_repository.dart';
 import 'package:pi_hole_client/data/repositories/api/v6/base_v6_sid_repository.dart';
 import 'package:pi_hole_client/data/repositories/utils/call_with_retry.dart';
@@ -14,7 +15,7 @@ import 'package:pi_hole_client/domain/model/overtime/overtime.dart';
 import 'package:result_dart/result_dart.dart';
 
 class MetricsRepositoryV6 extends BaseV6SidRepository
-    implements MetricsRepository {
+    implements MetricsRepository, FilteredMetricsRepository {
   MetricsRepositoryV6({
     required PiholeV6ApiClient client,
     required super.sessionCache,
@@ -53,6 +54,22 @@ class MetricsRepositoryV6 extends BaseV6SidRepository
     int? length = 100,
     int? cursor,
     int? start,
+  }) => fetchQueriesFiltered(
+    from: from,
+    until: until,
+    length: length,
+    cursor: cursor,
+    start: start,
+  );
+
+  @override
+  Future<Result<Logs>> fetchQueriesFiltered({
+    required DateTime from,
+    required DateTime until,
+    int? length = 100,
+    int? cursor,
+    int? start,
+    V6QueryFilter? filter,
   }) async {
     return runWithResultRetry(
       action: () async {
@@ -64,6 +81,7 @@ class MetricsRepositoryV6 extends BaseV6SidRepository
           length: length,
           cursor: cursor,
           start: start,
+          filter: filter,
         );
 
         return result.map((e) => e.toDomain());

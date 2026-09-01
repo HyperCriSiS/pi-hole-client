@@ -32,6 +32,7 @@ import 'package:pi_hole_client/data/repositories/api/v6/v6_session_cache.dart';
 import 'package:pi_hole_client/data/repositories/api/v6/v6_session_cache_store.dart';
 import 'package:pi_hole_client/data/services/api/pihole_v5_api_client.dart';
 import 'package:pi_hole_client/data/services/api/pihole_v6_api_client.dart';
+import 'package:pi_hole_client/data/services/api/wrappers/pihole_v6_service.dart';
 import 'package:pi_hole_client/data/services/local/secure_storage_service.dart';
 import 'package:pi_hole_client/data/services/local/session_credential_service.dart';
 import 'package:pi_hole_client/domain/model/server/api_versions.dart';
@@ -60,10 +61,17 @@ class RepositoryBundleFactory {
               client: client,
             ) ??
             V6SessionCache(creds: creds, client: client);
+        final generatedService = PiholeV6Service.fromConnection(
+          url: server.address,
+          allowUntrustedCert: server.allowUntrustedCert,
+          ignoreCertificateErrors: server.ignoreCertificateErrors,
+          pinnedCertificateSha256: server.pinnedCertificateSha256,
+        );
 
         return RepositoryBundle(
           actions: ActionsRepositoryV6(
             client: client,
+            service: generatedService,
             sessionCache: sessionCache,
           ),
           adlist: AdlistRepositoryV6(
@@ -79,13 +87,23 @@ class RepositoryBundleFactory {
             client: client,
             sessionCache: sessionCache,
           ),
-          dhcp: DhcpRepositoryV6(client: client, sessionCache: sessionCache),
-          dns: DnsRepositoryV6(client: client, sessionCache: sessionCache),
+          dhcp: DhcpRepositoryV6(
+            service: generatedService,
+            sessionCache: sessionCache,
+          ),
+          dns: DnsRepositoryV6(
+            service: generatedService,
+            sessionCache: sessionCache,
+          ),
           domain: DomainRepositoryV6(
             client: client,
             sessionCache: sessionCache,
           ),
-          ftl: FtlRepositoryV6(client: client, sessionCache: sessionCache),
+          ftl: FtlRepositoryV6(
+            client: client,
+            service: generatedService,
+            sessionCache: sessionCache,
+          ),
           group: GroupRepositoryV6(client: client, sessionCache: sessionCache),
           localDns: LocalDnsRepositoryV6(
             client: client,
@@ -97,6 +115,7 @@ class RepositoryBundleFactory {
           ),
           network: NetworkRepositoryV6(
             client: client,
+            service: generatedService,
             sessionCache: sessionCache,
           ),
           realtimeStatus: v6.RealtimeStatusRepositoryV6(

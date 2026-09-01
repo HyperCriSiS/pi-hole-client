@@ -141,6 +141,16 @@ void main() {
       },
     );
 
+    test('removing passcode unlocks the in-memory app state', () async {
+      appConfigViewModel.setAppUnlocked(false);
+
+      final result = await appConfigViewModel.setPassCode(null);
+
+      expect(result, true);
+      expect(appConfigViewModel.passCode, isNull);
+      expect(appConfigViewModel.appUnlocked, true);
+    });
+
     test('setAutoRefreshTime updates value and notifies listeners', () async {
       final result = await appConfigViewModel.setAutoRefreshTime(10);
       expect(result, true);
@@ -210,6 +220,34 @@ void main() {
         expect(listenerCalled, true);
       },
     );
+
+    test('saveFromDb unlocks when persisted passcode is absent', () {
+      appConfigViewModel.setAppUnlocked(false);
+
+      const appConfig = AppConfig(
+        autoRefreshTime: 5,
+        theme: AppThemeMode.system,
+        language: 'en',
+        reducedDataCharts: false,
+        logsPerQuery: 2,
+        logAutoRefreshTime: 5,
+        liveLog: true,
+        isLivelogPaused: true,
+        useBiometricAuth: false,
+        importantInfoReaden: false,
+        hideZeroValues: false,
+        loadingAnimation: true,
+        statisticsVisualizationMode: StatisticsVisualizationMode.list,
+        homeVisualizationMode: HomeVisualizationMode.lineArea,
+        sendCrashReports: false,
+        passCode: null,
+      );
+
+      appConfigViewModel.saveFromDb(appConfig);
+
+      expect(appConfigViewModel.passCode, isNull);
+      expect(appConfigViewModel.appUnlocked, true);
+    });
 
     test('setReducedDataCharts updates value and notifies listeners', () async {
       final result = await appConfigViewModel.setReducedDataCharts(true);

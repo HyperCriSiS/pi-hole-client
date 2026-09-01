@@ -6,6 +6,7 @@ import 'package:pi_hole_client/domain/model/enums.dart';
 import 'package:pi_hole_client/routing/route_extra.dart';
 import 'package:pi_hole_client/routing/routes.dart';
 import 'package:pi_hole_client/ui/core/l10n/generated/app_localizations.dart';
+import 'package:pi_hole_client/ui/core/ui/components/error_message.dart';
 import 'package:pi_hole_client/ui/core/themes/theme.dart';
 import 'package:pi_hole_client/ui/core/ui/components/tab_content_list.dart';
 import 'package:pi_hole_client/ui/core/ui/helpers/responsive.dart';
@@ -254,20 +255,8 @@ class _DomainsListState extends State<DomainsList> {
           errorGenerator: () => SizedBox(
             width: double.maxFinite,
             height: 300,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.error, size: 50, color: Colors.red),
-                const SizedBox(height: 50),
-                Text(
-                  AppLocalizations.of(context)!.domainsNotLoaded,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    fontSize: 22,
-                  ),
-                ),
-              ],
+            child: ErrorMessage(
+              message: AppLocalizations.of(context)!.domainsNotLoaded,
             ),
           ),
           loadStatus: viewModel.loadingStatus,

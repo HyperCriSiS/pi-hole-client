@@ -1,6 +1,7 @@
 import 'package:pi_hole_client/data/mapper/v6/auth_mapper.dart';
 import 'package:pi_hole_client/data/services/api/pihole_v6_api_client.dart';
 import 'package:pi_hole_client/data/services/local/session_credential_service.dart';
+import 'package:pi_hole_client/domain/services/app_log_service.dart';
 import 'package:pi_hole_client/utils/exceptions.dart';
 import 'package:pi_hole_client/utils/logger.dart';
 import 'package:pi_hole_client/utils/widget_channel.dart';
@@ -16,13 +17,16 @@ class V6SessionCache {
   V6SessionCache({
     required SessionCredentialService creds,
     required PiholeV6ApiClient client,
+    AppLogService? appLogService,
     this.renewalCooldown = const Duration(milliseconds: 500),
   }) : _creds = creds,
-       _client = client;
+       _client = client,
+       _appLogService = appLogService;
 
   SessionCredentialService _creds;
   PiholeV6ApiClient _client;
   final Duration renewalCooldown;
+  final AppLogService? _appLogService;
 
   String? _sid;
   Future<String>? _pendingLoad;
@@ -64,6 +68,19 @@ class V6SessionCache {
         if (pwResult.isSuccess() && (pwResult.getOrNull() ?? '').isEmpty) {
           return '';
         }
+        if (pwResult.isError()) {
+          _appLogService?.addDiagnostic(
+            type: 'session',
+            message:
+                'Pi-hole v6 session restore failed while reading stored '
+                'credentials: ${pwResult.exceptionOrNull()}',
+          );
+        } else {
+          _appLogService?.addDiagnostic(
+            type: 'session',
+            message: 'Pi-hole v6 session restore failed: stored SID not found.',
+          );
+        }
         throw SidNotFoundException();
       }
       final sid = r.getOrThrow();
@@ -79,7 +96,18 @@ class V6SessionCache {
   Future<void> saveSid(String sid) async {
     _interactiveReauthRequired = false;
     _set(sid);
-    await _creds.saveSid(sid);
+    final result = await _creds.saveSid(sid);
+    if (result.isError()) {
+      _clear();
+      _appLogService?.addDiagnostic(
+        type: 'session',
+        message:
+            'Pi-hole v6 session could not be persisted: '
+            '${result.exceptionOrNull()}',
+      );
+      throw result.exceptionOrNull() ??
+          Exception('Failed to persist Pi-hole v6 session');
+    }
   }
 
   /// Clears the shared SID cache.
@@ -99,9 +127,21 @@ class V6SessionCache {
       // 2FA server: password-only renewal can never succeed. Gate further
       // postAuth attempts and propagate so the UI prompts for a TOTP code.
       _interactiveReauthRequired = true;
+      _appLogService?.addDiagnostic(
+        type: 'auth',
+        message: 'Pi-hole v6 session renewal requires interactive TOTP.',
+      );
       rethrow;
-    } catch (e) {
-      logger.w('[V6SessionCache] Session renewal failed: $e');
+    } catch (e, st) {
+      logger.w(
+        '[V6SessionCache] Session renewal failed',
+        error: e,
+        stackTrace: st,
+      );
+      _appLogService?.addDiagnostic(
+        type: 'session',
+        message: 'Pi-hole v6 session renewal failed: ${e.runtimeType}: $e',
+      );
       await WidgetChannel.sendSidInvalidated(serverAddress: _creds.address);
     }
   }
@@ -139,10 +179,26 @@ class V6SessionCache {
   }
 
   Future<void> _renew() async {
-    final pw = (await _creds.password).getOrNull() ?? '';
+    final passwordResult = await _creds.password;
+    if (passwordResult.isError()) {
+      _appLogService?.addDiagnostic(
+        type: 'session',
+        message:
+            'Pi-hole v6 session renewal could not read the stored '
+            'credential: ${passwordResult.exceptionOrNull()}',
+      );
+      throw passwordResult.exceptionOrNull() ??
+          Exception('Failed to read credential for session renewal');
+    }
+
+    final pw = passwordResult.getOrNull() ?? '';
     if (pw.isEmpty) {
       _clear();
-      await _creds.deleteSid();
+      final deleteResult = await _creds.deleteSid();
+      if (deleteResult.isError()) {
+        throw deleteResult.exceptionOrNull() ??
+            Exception('Failed to clear unauthenticated session');
+      }
       return;
     }
     // Purge the stale SID from storage before POST /api/auth.
@@ -153,6 +209,12 @@ class V6SessionCache {
     if (deleteResult.isError()) {
       logger.w(
         '[V6SessionCache] Failed to purge stale SID: ${deleteResult.exceptionOrNull()}',
+      );
+      _appLogService?.addDiagnostic(
+        type: 'session',
+        message:
+            'Failed to purge stale Pi-hole v6 session before renewal: '
+            '${deleteResult.exceptionOrNull()}',
       );
     }
     final result = await _client.postAuth(password: pw);

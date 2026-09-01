@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pi_hole_client/domain/model/enums.dart';
 import 'package:pi_hole_client/domain/model/metrics/queries.dart';
@@ -78,6 +79,17 @@ class LogDetailsScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(AppLocalizations.of(context)!.logDetails),
         actions: [
+          IconButton(
+            onPressed: () {
+              logsViewModel.setSelectedDomain(log.url);
+              if (context.canPop()) context.pop();
+            },
+            icon: const Icon(Icons.filter_alt_rounded),
+          ),
+          IconButton(
+            onPressed: () => Clipboard.setData(ClipboardData(text: log.url)),
+            icon: const Icon(Icons.content_copy_rounded),
+          ),
           IconButton(
             onPressed: () => openUrl('${Urls.googleSearch}${log.url}'),
             icon: const Icon(Icons.travel_explore_rounded),

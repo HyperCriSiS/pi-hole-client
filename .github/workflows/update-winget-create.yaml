@@ -5,6 +5,9 @@ on:
     types: [published]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   get-version:
     name: Extract Version from pubspec.yaml
@@ -30,6 +33,9 @@ jobs:
           echo "Extracted Version Number: $VERSION_NUMBER"
 
   winget-update:
+    permissions:
+      contents: write
+      pull-requests: write
     name: Create winget manifest
     runs-on: windows-latest
     needs: get-version

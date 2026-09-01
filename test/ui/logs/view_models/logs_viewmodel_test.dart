@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pi_hole_client/data/model/v6/metrics/query_filter.dart';
 import 'package:pi_hole_client/data/repositories/api/interfaces/metrics_repository.dart';
 import 'package:pi_hole_client/domain/model/enums.dart';
 import 'package:pi_hole_client/domain/model/metrics/clients.dart';
@@ -102,6 +103,13 @@ class _CountingPaginationService extends _ControlledPaginationService {
 
   int loadNextPageCallCount = 0;
   int resetCallCount = 0;
+  V6QueryFilter? lastFilter;
+
+  @override
+  void setFilter(V6QueryFilter? filter) {
+    lastFilter = filter;
+    super.setFilter(filter);
+  }
 
   @override
   void reset(DateTime start, DateTime until) {
@@ -794,6 +802,114 @@ void main() {
   });
 
   // -------------------------------------------------------------------------
+  // Direction-aware infinite scrolling (#432)
+  // -------------------------------------------------------------------------
+
+  group('LogsViewModel – direction-aware load more', () {
+    test('newest-first loads older history, not the live service', () async {
+      final initialLog = _allowedLog(
+        url: 'initial.com',
+        device: '10.0.0.1',
+        dateTime: DateTime(2024, 1, 1, 12, 0),
+        id: 1,
+      );
+      final paginationServices = <_CountingPaginationService>[];
+      late _CountingLiveLogsService liveService;
+
+      final vm = LogsViewModel(
+        paginationServiceFactory: ({required MetricsRepository repository}) {
+          final service = _CountingPaginationService([initialLog]);
+          paginationServices.add(service);
+          return service;
+        },
+        liveLogsServiceFactory:
+            ({
+              required LogsPaginationService paginationService,
+              required DateTime endTime,
+            }) {
+              liveService = _CountingLiveLogsService(
+                paginationService: paginationService,
+                endTime: endTime,
+                onTick: () async => const [],
+              );
+              return liveService;
+            },
+      );
+      vm.update(metricsRepository: _StubMetricsRepository(), apiVersion: 'v5');
+      await _initAndLoad(vm);
+
+      final historyService = paginationServices.first;
+      final callsBefore = historyService.loadNextPageCallCount;
+
+      vm.updateSortStatus(0);
+      await vm.enqueueLoadMore();
+
+      expect(historyService.loadNextPageCallCount, equals(callsBefore + 1));
+      expect(liveService.tickCount, equals(0));
+      vm.dispose();
+    });
+
+    test(
+      'oldest-first loads newer logs even when automatic live log is paused',
+      () async {
+        final initialLog = _allowedLog(
+          url: 'initial.com',
+          device: '10.0.0.1',
+          dateTime: DateTime(2024, 1, 1, 12, 0),
+          id: 1,
+        );
+        final newerLog = _allowedLog(
+          url: 'newer.com',
+          device: '10.0.0.2',
+          dateTime: DateTime(2024, 1, 1, 12, 5),
+          id: 2,
+        );
+        final paginationServices = <_CountingPaginationService>[];
+        late _CountingLiveLogsService liveService;
+
+        final vm = LogsViewModel(
+          paginationServiceFactory: ({required MetricsRepository repository}) {
+            final service = _CountingPaginationService([initialLog]);
+            paginationServices.add(service);
+            return service;
+          },
+          liveLogsServiceFactory:
+              ({
+                required LogsPaginationService paginationService,
+                required DateTime endTime,
+              }) {
+                liveService = _CountingLiveLogsService(
+                  paginationService: paginationService,
+                  endTime: endTime,
+                  onTick: () async => [newerLog],
+                );
+                return liveService;
+              },
+        );
+        vm.update(
+          metricsRepository: _StubMetricsRepository(),
+          apiVersion: 'v5',
+        );
+        await _initAndLoad(vm);
+
+        final historyService = paginationServices.first;
+        final callsBefore = historyService.loadNextPageCallCount;
+
+        // Automatic live log remains paused by default. Scrolling to the end
+        // in oldest-first mode must still perform a one-shot newer fetch.
+        vm.updateSortStatus(1);
+        await vm.enqueueLoadMore();
+
+        expect(historyService.loadNextPageCallCount, equals(callsBefore));
+        expect(liveService.tickCount, equals(1));
+        expect(vm.logsListDisplay.last.url, equals('newer.com'));
+        expect(vm.isLoadingMore, isFalse);
+        vm.dispose();
+      },
+    );
+  });
+
+  // -------------------------------------------------------------------------
   // applyFilterAndLoad
   // -------------------------------------------------------------------------
 
@@ -865,6 +981,130 @@ void main() {
       expect(service.loadNextPageCallCount, equals(callsBefore));
       vm.dispose();
     });
+
+    test('v6 exact domain is pushed server-side and reloads', () async {
+      final vm = _buildVm(
+        apiVersion: 'v6',
+        overrideFactory: ({required MetricsRepository repository}) => service,
+      );
+      await _initAndLoad(vm);
+      final callsBefore = service.loadNextPageCallCount;
+      vm.setSelectedDomain('example.com');
+      await vm.applyFilterAndLoad();
+      expect(service.loadNextPageCallCount, callsBefore + 1);
+      expect(service.lastFilter?.domain, 'example.com');
+      expect(service.lastFilter?.status, isNull);
+      vm.dispose();
+    });
+
+    test('v6 single concrete status is pushed server-side', () async {
+      final vm = _buildVm(
+        apiVersion: 'v6',
+        overrideFactory: ({required MetricsRepository repository}) => service,
+      );
+      await _initAndLoad(vm);
+      vm.setStatusSelected([2]);
+      await vm.applyFilterAndLoad();
+      expect(service.lastFilter?.status, 'GRAVITY');
+      vm.dispose();
+    });
+
+    test('v6 multiple statuses retain client-side semantics', () async {
+      final vm = _buildVm(
+        apiVersion: 'v6',
+        overrideFactory: ({required MetricsRepository repository}) => service,
+      );
+      await _initAndLoad(vm);
+      vm.setStatusSelected([2, 3]);
+      await vm.applyFilterAndLoad();
+      expect(service.lastFilter?.status, isNull);
+      vm.dispose();
+    });
+
+    test('v6 single IPv4 client is pushed server-side', () async {
+      final vm = _buildVm(
+        apiVersion: 'v6',
+        overrideFactory: ({required MetricsRepository repository}) => service,
+      );
+      await _initAndLoad(vm);
+      vm.setClients(['192.168.1.10', '192.168.1.11']);
+      vm.setSelectedClients(['192.168.1.10']);
+      await vm.applyFilterAndLoad();
+      expect(service.lastFilter?.clientIp, '192.168.1.10');
+      vm.dispose();
+    });
+
+    test('v6 single IPv6 client is pushed server-side', () async {
+      final vm = _buildVm(
+        apiVersion: 'v6',
+        overrideFactory: ({required MetricsRepository repository}) => service,
+      );
+      await _initAndLoad(vm);
+      vm.setClients(['2001:db8::10', '2001:db8::11']);
+      vm.setSelectedClients(['2001:db8::10']);
+      await vm.applyFilterAndLoad();
+      expect(service.lastFilter?.clientIp, '2001:db8::10');
+      vm.dispose();
+    });
+
+    test('v6 hostname client retains client-side semantics', () async {
+      final vm = _buildVm(
+        apiVersion: 'v6',
+        overrideFactory: ({required MetricsRepository repository}) => service,
+      );
+      await _initAndLoad(vm);
+      vm.setClients(['router.lan', '192.168.1.11']);
+      vm.setSelectedClients(['router.lan']);
+      await vm.applyFilterAndLoad();
+      expect(service.lastFilter?.clientIp, isNull);
+      vm.dispose();
+    });
+
+    test('v6 multiple clients retain client-side semantics', () async {
+      final vm = _buildVm(
+        apiVersion: 'v6',
+        overrideFactory: ({required MetricsRepository repository}) => service,
+      );
+      await _initAndLoad(vm);
+      vm.setClients(['192.168.1.10', '192.168.1.11', '192.168.1.12']);
+      vm.setSelectedClients(['192.168.1.10', '192.168.1.11']);
+      await vm.applyFilterAndLoad();
+      expect(service.lastFilter?.clientIp, isNull);
+      vm.dispose();
+    });
+
+    test('v6 all-selected single client is not pushed server-side', () async {
+      final vm = _buildVm(
+        apiVersion: 'v6',
+        overrideFactory: ({required MetricsRepository repository}) => service,
+      );
+      await _initAndLoad(vm);
+      vm.setClients(['192.168.1.10']);
+      vm.setSelectedClients(['192.168.1.10']);
+      await vm.applyFilterAndLoad();
+      expect(service.lastFilter?.clientIp, isNull);
+      vm.dispose();
+    });
+
+    test(
+      'v6 chip reset reloads after clearing a server-side domain filter',
+      () async {
+        final vm = _buildVm(
+          apiVersion: 'v6',
+          overrideFactory: ({required MetricsRepository repository}) => service,
+        );
+        await _initAndLoad(vm);
+        vm.setSelectedDomain('example.com');
+        await vm.applyFilterAndLoad();
+        final callsBeforeReset = service.loadNextPageCallCount;
+        vm.setSelectedDomain(null);
+        vm.resetLogs();
+        await Future<void>.delayed(Duration.zero);
+        expect(service.loadNextPageCallCount, greaterThan(callsBeforeReset));
+        expect(service.lastFilter, isNull);
+        vm.dispose();
+      },
+    );
 
     test('isFiltering is true after call', () async {
       final vm = buildTrackedVm();

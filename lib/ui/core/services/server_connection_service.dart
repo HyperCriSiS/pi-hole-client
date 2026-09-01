@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:pi_hole_client/data/repositories/api/interfaces/repository_bundle.dart';
+import 'package:pi_hole_client/domain/model/app/app_log.dart';
 import 'package:pi_hole_client/domain/model/dns/dns.dart';
 import 'package:pi_hole_client/domain/model/enums.dart';
 import 'package:pi_hole_client/domain/model/server/api_versions.dart';
@@ -83,6 +84,12 @@ class ServerConnectionService {
   final bool showModal;
   final TlsCertificateFetcher fetchTlsCertificate;
 
+  void _recordDiagnostic(String type, String message) {
+    appConfigViewModel.addLog(
+      AppLog(type: type, dateTime: DateTime.now(), message: message),
+    );
+  }
+
   Future<void> connect() async {
     // Prevent a second concurrent connection attempt to the same server.
     // Two callers (e.g. home screen + server list) can both trigger connect()
@@ -136,6 +143,11 @@ class ServerConnectionService {
           '${previouslySelectedServer?.address}(${previouslySelectedServer?.alias}) '
           '<- ${server.address}(${server.alias})',
         );
+        _recordDiagnostic(
+          'connection',
+          'Server connection failed: ${error?.runtimeType ?? 'UnknownError'}: '
+              '${error ?? 'No error details available'}',
+        );
         await _onFailure(previouslySelectedServer, error, previousStatus);
         return;
       }
@@ -152,6 +164,10 @@ class ServerConnectionService {
         '${server.address}(${server.alias})',
         error: e,
         stackTrace: st,
+      );
+      _recordDiagnostic(
+        'connection',
+        'Unexpected server connection failure: ${e.runtimeType}: $e',
       );
       if (serversViewModel.connectingServer == server) {
         _abortConnection(previouslySelectedServer);
@@ -196,6 +212,17 @@ class ServerConnectionService {
       final creds = await serversViewModel.fetchCredentials(
         serverForLogin.address,
       );
+      if (creds.isError()) {
+        process?.close();
+        final error =
+            creds.exceptionOrNull() ?? Exception('Failed to load credentials');
+        _recordDiagnostic(
+          'secure-storage',
+          'Failed to load stored server credentials before connection: '
+              '${error.runtimeType}: $error',
+        );
+        return Failure(error);
+      }
       final pw = creds.getOrNull()?.password ?? '';
       if (pw.isNotEmpty) {
         // Try existing session first to avoid creating unnecessary sessions.
@@ -276,10 +303,14 @@ class ServerConnectionService {
         return code;
       },
     );
-    return (
-      cancelled: outcome.cancelled,
-      error: outcome.result.exceptionOrNull(),
-    );
+    final error = outcome.result.exceptionOrNull();
+    if (!outcome.cancelled && error != null) {
+      _recordDiagnostic(
+        'auth',
+        'Pi-hole v6 authentication failed: ${error.runtimeType}: $error',
+      );
+    }
+    return (cancelled: outcome.cancelled, error: error);
   }
 
   Future<void> _onSuccess(Blocking blocking, Server connectedServer) async {

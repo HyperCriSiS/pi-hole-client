@@ -38,6 +38,7 @@ import 'package:pi_hole_client/data/model/v6/metrics/stats.dart'
     show StatsSummary, StatsTopClients, StatsTopDomains, StatsUpstreams;
 import 'package:pi_hole_client/data/model/v6/network/devices.dart' show Devices;
 import 'package:pi_hole_client/data/model/v6/network/gateway.dart' show Gateway;
+import 'package:pi_hole_client/data/model/v6/metrics/query_filter.dart';
 import 'package:pi_hole_client/data/services/api/pihole_v6_api_client.dart';
 import 'package:pi_hole_client/domain/model/enums.dart';
 import 'package:pi_hole_client/utils/exceptions.dart';
@@ -179,6 +180,7 @@ class FakePiholeV6ApiClient implements PiholeV6ApiClient {
     int? length = 100,
     int? cursor,
     int? start,
+    V6QueryFilter? filter,
   }) async {
     if (shouldFail) {
       return Failure(Exception('Forced getQueries failure'));

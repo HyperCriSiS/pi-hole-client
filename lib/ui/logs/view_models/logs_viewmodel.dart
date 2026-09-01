@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:pi_hole_client/data/model/v6/metrics/query_filter.dart';
 import 'package:pi_hole_client/data/repositories/api/interfaces/domain_repository.dart';
 import 'package:pi_hole_client/data/repositories/api/interfaces/metrics_repository.dart';
 import 'package:pi_hole_client/domain/model/domain/domain.dart';
@@ -468,6 +470,36 @@ class LogsViewModel extends ChangeNotifier {
     _stopLiveTimer();
   }
 
+  V6QueryFilter? _buildServerQueryFilter() {
+    if (_apiVersion != SupportedApiVersions.v6) return null;
+
+    String? status;
+    if (statusSelected.length == 1) {
+      final selectedIndex = statusSelected.single;
+      status = queryStatusesV6
+          .firstWhere((entry) => entry.index == selectedIndex)
+          .key;
+    }
+
+    String? clientIp;
+    final hasActiveClientFilter =
+        selectedClients.isNotEmpty &&
+        selectedClients.length < totalClients.length;
+    if (hasActiveClientFilter && selectedClients.length == 1) {
+      final selectedClient = selectedClients.single;
+      if (InternetAddress.tryParse(selectedClient) != null) {
+        clientIp = selectedClient;
+      }
+    }
+
+    final filter = V6QueryFilter(
+      domain: selectedDomain,
+      clientIp: clientIp,
+      status: status,
+    );
+    return filter.isEmpty ? null : filter;
+  }
+
   // ------------------------------------------
   // Load management
   // ------------------------------------------
@@ -505,7 +537,9 @@ class LogsViewModel extends ChangeNotifier {
 
     final now = DateTime.now();
     final start = _getWindowStart(now);
-    _paginationService!.reset(start, now);
+    _paginationService!
+      ..setFilter(_buildServerQueryFilter())
+      ..reset(start, now);
 
     if (hasCache) {
       await _collectAndReplace(serverEpoch: serverEpoch);
@@ -558,9 +592,15 @@ class LogsViewModel extends ChangeNotifier {
     final endTime = inEndTime ?? DateTime.now();
     final startTime = inStartTime ?? _getWindowStart(endTime);
 
-    if (inStartTime != null || inEndTime != null) {
-      _enableNextWindow = false;
-      _paginationService!.reset(startTime, endTime);
+    final hasExplicitTimeRange = inStartTime != null || inEndTime != null;
+    final shouldReloadFromServer =
+        hasExplicitTimeRange || _apiVersion == SupportedApiVersions.v6;
+
+    if (shouldReloadFromServer) {
+      _enableNextWindow = !hasExplicitTimeRange;
+      _paginationService!
+        ..setFilter(_buildServerQueryFilter())
+        ..reset(startTime, endTime);
       _resetLogsCache();
 
       final newLogs = await _paginationService!.loadNextPage();
@@ -582,10 +622,14 @@ class LogsViewModel extends ChangeNotifier {
 
   /// Resets the filtering state so that window expansion resumes normally.
   void resetLogs() {
+    _paginationService?.setFilter(null);
     _enableNextWindow = true;
     _loadStatus = LoadStatus.loaded;
     _isFiltering = false;
     notifyListeners();
+    if (_apiVersion == SupportedApiVersions.v6 && _screenActive) {
+      unawaited(initializeLoad());
+    }
   }
 
   Future<void> _enqueueLoad({required int serverEpoch}) async {
@@ -661,7 +705,15 @@ class LogsViewModel extends ChangeNotifier {
     _recomputeLogsListDisplay();
   }
 
-  /// Triggered by the scroll listener to load the next page of logs.
+  /// Triggered by the scroll listener to load more logs in the direction
+  /// represented by the current sort order.
+  ///
+  /// With newest-first sorting (`0`), the end of the list represents older
+  /// history, so the historical pagination service expands to the previous
+  /// time window. With oldest-first sorting (`1`), the end of the list
+  /// represents newer data, so a one-shot live fetch advances from the last
+  /// live baseline to now. This also works while automatic Live Log is paused
+  /// or disabled.
   ///
   /// No-op when a load is already in progress.
   ///
@@ -671,7 +723,39 @@ class LogsViewModel extends ChangeNotifier {
   /// incompatible with the pagination state machine used here.
   Future<void> enqueueLoadMore() async {
     if (_isLoadingMore || _paginationService == null) return;
+
+    if (_sortStatus == 1) {
+      await _enqueueNewerLogs();
+      return;
+    }
+
     await _enqueueLoad(serverEpoch: _serverEpoch);
+  }
+
+  Future<void> _enqueueNewerLogs() async {
+    if (_isFiltering) return;
+
+    final serverEpoch = _serverEpoch;
+    final liveLogsService = _liveLogsService;
+    if (liveLogsService == null) return;
+
+    _isLoadingMore = true;
+    notifyListeners();
+
+    try {
+      final newLogs = await liveLogsService.tickOnce();
+      if (!_isCurrentServerEpoch(serverEpoch)) return;
+      if (_liveLogsService != liveLogsService) return;
+      if (newLogs.isNotEmpty) _addLogs(newLogs);
+    } catch (error, stackTrace) {
+      logger.e('Failed to load newer logs: $error', stackTrace: stackTrace);
+    } finally {
+      if (_isCurrentServerEpoch(serverEpoch) &&
+          _liveLogsService == liveLogsService) {
+        _isLoadingMore = false;
+        notifyListeners();
+      }
+    }
   }
 
   bool get _isPaginationFinished =>
