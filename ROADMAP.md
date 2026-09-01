@@ -8,7 +8,7 @@ Maintain and improve the unofficial Pi-hole client while upstream activity is li
 
 **Status: in progress**
 
-The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPSTREAM_TRIAGE.md` remains the detailed upstream issue/PR triage reference; this file is the project-level execution roadmap and source of truth for future work.
+`main` is the canonical integrated baseline. The validated maintenance snapshot was merged through PR #8 on 2026-09-01; the former long-lived `dev` integration PR #2 was closed as superseded after repository-content parity was verified. Future integration work should use short-lived branches/PRs from `main` so validation remains tied to a stable candidate. `UPSTREAM_TRIAGE.md` remains the detailed upstream issue/PR triage reference; this file is the project-level execution roadmap and source of truth for future work.
 
 ## Completed foundation
 
@@ -22,6 +22,7 @@ The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPS
 - [x] Apply explicit least-privilege `GITHUB_TOKEN` permissions across all current workflows: read-only by default, with narrowly scoped write permissions only for release creation, release preparation, Winget PR creation and version updates; preserve Google Play OIDC requirements.
 - [x] Extend Dependabot coverage to the Docusaurus/pnpm website dependency tree so website security and version updates are maintained alongside Dart and GitHub Actions dependencies.
 - [x] Repair the September framework-audit CI regressions: analyze `mock_api_server` with its own resolved dependencies, stop coverage/scanner follow-up jobs after a failed test gate, restore generated Git commit metadata before Android builds, and pin pnpm 10 for the docs validation workflow.
+- [x] Integrate the validated maintenance snapshot into `main` through PR #8 after green Dart tests, docs validation, unsigned Android source build, CodeQL, Codecov, Sonar and static analysis; close the obsolete long-lived PR #2 after confirming `dev` and `main` resolve to identical repository objects.
 
 ## Phase 1 — deterministic UI and diagnostics work
 
@@ -35,11 +36,11 @@ The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPS
   - [x] Keep suggestions and their scrollbar in the `TextField` tap group with `TextFieldTapRegion` while preserving normal outside-click dismissal.
   - [x] Add focused mouse-pointer regression coverage for suggestion selection and outside-click dismissal.
   - [x] Validate the focused autocomplete test and existing Local DNS widget suite in CI; full `Dart Tests` was green for the validated fix.
-- [ ] #442: reproduce the PopupMenu/Navigator crash on current `dev` and implement only a verified lifecycle fix.
+- [ ] #442: reproduce the PopupMenu/Navigator crash on current `main` and implement only a verified lifecycle fix.
   - [x] Confirm the upstream report: v1.7.0 on Android 16 crashes in `PopupMenuButtonState._positionBuilder` because `Navigator.of` encounters a detached/null context while laying out the popup route.
   - [x] Confirm there is no upstream closing PR or follow-up stack in the repository triage evidence.
   - [x] Audit relevant current code history: Home server navigation was migrated from direct `Navigator.push` to GoRouter, while `ServerActionsMenu` still uses `PopupMenuButton`; this is a material lifecycle change but not proof that the old crash is fixed.
-  - [ ] Reproduce on the current `dev` build on Android 16 while opening/closing the Home server actions popup and navigating/changing server; capture a current stack before changing menu behavior.
+  - [ ] Reproduce on the current `main` baseline (or a short-lived branch created from it) on Android 16 while opening/closing the Home server actions popup and navigating/changing server; capture a current stack before changing menu behavior.
   - [ ] If reproduced, add the smallest regression test that exercises the failing popup lifecycle and implement the corresponding mounted/navigation fix.
 
 ## Phase 2 — device-dependent regressions
@@ -94,7 +95,8 @@ The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPS
 - [ ] Keep regression tests/builds green for each deterministic change.
 - [ ] Validate device-dependent fixes on affected devices before marking them complete.
 - [ ] Keep `UPSTREAM_TRIAGE.md` synchronized when an upstream-tracked item changes state.
-- [ ] Merge the validated maintenance work from `dev` according to the repository's existing PR workflow.
+- [x] Integrate the validated maintenance snapshot into `main` through a stable short-lived PR candidate.
+- [ ] Remediate the current Docusaurus/pnpm Dependabot alerts through updates generated from the current `main` dependency graph; validate the docs build before merging dependency changes.
 
 ## Blockers / dependencies
 
@@ -103,6 +105,8 @@ The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPS
 - Larger v6 API work depends on preserving authentication and behavior parity during migration.
 - #570 is CI-validated for the v6 repository and Local DNS UI path; v5 CNAME parity must not be assumed because the current v5 Local DNS path is unsupported.
 - #134 scanner compliance is resolved: Android no longer uses `mobile_scanner`/Google ML Kit. The source-build path is also isolated from private signing material and from `sqlite3` precompiled-binary downloads and is CI-validated, including an `apksigner` check that the produced release APK is unsigned. A separate F-Droid publication of this maintenance fork still requires a fresh application ID plus corresponding name/icon/string changes before downstream metadata submission.
+- GitHub Pages deployment is repository-configuration blocked: the production docs build and Pages artifact upload succeed, but `actions/deploy-pages` receives HTTP 404 until Pages is enabled for this repository with GitHub Actions as the deployment source.
+- Website dependency security maintenance is active through Dependabot. Treat regenerated `/website` updates as the remediation path; do not hand-edit `pnpm-lock.yaml`, and do not reuse dependency PRs generated from the pre-integration graph.
 
 ## Completion status
 
