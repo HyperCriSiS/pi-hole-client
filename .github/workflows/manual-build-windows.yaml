@@ -1,7 +1,10 @@
-name: Manual Build Windows Installer
+name: Compile Windows build manually
 
 on:
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   get-version:
@@ -34,19 +37,10 @@ jobs:
     env:
       VERSION_NAME: ${{ needs.get-version.outputs.VERSION_NAME }}
       VERSION_NUMBER: ${{ needs.get-version.outputs.VERSION_NUMBER }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
-
-      - name: Decode .env
-        shell: pwsh
-        run: |
-          [IO.File]::WriteAllBytes('.env', [Convert]::FromBase64String('${{ secrets.ENV }}'))
-
-      - name: Update version in innosetup config file
-        shell: pwsh
-        run: |
-          (Get-Content windows/innosetup_installer_builder.iss) -replace '<REPLACE_VERSION_ACTIONS>', '${{ env.VERSION_NAME }}' | Out-File -encoding ASCII windows/innosetup_installer_builder.iss
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -54,21 +48,27 @@ jobs:
           channel: stable
           cache: true
           flutter-version: 3.44.1
+
       - run: flutter clean
       - run: flutter pub get
 
-      - name: Generate Git commit hash
-        run: dart run .\tools\generate_git_commit.dart
+      - name: Copy .env file
+        shell: pwsh
+        run: Copy-Item .env.sample .env
 
-      - name: Build windows
+      - name: Generate files
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Build Windows
         run: flutter build windows --release
 
-      - name: Build installer witn innosetup
-        run: iscc /Q windows/innosetup_installer_builder.iss
+      - name: Install Inno Setup
+        run: choco install innosetup -y
 
-      - name: Rename installer
+      - name: Build Windows Installer
         shell: pwsh
-        run: Move-Item -Path build/windows/PiHoleClient.exe -Destination build/windows/PiHoleClient_${{ env.VERSION_NAME }}_Windows_x64.exe
+        run: |
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" /DMyAppVersion="${{ env.VERSION_NAME }}" windows\installer.iss
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7

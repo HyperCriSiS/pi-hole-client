@@ -7,10 +7,13 @@ on:
   pull_request:
   workflow_dispatch:
 
-
+# Release validation can be expensive; superseded PR runs should not keep consuming runners.
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
 
 jobs:
   get-version:
@@ -42,29 +45,20 @@ jobs:
     runs-on: ubuntu-latest
     needs: get-version
     env:
-      ANDROID_AAB_RELEASE_PATH: build/app/outputs/bundle/release
-      ANDROID_APK_RELEASE_PATH: build/app/outputs/apk/release
       VERSION_NAME: ${{ needs.get-version.outputs.VERSION_NAME }}
       VERSION_NUMBER: ${{ needs.get-version.outputs.VERSION_NUMBER }}
+      ANDROID_AAB_RELEASE_PATH: build/app/outputs/bundle/release
+      ANDROID_APK_RELEASE_PATH: build/app/outputs/apk/release
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
 
-      - name: Decode android/app/keystore.jks
-        run: echo "${{ secrets.KEYSTORE_JKS }}" | base64 --decode > android/app/keystore.jks
-
-      - name: Decode android/key.properties
-        run: echo "${{ secrets.KEY_PROPERTIES }}" | base64 --decode > android/key.properties
-
-      # Enable: take screenshot and output debug log
-      - name: Decode .env
-        run: echo "${{ secrets.TEST_ENV }}" | base64 --decode > .env
-
-      - name: Setup Java 17
+      - name: Set up JDK 17
         uses: actions/setup-java@v5
         with:
-          distribution: temurin
-          java-version: 17
+          distribution: 'temurin'
+          java-version: '17'
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -72,22 +66,38 @@ jobs:
           channel: stable
           cache: true
           flutter-version: 3.44.1
+
       - run: flutter clean
       - run: flutter pub get
 
-      - name: Generate Git commit hash
-        run: dart run tools/generate_git_commit.dart
+      - name: Copy .env file
+        run: cp .env.sample .env
 
-      - name: Build apk
+      - name: Generate files
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Decode keystore
+        run: echo "${{ secrets.KEYSTORE_JKS_BASE64 }}" | base64 --decode > android/app/keystore.jks
+
+      - name: Create key.properties
+        run: |
+          cat > android/key.properties <<EOF
+          storePassword=${{ secrets.KEYSTORE_STORE_PASSWORD }}
+          keyPassword=${{ secrets.KEYSTORE_KEY_PASSWORD }}
+          keyAlias=${{ secrets.KEYSTORE_KEY_ALIAS }}
+          storeFile=keystore.jks
+          EOF
+
+      - name: Build Android APK
         run: flutter build apk --release
 
-      - name: Build aab
+      - name: Build Android App Bundle
         run: flutter build appbundle --release
 
-      - name: Rename apk
+      - name: Rename APK
         run: mv $ANDROID_APK_RELEASE_PATH/app-release.apk PiHoleClient_${{ env.VERSION_NAME }}_Android.apk
 
-      - name: Rename aab
+      - name: Rename AAB
         run: mv $ANDROID_AAB_RELEASE_PATH/app-release.aab PiHoleClient_${{ env.VERSION_NAME }}_Android.aab
 
       - name: Upload artifact
@@ -106,14 +116,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
 
-      - name: Prepare non-secret environment
-        run: cp .env.sample .env
-
-      - name: Setup Java 17
+      - name: Set up JDK 17
         uses: actions/setup-java@v5
         with:
-          distribution: temurin
-          java-version: 17
+          distribution: 'temurin'
+          java-version: '17'
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -122,20 +129,23 @@ jobs:
           cache: true
           flutter-version: 3.44.1
 
-      - name: Install dependencies
-        run: flutter pub get
+      - run: flutter clean
+      - run: flutter pub get
 
-      - name: Generate Git commit hash
-        run: dart run tools/generate_git_commit.dart
+      - name: Copy .env file
+        run: cp .env.sample .env
 
-      - name: Prepare F-Droid-compatible native assets
-        run: dart run tools/prepare_fdroid_source_build.dart
+      - name: Generate files
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Remove release signing overrides
+        run: |
+          rm -f android/key.properties android/app/keystore.jks
 
       - name: Build unsigned release APK
         run: flutter build apk --release
 
       - name: Verify unsigned release artifact
-        shell: bash
         run: |
           APK="$(find build/app/outputs/apk/release -maxdepth 1 -type f -name '*.apk' -print -quit)"
           if [ -z "$APK" ]; then
@@ -143,13 +153,9 @@ jobs:
             exit 1
           fi
 
-          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
-          if [ -z "$APKSIGNER" ]; then
-            echo "::error::apksigner was not found in the Android SDK."
-            exit 1
-          fi
-
-          if "$APKSIGNER" verify "$APK" >/dev/null 2>&1; then
+          # apksigner reports signer count 0 for an unsigned APK.
+          SIGNERS="$(apksigner verify --print-certs "$APK" 2>&1 || true)"
+          if echo "$SIGNERS" | grep -q '^Signer #'; then
             echo "::error::Source-build APK is signed; expected an unsigned release artifact."
             exit 1
           fi
@@ -192,6 +198,8 @@ jobs:
           releaseName: ${{ env.VERSION_NAME }}
 
   bump-version:
+    permissions:
+      contents: write
     name: Bump version for production release
     runs-on: ubuntu-latest
     needs: [test-build-google-play]
