@@ -3,7 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:pi_hole_client/data/services/api/wrappers/pihole_v6_service.dart';
 import 'package:pihole_v6_api/pihole_v6_api.dart';
-import 'package:result_dart/result_dart.dart';
 
 import 'mocks.mocks.dart';
 
