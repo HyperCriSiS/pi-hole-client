@@ -73,6 +73,9 @@ jobs:
       - name: Copy .env file
         run: cp .env.sample .env
 
+      - name: Generate git commit file
+        run: dart run tools/generate_git_commit.dart
+
       - name: Generate files
         run: dart run build_runner build --delete-conflicting-outputs
 
@@ -134,6 +137,9 @@ jobs:
 
       - name: Copy .env file
         run: cp .env.sample .env
+
+      - name: Generate git commit file
+        run: dart run tools/generate_git_commit.dart
 
       - name: Generate files
         run: dart run build_runner build --delete-conflicting-outputs
