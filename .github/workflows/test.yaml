@@ -43,12 +43,14 @@ jobs:
     - name: Get dependencies
       run: flutter pub get
 
-    - name: Get mock API dependencies
-      working-directory: mock_api_server
-      run: dart pub get
-
     - name: Copy .env file
       run: cp .env.sample .env
+
+    - name: Validate mock API server package
+      working-directory: mock_api_server
+      run: |
+        dart pub get
+        dart analyze
 
     - name: Generate git commit file
       run: dart run tools/generate_git_commit.dart
@@ -122,7 +124,7 @@ jobs:
   codecov:
     needs: [test]
     runs-on: ubuntu-latest
-    if: always()
+    if: needs.test.result == 'success'
 
     steps:
     - name: Checkout
@@ -150,7 +152,7 @@ jobs:
   sonar:
     needs: [test]
     runs-on: ubuntu-latest
-    if: always()
+    if: needs.test.result == 'success'
     env:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
@@ -198,6 +200,7 @@ jobs:
           path: coverage/unit
 
       # - name: Download integration test coverage artifact
+      #   if: env.SONAR_TOKEN != ''
       #   uses: actions/download-artifact@v8
       #   with:
       #     name: integration-test-coverage

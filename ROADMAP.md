@@ -21,6 +21,7 @@ The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPS
 - [x] Add PR-scoped Actions concurrency to the Dart-test, test-release and docs-deployment workflows so newer commits automatically cancel stale runs without cancelling `main`/release pushes.
 - [x] Apply explicit least-privilege `GITHUB_TOKEN` permissions across all current workflows: read-only by default, with narrowly scoped write permissions only for release creation, release preparation, Winget PR creation and version updates; preserve Google Play OIDC requirements.
 - [x] Extend Dependabot coverage to the Docusaurus/pnpm website dependency tree so website security and version updates are maintained alongside Dart and GitHub Actions dependencies.
+- [x] Repair the September framework-audit CI regressions: analyze `mock_api_server` with its own resolved dependencies, stop coverage/scanner follow-up jobs after a failed test gate, restore generated Git commit metadata before Android builds, and pin pnpm 10 for the docs validation workflow.
 
 ## Phase 1 — deterministic UI and diagnostics work
 

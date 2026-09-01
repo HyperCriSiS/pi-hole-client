@@ -8,6 +8,7 @@ on:
       - 'website/**'
       - 'docs/**'
       - '.github/workflows/deploy-docs.yaml'
+      - '.github/workflows/test-deploy-docs.yaml'
 
 # Documentation builds should only validate the latest state of a pull request.
 concurrency:
@@ -30,7 +31,7 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v6
         with:
-          version: 10.30.1
+          version: 10
 
       - uses: actions/setup-node@v7
         with:
