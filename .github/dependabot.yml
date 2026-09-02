@@ -25,6 +25,11 @@ updates:
       - dependency-name: "flutter_secure_storage"
         update-types:
           - "version-update:semver-major"
+      # dynamic_color 2.x exposes material_ui ColorScheme values that are not
+      # compatible with Flutter's material ColorScheme on the current baseline.
+      - dependency-name: "dynamic_color"
+        update-types:
+          - "version-update:semver-major"
   - package-ecosystem: "npm"
     directory: "/website"
     schedule:
