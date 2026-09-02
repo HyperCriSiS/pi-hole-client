@@ -14,7 +14,6 @@ updates:
       dependencies:
         applies-to: "version-updates"
         update-types:
-          - "minor"
           - "patch"
   - package-ecosystem: "npm"
     directory: "/website"
