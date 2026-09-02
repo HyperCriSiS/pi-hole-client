@@ -111,6 +111,7 @@ class RepositoryBundleFactory {
           ),
           metrics: MetricsRepositoryV6(
             client: client,
+            service: generatedService,
             sessionCache: sessionCache,
           ),
           network: NetworkRepositoryV6(
