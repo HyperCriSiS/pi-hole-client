@@ -1,0 +1,55 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:pi_hole_client/data/repositories/api/v6/metrics_repository.dart';
+import 'package:pi_hole_client/data/repositories/api/v6/v6_session_cache.dart';
+import 'package:pi_hole_client/data/services/api/utils/api_exception.dart';
+import 'package:pi_hole_client/data/services/api/wrappers/pihole_v6_service.dart';
+import 'package:pihole_v6_api/pihole_v6_api.dart' hide Success;
+import 'package:result_dart/result_dart.dart';
+
+import '../../../../../testing/fakes/services/fake_pihole_v6_api_client.dart';
+import '../../../../../testing/fakes/services/fake_session_credential_service.dart';
+import '../../../../../testing/models/v6/metrics.dart';
+
+class _RetryPiholeV6Service extends PiholeV6Service {
+  _RetryPiholeV6Service()
+    : super(api: PiholeV6Api(basePathOverride: 'http://localhost/api'));
+
+  int getHistoryCallCount = 0;
+  String? lastSid;
+
+  @override
+  void setSid(String sid) {
+    lastSid = sid;
+  }
+
+  @override
+  Future<Result<GetActivityMetrics200Response>> getHistory() async {
+    getHistoryCallCount++;
+    if (getHistoryCallCount == 1) {
+      return Failure(ApiException(message: 'Unauthorized', statusCode: 401));
+    }
+    return Success(
+      GetActivityMetrics200Response.fromJson(kSrvGetHistory.toJson()),
+    );
+  }
+}
+
+void main() {
+  test('renews SID and retries generated history service after 401', () async {
+    final client = FakePiholeV6ApiClient();
+    final creds = FakeSessionCredentialService();
+    final service = _RetryPiholeV6Service();
+    final repository = MetricsRepositoryV6(
+      client: client,
+      service: service,
+      sessionCache: V6SessionCache(creds: creds, client: client),
+    );
+
+    final result = await repository.fetchHistory();
+
+    expect(result.getOrNull(), kRepoFetchHistory);
+    expect(client.postAuthCallCount, 1);
+    expect(service.getHistoryCallCount, 2);
+    expect(service.lastSid, isNot('sid123'));
+  });
+}
