@@ -10,11 +10,6 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-    groups:
-      dependencies:
-        applies-to: "version-updates"
-        update-types:
-          - "patch"
     ignore:
       # These majors currently require Android compileSdk 37. Keep them blocked
       # until the project deliberately moves beyond the compileSdk 36 / F-Droid
@@ -56,3 +51,4 @@ updates:
         update-types:
           - "minor"
           - "patch"
+    
