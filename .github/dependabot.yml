@@ -13,11 +13,23 @@ updates:
     groups:
       dependencies:
         applies-to: "version-updates"
-        patterns:
-          - "*"
         update-types:
-          - "minor"
           - "patch"
+    ignore:
+      # These majors currently require Android compileSdk 37. Keep them blocked
+      # until the project deliberately moves beyond the compileSdk 36 / F-Droid
+      # compatibility baseline.
+      - dependency-name: "permission_handler"
+        update-types:
+          - "version-update:semver-major"
+      - dependency-name: "flutter_secure_storage"
+        update-types:
+          - "version-update:semver-major"
+      # dynamic_color 2.x exposes material_ui ColorScheme values that are not
+      # compatible with Flutter's material ColorScheme on the current baseline.
+      - dependency-name: "dynamic_color"
+        update-types:
+          - "version-update:semver-major"
   - package-ecosystem: "npm"
     directory: "/website"
     schedule:
@@ -25,11 +37,15 @@ updates:
     groups:
       dependencies:
         applies-to: "version-updates"
-        patterns:
-          - "*"
         update-types:
           - "minor"
           - "patch"
+    ignore:
+      # Docusaurus 3.10.x still relies on the tsconfig baseUrl option removed by
+      # TypeScript 7. Revisit this major together with the Docusaurus 4 migration.
+      - dependency-name: "typescript"
+        update-types:
+          - "version-update:semver-major"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
@@ -37,8 +53,6 @@ updates:
     groups:
       dependencies:
         applies-to: "version-updates"
-        patterns:
-          - "*"
         update-types:
           - "minor"
           - "patch"
