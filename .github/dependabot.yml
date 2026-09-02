@@ -13,8 +13,6 @@ updates:
     groups:
       dependencies:
         applies-to: "version-updates"
-        patterns:
-          - "*"
         update-types:
           - "minor"
           - "patch"
@@ -25,8 +23,6 @@ updates:
     groups:
       dependencies:
         applies-to: "version-updates"
-        patterns:
-          - "*"
         update-types:
           - "minor"
           - "patch"
@@ -37,8 +33,6 @@ updates:
     groups:
       dependencies:
         applies-to: "version-updates"
-        patterns:
-          - "*"
         update-types:
           - "minor"
           - "patch"
