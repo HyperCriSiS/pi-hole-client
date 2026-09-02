@@ -35,6 +35,12 @@ updates:
         update-types:
           - "minor"
           - "patch"
+    ignore:
+      # Docusaurus 3.10.x still relies on the tsconfig baseUrl option removed by
+      # TypeScript 7. Revisit this major together with the Docusaurus 4 migration.
+      - dependency-name: "typescript"
+        update-types:
+          - "version-update:semver-major"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
