@@ -1,34 +1,65 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pi_hole_client/data/repositories/api/v6/metrics_repository.dart';
 import 'package:pi_hole_client/data/repositories/api/v6/v6_session_cache.dart';
+import 'package:pi_hole_client/data/services/api/wrappers/pihole_v6_service.dart';
+import 'package:pihole_v6_api/pihole_v6_api.dart' hide Success;
+import 'package:result_dart/result_dart.dart';
 
 import '../../../../../testing/fakes/services/fake_pihole_v6_api_client.dart';
 import '../../../../../testing/fakes/services/fake_session_credential_service.dart';
 import '../../../../../testing/helper/test_helper.dart';
 import '../../../../../testing/models/v6/metrics.dart';
 
+class _FakePiholeV6Service extends PiholeV6Service {
+  _FakePiholeV6Service()
+    : super(api: PiholeV6Api(basePathOverride: 'http://localhost/api'));
+
+  bool shouldFailHistory = false;
+  String? lastSid;
+
+  @override
+  void setSid(String sid) {
+    lastSid = sid;
+  }
+
+  @override
+  Future<Result<GetActivityMetrics200Response>> getHistory() async {
+    if (shouldFailHistory) {
+      return Failure(Exception('Forced getHistory failure'));
+    }
+    return Success(
+      GetActivityMetrics200Response.fromJson(kSrvGetHistory.toJson()),
+    );
+  }
+}
+
 void main() {
   late MetricsRepositoryV6 repository;
   late FakePiholeV6ApiClient client;
   late FakeSessionCredentialService creds;
+  late _FakePiholeV6Service service;
 
   group('fetchHistory', () {
     setUp(() {
       creds = FakeSessionCredentialService();
       client = FakePiholeV6ApiClient();
+      service = _FakePiholeV6Service();
       repository = MetricsRepositoryV6(
         client: client,
+        service: service,
         sessionCache: V6SessionCache(creds: creds, client: client),
       );
     });
 
-    test('should get history successfully', () async {
+    test('should get history successfully through generated service', () async {
       final result = await repository.fetchHistory();
+
       expect(result.getOrNull(), kRepoFetchHistory);
+      expect(service.lastSid, 'sid123');
     });
 
-    test('should fail when fetching history', () async {
-      client.shouldFail = true;
+    test('should fail when generated history request fails', () async {
+      service.shouldFailHistory = true;
 
       final result = await repository.fetchHistory();
       expectError(result, messageContains: 'Forced getHistory failure');
@@ -39,8 +70,10 @@ void main() {
     setUp(() {
       creds = FakeSessionCredentialService();
       client = FakePiholeV6ApiClient();
+      service = _FakePiholeV6Service();
       repository = MetricsRepositoryV6(
         client: client,
+        service: service,
         sessionCache: V6SessionCache(creds: creds, client: client),
       );
     });
@@ -62,8 +95,10 @@ void main() {
     setUp(() {
       creds = FakeSessionCredentialService();
       client = FakePiholeV6ApiClient();
+      service = _FakePiholeV6Service();
       repository = MetricsRepositoryV6(
         client: client,
+        service: service,
         sessionCache: V6SessionCache(creds: creds, client: client),
       );
     });
@@ -91,8 +126,10 @@ void main() {
     setUp(() {
       creds = FakeSessionCredentialService();
       client = FakePiholeV6ApiClient();
+      service = _FakePiholeV6Service();
       repository = MetricsRepositoryV6(
         client: client,
+        service: service,
         sessionCache: V6SessionCache(creds: creds, client: client),
       );
     });
@@ -114,8 +151,10 @@ void main() {
     setUp(() {
       creds = FakeSessionCredentialService();
       client = FakePiholeV6ApiClient();
+      service = _FakePiholeV6Service();
       repository = MetricsRepositoryV6(
         client: client,
+        service: service,
         sessionCache: V6SessionCache(creds: creds, client: client),
       );
     });
@@ -137,8 +176,10 @@ void main() {
     setUp(() {
       creds = FakeSessionCredentialService();
       client = FakePiholeV6ApiClient();
+      service = _FakePiholeV6Service();
       repository = MetricsRepositoryV6(
         client: client,
+        service: service,
         sessionCache: V6SessionCache(creds: creds, client: client),
       );
     });
@@ -160,8 +201,10 @@ void main() {
     setUp(() {
       creds = FakeSessionCredentialService();
       client = FakePiholeV6ApiClient();
+      service = _FakePiholeV6Service();
       repository = MetricsRepositoryV6(
         client: client,
+        service: service,
         sessionCache: V6SessionCache(creds: creds, client: client),
       );
     });
@@ -183,8 +226,10 @@ void main() {
     setUp(() {
       creds = FakeSessionCredentialService();
       client = FakePiholeV6ApiClient();
+      service = _FakePiholeV6Service();
       repository = MetricsRepositoryV6(
         client: client,
+        service: service,
         sessionCache: V6SessionCache(creds: creds, client: client),
       );
     });
@@ -206,8 +251,10 @@ void main() {
     setUp(() {
       creds = FakeSessionCredentialService();
       client = FakePiholeV6ApiClient();
+      service = _FakePiholeV6Service();
       repository = MetricsRepositoryV6(
         client: client,
+        service: service,
         sessionCache: V6SessionCache(creds: creds, client: client),
       );
     });
@@ -229,8 +276,10 @@ void main() {
     setUp(() {
       creds = FakeSessionCredentialService();
       client = FakePiholeV6ApiClient();
+      service = _FakePiholeV6Service();
       repository = MetricsRepositoryV6(
         client: client,
+        service: service,
         sessionCache: V6SessionCache(creds: creds, client: client),
       );
     });
@@ -241,7 +290,7 @@ void main() {
     });
 
     test('should fail when fetching stats over time', () async {
-      client.shouldFail = true;
+      service.shouldFailHistory = true;
 
       final result = await repository.fetchOverTime();
       expectError(result, messageContains: 'Forced getHistory failure');
