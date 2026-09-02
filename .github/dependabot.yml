@@ -15,6 +15,16 @@ updates:
         applies-to: "version-updates"
         update-types:
           - "patch"
+    ignore:
+      # These majors currently require Android compileSdk 37. Keep them blocked
+      # until the project deliberately moves beyond the compileSdk 36 / F-Droid
+      # compatibility baseline.
+      - dependency-name: "permission_handler"
+        update-types:
+          - "version-update:semver-major"
+      - dependency-name: "flutter_secure_storage"
+        update-types:
+          - "version-update:semver-major"
   - package-ecosystem: "npm"
     directory: "/website"
     schedule:
