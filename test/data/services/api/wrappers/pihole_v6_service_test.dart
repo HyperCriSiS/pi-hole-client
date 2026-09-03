@@ -215,13 +215,14 @@ void main() {
       test('returns Success with client metrics', () async {
         final mockResponse = GetClientMetrics200Response();
         when(
-          mockMetricsApi.getClientMetrics(),
+          mockMetricsApi.getClientMetrics(N: 10),
         ).thenAnswer((_) async => dioResponse(mockResponse));
 
         final result = await service.getHistoryClients();
 
         expect(result.isSuccess(), true);
         expect(result.getOrNull(), mockResponse);
+        verify(mockMetricsApi.getClientMetrics(N: 10)).called(1);
       });
     });
 

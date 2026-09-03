@@ -117,9 +117,11 @@ class PiholeV6Service {
     });
   }
 
-  Future<Result<GetClientMetrics200Response>> getHistoryClients() {
+  Future<Result<GetClientMetrics200Response>> getHistoryClients({
+    int? count = 10,
+  }) {
     return safeDioCall(() async {
-      final response = await _metricsApi.getClientMetrics();
+      final response = await _metricsApi.getClientMetrics(N: count);
       return response.requireData;
     });
   }
