@@ -98,7 +98,7 @@ Maintain and improve the unofficial Pi-hole client while upstream activity is li
 - [ ] Validate device-dependent fixes on affected devices before marking them complete.
 - [ ] Keep `UPSTREAM_TRIAGE.md` synchronized when an upstream-tracked item changes state.
 - [x] Integrate the validated maintenance snapshot into `main` through a stable short-lived PR candidate.
-- [ ] Remediate the current Docusaurus/pnpm Dependabot alerts through updates generated from the current `main` dependency graph; validate the docs build before merging dependency changes.
+- [x] Remediate all currently patchable Docusaurus/pnpm high-severity Dependabot alerts through updates generated from the current `main` dependency graph; the remaining two `image-size` high-severity advisories have no patched release and are bounded by the existing 15-minute docs-build timeout.
 
 ## Blockers / dependencies
 
@@ -107,8 +107,8 @@ Maintain and improve the unofficial Pi-hole client while upstream activity is li
 - Larger v6 API work depends on preserving authentication and behavior parity during migration.
 - #570 is CI-validated for the v6 repository and Local DNS UI path; v5 CNAME parity must not be assumed because the current v5 Local DNS path is unsupported.
 - #134 scanner compliance is resolved: Android no longer uses `mobile_scanner`/Google ML Kit. The source-build path is also isolated from private signing material and from `sqlite3` precompiled-binary downloads and is CI-validated, including an `apksigner` check that the produced release APK is unsigned. A separate F-Droid publication of this maintenance fork still requires a fresh application ID plus corresponding name/icon/string changes before downstream metadata submission.
-- GitHub Pages deployment is repository-configuration blocked: the production docs build and Pages artifact upload succeed, but `actions/deploy-pages` receives HTTP 404 until Pages is enabled for this repository with GitHub Actions as the deployment source.
-- Website dependency security maintenance is active through Dependabot. Treat regenerated `/website` updates as the remediation path; do not hand-edit `pnpm-lock.yaml`, and do not reuse dependency PRs generated from the pre-integration graph.
+- GitHub Pages is enabled with GitHub Actions as the deployment source; the two latest production docs deployments from `main` completed successfully after the repository setting was corrected.
+- Website dependency security maintenance remains active through Dependabot. The only currently open high-severity alerts are the two unpatched `image-size <=2.0.2` parser DoS advisories; retain the 15-minute build timeout as a compensating control and continue to resolve future lockfile changes reproducibly rather than hand-editing `pnpm-lock.yaml`.
 
 ## Completion status
 
