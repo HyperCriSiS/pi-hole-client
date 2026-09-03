@@ -15,6 +15,8 @@ class _RetryPiholeV6Service extends PiholeV6Service {
     : super(api: PiholeV6Api(basePathOverride: 'http://localhost/api'));
 
   int getHistoryCallCount = 0;
+  int getHistoryClientsCallCount = 0;
+  int? lastHistoryClientCount;
   String? lastSid;
 
   @override
@@ -30,6 +32,20 @@ class _RetryPiholeV6Service extends PiholeV6Service {
     }
     return Success(
       GetActivityMetrics200Response.fromJson(kSrvGetHistory.toJson()),
+    );
+  }
+
+  @override
+  Future<Result<GetClientMetrics200Response>> getHistoryClients({
+    int? count = 10,
+  }) async {
+    getHistoryClientsCallCount++;
+    lastHistoryClientCount = count;
+    if (getHistoryClientsCallCount == 1) {
+      return Failure(ApiException(message: 'Unauthorized', statusCode: 401));
+    }
+    return Success(
+      GetClientMetrics200Response.fromJson(kSrvGetHistoryClient.toJson()),
     );
   }
 }
@@ -50,6 +66,25 @@ void main() {
     expect(result.getOrNull(), kRepoFetchHistory);
     expect(client.postAuthCallCount, 1);
     expect(service.getHistoryCallCount, 2);
+    expect(service.lastSid, isNot('sid123'));
+  });
+
+  test('renews SID and retries generated history clients service after 401', () async {
+    final client = FakePiholeV6ApiClient();
+    final creds = FakeSessionCredentialService();
+    final service = _RetryPiholeV6Service();
+    final repository = MetricsRepositoryV6(
+      client: client,
+      service: service,
+      sessionCache: V6SessionCache(creds: creds, client: client),
+    );
+
+    final result = await repository.fetchHistoryClient(count: 25);
+
+    expect(result.getOrNull(), kRepoFetchHistoryClient);
+    expect(client.postAuthCallCount, 1);
+    expect(service.getHistoryClientsCallCount, 2);
+    expect(service.lastHistoryClientCount, 25);
     expect(service.lastSid, isNot('sid123'));
   });
 }
