@@ -15,7 +15,9 @@ class _FakePiholeV6Service extends PiholeV6Service {
     : super(api: PiholeV6Api(basePathOverride: 'http://localhost/api'));
 
   bool shouldFailHistory = false;
+  bool shouldFailHistoryClients = false;
   String? lastSid;
+  int? lastHistoryClientCount;
 
   @override
   void setSid(String sid) {
@@ -29,6 +31,19 @@ class _FakePiholeV6Service extends PiholeV6Service {
     }
     return Success(
       GetActivityMetrics200Response.fromJson(kSrvGetHistory.toJson()),
+    );
+  }
+
+  @override
+  Future<Result<GetClientMetrics200Response>> getHistoryClients({
+    int? count = 10,
+  }) async {
+    lastHistoryClientCount = count;
+    if (shouldFailHistoryClients) {
+      return Failure(Exception('Forced getHistoryClients failure'));
+    }
+    return Success(
+      GetClientMetrics200Response.fromJson(kSrvGetHistoryClient.toJson()),
     );
   }
 }
@@ -78,16 +93,33 @@ void main() {
       );
     });
 
-    test('should get history client successfully', () async {
+    test('should get history client successfully through generated service', () async {
       final result = await repository.fetchHistoryClient();
+
       expect(result.getOrNull(), kRepoFetchHistoryClient);
+      expect(service.lastSid, 'sid123');
+      expect(service.lastHistoryClientCount, 10);
     });
 
-    test('should fail when fetching history client', () async {
-      client.shouldFail = true;
+    test('should forward custom history client count', () async {
+      final result = await repository.fetchHistoryClient(count: 25);
+
+      expect(result.getOrNull(), kRepoFetchHistoryClient);
+      expect(service.lastHistoryClientCount, 25);
+    });
+
+    test('should allow omitting history client count', () async {
+      final result = await repository.fetchHistoryClient(count: null);
+
+      expect(result.getOrNull(), kRepoFetchHistoryClient);
+      expect(service.lastHistoryClientCount, isNull);
+    });
+
+    test('should fail when generated history client request fails', () async {
+      service.shouldFailHistoryClients = true;
 
       final result = await repository.fetchHistoryClient();
-      expectError(result, messageContains: 'Forced getHistoryClient failure');
+      expectError(result, messageContains: 'Forced getHistoryClients failure');
     });
   });
 
