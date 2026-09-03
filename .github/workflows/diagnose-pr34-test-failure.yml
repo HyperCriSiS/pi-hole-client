@@ -10,6 +10,25 @@ permissions:
 
 jobs:
   diagnose:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: data
+            target: test/data
+          - name: domain
+            target: test/domain
+          - name: routing
+            target: test/routing
+          - name: ui
+            target: test/ui
+          - name: utils
+            target: test/utils
+          - name: widgets
+            target: test/widgets
+          - name: full-coverage
+            target: test/full_coverage_test.dart
+    name: diagnose-${{ matrix.name }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -43,5 +62,5 @@ jobs:
       - name: Run full coverage tool
         run: dart run full_coverage
 
-      - name: Run tests fail-fast with expanded output
-        run: xvfb-run flutter test --coverage --fail-fast --reporter expanded
+      - name: Run test area fail-fast
+        run: xvfb-run flutter test --coverage --fail-fast --reporter expanded "${{ matrix.target }}"
