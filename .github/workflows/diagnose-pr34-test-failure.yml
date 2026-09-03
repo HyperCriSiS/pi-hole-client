@@ -1,4 +1,4 @@
-name: Diagnose PR 34 test failure
+name: Apply isolated PR 34 test stub fix
 
 on:
   push:
@@ -6,61 +6,40 @@ on:
       - diagnostics/pr34-test-failure
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  diagnose:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: data
-            target: test/data
-          - name: domain
-            target: test/domain
-          - name: routing
-            target: test/routing
-          - name: ui
-            target: test/ui
-          - name: utils
-            target: test/utils
-          - name: widgets
-            target: test/widgets
-          - name: full-coverage
-            target: test/full_coverage_test.dart
-    name: diagnose-${{ matrix.name }}
+  fix:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
     steps:
-      - name: Checkout
+      - name: Checkout PR branch
         uses: actions/checkout@v7
-
-      - name: Install dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y libsecret-1-0 libjsoncpp-dev libsecret-1-dev xvfb
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
         with:
-          channel: stable
-          cache: true
-          flutter-version: 3.44.1
+          ref: feature/generated-history-clients-migration-current
+          fetch-depth: 0
 
-      - name: Get dependencies
-        run: flutter pub get
+      - name: Apply exact test stub fix
+        shell: python
+        run: |
+          from pathlib import Path
 
-      - name: Copy .env file
-        run: cp .env.sample .env
+          path = Path('test/data/services/api/wrappers/pihole_v6_service_test.dart')
+          text = path.read_text()
+          old = """        when(\n          mockMetricsApi.getClientMetrics(),\n        ).thenAnswer((_) async => dioResponse(mockResponse));\n\n        final result = await service.getHistoryClients();\n\n        expect(result.isSuccess(), true);\n        expect(result.getOrNull(), mockResponse);\n"""
+          new = """        when(\n          mockMetricsApi.getClientMetrics(N: 10),\n        ).thenAnswer((_) async => dioResponse(mockResponse));\n\n        final result = await service.getHistoryClients();\n\n        expect(result.isSuccess(), true);\n        expect(result.getOrNull(), mockResponse);\n        verify(mockMetricsApi.getClientMetrics(N: 10)).called(1);\n"""
+          if text.count(old) != 1:
+              raise SystemExit(f'Expected exactly one target block, found {text.count(old)}')
+          path.write_text(text.replace(old, new))
 
-      - name: Generate git commit file
-        run: dart run tools/generate_git_commit.dart
+      - name: Validate diff
+        run: |
+          git diff --check
+          git diff -- test/data/services/api/wrappers/pihole_v6_service_test.dart
 
-      - name: Generate files
-        run: dart run build_runner build --delete-conflicting-outputs
-
-      - name: Run full coverage tool
-        run: dart run full_coverage
-
-      - name: Run test area fail-fast
-        run: xvfb-run flutter test --coverage --fail-fast --reporter expanded "${{ matrix.target }}"
+      - name: Commit and push fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add test/data/services/api/wrappers/pihole_v6_service_test.dart
+          git commit -m "test: align history client wrapper stub"
+          git push origin HEAD:feature/generated-history-clients-migration-current
