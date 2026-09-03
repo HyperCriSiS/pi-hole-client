@@ -1,0 +1,47 @@
+name: Diagnose PR 34 test failure
+
+on:
+  push:
+    branches:
+      - diagnostics/pr34-test-failure
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y libsecret-1-0 libjsoncpp-dev libsecret-1-dev xvfb
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+          flutter-version: 3.44.1
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Copy .env file
+        run: cp .env.sample .env
+
+      - name: Generate git commit file
+        run: dart run tools/generate_git_commit.dart
+
+      - name: Generate files
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Run full coverage tool
+        run: dart run full_coverage
+
+      - name: Run tests fail-fast with expanded output
+        run: xvfb-run flutter test --coverage --fail-fast --reporter expanded
