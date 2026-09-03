@@ -15,7 +15,9 @@ class _FakePiholeV6Service extends PiholeV6Service {
     : super(api: PiholeV6Api(basePathOverride: 'http://localhost/api'));
 
   bool shouldFailHistory = false;
+  bool shouldFailHistoryClients = false;
   String? lastSid;
+  int? lastHistoryClientCount;
 
   @override
   void setSid(String sid) {
@@ -29,6 +31,19 @@ class _FakePiholeV6Service extends PiholeV6Service {
     }
     return Success(
       GetActivityMetrics200Response.fromJson(kSrvGetHistory.toJson()),
+    );
+  }
+
+  @override
+  Future<Result<GetClientMetrics200Response>> getHistoryClients({
+    int? count = 10,
+  }) async {
+    lastHistoryClientCount = count;
+    if (shouldFailHistoryClients) {
+      return Failure(Exception('Forced getHistoryClients failure'));
+    }
+    return Success(
+      GetClientMetrics200Response.fromJson(kSrvGetHistoryClient.toJson()),
     );
   }
 }
@@ -78,16 +93,33 @@ void main() {
       );
     });
 
-    test('should get history client successfully', () async {
+    test('should get history client successfully through generated service', () async {
       final result = await repository.fetchHistoryClient();
+
       expect(result.getOrNull(), kRepoFetchHistoryClient);
+      expect(service.lastSid, 'sid123');
+      expect(service.lastHistoryClientCount, 10);
     });
 
-    test('should fail when fetching history client', () async {
-      client.shouldFail = true;
+    test('should forward custom history client count', () async {
+      final result = await repository.fetchHistoryClient(count: 25);
+
+      expect(result.getOrNull(), kRepoFetchHistoryClient);
+      expect(service.lastHistoryClientCount, 25);
+    });
+
+    test('should allow omitting history client count', () async {
+      final result = await repository.fetchHistoryClient(count: null);
+
+      expect(result.getOrNull(), kRepoFetchHistoryClient);
+      expect(service.lastHistoryClientCount, isNull);
+    });
+
+    test('should fail when generated history client request fails', () async {
+      service.shouldFailHistoryClients = true;
 
       final result = await repository.fetchHistoryClient();
-      expectError(result, messageContains: 'Forced getHistoryClient failure');
+      expectError(result, messageContains: 'Forced getHistoryClients failure');
     });
   });
 
@@ -172,7 +204,7 @@ void main() {
     });
   });
 
-  group('fetchStatsTopDomainsBlocked', () {
+  group('fetchStatsTopDomains', () {
     setUp(() {
       creds = FakeSessionCredentialService();
       client = FakePiholeV6ApiClient();
@@ -184,20 +216,25 @@ void main() {
       );
     });
 
-    test('should get stats top domains blocked successfully', () async {
-      final result = await repository.fetchStatsTopDomainsBlocked();
+    test('should get blocked stats top domains successfully', () async {
+      final result = await repository.fetchStatsTopDomains(blocked: true);
       expect(result.getOrNull(), kRepoFetchStatsTopDomainsBlocked);
     });
 
-    test('should fail when fetching stats top domains blocked', () async {
+    test('should get permitted stats top domains successfully', () async {
+      final result = await repository.fetchStatsTopDomains();
+      expect(result.getOrNull(), kRepoFetchStatsTopDomains);
+    });
+
+    test('should fail when fetching stats top domains', () async {
       client.shouldFail = true;
 
-      final result = await repository.fetchStatsTopDomainsBlocked();
+      final result = await repository.fetchStatsTopDomains();
       expectError(result, messageContains: 'Forced getStatsTopDomains failure');
     });
   });
 
-  group('fetchStatsTopDomainsAllowed', () {
+  group('fetchStatsTopClients', () {
     setUp(() {
       creds = FakeSessionCredentialService();
       client = FakePiholeV6ApiClient();
@@ -209,45 +246,25 @@ void main() {
       );
     });
 
-    test('should get stats top domains allowed successfully', () async {
-      final result = await repository.fetchStatsTopDomainsAllowed();
-      expect(result.getOrNull(), kRepoFetchStatsTopDomainsAllowed);
-    });
-
-    test('should fail when fetching stats top domains allowed', () async {
-      client.shouldFail = true;
-
-      final result = await repository.fetchStatsTopDomainsAllowed();
-      expectError(result, messageContains: 'Forced getStatsTopDomains failure');
-    });
-  });
-
-  group('fetchStatsTopClientsBlocked', () {
-    setUp(() {
-      creds = FakeSessionCredentialService();
-      client = FakePiholeV6ApiClient();
-      service = _FakePiholeV6Service();
-      repository = MetricsRepositoryV6(
-        client: client,
-        service: service,
-        sessionCache: V6SessionCache(creds: creds, client: client),
-      );
-    });
-
-    test('should get stats top clients blocked successfully', () async {
-      final result = await repository.fetchStatsTopClientsBlocked();
+    test('should get blocked stats top clients successfully', () async {
+      final result = await repository.fetchStatsTopClients(blocked: true);
       expect(result.getOrNull(), kRepoFetchStatsTopClientsBlocked);
     });
 
-    test('should fail when fetching stats top clients blocked', () async {
+    test('should get permitted stats top clients successfully', () async {
+      final result = await repository.fetchStatsTopClients();
+      expect(result.getOrNull(), kRepoFetchStatsTopClients);
+    });
+
+    test('should fail when fetching stats top clients', () async {
       client.shouldFail = true;
 
-      final result = await repository.fetchStatsTopClientsBlocked();
+      final result = await repository.fetchStatsTopClients();
       expectError(result, messageContains: 'Forced getStatsTopClients failure');
     });
   });
 
-  group('fetchStatsTopClientsAllowed', () {
+  group('fetchQueryTypes', () {
     setUp(() {
       creds = FakeSessionCredentialService();
       client = FakePiholeV6ApiClient();
@@ -259,16 +276,101 @@ void main() {
       );
     });
 
-    test('should get stats top clients allowed successfully', () async {
-      final result = await repository.fetchStatsTopClientsAllowed();
-      expect(result.getOrNull(), kRepoFetchStatsTopClientsAllowed);
+    test('should get query types successfully', () async {
+      final result = await repository.fetchQueryTypes();
+      expect(result.getOrNull(), kRepoFetchQueryTypes);
     });
 
-    test('should fail when fetching stats top clients allowed', () async {
+    test('should fail when fetching query types', () async {
       client.shouldFail = true;
 
-      final result = await repository.fetchStatsTopClientsAllowed();
+      final result = await repository.fetchQueryTypes();
+      expectError(result, messageContains: 'Forced getQueryTypes failure');
+    });
+  });
+
+  group('fetchStatsTopDomains', () {
+    setUp(() {
+      creds = FakeSessionCredentialService();
+      client = FakePiholeV6ApiClient();
+      service = _FakePiholeV6Service();
+      repository = MetricsRepositoryV6(
+        client: client,
+        service: service,
+        sessionCache: V6SessionCache(creds: creds, client: client),
+      );
+    });
+
+    test('should get blocked stats top domains successfully', () async {
+      final result = await repository.fetchStatsTopDomains(blocked: true);
+      expect(result.getOrNull(), kRepoFetchStatsTopDomainsBlocked);
+    });
+
+    test('should get permitted stats top domains successfully', () async {
+      final result = await repository.fetchStatsTopDomains();
+      expect(result.getOrNull(), kRepoFetchStatsTopDomains);
+    });
+
+    test('should fail when fetching stats top domains', () async {
+      client.shouldFail = true;
+
+      final result = await repository.fetchStatsTopDomains();
+      expectError(result, messageContains: 'Forced getStatsTopDomains failure');
+    });
+  });
+
+  group('fetchStatsTopClients', () {
+    setUp(() {
+      creds = FakeSessionCredentialService();
+      client = FakePiholeV6ApiClient();
+      service = _FakePiholeV6Service();
+      repository = MetricsRepositoryV6(
+        client: client,
+        service: service,
+        sessionCache: V6SessionCache(creds: creds, client: client),
+      );
+    });
+
+    test('should get blocked stats top clients successfully', () async {
+      final result = await repository.fetchStatsTopClients(blocked: true);
+      expect(result.getOrNull(), kRepoFetchStatsTopClientsBlocked);
+    });
+
+    test('should get permitted stats top clients successfully', () async {
+      final result = await repository.fetchStatsTopClients();
+      expect(result.getOrNull(), kRepoFetchStatsTopClients);
+    });
+
+    test('should fail when fetching stats top clients', () async {
+      client.shouldFail = true;
+
+      final result = await repository.fetchStatsTopClients();
       expectError(result, messageContains: 'Forced getStatsTopClients failure');
+    });
+  });
+
+  group('fetchQueryTypes', () {
+    setUp(() {
+      creds = FakeSessionCredentialService();
+      client = FakePiholeV6ApiClient();
+      service = _FakePiholeV6Service();
+      repository = MetricsRepositoryV6(
+        client: client,
+        service: service,
+        sessionCache: V6SessionCache(creds: creds, client: client),
+      );
+    });
+
+    test('should get query types successfully', () async {
+      final result = await repository.fetchQueryTypes();
+      expect(result.getOrNull(), kRepoFetchQueryTypes);
+    });
+
+    test('should fail when fetching query types', () async {
+      client.shouldFail = true;
+
+      final result = await repository.fetchQueryTypes();
+      expectError(result, messageContains: 'Forced getQueryTypes failure');
     });
   });
 
@@ -284,9 +386,9 @@ void main() {
       );
     });
 
-    test('should get stats over time successfully', () async {
+    test('should get stats overtime successfully', () async {
       final result = await repository.fetchOverTime();
-      expect(result.getOrNull(), kRepoFetchOverTime);
+      expect(result.getOrNull(), kRepoFetchOvertime);
     });
 
     test('should fail when fetching stats over time', () async {

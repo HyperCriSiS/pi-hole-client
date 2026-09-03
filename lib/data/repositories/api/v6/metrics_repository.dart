@@ -48,8 +48,11 @@ class MetricsRepositoryV6 extends BaseV6SidRepository
     return runWithResultRetry(
       action: () async {
         final sid = await getSid();
-        final result = await _client.getHistoryClient(sid, count: count);
-        return result.map((e) => e.toDomain());
+        _service.setSid(sid);
+        final result = await _service.getHistoryClients(count: count);
+        return result.map(
+          (e) => legacy_history.HistoryClients.fromJson(e.toJson()).toDomain(),
+        );
       },
       onRetry: (_, e) => renewSidIfExpired(e),
     );
@@ -111,7 +114,7 @@ class MetricsRepositoryV6 extends BaseV6SidRepository
   }
 
   @override
-  Future<Result<List<DestinationStat>>> fetchStatsUpstreams() async {
+  Future<Result<Upstreams>> fetchStatsUpstreams() async {
     return runWithResultRetry(
       action: () async {
         final sid = await getSid();
@@ -123,7 +126,8 @@ class MetricsRepositoryV6 extends BaseV6SidRepository
   }
 
   @override
-  Future<Result<List<QueryStat>>> fetchStatsTopDomainsBlocked({
+  Future<Result<TopDomains>> fetchStatsTopDomains({
+    bool? blocked = false,
     int? count = 10,
   }) async {
     return runWithResultRetry(
@@ -131,30 +135,18 @@ class MetricsRepositoryV6 extends BaseV6SidRepository
         final sid = await getSid();
         final result = await _client.getStatsTopDomains(
           sid,
+          blocked: blocked,
           count: count,
-          blocked: true,
         );
-        return result.map((e) => e.domains.map((d) => d.toDomain()).toList());
+        return result.map((e) => e.toDomain());
       },
       onRetry: (_, e) => renewSidIfExpired(e),
     );
   }
 
   @override
-  Future<Result<List<QueryStat>>> fetchStatsTopDomainsAllowed({
-    int? count = 10,
-  }) async {
-    return runWithResultRetry(
-      action: () async {
-        final sid = await getSid();
-        final result = await _client.getStatsTopDomains(sid, count: count);
-        return result.map((e) => e.domains.map((d) => d.toDomain()).toList());
-      },
-    );
-  }
-
-  @override
-  Future<Result<List<SourceStat>>> fetchStatsTopClientsBlocked({
+  Future<Result<TopClients>> fetchStatsTopClients({
+    bool? blocked = false,
     int? count = 10,
   }) async {
     return runWithResultRetry(
@@ -162,43 +154,37 @@ class MetricsRepositoryV6 extends BaseV6SidRepository
         final sid = await getSid();
         final result = await _client.getStatsTopClients(
           sid,
+          blocked: blocked,
           count: count,
-          blocked: true,
         );
-        return result.map((e) => e.clients.map((c) => c.toDomain()).toList());
+        return result.map((e) => e.toDomain());
       },
+      onRetry: (_, e) => renewSidIfExpired(e),
     );
   }
 
   @override
-  Future<Result<List<SourceStat>>> fetchStatsTopClientsAllowed({
-    int? count = 10,
-  }) async {
+  Future<Result<QueryTypes>> fetchQueryTypes() async {
     return runWithResultRetry(
       action: () async {
         final sid = await getSid();
-        final result = await _client.getStatsTopClients(sid, count: count);
-        return result.map((e) => e.clients.map((c) => c.toDomain()).toList());
+        final result = await _client.getQueryTypes(sid);
+        return result.map((e) => e.toDomain());
       },
+      onRetry: (_, e) => renewSidIfExpired(e),
     );
   }
 
   @override
   Future<Result<OverTime>> fetchOverTime({int? count = 10}) async {
-    try {
-      final response = await Future.wait([
-        fetchHistory(),
-        fetchHistoryClient(count: count),
-      ]);
-
-      final history = response[0] as Result<History>;
-      final historyClients = response[1] as Result<Clients>;
-
-      return Success(
-        (history.getOrThrow(), historyClients.getOrThrow()).toDomain(),
-      );
-    } catch (e, st) {
-      return Failure(Exception('Failed to fetch over time data: $e\n$st'));
-    }
+    final results = await Future.wait([
+      fetchHistory(),
+      fetchHistoryClient(count: count),
+    ]);
+    return results[0].flatMap((history) {
+      return results[1].map((clients) {
+        return toOverTime(history: history as History, clients: clients as Clients);
+      });
+    });
   }
 }
