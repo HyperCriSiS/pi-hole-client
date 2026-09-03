@@ -48,8 +48,11 @@ class MetricsRepositoryV6 extends BaseV6SidRepository
     return runWithResultRetry(
       action: () async {
         final sid = await getSid();
-        final result = await _client.getHistoryClient(sid, count: count);
-        return result.map((e) => e.toDomain());
+        _service.setSid(sid);
+        final result = await _service.getHistoryClients(count: count);
+        return result.map(
+          (e) => legacy_history.HistoryClients.fromJson(e.toJson()).toDomain(),
+        );
       },
       onRetry: (_, e) => renewSidIfExpired(e),
     );
