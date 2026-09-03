@@ -1,4 +1,4 @@
-name: Apply isolated PR 34 test stub fix
+name: Apply isolated history clients roadmap sync
 
 on:
   push:
@@ -9,37 +9,37 @@ permissions:
   contents: write
 
 jobs:
-  fix:
+  sync:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout PR branch
+      - name: Checkout roadmap branch
         uses: actions/checkout@v7
         with:
-          ref: feature/generated-history-clients-migration-current
+          ref: maintenance/roadmap-history-clients-complete
           fetch-depth: 0
 
-      - name: Apply exact test stub fix
+      - name: Apply exact roadmap update
         shell: python
         run: |
           from pathlib import Path
 
-          path = Path('test/data/services/api/wrappers/pihole_v6_service_test.dart')
+          path = Path('ROADMAP.md')
           text = path.read_text()
-          old = """        when(\n          mockMetricsApi.getClientMetrics(),\n        ).thenAnswer((_) async => dioResponse(mockResponse));\n\n        final result = await service.getHistoryClients();\n\n        expect(result.isSuccess(), true);\n        expect(result.getOrNull(), mockResponse);\n"""
-          new = """        when(\n          mockMetricsApi.getClientMetrics(N: 10),\n        ).thenAnswer((_) async => dioResponse(mockResponse));\n\n        final result = await service.getHistoryClients();\n\n        expect(result.isSuccess(), true);\n        expect(result.getOrNull(), mockResponse);\n        verify(mockMetricsApi.getClientMetrics(N: 10)).called(1);\n"""
+          old = "- [ ] Keep `/api/history/clients` on the handwritten client until `PiholeV6Service.getHistoryClients` forwards the existing `N`/count parameter; generated response-model parity is otherwise verified, so fix parameter forwarding separately before migrating the repository call."
+          new = "- [x] Migrate `/api/history/clients` to the generated service after adding explicit `N`/count forwarding; preserve default/custom/null count semantics, the proven legacy domain mapper via generated-JSON roundtrip, and shared SID renewal/retry behavior. The full Dart suite, unsigned Android source APK, CodeQL/static analysis and zero open code-scanning alerts are green on the final PR #34 candidate."
           if text.count(old) != 1:
-              raise SystemExit(f'Expected exactly one target block, found {text.count(old)}')
+              raise SystemExit(f'Expected exactly one roadmap target, found {text.count(old)}')
           path.write_text(text.replace(old, new))
 
       - name: Validate diff
         run: |
           git diff --check
-          git diff -- test/data/services/api/wrappers/pihole_v6_service_test.dart
+          git diff -- ROADMAP.md
 
-      - name: Commit and push fix
+      - name: Commit and push roadmap update
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add test/data/services/api/wrappers/pihole_v6_service_test.dart
-          git commit -m "test: align history client wrapper stub"
-          git push origin HEAD:feature/generated-history-clients-migration-current
+          git add ROADMAP.md
+          git commit -m "docs: mark history clients migration complete"
+          git push origin HEAD:maintenance/roadmap-history-clients-complete
