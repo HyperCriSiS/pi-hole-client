@@ -17,6 +17,7 @@ class _FakePiholeV6Service extends PiholeV6Service {
   bool shouldFailHistory = false;
   bool shouldFailHistoryClients = false;
   bool shouldFailStatsSummary = false;
+  bool shouldFailStatsUpstreams = false;
   String? lastSid;
   int? lastHistoryClientCount;
 
@@ -55,6 +56,16 @@ class _FakePiholeV6Service extends PiholeV6Service {
     }
     return Success(
       GetMetricsSummary200Response.fromJson(kSrvGetStatsSummary.toJson()),
+    );
+  }
+
+  @override
+  Future<Result<GetMetricsUpstreams200Response>> getStatsUpstreams() async {
+    if (shouldFailStatsUpstreams) {
+      return Failure(Exception('Forced getStatsUpstreams failure'));
+    }
+    return Success(
+      GetMetricsUpstreams200Response.fromJson(kSrvGetStatsUpstreams.toJson()),
     );
   }
 }
@@ -104,13 +115,16 @@ void main() {
       );
     });
 
-    test('should get history client successfully through generated service', () async {
-      final result = await repository.fetchHistoryClient();
+    test(
+      'should get history client successfully through generated service',
+      () async {
+        final result = await repository.fetchHistoryClient();
 
-      expect(result.getOrNull(), kRepoFetchHistoryClient);
-      expect(service.lastSid, 'sid123');
-      expect(service.lastHistoryClientCount, 10);
-    });
+        expect(result.getOrNull(), kRepoFetchHistoryClient);
+        expect(service.lastSid, 'sid123');
+        expect(service.lastHistoryClientCount, 10);
+      },
+    );
 
     test('should forward custom history client count', () async {
       final result = await repository.fetchHistoryClient(count: 25);
@@ -207,13 +221,18 @@ void main() {
       );
     });
 
-    test('should get stats upstreams successfully', () async {
-      final result = await repository.fetchStatsUpstreams();
-      expect(result.getOrNull(), kRepoFetchStatsUpstreams);
-    });
+    test(
+      'should get stats upstreams successfully through generated service',
+      () async {
+        final result = await repository.fetchStatsUpstreams();
 
-    test('should fail when fetching stats upstreams', () async {
-      client.shouldFail = true;
+        expect(result.getOrNull(), kRepoFetchStatsUpstreams);
+        expect(service.lastSid, 'sid123');
+      },
+    );
+
+    test('should fail when generated stats upstreams request fails', () async {
+      service.shouldFailStatsUpstreams = true;
 
       final result = await repository.fetchStatsUpstreams();
       expectError(result, messageContains: 'Forced getStatsUpstreams failure');
