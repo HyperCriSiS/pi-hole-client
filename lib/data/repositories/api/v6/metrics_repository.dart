@@ -179,12 +179,16 @@ class MetricsRepositoryV6 extends BaseV6SidRepository
     return runWithResultRetry(
       action: () async {
         final sid = await getSid();
-        final result = await _client.getStatsTopClients(
-          sid,
+        _service.setSid(sid);
+        final result = await _service.getStatsTopClients(
           count: count,
           blocked: true,
         );
-        return result.map((e) => e.clients.map((c) => c.toDomain()).toList());
+        return result.map(
+          (e) => legacy_stats.StatsTopClients.fromJson(
+            e.toJson(),
+          ).clients.map((c) => c.toDomain()).toList(),
+        );
       },
     );
   }
@@ -196,8 +200,13 @@ class MetricsRepositoryV6 extends BaseV6SidRepository
     return runWithResultRetry(
       action: () async {
         final sid = await getSid();
-        final result = await _client.getStatsTopClients(sid, count: count);
-        return result.map((e) => e.clients.map((c) => c.toDomain()).toList());
+        _service.setSid(sid);
+        final result = await _service.getStatsTopClients(count: count);
+        return result.map(
+          (e) => legacy_stats.StatsTopClients.fromJson(
+            e.toJson(),
+          ).clients.map((c) => c.toDomain()).toList(),
+        );
       },
     );
   }

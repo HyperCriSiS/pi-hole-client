@@ -19,6 +19,7 @@ class _FakePiholeV6Service extends PiholeV6Service {
   bool shouldFailStatsSummary = false;
   bool shouldFailStatsUpstreams = false;
   bool shouldFailStatsTopDomains = false;
+  bool shouldFailStatsTopClients = false;
   String? lastSid;
   int? lastHistoryClientCount;
 
@@ -82,6 +83,20 @@ class _FakePiholeV6Service extends PiholeV6Service {
         ? kSrvGetStatsTopDomainsBlocked
         : kSrvGetStatsTopDomains;
     return Success(GetMetricsTopDomains200Response.fromJson(payload.toJson()));
+  }
+
+  @override
+  Future<Result<GetMetricsTopClients200Response>> getStatsTopClients({
+    bool? blocked,
+    int? count,
+  }) async {
+    if (shouldFailStatsTopClients) {
+      return Failure(Exception('Forced getStatsTopClients failure'));
+    }
+    final payload = blocked == true
+        ? kSrvGetStatsTopClientsBlocked
+        : kSrvGetStatsTopClients;
+    return Success(GetMetricsTopClients200Response.fromJson(payload.toJson()));
   }
 }
 
@@ -322,7 +337,7 @@ void main() {
     });
 
     test('should fail when fetching stats top clients blocked', () async {
-      client.shouldFail = true;
+      service.shouldFailStatsTopClients = true;
 
       final result = await repository.fetchStatsTopClientsBlocked();
       expectError(result, messageContains: 'Forced getStatsTopClients failure');
@@ -347,7 +362,7 @@ void main() {
     });
 
     test('should fail when fetching stats top clients allowed', () async {
-      client.shouldFail = true;
+      service.shouldFailStatsTopClients = true;
 
       final result = await repository.fetchStatsTopClientsAllowed();
       expectError(result, messageContains: 'Forced getStatsTopClients failure');
