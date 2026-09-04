@@ -1,6 +1,7 @@
 import 'package:pi_hole_client/data/mapper/v6/metrics_mapper.dart';
 import 'package:pi_hole_client/data/model/v6/metrics/history.dart' as legacy_history;
 import 'package:pi_hole_client/data/model/v6/metrics/query_filter.dart';
+import 'package:pi_hole_client/data/model/v6/metrics/stats.dart' as legacy_stats;
 import 'package:pi_hole_client/data/repositories/api/interfaces/metrics_repository.dart';
 import 'package:pi_hole_client/data/repositories/api/v6/base_v6_sid_repository.dart';
 import 'package:pi_hole_client/data/repositories/utils/call_with_retry.dart';
@@ -106,8 +107,11 @@ class MetricsRepositoryV6 extends BaseV6SidRepository
     return runWithResultRetry(
       action: () async {
         final sid = await getSid();
-        final result = await _client.getStatsSummary(sid);
-        return result.map((e) => e.toDomain());
+        _service.setSid(sid);
+        final result = await _service.getStatsSummary();
+        return result.map(
+          (e) => legacy_stats.StatsSummary.fromJson(e.toJson()).toDomain(),
+        );
       },
       onRetry: (_, e) => renewSidIfExpired(e),
     );

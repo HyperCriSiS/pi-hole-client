@@ -16,6 +16,7 @@ class _FakePiholeV6Service extends PiholeV6Service {
 
   bool shouldFailHistory = false;
   bool shouldFailHistoryClients = false;
+  bool shouldFailStatsSummary = false;
   String? lastSid;
   int? lastHistoryClientCount;
 
@@ -44,6 +45,16 @@ class _FakePiholeV6Service extends PiholeV6Service {
     }
     return Success(
       GetClientMetrics200Response.fromJson(kSrvGetHistoryClient.toJson()),
+    );
+  }
+
+  @override
+  Future<Result<GetMetricsSummary200Response>> getStatsSummary() async {
+    if (shouldFailStatsSummary) {
+      return Failure(Exception('Forced getStatsSummary failure'));
+    }
+    return Success(
+      GetMetricsSummary200Response.fromJson(kSrvGetStatsSummary.toJson()),
     );
   }
 }
@@ -166,13 +177,18 @@ void main() {
       );
     });
 
-    test('should get stats summary successfully', () async {
-      final result = await repository.fetchStatsSummary();
-      expect(result.getOrNull(), kRepoFetchStatsSummary);
-    });
+    test(
+      'should get stats summary successfully through generated service',
+      () async {
+        final result = await repository.fetchStatsSummary();
 
-    test('should fail when fetching stats summary', () async {
-      client.shouldFail = true;
+        expect(result.getOrNull(), kRepoFetchStatsSummary);
+        expect(service.lastSid, 'sid123');
+      },
+    );
+
+    test('should fail when generated stats summary request fails', () async {
+      service.shouldFailStatsSummary = true;
 
       final result = await repository.fetchStatsSummary();
       expectError(result, messageContains: 'Forced getStatsSummary failure');
@@ -316,16 +332,16 @@ void main() {
       );
     });
 
-    test('should get stats over time successfully', () async {
+    test('should get overtime successfully', () async {
       final result = await repository.fetchOverTime();
       expect(result.getOrNull(), kRepoFetchOverTime);
     });
 
-    test('should fail when fetching stats over time', () async {
-      service.shouldFailHistory = true;
+    test('should fail when fetching overtime', () async {
+      client.shouldFail = true;
 
       final result = await repository.fetchOverTime();
-      expectError(result, messageContains: 'Forced getHistory failure');
+      expectError(result, messageContains: 'Failed to fetch over time data');
     });
   });
 }
