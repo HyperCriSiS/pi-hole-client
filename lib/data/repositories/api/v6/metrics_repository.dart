@@ -139,12 +139,16 @@ class MetricsRepositoryV6 extends BaseV6SidRepository
     return runWithResultRetry(
       action: () async {
         final sid = await getSid();
-        final result = await _client.getStatsTopDomains(
-          sid,
+        _service.setSid(sid);
+        final result = await _service.getStatsTopDomains(
           count: count,
           blocked: true,
         );
-        return result.map((e) => e.domains.map((d) => d.toDomain()).toList());
+        return result.map(
+          (e) => legacy_stats.StatsTopDomains.fromJson(
+            e.toJson(),
+          ).domains.map((d) => d.toDomain()).toList(),
+        );
       },
       onRetry: (_, e) => renewSidIfExpired(e),
     );
@@ -157,8 +161,13 @@ class MetricsRepositoryV6 extends BaseV6SidRepository
     return runWithResultRetry(
       action: () async {
         final sid = await getSid();
-        final result = await _client.getStatsTopDomains(sid, count: count);
-        return result.map((e) => e.domains.map((d) => d.toDomain()).toList());
+        _service.setSid(sid);
+        final result = await _service.getStatsTopDomains(count: count);
+        return result.map(
+          (e) => legacy_stats.StatsTopDomains.fromJson(
+            e.toJson(),
+          ).domains.map((d) => d.toDomain()).toList(),
+        );
       },
     );
   }
