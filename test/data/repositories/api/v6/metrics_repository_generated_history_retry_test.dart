@@ -16,6 +16,7 @@ class _RetryPiholeV6Service extends PiholeV6Service {
 
   int getHistoryCallCount = 0;
   int getHistoryClientsCallCount = 0;
+  int getStatsSummaryCallCount = 0;
   int? lastHistoryClientCount;
   String? lastSid;
 
@@ -46,6 +47,17 @@ class _RetryPiholeV6Service extends PiholeV6Service {
     }
     return Success(
       GetClientMetrics200Response.fromJson(kSrvGetHistoryClient.toJson()),
+    );
+  }
+
+  @override
+  Future<Result<GetMetricsSummary200Response>> getStatsSummary() async {
+    getStatsSummaryCallCount++;
+    if (getStatsSummaryCallCount == 1) {
+      return Failure(ApiException(message: 'Unauthorized', statusCode: 401));
+    }
+    return Success(
+      GetMetricsSummary200Response.fromJson(kSrvGetStatsSummary.toJson()),
     );
   }
 }
@@ -87,4 +99,25 @@ void main() {
     expect(service.lastHistoryClientCount, 25);
     expect(service.lastSid, isNot('sid123'));
   });
+
+  test(
+    'renews SID and retries generated stats summary service after 401',
+    () async {
+      final client = FakePiholeV6ApiClient();
+      final creds = FakeSessionCredentialService();
+      final service = _RetryPiholeV6Service();
+      final repository = MetricsRepositoryV6(
+        client: client,
+        service: service,
+        sessionCache: V6SessionCache(creds: creds, client: client),
+      );
+
+      final result = await repository.fetchStatsSummary();
+
+      expect(result.getOrNull(), kRepoFetchStatsSummary);
+      expect(client.postAuthCallCount, 1);
+      expect(service.getStatsSummaryCallCount, 2);
+      expect(service.lastSid, isNot('sid123'));
+    },
+  );
 }
