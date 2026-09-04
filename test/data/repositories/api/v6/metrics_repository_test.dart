@@ -332,16 +332,16 @@ void main() {
       );
     });
 
-    test('should get overtime successfully', () async {
+    test('should get stats over time successfully', () async {
       final result = await repository.fetchOverTime();
       expect(result.getOrNull(), kRepoFetchOverTime);
     });
 
-    test('should fail when fetching overtime', () async {
-      client.shouldFail = true;
+    test('should fail when fetching stats over time', () async {
+      service.shouldFailHistory = true;
 
       final result = await repository.fetchOverTime();
-      expectError(result, messageContains: 'Failed to fetch over time data');
+      expectError(result, messageContains: 'Forced getHistory failure');
     });
   });
 }
