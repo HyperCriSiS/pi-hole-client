@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pi_hole_client/data/model/v6/lists/search.dart' as legacy_search;
 import 'package:pi_hole_client/data/repositories/api/v6/adlist_repository.dart';
@@ -52,6 +54,9 @@ legacy_search.Search _searchFixture({
     took: 0.01,
   );
 }
+
+Map<String, dynamic> _deepJson(legacy_search.Search fixture) =>
+    jsonDecode(jsonEncode(fixture)) as Map<String, dynamic>;
 
 class _FakePiholeV6Service extends PiholeV6Service {
   _FakePiholeV6Service()
@@ -159,11 +164,13 @@ class _FakePiholeV6Service extends PiholeV6Service {
     }
     return Success(
       GetSearch200Response.fromJson(
-        _searchFixture(
-          domain: domain,
-          partial: partial ?? false,
-          limit: n ?? 20,
-        ).toJson(),
+        _deepJson(
+          _searchFixture(
+            domain: domain,
+            partial: partial ?? false,
+            limit: n ?? 20,
+          ),
+        ),
       ),
     );
   }
