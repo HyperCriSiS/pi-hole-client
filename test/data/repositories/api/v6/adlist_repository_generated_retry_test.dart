@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pi_hole_client/data/model/v6/lists/search.dart' as legacy_search;
 import 'package:pi_hole_client/data/repositories/api/v6/adlist_repository.dart';
@@ -48,6 +50,9 @@ legacy_search.Search _searchFixture(String domain) {
     took: 0.01,
   );
 }
+
+Map<String, dynamic> _deepJson(legacy_search.Search fixture) =>
+    jsonDecode(jsonEncode(fixture)) as Map<String, dynamic>;
 
 class _RetryAdlistService extends PiholeV6Service {
   _RetryAdlistService()
@@ -143,7 +148,9 @@ class _RetryAdlistService extends PiholeV6Service {
     if (searchCallCount == 1) {
       return Failure(ApiException(message: 'Unauthorized', statusCode: 401));
     }
-    return Success(GetSearch200Response.fromJson(_searchFixture(domain).toJson()));
+    return Success(
+      GetSearch200Response.fromJson(_deepJson(_searchFixture(domain))),
+    );
   }
 }
 
