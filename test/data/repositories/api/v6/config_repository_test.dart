@@ -14,6 +14,7 @@ class _FakePiholeV6Service extends PiholeV6Service {
   _FakePiholeV6Service()
     : super(api: PiholeV6Api(basePathOverride: 'http://localhost/api'));
 
+  bool shouldFailGet = false;
   bool shouldFailPatch = false;
   String? lastSid;
   GetConfig200Response? lastPatchBody;
@@ -22,6 +23,21 @@ class _FakePiholeV6Service extends PiholeV6Service {
   @override
   void setSid(String sid) {
     lastSid = sid;
+  }
+
+  @override
+  Future<Result<GetConfig200Response>> getConfig() async {
+    if (shouldFailGet) {
+      return Failure(Exception('Forced generated getConfig failure'));
+    }
+    return Success(
+      GetConfig200Response(
+        config: ConfigConfig(
+          dns: ConfigConfigDns(queryLogging: true),
+        ),
+        took: 0.003,
+      ),
+    );
   }
 
   @override
@@ -56,24 +72,25 @@ void main() {
     creds = FakeSessionCredentialService();
     service = _FakePiholeV6Service();
     repository = ConfigRepositoryV6(
-      client: client,
       service: service,
       sessionCache: V6SessionCache(creds: creds, client: client),
     );
   });
 
   group('fetchDnsQueryLogging', () {
-    test('keeps element-specific query logging read on legacy client', () async {
+    test('reads query logging through generated full config endpoint', () async {
       final result = await repository.fetchDnsQueryLogging();
+
       expect(result.getOrNull(), kRepoFetchDnsQueryLogging);
+      expect(service.lastSid, 'sid123');
       expect(service.lastPatchBody, isNull);
     });
 
-    test('fails when legacy query logging read fails', () async {
-      client.shouldFail = true;
+    test('fails when generated full config read fails', () async {
+      service.shouldFailGet = true;
 
       final result = await repository.fetchDnsQueryLogging();
-      expectError(result, messageContains: 'Forced getConfigElement failure');
+      expectError(result, messageContains: 'Forced generated getConfig failure');
     });
   });
 
