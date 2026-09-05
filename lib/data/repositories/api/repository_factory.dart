@@ -75,7 +75,7 @@ class RepositoryBundleFactory {
             sessionCache: sessionCache,
           ),
           adlist: AdlistRepositoryV6(
-            client: client,
+            service: generatedService,
             sessionCache: sessionCache,
           ),
           auth: AuthRepositoryV6(client: client, sessionCache: sessionCache),
