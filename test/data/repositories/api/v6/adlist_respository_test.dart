@@ -267,6 +267,25 @@ void main() {
       expect(service.lastReplaceBody?.enabled, false);
     });
 
+    test('keeps unknown type in endpoint and omits unsupported body enum', () async {
+      const address = 'https://example.com/adlist.txt';
+      final result = await repository.updateAdlist(
+        address,
+        ListType.unknown,
+        groups: const [3],
+        comment: 'unknown type',
+        enabled: true,
+      );
+
+      expect(result.isSuccess(), true);
+      expect(service.lastReplaceList, address);
+      expect(service.lastReplaceType, 'unknown');
+      expect(service.lastReplaceBody?.type, isNull);
+      expect(service.lastReplaceBody?.groups, [3]);
+      expect(service.lastReplaceBody?.comment, 'unknown type');
+      expect(service.lastReplaceBody?.enabled, true);
+    });
+
     test('fails when generated replace request fails', () async {
       service.shouldFailReplace = true;
 
