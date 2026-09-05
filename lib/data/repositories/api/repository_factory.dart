@@ -96,7 +96,7 @@ class RepositoryBundleFactory {
             sessionCache: sessionCache,
           ),
           domain: DomainRepositoryV6(
-            client: client,
+            service: generatedService,
             sessionCache: sessionCache,
           ),
           ftl: FtlRepositoryV6(
