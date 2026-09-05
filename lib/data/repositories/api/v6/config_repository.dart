@@ -6,7 +6,6 @@ import 'package:pi_hole_client/data/repositories/utils/call_with_retry.dart';
 import 'package:pi_hole_client/data/services/api/pihole_v6_api_client.dart';
 import 'package:pi_hole_client/data/services/api/wrappers/pihole_v6_service.dart';
 import 'package:pi_hole_client/domain/model/config/config.dart';
-import 'package:pi_hole_client/domain/model/config/dns_config.dart';
 import 'package:pihole_v6_api/pihole_v6_api.dart' as generated;
 import 'package:result_dart/result_dart.dart';
 
