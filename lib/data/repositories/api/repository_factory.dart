@@ -80,7 +80,7 @@ class RepositoryBundleFactory {
           ),
           auth: AuthRepositoryV6(client: client, sessionCache: sessionCache),
           client: ClientRepositoryV6(
-            client: client,
+            service: generatedService,
             sessionCache: sessionCache,
           ),
           config: ConfigRepositoryV6(
