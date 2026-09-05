@@ -135,10 +135,11 @@ class AdlistRepositoryV6 extends BaseV6SidRepository
     );
   }
 
-  ListsPutTypeEnum _generatedType(ListType type) {
+  ListsPutTypeEnum? _generatedType(ListType type) {
     return switch (type) {
       ListType.allow => ListsPutTypeEnum.allow,
       ListType.block => ListsPutTypeEnum.block,
+      ListType.unknown => null,
     };
   }
 }
