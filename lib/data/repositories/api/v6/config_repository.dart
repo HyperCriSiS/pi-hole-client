@@ -7,7 +7,7 @@ import 'package:pi_hole_client/data/services/api/pihole_v6_api_client.dart';
 import 'package:pi_hole_client/data/services/api/wrappers/pihole_v6_service.dart';
 import 'package:pi_hole_client/domain/model/config/config.dart';
 import 'package:pi_hole_client/domain/model/config/dns_config.dart';
-import 'package:pihole_v6_api/pihole_v6_api.dart';
+import 'package:pihole_v6_api/pihole_v6_api.dart' as generated;
 import 'package:result_dart/result_dart.dart';
 
 class ConfigRepositoryV6 extends BaseV6SidRepository
@@ -34,9 +34,9 @@ class ConfigRepositoryV6 extends BaseV6SidRepository
         final sid = await getSid();
         _service.setSid(sid);
         final result = await _service.patchConfig(
-          body: GetConfig200Response(
-            config: ConfigConfig(
-              dns: ConfigConfigDns(queryLogging: status),
+          body: generated.GetConfig200Response(
+            config: generated.ConfigConfig(
+              dns: generated.ConfigConfigDns(queryLogging: status),
             ),
           ),
           restart: true,
