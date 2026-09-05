@@ -130,6 +130,7 @@ class PiholeV6Service {
     num? from,
     num? until,
     int? length,
+    int? start,
     int? cursor,
     String? domain,
     String? clientIp,
@@ -137,12 +138,15 @@ class PiholeV6Service {
     String? upstream,
     String? type,
     String? status,
+    String? reply,
+    String? dnssec,
   }) {
     return safeDioCall(() async {
       final response = await _metricsApi.getQueries(
         from: from,
         until: until,
         length: length,
+        start: start,
         cursor: cursor,
         domain: domain,
         clientIp: clientIp,
@@ -150,6 +154,8 @@ class PiholeV6Service {
         upstream: upstream,
         type: type,
         status: status,
+        reply: reply,
+        dnssec: dnssec,
       );
       return response.requireData;
     });
