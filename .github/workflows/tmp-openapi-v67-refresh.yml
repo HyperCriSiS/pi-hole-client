@@ -54,11 +54,12 @@ jobs:
 
       - name: Bundle pinned FTL v6.7 spec
         run: |
-          tools/openapi/bundle-spec.sh
+          chmod +x tools/openapi/bundle-spec.sh tools/openapi/generate.sh
+          bash tools/openapi/bundle-spec.sh
           cp tools/openapi/spec/upstream-bundled.yaml tools/openapi/spec/bundled.yaml
 
       - name: Regenerate v6 API client
-        run: tools/openapi/generate.sh
+        run: bash tools/openapi/generate.sh
 
       - name: Normalize generated Dart
         run: dart format .
