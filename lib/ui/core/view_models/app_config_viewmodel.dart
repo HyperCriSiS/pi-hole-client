@@ -12,10 +12,8 @@ import 'package:pi_hole_client/ui/core/themes/theme.dart';
 import 'package:pi_hole_client/utils/logger.dart';
 
 class AppConfigViewModel with ChangeNotifier {
-  AppConfigViewModel(
-    this._repository, {
-    AppLogService? appLogService,
-  }) : _appLogService = appLogService ?? AppLogService() {
+  AppConfigViewModel(this._repository, {AppLogService? appLogService})
+    : _appLogService = appLogService ?? AppLogService() {
     _appLogService.addListener(_onAppLogChanged);
   }
 
@@ -495,5 +493,4 @@ class AppConfigViewModel with ChangeNotifier {
     _appLogService.removeListener(_onAppLogChanged);
     super.dispose();
   }
-
 }

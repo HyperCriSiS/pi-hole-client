@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'groups.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,33 +17,18 @@ part 'groups.g.dart';
 )
 class Groups {
   /// Returns a new [Groups] instance.
-  Groups({
+  Groups({this.groups});
 
-     this.groups,
-  });
-
-      /// Array of group IDs
-  @JsonKey(
-    
-    name: r'groups',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Array of group IDs
+  @JsonKey(name: r'groups', required: false, includeIfNull: false)
   final List<int>? groups;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is Groups && other.groups == groups;
 
-
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is Groups &&
-      other.groups == groups;
-
-    @override
-    int get hashCode =>
-        groups.hashCode;
+  @override
+  int get hashCode => groups.hashCode;
 
   factory Groups.fromJson(Map<String, dynamic> json) => _$GroupsFromJson(json);
 
@@ -54,6 +38,4 @@ class Groups {
   String toString() {
     return toJson().toString();
   }
-
 }
-

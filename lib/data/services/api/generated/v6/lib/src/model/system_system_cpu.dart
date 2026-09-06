@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'system_system_cpu.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,68 +18,32 @@ part 'system_system_cpu.g.dart';
 )
 class SystemSystemCpu {
   /// Returns a new [SystemSystemCpu] instance.
-  SystemSystemCpu({
+  SystemSystemCpu({this.nprocs, this.percentCpu, this.load});
 
-     this.nprocs,
-
-     this.percentCpu,
-
-     this.load,
-  });
-
-      /// Number of available processors
-  @JsonKey(
-    
-    name: r'nprocs',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Number of available processors
+  @JsonKey(name: r'nprocs', required: false, includeIfNull: false)
   final int? nprocs;
 
-
-
-      /// Total CPU usage in percent (may be higher than 100% on multi-core systems and negative if the value cannot be computed)
-  @JsonKey(
-    
-    name: r'%cpu',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Total CPU usage in percent (may be higher than 100% on multi-core systems and negative if the value cannot be computed)
+  @JsonKey(name: r'%cpu', required: false, includeIfNull: false)
   final num? percentCpu;
 
-
-
-  @JsonKey(
-    
-    name: r'load',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'load', required: false, includeIfNull: false)
   final SystemSystemCpuLoad? load;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SystemSystemCpu &&
+          other.nprocs == nprocs &&
+          other.percentCpu == percentCpu &&
+          other.load == load;
 
+  @override
+  int get hashCode => nprocs.hashCode + percentCpu.hashCode + load.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is SystemSystemCpu &&
-      other.nprocs == nprocs &&
-      other.percentCpu == percentCpu &&
-      other.load == load;
-
-    @override
-    int get hashCode =>
-        nprocs.hashCode +
-        percentCpu.hashCode +
-        load.hashCode;
-
-  factory SystemSystemCpu.fromJson(Map<String, dynamic> json) => _$SystemSystemCpuFromJson(json);
+  factory SystemSystemCpu.fromJson(Map<String, dynamic> json) =>
+      _$SystemSystemCpuFromJson(json);
 
   Map<String, dynamic> toJson() => _$SystemSystemCpuToJson(this);
 
@@ -88,6 +51,4 @@ class SystemSystemCpu {
   String toString() {
     return toJson().toString();
   }
-
 }
-

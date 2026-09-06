@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'interfaces.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,35 +18,22 @@ part 'interfaces.g.dart';
 )
 class Interfaces {
   /// Returns a new [Interfaces] instance.
-  Interfaces({
+  Interfaces({this.interfaces});
 
-     this.interfaces,
-  });
-
-      /// Interface information
-  @JsonKey(
-    
-    name: r'interfaces',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Interface information
+  @JsonKey(name: r'interfaces', required: false, includeIfNull: false)
   final List<InterfacesInterfacesInner>? interfaces;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Interfaces && other.interfaces == interfaces;
 
+  @override
+  int get hashCode => interfaces.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is Interfaces &&
-      other.interfaces == interfaces;
-
-    @override
-    int get hashCode =>
-        interfaces.hashCode;
-
-  factory Interfaces.fromJson(Map<String, dynamic> json) => _$InterfacesFromJson(json);
+  factory Interfaces.fromJson(Map<String, dynamic> json) =>
+      _$InterfacesFromJson(json);
 
   Map<String, dynamic> toJson() => _$InterfacesToJson(this);
 
@@ -55,6 +41,4 @@ class Interfaces {
   String toString() {
     return toJson().toString();
   }
-
 }
-

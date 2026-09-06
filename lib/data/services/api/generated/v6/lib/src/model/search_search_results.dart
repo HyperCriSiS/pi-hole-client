@@ -10,7 +10,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'search_search_results.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -20,67 +19,31 @@ part 'search_search_results.g.dart';
 )
 class SearchSearchResults {
   /// Returns a new [SearchSearchResults] instance.
-  SearchSearchResults({
+  SearchSearchResults({this.domains, this.gravity, this.total});
 
-     this.domains,
-
-     this.gravity,
-
-     this.total,
-  });
-
-  @JsonKey(
-    
-    name: r'domains',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'domains', required: false, includeIfNull: false)
   final SearchSearchResultsDomains? domains;
 
-
-
-  @JsonKey(
-    
-    name: r'gravity',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'gravity', required: false, includeIfNull: false)
   final SearchSearchResultsGravity? gravity;
 
-
-
-      /// Total number of matches
-  @JsonKey(
-    
-    name: r'total',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Total number of matches
+  @JsonKey(name: r'total', required: false, includeIfNull: false)
   final int? total;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SearchSearchResults &&
+          other.domains == domains &&
+          other.gravity == gravity &&
+          other.total == total;
 
+  @override
+  int get hashCode => domains.hashCode + gravity.hashCode + total.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is SearchSearchResults &&
-      other.domains == domains &&
-      other.gravity == gravity &&
-      other.total == total;
-
-    @override
-    int get hashCode =>
-        domains.hashCode +
-        gravity.hashCode +
-        total.hashCode;
-
-  factory SearchSearchResults.fromJson(Map<String, dynamic> json) => _$SearchSearchResultsFromJson(json);
+  factory SearchSearchResults.fromJson(Map<String, dynamic> json) =>
+      _$SearchSearchResultsFromJson(json);
 
   Map<String, dynamic> toJson() => _$SearchSearchResultsToJson(this);
 
@@ -88,6 +51,4 @@ class SearchSearchResults {
   String toString() {
     return toJson().toString();
   }
-
 }
-

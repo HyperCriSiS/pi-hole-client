@@ -17,7 +17,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'config_config.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -28,161 +27,80 @@ part 'config_config.g.dart';
 class ConfigConfig {
   /// Returns a new [ConfigConfig] instance.
   ConfigConfig({
+    this.dns,
 
-     this.dns,
+    this.dhcp,
 
-     this.dhcp,
+    this.ntp,
 
-     this.ntp,
+    this.resolver,
 
-     this.resolver,
+    this.database,
 
-     this.database,
+    this.webserver,
 
-     this.webserver,
+    this.files,
 
-     this.files,
+    this.misc,
 
-     this.misc,
-
-     this.debug,
+    this.debug,
   });
 
-  @JsonKey(
-    
-    name: r'dns',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'dns', required: false, includeIfNull: false)
   final ConfigConfigDns? dns;
 
-
-
-  @JsonKey(
-    
-    name: r'dhcp',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'dhcp', required: false, includeIfNull: false)
   final ConfigConfigDhcp? dhcp;
 
-
-
-  @JsonKey(
-    
-    name: r'ntp',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'ntp', required: false, includeIfNull: false)
   final ConfigConfigNtp? ntp;
 
-
-
-  @JsonKey(
-    
-    name: r'resolver',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'resolver', required: false, includeIfNull: false)
   final ConfigConfigResolver? resolver;
 
-
-
-  @JsonKey(
-    
-    name: r'database',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'database', required: false, includeIfNull: false)
   final ConfigConfigDatabase? database;
 
-
-
-  @JsonKey(
-    
-    name: r'webserver',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'webserver', required: false, includeIfNull: false)
   final ConfigConfigWebserver? webserver;
 
-
-
-  @JsonKey(
-    
-    name: r'files',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'files', required: false, includeIfNull: false)
   final ConfigConfigFiles? files;
 
-
-
-  @JsonKey(
-    
-    name: r'misc',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'misc', required: false, includeIfNull: false)
   final ConfigConfigMisc? misc;
 
-
-
-  @JsonKey(
-    
-    name: r'debug',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'debug', required: false, includeIfNull: false)
   final ConfigConfigDebug? debug;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ConfigConfig &&
+          other.dns == dns &&
+          other.dhcp == dhcp &&
+          other.ntp == ntp &&
+          other.resolver == resolver &&
+          other.database == database &&
+          other.webserver == webserver &&
+          other.files == files &&
+          other.misc == misc &&
+          other.debug == debug;
 
+  @override
+  int get hashCode =>
+      dns.hashCode +
+      dhcp.hashCode +
+      ntp.hashCode +
+      resolver.hashCode +
+      database.hashCode +
+      webserver.hashCode +
+      files.hashCode +
+      misc.hashCode +
+      debug.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is ConfigConfig &&
-      other.dns == dns &&
-      other.dhcp == dhcp &&
-      other.ntp == ntp &&
-      other.resolver == resolver &&
-      other.database == database &&
-      other.webserver == webserver &&
-      other.files == files &&
-      other.misc == misc &&
-      other.debug == debug;
-
-    @override
-    int get hashCode =>
-        dns.hashCode +
-        dhcp.hashCode +
-        ntp.hashCode +
-        resolver.hashCode +
-        database.hashCode +
-        webserver.hashCode +
-        files.hashCode +
-        misc.hashCode +
-        debug.hashCode;
-
-  factory ConfigConfig.fromJson(Map<String, dynamic> json) => _$ConfigConfigFromJson(json);
+  factory ConfigConfig.fromJson(Map<String, dynamic> json) =>
+      _$ConfigConfigFromJson(json);
 
   Map<String, dynamic> toJson() => _$ConfigConfigToJson(this);
 
@@ -190,6 +108,4 @@ class ConfigConfig {
   String toString() {
     return toJson().toString();
   }
-
 }
-

@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'address_maybe_array.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,34 +18,21 @@ part 'address_maybe_array.g.dart';
 )
 class AddressMaybeArray {
   /// Returns a new [AddressMaybeArray] instance.
-  AddressMaybeArray({
+  AddressMaybeArray({this.address});
 
-     this.address,
-  });
-
-  @JsonKey(
-    
-    name: r'address',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'address', required: false, includeIfNull: false)
   final StringOrList? address;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AddressMaybeArray && other.address == address;
 
+  @override
+  int get hashCode => address.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is AddressMaybeArray &&
-      other.address == address;
-
-    @override
-    int get hashCode =>
-        address.hashCode;
-
-  factory AddressMaybeArray.fromJson(Map<String, dynamic> json) => _$AddressMaybeArrayFromJson(json);
+  factory AddressMaybeArray.fromJson(Map<String, dynamic> json) =>
+      _$AddressMaybeArrayFromJson(json);
 
   Map<String, dynamic> toJson() => _$AddressMaybeArrayToJson(this);
 
@@ -54,6 +40,4 @@ class AddressMaybeArray {
   String toString() {
     return toJson().toString();
   }
-
 }
-

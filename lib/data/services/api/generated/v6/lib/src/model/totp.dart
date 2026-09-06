@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'totp.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,32 +18,17 @@ part 'totp.g.dart';
 )
 class Totp {
   /// Returns a new [Totp] instance.
-  Totp({
+  Totp({this.totp});
 
-     this.totp,
-  });
-
-  @JsonKey(
-    
-    name: r'totp',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'totp', required: false, includeIfNull: false)
   final TotpTotp? totp;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is Totp && other.totp == totp;
 
-
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is Totp &&
-      other.totp == totp;
-
-    @override
-    int get hashCode =>
-        totp.hashCode;
+  @override
+  int get hashCode => totp.hashCode;
 
   factory Totp.fromJson(Map<String, dynamic> json) => _$TotpFromJson(json);
 
@@ -54,6 +38,4 @@ class Totp {
   String toString() {
     return toJson().toString();
   }
-
 }
-

@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'ftl_ftl_database_regex_denied.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,52 +17,28 @@ part 'ftl_ftl_database_regex_denied.g.dart';
 )
 class FtlFtlDatabaseRegexDenied {
   /// Returns a new [FtlFtlDatabaseRegexDenied] instance.
-  FtlFtlDatabaseRegexDenied({
+  FtlFtlDatabaseRegexDenied({this.total, this.enabled});
 
-     this.total,
-
-     this.enabled,
-  });
-
-      /// Number of denied regex filters (total)
-  @JsonKey(
-    
-    name: r'total',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Number of denied regex filters (total)
+  @JsonKey(name: r'total', required: false, includeIfNull: false)
   final int? total;
 
-
-
-      /// Number of denied regex filters (enabled)
-  @JsonKey(
-    
-    name: r'enabled',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Number of denied regex filters (enabled)
+  @JsonKey(name: r'enabled', required: false, includeIfNull: false)
   final int? enabled;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is FtlFtlDatabaseRegexDenied &&
+          other.total == total &&
+          other.enabled == enabled;
 
+  @override
+  int get hashCode => total.hashCode + enabled.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is FtlFtlDatabaseRegexDenied &&
-      other.total == total &&
-      other.enabled == enabled;
-
-    @override
-    int get hashCode =>
-        total.hashCode +
-        enabled.hashCode;
-
-  factory FtlFtlDatabaseRegexDenied.fromJson(Map<String, dynamic> json) => _$FtlFtlDatabaseRegexDeniedFromJson(json);
+  factory FtlFtlDatabaseRegexDenied.fromJson(Map<String, dynamic> json) =>
+      _$FtlFtlDatabaseRegexDeniedFromJson(json);
 
   Map<String, dynamic> toJson() => _$FtlFtlDatabaseRegexDeniedToJson(this);
 
@@ -71,6 +46,4 @@ class FtlFtlDatabaseRegexDenied {
   String toString() {
     return toJson().toString();
   }
-
 }
-

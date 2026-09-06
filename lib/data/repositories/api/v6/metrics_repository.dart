@@ -1,8 +1,11 @@
 import 'package:pi_hole_client/data/mapper/v6/metrics_mapper.dart';
-import 'package:pi_hole_client/data/model/v6/metrics/history.dart' as legacy_history;
-import 'package:pi_hole_client/data/model/v6/metrics/query.dart' as legacy_query;
+import 'package:pi_hole_client/data/model/v6/metrics/history.dart'
+    as legacy_history;
+import 'package:pi_hole_client/data/model/v6/metrics/query.dart'
+    as legacy_query;
 import 'package:pi_hole_client/data/model/v6/metrics/query_filter.dart';
-import 'package:pi_hole_client/data/model/v6/metrics/stats.dart' as legacy_stats;
+import 'package:pi_hole_client/data/model/v6/metrics/stats.dart'
+    as legacy_stats;
 import 'package:pi_hole_client/data/repositories/api/interfaces/metrics_repository.dart';
 import 'package:pi_hole_client/data/repositories/api/v6/base_v6_sid_repository.dart';
 import 'package:pi_hole_client/data/repositories/utils/call_with_retry.dart';

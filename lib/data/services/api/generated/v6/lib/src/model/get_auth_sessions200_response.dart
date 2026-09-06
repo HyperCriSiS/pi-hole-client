@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'get_auth_sessions200_response.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,51 +18,27 @@ part 'get_auth_sessions200_response.g.dart';
 )
 class GetAuthSessions200Response {
   /// Returns a new [GetAuthSessions200Response] instance.
-  GetAuthSessions200Response({
+  GetAuthSessions200Response({this.sessions, this.took});
 
-     this.sessions,
-
-     this.took,
-  });
-
-  @JsonKey(
-    
-    name: r'sessions',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'sessions', required: false, includeIfNull: false)
   final List<SessionsListSessionsInner>? sessions;
 
-
-
-      /// Time in seconds it took to process the request
-  @JsonKey(
-    
-    name: r'took',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Time in seconds it took to process the request
+  @JsonKey(name: r'took', required: false, includeIfNull: false)
   final num? took;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GetAuthSessions200Response &&
+          other.sessions == sessions &&
+          other.took == took;
 
+  @override
+  int get hashCode => sessions.hashCode + took.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is GetAuthSessions200Response &&
-      other.sessions == sessions &&
-      other.took == took;
-
-    @override
-    int get hashCode =>
-        sessions.hashCode +
-        took.hashCode;
-
-  factory GetAuthSessions200Response.fromJson(Map<String, dynamic> json) => _$GetAuthSessions200ResponseFromJson(json);
+  factory GetAuthSessions200Response.fromJson(Map<String, dynamic> json) =>
+      _$GetAuthSessions200ResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$GetAuthSessions200ResponseToJson(this);
 
@@ -71,6 +46,4 @@ class GetAuthSessions200Response {
   String toString() {
     return toJson().toString();
   }
-
 }
-

@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'components_schemas_readonly.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,85 +18,49 @@ part 'components_schemas_readonly.g.dart';
 class ComponentsSchemasReadonly {
   /// Returns a new [ComponentsSchemasReadonly] instance.
   ComponentsSchemasReadonly({
+    this.id,
 
-     this.id,
+    this.dateAdded,
 
-     this.dateAdded,
+    this.dateModified,
 
-     this.dateModified,
-
-     this.name,
+    this.name,
   });
 
-      /// Database ID
-  @JsonKey(
-    
-    name: r'id',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Database ID
+  @JsonKey(name: r'id', required: false, includeIfNull: false)
   final int? id;
 
-
-
-      /// Unix timestamp of item addition
-  @JsonKey(
-    
-    name: r'date_added',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Unix timestamp of item addition
+  @JsonKey(name: r'date_added', required: false, includeIfNull: false)
   final int? dateAdded;
 
-
-
-      /// Unix timestamp of last item modification
-  @JsonKey(
-    
-    name: r'date_modified',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Unix timestamp of last item modification
+  @JsonKey(name: r'date_modified', required: false, includeIfNull: false)
   final int? dateModified;
 
-
-
-      /// hostname (only if available)
-  @JsonKey(
-    
-    name: r'name',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// hostname (only if available)
+  @JsonKey(name: r'name', required: false, includeIfNull: false)
   final String? name;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ComponentsSchemasReadonly &&
+          other.id == id &&
+          other.dateAdded == dateAdded &&
+          other.dateModified == dateModified &&
+          other.name == name;
 
+  @override
+  int get hashCode =>
+      id.hashCode +
+      dateAdded.hashCode +
+      dateModified.hashCode +
+      (name == null ? 0 : name.hashCode);
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is ComponentsSchemasReadonly &&
-      other.id == id &&
-      other.dateAdded == dateAdded &&
-      other.dateModified == dateModified &&
-      other.name == name;
-
-    @override
-    int get hashCode =>
-        id.hashCode +
-        dateAdded.hashCode +
-        dateModified.hashCode +
-        (name == null ? 0 : name.hashCode);
-
-  factory ComponentsSchemasReadonly.fromJson(Map<String, dynamic> json) => _$ComponentsSchemasReadonlyFromJson(json);
+  factory ComponentsSchemasReadonly.fromJson(Map<String, dynamic> json) =>
+      _$ComponentsSchemasReadonlyFromJson(json);
 
   Map<String, dynamic> toJson() => _$ComponentsSchemasReadonlyToJson(this);
 
@@ -105,6 +68,4 @@ class ComponentsSchemasReadonly {
   String toString() {
     return toJson().toString();
   }
-
 }
-

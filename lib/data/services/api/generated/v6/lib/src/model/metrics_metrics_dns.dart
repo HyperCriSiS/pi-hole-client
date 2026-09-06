@@ -10,7 +10,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'metrics_metrics_dns.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -20,50 +19,26 @@ part 'metrics_metrics_dns.g.dart';
 )
 class MetricsMetricsDns {
   /// Returns a new [MetricsMetricsDns] instance.
-  MetricsMetricsDns({
+  MetricsMetricsDns({this.cache, this.replies});
 
-     this.cache,
-
-     this.replies,
-  });
-
-  @JsonKey(
-    
-    name: r'cache',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'cache', required: false, includeIfNull: false)
   final MetricsMetricsDnsCache? cache;
 
-
-
-  @JsonKey(
-    
-    name: r'replies',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'replies', required: false, includeIfNull: false)
   final MetricsMetricsDnsReplies? replies;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is MetricsMetricsDns &&
+          other.cache == cache &&
+          other.replies == replies;
 
+  @override
+  int get hashCode => cache.hashCode + replies.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is MetricsMetricsDns &&
-      other.cache == cache &&
-      other.replies == replies;
-
-    @override
-    int get hashCode =>
-        cache.hashCode +
-        replies.hashCode;
-
-  factory MetricsMetricsDns.fromJson(Map<String, dynamic> json) => _$MetricsMetricsDnsFromJson(json);
+  factory MetricsMetricsDns.fromJson(Map<String, dynamic> json) =>
+      _$MetricsMetricsDnsFromJson(json);
 
   Map<String, dynamic> toJson() => _$MetricsMetricsDnsToJson(this);
 
@@ -71,6 +46,4 @@ class MetricsMetricsDns {
   String toString() {
     return toJson().toString();
   }
-
 }
-

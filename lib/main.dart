@@ -195,7 +195,8 @@ Future<Widget> bootstrapApp({
   await dbService.open();
   final appLogService = AppLogService();
   final storage =
-      secureStorageService ?? SecureStorageService(appLogService: appLogService);
+      secureStorageService ??
+      SecureStorageService(appLogService: appLogService);
   final appConfigRepository = LocalAppConfigRepository(dbService, storage);
   final serverRepository = LocalServerRepository(dbService, storage);
 

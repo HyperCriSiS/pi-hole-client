@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'system_system_memory_ram.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,102 +18,57 @@ part 'system_system_memory_ram.g.dart';
 class SystemSystemMemoryRam {
   /// Returns a new [SystemSystemMemoryRam] instance.
   SystemSystemMemoryRam({
+    this.total,
 
-     this.total,
+    this.free,
 
-     this.free,
+    this.used,
 
-     this.used,
+    this.available,
 
-     this.available,
-
-     this.percentUsed,
+    this.percentUsed,
   });
 
-      /// Total RAM
-  @JsonKey(
-    
-    name: r'total',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Total RAM
+  @JsonKey(name: r'total', required: false, includeIfNull: false)
   final int? total;
 
-
-
-      /// Total free RAM
-  @JsonKey(
-    
-    name: r'free',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Total free RAM
+  @JsonKey(name: r'free', required: false, includeIfNull: false)
   final int? free;
 
-
-
-      /// Used RAM
-  @JsonKey(
-    
-    name: r'used',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Used RAM
+  @JsonKey(name: r'used', required: false, includeIfNull: false)
   final int? used;
 
-
-
-      /// Total available RAM
-  @JsonKey(
-    
-    name: r'available',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Total available RAM
+  @JsonKey(name: r'available', required: false, includeIfNull: false)
   final int? available;
 
-
-
-      /// Used RAM in percent
-  @JsonKey(
-    
-    name: r'%used',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Used RAM in percent
+  @JsonKey(name: r'%used', required: false, includeIfNull: false)
   final num? percentUsed;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SystemSystemMemoryRam &&
+          other.total == total &&
+          other.free == free &&
+          other.used == used &&
+          other.available == available &&
+          other.percentUsed == percentUsed;
 
+  @override
+  int get hashCode =>
+      total.hashCode +
+      free.hashCode +
+      used.hashCode +
+      available.hashCode +
+      percentUsed.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is SystemSystemMemoryRam &&
-      other.total == total &&
-      other.free == free &&
-      other.used == used &&
-      other.available == available &&
-      other.percentUsed == percentUsed;
-
-    @override
-    int get hashCode =>
-        total.hashCode +
-        free.hashCode +
-        used.hashCode +
-        available.hashCode +
-        percentUsed.hashCode;
-
-  factory SystemSystemMemoryRam.fromJson(Map<String, dynamic> json) => _$SystemSystemMemoryRamFromJson(json);
+  factory SystemSystemMemoryRam.fromJson(Map<String, dynamic> json) =>
+      _$SystemSystemMemoryRamFromJson(json);
 
   Map<String, dynamic> toJson() => _$SystemSystemMemoryRamToJson(this);
 
@@ -122,6 +76,4 @@ class SystemSystemMemoryRam {
   String toString() {
     return toJson().toString();
   }
-
 }
-

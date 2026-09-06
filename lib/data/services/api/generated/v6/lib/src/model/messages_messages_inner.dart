@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'messages_messages_inner.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,102 +18,57 @@ part 'messages_messages_inner.g.dart';
 class MessagesMessagesInner {
   /// Returns a new [MessagesMessagesInner] instance.
   MessagesMessagesInner({
+    this.id,
 
-     this.id,
+    this.timestamp,
 
-     this.timestamp,
+    this.type,
 
-     this.type,
+    this.plain,
 
-     this.plain,
-
-     this.html,
+    this.html,
   });
 
-      /// ID of message
-  @JsonKey(
-    
-    name: r'id',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// ID of message
+  @JsonKey(name: r'id', required: false, includeIfNull: false)
   final int? id;
 
-
-
-      /// Unix timestamp of message
-  @JsonKey(
-    
-    name: r'timestamp',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Unix timestamp of message
+  @JsonKey(name: r'timestamp', required: false, includeIfNull: false)
   final num? timestamp;
 
-
-
-      /// Message type
-  @JsonKey(
-    
-    name: r'type',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Message type
+  @JsonKey(name: r'type', required: false, includeIfNull: false)
   final String? type;
 
-
-
-      /// Plain message
-  @JsonKey(
-    
-    name: r'plain',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Plain message
+  @JsonKey(name: r'plain', required: false, includeIfNull: false)
   final String? plain;
 
-
-
-      /// HTML-formatted message
-  @JsonKey(
-    
-    name: r'html',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// HTML-formatted message
+  @JsonKey(name: r'html', required: false, includeIfNull: false)
   final String? html;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is MessagesMessagesInner &&
+          other.id == id &&
+          other.timestamp == timestamp &&
+          other.type == type &&
+          other.plain == plain &&
+          other.html == html;
 
+  @override
+  int get hashCode =>
+      id.hashCode +
+      timestamp.hashCode +
+      type.hashCode +
+      plain.hashCode +
+      html.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is MessagesMessagesInner &&
-      other.id == id &&
-      other.timestamp == timestamp &&
-      other.type == type &&
-      other.plain == plain &&
-      other.html == html;
-
-    @override
-    int get hashCode =>
-        id.hashCode +
-        timestamp.hashCode +
-        type.hashCode +
-        plain.hashCode +
-        html.hashCode;
-
-  factory MessagesMessagesInner.fromJson(Map<String, dynamic> json) => _$MessagesMessagesInnerFromJson(json);
+  factory MessagesMessagesInner.fromJson(Map<String, dynamic> json) =>
+      _$MessagesMessagesInnerFromJson(json);
 
   Map<String, dynamic> toJson() => _$MessagesMessagesInnerToJson(this);
 
@@ -122,6 +76,4 @@ class MessagesMessagesInner {
   String toString() {
     return toJson().toString();
   }
-
 }
-

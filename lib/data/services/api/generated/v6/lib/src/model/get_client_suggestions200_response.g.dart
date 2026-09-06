@@ -8,7 +8,7 @@ part of 'get_client_suggestions200_response.dart';
 
 abstract class _$GetClientSuggestions200ResponseCWProxy {
   GetClientSuggestions200Response clients(
-    List<SchemasSuggestionsClientsInner>? clients,
+    List<Suggestions2ClientsInner>? clients,
   );
 
   GetClientSuggestions200Response took(num? took);
@@ -20,7 +20,7 @@ abstract class _$GetClientSuggestions200ResponseCWProxy {
   /// GetClientSuggestions200Response(...).copyWith(id: 12, name: "My name")
   /// ````
   GetClientSuggestions200Response call({
-    List<SchemasSuggestionsClientsInner>? clients,
+    List<Suggestions2ClientsInner>? clients,
     num? took,
   });
 }
@@ -34,7 +34,7 @@ class _$GetClientSuggestions200ResponseCWProxyImpl
 
   @override
   GetClientSuggestions200Response clients(
-    List<SchemasSuggestionsClientsInner>? clients,
+    List<Suggestions2ClientsInner>? clients,
   ) => this(clients: clients);
 
   @override
@@ -55,7 +55,7 @@ class _$GetClientSuggestions200ResponseCWProxyImpl
       clients: clients == const $CopyWithPlaceholder()
           ? _value.clients
           // ignore: cast_nullable_to_non_nullable
-          : clients as List<SchemasSuggestionsClientsInner>?,
+          : clients as List<Suggestions2ClientsInner>?,
       took: took == const $CopyWithPlaceholder()
           ? _value.took
           // ignore: cast_nullable_to_non_nullable
@@ -84,9 +84,7 @@ GetClientSuggestions200Response _$GetClientSuggestions200ResponseFromJson(
       'clients',
       (v) => (v as List<dynamic>?)
           ?.map(
-            (e) => SchemasSuggestionsClientsInner.fromJson(
-              e as Map<String, dynamic>,
-            ),
+            (e) => Suggestions2ClientsInner.fromJson(e as Map<String, dynamic>),
           )
           .toList(),
     ),

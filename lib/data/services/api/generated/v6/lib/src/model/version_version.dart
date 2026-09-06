@@ -12,7 +12,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'version_version.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -22,82 +21,35 @@ part 'version_version.g.dart';
 )
 class VersionVersion {
   /// Returns a new [VersionVersion] instance.
-  VersionVersion({
+  VersionVersion({this.core, this.web, this.ftl, this.docker});
 
-     this.core,
-
-     this.web,
-
-     this.ftl,
-
-     this.docker,
-  });
-
-  @JsonKey(
-    
-    name: r'core',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'core', required: false, includeIfNull: false)
   final VersionVersionCore? core;
 
-
-
-  @JsonKey(
-    
-    name: r'web',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'web', required: false, includeIfNull: false)
   final VersionVersionWeb? web;
 
-
-
-  @JsonKey(
-    
-    name: r'ftl',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'ftl', required: false, includeIfNull: false)
   final VersionVersionFtl? ftl;
 
-
-
-  @JsonKey(
-    
-    name: r'docker',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'docker', required: false, includeIfNull: false)
   final VersionVersionDocker? docker;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is VersionVersion &&
+          other.core == core &&
+          other.web == web &&
+          other.ftl == ftl &&
+          other.docker == docker;
 
+  @override
+  int get hashCode =>
+      core.hashCode + web.hashCode + ftl.hashCode + docker.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is VersionVersion &&
-      other.core == core &&
-      other.web == web &&
-      other.ftl == ftl &&
-      other.docker == docker;
-
-    @override
-    int get hashCode =>
-        core.hashCode +
-        web.hashCode +
-        ftl.hashCode +
-        docker.hashCode;
-
-  factory VersionVersion.fromJson(Map<String, dynamic> json) => _$VersionVersionFromJson(json);
+  factory VersionVersion.fromJson(Map<String, dynamic> json) =>
+      _$VersionVersionFromJson(json);
 
   Map<String, dynamic> toJson() => _$VersionVersionToJson(this);
 
@@ -105,6 +57,4 @@ class VersionVersion {
   String toString() {
     return toJson().toString();
   }
-
 }
-

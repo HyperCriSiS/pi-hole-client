@@ -15,14 +15,34 @@ Response<T> _response<T>(T data) {
 }
 
 void main() {
-  test('forwards all supported query parameters to generated MetricsApi', () async {
-    final api = MockPiholeV6Api();
-    final metricsApi = MockMetricsApi();
-    final response = GetQueries200Response();
+  test(
+    'forwards all supported query parameters to generated MetricsApi',
+    () async {
+      final api = MockPiholeV6Api();
+      final metricsApi = MockMetricsApi();
+      final response = GetQueries200Response();
 
-    when(api.getMetricsApi()).thenReturn(metricsApi);
-    when(
-      metricsApi.getQueries(
+      when(api.getMetricsApi()).thenReturn(metricsApi);
+      when(
+        metricsApi.getQueries(
+          from: 1000,
+          until: 2000,
+          length: 100,
+          start: 25,
+          cursor: 7,
+          domain: 'example.com',
+          clientIp: '192.0.2.10',
+          clientName: 'desktop',
+          upstream: '1.1.1.1',
+          type: 'AAAA',
+          status: 'FORWARDED',
+          reply: 'IP',
+          dnssec: 'SECURE',
+        ),
+      ).thenAnswer((_) async => _response(response));
+
+      final service = PiholeV6Service(api: api);
+      final result = await service.getQueries(
         from: 1000,
         until: 2000,
         length: 100,
@@ -36,43 +56,26 @@ void main() {
         status: 'FORWARDED',
         reply: 'IP',
         dnssec: 'SECURE',
-      ),
-    ).thenAnswer((_) async => _response(response));
+      );
 
-    final service = PiholeV6Service(api: api);
-    final result = await service.getQueries(
-      from: 1000,
-      until: 2000,
-      length: 100,
-      start: 25,
-      cursor: 7,
-      domain: 'example.com',
-      clientIp: '192.0.2.10',
-      clientName: 'desktop',
-      upstream: '1.1.1.1',
-      type: 'AAAA',
-      status: 'FORWARDED',
-      reply: 'IP',
-      dnssec: 'SECURE',
-    );
-
-    expect(result.getOrNull(), response);
-    verify(
-      metricsApi.getQueries(
-        from: 1000,
-        until: 2000,
-        length: 100,
-        start: 25,
-        cursor: 7,
-        domain: 'example.com',
-        clientIp: '192.0.2.10',
-        clientName: 'desktop',
-        upstream: '1.1.1.1',
-        type: 'AAAA',
-        status: 'FORWARDED',
-        reply: 'IP',
-        dnssec: 'SECURE',
-      ),
-    ).called(1);
-  });
+      expect(result.getOrNull(), response);
+      verify(
+        metricsApi.getQueries(
+          from: 1000,
+          until: 2000,
+          length: 100,
+          start: 25,
+          cursor: 7,
+          domain: 'example.com',
+          clientIp: '192.0.2.10',
+          clientName: 'desktop',
+          upstream: '1.1.1.1',
+          type: 'AAAA',
+          status: 'FORWARDED',
+          reply: 'IP',
+          dnssec: 'SECURE',
+        ),
+      ).called(1);
+    },
+  );
 }

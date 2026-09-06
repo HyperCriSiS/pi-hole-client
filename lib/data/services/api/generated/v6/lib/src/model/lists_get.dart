@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'lists_get.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,35 +18,21 @@ part 'lists_get.g.dart';
 )
 class ListsGet {
   /// Returns a new [ListsGet] instance.
-  ListsGet({
+  ListsGet({this.lists});
 
-     this.lists,
-  });
-
-      /// Array of lists
-  @JsonKey(
-    
-    name: r'lists',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Array of lists
+  @JsonKey(name: r'lists', required: false, includeIfNull: false)
   final List<ListsGetListsInner>? lists;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is ListsGet && other.lists == lists;
 
+  @override
+  int get hashCode => lists.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is ListsGet &&
-      other.lists == lists;
-
-    @override
-    int get hashCode =>
-        lists.hashCode;
-
-  factory ListsGet.fromJson(Map<String, dynamic> json) => _$ListsGetFromJson(json);
+  factory ListsGet.fromJson(Map<String, dynamic> json) =>
+      _$ListsGetFromJson(json);
 
   Map<String, dynamic> toJson() => _$ListsGetToJson(this);
 
@@ -55,6 +40,4 @@ class ListsGet {
   String toString() {
     return toJson().toString();
   }
-
 }
-

@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'version.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,34 +18,20 @@ part 'version.g.dart';
 )
 class Version {
   /// Returns a new [Version] instance.
-  Version({
+  Version({this.version});
 
-     this.version,
-  });
-
-  @JsonKey(
-    
-    name: r'version',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'version', required: false, includeIfNull: false)
   final VersionVersion? version;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is Version && other.version == version;
 
+  @override
+  int get hashCode => version.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is Version &&
-      other.version == version;
-
-    @override
-    int get hashCode =>
-        version.hashCode;
-
-  factory Version.fromJson(Map<String, dynamic> json) => _$VersionFromJson(json);
+  factory Version.fromJson(Map<String, dynamic> json) =>
+      _$VersionFromJson(json);
 
   Map<String, dynamic> toJson() => _$VersionToJson(this);
 
@@ -54,6 +39,4 @@ class Version {
   String toString() {
     return toJson().toString();
   }
-
 }
-

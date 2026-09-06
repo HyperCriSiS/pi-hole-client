@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'sensors.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,34 +18,20 @@ part 'sensors.g.dart';
 )
 class Sensors {
   /// Returns a new [Sensors] instance.
-  Sensors({
+  Sensors({this.sensors});
 
-     this.sensors,
-  });
-
-  @JsonKey(
-    
-    name: r'sensors',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'sensors', required: false, includeIfNull: false)
   final SensorsSensors? sensors;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is Sensors && other.sensors == sensors;
 
+  @override
+  int get hashCode => sensors.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is Sensors &&
-      other.sensors == sensors;
-
-    @override
-    int get hashCode =>
-        sensors.hashCode;
-
-  factory Sensors.fromJson(Map<String, dynamic> json) => _$SensorsFromJson(json);
+  factory Sensors.fromJson(Map<String, dynamic> json) =>
+      _$SensorsFromJson(json);
 
   Map<String, dynamic> toJson() => _$SensorsToJson(this);
 
@@ -54,6 +39,4 @@ class Sensors {
   String toString() {
     return toJson().toString();
   }
-
 }
-

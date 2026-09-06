@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'schemas_queries.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -20,102 +19,57 @@ part 'schemas_queries.g.dart';
 class SchemasQueries {
   /// Returns a new [SchemasQueries] instance.
   SchemasQueries({
+    this.queries,
 
-     this.queries,
+    this.cursor,
 
-     this.cursor,
+    this.recordsTotal,
 
-     this.recordsTotal,
+    this.recordsFiltered,
 
-     this.recordsFiltered,
-
-     this.draw,
+    this.draw,
   });
 
-      /// Data array
-  @JsonKey(
-    
-    name: r'queries',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Data array
+  @JsonKey(name: r'queries', required: false, includeIfNull: false)
   final List<SchemasQueriesQueriesInner>? queries;
 
-
-
-      /// Database ID of most recent query to show
-  @JsonKey(
-    
-    name: r'cursor',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Database ID of most recent query to show
+  @JsonKey(name: r'cursor', required: false, includeIfNull: false)
   final int? cursor;
 
-
-
-      /// Total number of available queries
-  @JsonKey(
-    
-    name: r'recordsTotal',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Total number of available queries
+  @JsonKey(name: r'recordsTotal', required: false, includeIfNull: false)
   final int? recordsTotal;
 
-
-
-      /// Number of available queries after filtering
-  @JsonKey(
-    
-    name: r'recordsFiltered',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Number of available queries after filtering
+  @JsonKey(name: r'recordsFiltered', required: false, includeIfNull: false)
   final int? recordsFiltered;
 
-
-
-      /// DataTables-specific integer (echos input value)
-  @JsonKey(
-    
-    name: r'draw',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// DataTables-specific integer (echos input value)
+  @JsonKey(name: r'draw', required: false, includeIfNull: false)
   final int? draw;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SchemasQueries &&
+          other.queries == queries &&
+          other.cursor == cursor &&
+          other.recordsTotal == recordsTotal &&
+          other.recordsFiltered == recordsFiltered &&
+          other.draw == draw;
 
+  @override
+  int get hashCode =>
+      queries.hashCode +
+      cursor.hashCode +
+      recordsTotal.hashCode +
+      recordsFiltered.hashCode +
+      draw.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is SchemasQueries &&
-      other.queries == queries &&
-      other.cursor == cursor &&
-      other.recordsTotal == recordsTotal &&
-      other.recordsFiltered == recordsFiltered &&
-      other.draw == draw;
-
-    @override
-    int get hashCode =>
-        queries.hashCode +
-        cursor.hashCode +
-        recordsTotal.hashCode +
-        recordsFiltered.hashCode +
-        draw.hashCode;
-
-  factory SchemasQueries.fromJson(Map<String, dynamic> json) => _$SchemasQueriesFromJson(json);
+  factory SchemasQueries.fromJson(Map<String, dynamic> json) =>
+      _$SchemasQueriesFromJson(json);
 
   Map<String, dynamic> toJson() => _$SchemasQueriesToJson(this);
 
@@ -123,6 +77,4 @@ class SchemasQueries {
   String toString() {
     return toJson().toString();
   }
-
 }
-

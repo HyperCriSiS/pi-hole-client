@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'ftl_ftl_database_regex_allowed.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,52 +17,28 @@ part 'ftl_ftl_database_regex_allowed.g.dart';
 )
 class FtlFtlDatabaseRegexAllowed {
   /// Returns a new [FtlFtlDatabaseRegexAllowed] instance.
-  FtlFtlDatabaseRegexAllowed({
+  FtlFtlDatabaseRegexAllowed({this.total, this.enabled});
 
-     this.total,
-
-     this.enabled,
-  });
-
-      /// Number of allowed regex filters (total)
-  @JsonKey(
-    
-    name: r'total',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Number of allowed regex filters (total)
+  @JsonKey(name: r'total', required: false, includeIfNull: false)
   final int? total;
 
-
-
-      /// Number of allowed regex filters (enabled)
-  @JsonKey(
-    
-    name: r'enabled',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Number of allowed regex filters (enabled)
+  @JsonKey(name: r'enabled', required: false, includeIfNull: false)
   final int? enabled;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is FtlFtlDatabaseRegexAllowed &&
+          other.total == total &&
+          other.enabled == enabled;
 
+  @override
+  int get hashCode => total.hashCode + enabled.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is FtlFtlDatabaseRegexAllowed &&
-      other.total == total &&
-      other.enabled == enabled;
-
-    @override
-    int get hashCode =>
-        total.hashCode +
-        enabled.hashCode;
-
-  factory FtlFtlDatabaseRegexAllowed.fromJson(Map<String, dynamic> json) => _$FtlFtlDatabaseRegexAllowedFromJson(json);
+  factory FtlFtlDatabaseRegexAllowed.fromJson(Map<String, dynamic> json) =>
+      _$FtlFtlDatabaseRegexAllowedFromJson(json);
 
   Map<String, dynamic> toJson() => _$FtlFtlDatabaseRegexAllowedToJson(this);
 
@@ -71,6 +46,4 @@ class FtlFtlDatabaseRegexAllowed {
   String toString() {
     return toJson().toString();
   }
-
 }
-

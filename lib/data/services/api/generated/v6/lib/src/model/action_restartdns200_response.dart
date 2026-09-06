@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'action_restartdns200_response.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,52 +17,28 @@ part 'action_restartdns200_response.g.dart';
 )
 class ActionRestartdns200Response {
   /// Returns a new [ActionRestartdns200Response] instance.
-  ActionRestartdns200Response({
+  ActionRestartdns200Response({this.status, this.took});
 
-     this.status,
-
-     this.took,
-  });
-
-      /// Key indicating the status of the request
-  @JsonKey(
-    
-    name: r'status',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Key indicating the status of the request
+  @JsonKey(name: r'status', required: false, includeIfNull: false)
   final String? status;
 
-
-
-      /// Time in seconds it took to process the request
-  @JsonKey(
-    
-    name: r'took',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Time in seconds it took to process the request
+  @JsonKey(name: r'took', required: false, includeIfNull: false)
   final num? took;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ActionRestartdns200Response &&
+          other.status == status &&
+          other.took == took;
 
+  @override
+  int get hashCode => status.hashCode + took.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is ActionRestartdns200Response &&
-      other.status == status &&
-      other.took == took;
-
-    @override
-    int get hashCode =>
-        status.hashCode +
-        took.hashCode;
-
-  factory ActionRestartdns200Response.fromJson(Map<String, dynamic> json) => _$ActionRestartdns200ResponseFromJson(json);
+  factory ActionRestartdns200Response.fromJson(Map<String, dynamic> json) =>
+      _$ActionRestartdns200ResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$ActionRestartdns200ResponseToJson(this);
 
@@ -71,6 +46,4 @@ class ActionRestartdns200Response {
   String toString() {
     return toJson().toString();
   }
-
 }
-

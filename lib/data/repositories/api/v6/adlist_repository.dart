@@ -1,7 +1,8 @@
 import 'package:pi_hole_client/data/mapper/v6/adlist_mapper.dart';
 import 'package:pi_hole_client/data/mapper/v6/list_search_mapper.dart';
 import 'package:pi_hole_client/data/model/v6/lists/lists.dart' as legacy_lists;
-import 'package:pi_hole_client/data/model/v6/lists/search.dart' as legacy_search;
+import 'package:pi_hole_client/data/model/v6/lists/search.dart'
+    as legacy_search;
 import 'package:pi_hole_client/data/repositories/api/interfaces/adlist_repository.dart';
 import 'package:pi_hole_client/data/repositories/api/v6/base_v6_sid_repository.dart';
 import 'package:pi_hole_client/data/repositories/utils/call_with_retry.dart';

@@ -23,11 +23,7 @@ void main() {
     });
 
     test('omits null, empty, and whitespace-only filters', () {
-      const filter = V6QueryFilter(
-        domain: '  ',
-        status: '',
-        clientIp: null,
-      );
+      const filter = V6QueryFilter(domain: '  ', status: '', clientIp: null);
 
       expect(filter.toQueryParameters(), isEmpty);
       expect(filter.isEmpty, isTrue);

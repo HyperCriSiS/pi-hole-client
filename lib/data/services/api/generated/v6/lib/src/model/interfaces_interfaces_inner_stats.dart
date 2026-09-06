@@ -10,7 +10,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'interfaces_interfaces_inner_stats.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -20,50 +19,26 @@ part 'interfaces_interfaces_inner_stats.g.dart';
 )
 class InterfacesInterfacesInnerStats {
   /// Returns a new [InterfacesInterfacesInnerStats] instance.
-  InterfacesInterfacesInnerStats({
+  InterfacesInterfacesInnerStats({this.rxBytes, this.txBytes});
 
-     this.rxBytes,
-
-     this.txBytes,
-  });
-
-  @JsonKey(
-    
-    name: r'rx_bytes',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'rx_bytes', required: false, includeIfNull: false)
   final InterfacesInterfacesInnerStatsRxBytes? rxBytes;
 
-
-
-  @JsonKey(
-    
-    name: r'tx_bytes',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'tx_bytes', required: false, includeIfNull: false)
   final InterfacesInterfacesInnerStatsTxBytes? txBytes;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is InterfacesInterfacesInnerStats &&
+          other.rxBytes == rxBytes &&
+          other.txBytes == txBytes;
 
+  @override
+  int get hashCode => rxBytes.hashCode + txBytes.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is InterfacesInterfacesInnerStats &&
-      other.rxBytes == rxBytes &&
-      other.txBytes == txBytes;
-
-    @override
-    int get hashCode =>
-        rxBytes.hashCode +
-        txBytes.hashCode;
-
-  factory InterfacesInterfacesInnerStats.fromJson(Map<String, dynamic> json) => _$InterfacesInterfacesInnerStatsFromJson(json);
+  factory InterfacesInterfacesInnerStats.fromJson(Map<String, dynamic> json) =>
+      _$InterfacesInterfacesInnerStatsFromJson(json);
 
   Map<String, dynamic> toJson() => _$InterfacesInterfacesInnerStatsToJson(this);
 
@@ -71,6 +46,4 @@ class InterfacesInterfacesInnerStats {
   String toString() {
     return toJson().toString();
   }
-
 }
-

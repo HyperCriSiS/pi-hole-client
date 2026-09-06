@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'get_sensors200_response.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,51 +18,27 @@ part 'get_sensors200_response.g.dart';
 )
 class GetSensors200Response {
   /// Returns a new [GetSensors200Response] instance.
-  GetSensors200Response({
+  GetSensors200Response({this.sensors, this.took});
 
-     this.sensors,
-
-     this.took,
-  });
-
-  @JsonKey(
-    
-    name: r'sensors',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'sensors', required: false, includeIfNull: false)
   final SensorsSensors? sensors;
 
-
-
-      /// Time in seconds it took to process the request
-  @JsonKey(
-    
-    name: r'took',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Time in seconds it took to process the request
+  @JsonKey(name: r'took', required: false, includeIfNull: false)
   final num? took;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GetSensors200Response &&
+          other.sensors == sensors &&
+          other.took == took;
 
+  @override
+  int get hashCode => sensors.hashCode + took.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is GetSensors200Response &&
-      other.sensors == sensors &&
-      other.took == took;
-
-    @override
-    int get hashCode =>
-        sensors.hashCode +
-        took.hashCode;
-
-  factory GetSensors200Response.fromJson(Map<String, dynamic> json) => _$GetSensors200ResponseFromJson(json);
+  factory GetSensors200Response.fromJson(Map<String, dynamic> json) =>
+      _$GetSensors200ResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$GetSensors200ResponseToJson(this);
 
@@ -71,6 +46,4 @@ class GetSensors200Response {
   String toString() {
     return toJson().toString();
   }
-
 }
-

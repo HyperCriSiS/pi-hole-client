@@ -56,9 +56,9 @@ class LiveLogsService {
 
       final collected = <Log>[];
       for (var i = 0; i < maxPagesPerTick; i++) {
-        final page = await _paginationService
-            .loadNextPage()
-            .timeout(_requestTimeout);
+        final page = await _paginationService.loadNextPage().timeout(
+          _requestTimeout,
+        );
         if (page.isEmpty) break;
         collected.addAll(page);
         if (_paginationService.finished != LoadStatus.loading) break;

@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'client_history_history_inner.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,52 +17,28 @@ part 'client_history_history_inner.g.dart';
 )
 class ClientHistoryHistoryInner {
   /// Returns a new [ClientHistoryHistoryInner] instance.
-  ClientHistoryHistoryInner({
+  ClientHistoryHistoryInner({this.timestamp, this.data});
 
-     this.timestamp,
-
-     this.data,
-  });
-
-      /// Timestamp
-  @JsonKey(
-    
-    name: r'timestamp',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Timestamp
+  @JsonKey(name: r'timestamp', required: false, includeIfNull: false)
   final num? timestamp;
 
-
-
-      /// Data corresponding to the individual clients
-  @JsonKey(
-    
-    name: r'data',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Data corresponding to the individual clients
+  @JsonKey(name: r'data', required: false, includeIfNull: false)
   final Map<String, int>? data;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ClientHistoryHistoryInner &&
+          other.timestamp == timestamp &&
+          other.data == data;
 
+  @override
+  int get hashCode => timestamp.hashCode + data.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is ClientHistoryHistoryInner &&
-      other.timestamp == timestamp &&
-      other.data == data;
-
-    @override
-    int get hashCode =>
-        timestamp.hashCode +
-        data.hashCode;
-
-  factory ClientHistoryHistoryInner.fromJson(Map<String, dynamic> json) => _$ClientHistoryHistoryInnerFromJson(json);
+  factory ClientHistoryHistoryInner.fromJson(Map<String, dynamic> json) =>
+      _$ClientHistoryHistoryInnerFromJson(json);
 
   Map<String, dynamic> toJson() => _$ClientHistoryHistoryInnerToJson(this);
 
@@ -71,6 +46,4 @@ class ClientHistoryHistoryInner {
   String toString() {
     return toJson().toString();
   }
-
 }
-

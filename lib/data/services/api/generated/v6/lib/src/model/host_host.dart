@@ -10,7 +10,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'host_host.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -20,67 +19,32 @@ part 'host_host.g.dart';
 )
 class HostHost {
   /// Returns a new [HostHost] instance.
-  HostHost({
+  HostHost({this.uname, this.model, this.dmi});
 
-     this.uname,
-
-     this.model,
-
-     this.dmi,
-  });
-
-  @JsonKey(
-    
-    name: r'uname',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'uname', required: false, includeIfNull: false)
   final HostHostUname? uname;
 
-
-
-      /// Device model (if available, `null` otherwise)
-  @JsonKey(
-    
-    name: r'model',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Device model (if available, `null` otherwise)
+  @JsonKey(name: r'model', required: false, includeIfNull: false)
   final String? model;
 
-
-
-  @JsonKey(
-    
-    name: r'dmi',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'dmi', required: false, includeIfNull: false)
   final HostHostDmi? dmi;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is HostHost &&
+          other.uname == uname &&
+          other.model == model &&
+          other.dmi == dmi;
 
+  @override
+  int get hashCode =>
+      uname.hashCode + (model == null ? 0 : model.hashCode) + dmi.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is HostHost &&
-      other.uname == uname &&
-      other.model == model &&
-      other.dmi == dmi;
-
-    @override
-    int get hashCode =>
-        uname.hashCode +
-        (model == null ? 0 : model.hashCode) +
-        dmi.hashCode;
-
-  factory HostHost.fromJson(Map<String, dynamic> json) => _$HostHostFromJson(json);
+  factory HostHost.fromJson(Map<String, dynamic> json) =>
+      _$HostHostFromJson(json);
 
   Map<String, dynamic> toJson() => _$HostHostToJson(this);
 
@@ -88,6 +52,4 @@ class HostHost {
   String toString() {
     return toJson().toString();
   }
-
 }
-

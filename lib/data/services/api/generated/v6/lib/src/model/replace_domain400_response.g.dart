@@ -7,7 +7,7 @@ part of 'replace_domain400_response.dart';
 // **************************************************************************
 
 abstract class _$ReplaceDomain400ResponseCWProxy {
-  ReplaceDomain400Response error(ErrorsBadRequestError? error);
+  ReplaceDomain400Response error(BadRequest2Error? error);
 
   ReplaceDomain400Response took(num? took);
 
@@ -17,7 +17,7 @@ abstract class _$ReplaceDomain400ResponseCWProxy {
   /// ```dart
   /// ReplaceDomain400Response(...).copyWith(id: 12, name: "My name")
   /// ````
-  ReplaceDomain400Response call({ErrorsBadRequestError? error, num? took});
+  ReplaceDomain400Response call({BadRequest2Error? error, num? took});
 }
 
 /// Proxy class for `copyWith` functionality. This is a callable class and can be used as follows: `instanceOfReplaceDomain400Response.copyWith(...)`. Additionally contains functions for specific fields e.g. `instanceOfReplaceDomain400Response.copyWith.fieldName(...)`
@@ -28,8 +28,7 @@ class _$ReplaceDomain400ResponseCWProxyImpl
   final ReplaceDomain400Response _value;
 
   @override
-  ReplaceDomain400Response error(ErrorsBadRequestError? error) =>
-      this(error: error);
+  ReplaceDomain400Response error(BadRequest2Error? error) => this(error: error);
 
   @override
   ReplaceDomain400Response took(num? took) => this(took: took);
@@ -49,7 +48,7 @@ class _$ReplaceDomain400ResponseCWProxyImpl
       error: error == const $CopyWithPlaceholder()
           ? _value.error
           // ignore: cast_nullable_to_non_nullable
-          : error as ErrorsBadRequestError?,
+          : error as BadRequest2Error?,
       took: took == const $CopyWithPlaceholder()
           ? _value.took
           // ignore: cast_nullable_to_non_nullable
@@ -77,7 +76,7 @@ ReplaceDomain400Response _$ReplaceDomain400ResponseFromJson(
       'error',
       (v) => v == null
           ? null
-          : ErrorsBadRequestError.fromJson(v as Map<String, dynamic>),
+          : BadRequest2Error.fromJson(v as Map<String, dynamic>),
     ),
     took: $checkedConvert('took', (v) => v as num?),
   );

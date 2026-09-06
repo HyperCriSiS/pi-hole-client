@@ -15,6 +15,8 @@ abstract class _$ConfigConfigDatabaseCWProxy {
 
   ConfigConfigDatabase useWAL(bool? useWAL);
 
+  ConfigConfigDatabase forceDisk(bool? forceDisk);
+
   ConfigConfigDatabase network(ConfigConfigDatabaseNetwork? network);
 
   /// This function **does support** nullification of nullable fields. All `null` values passed to `non-nullable` fields will be ignored. You can also use `ConfigConfigDatabase(...).copyWith.fieldName(...)` to override fields one at a time with nullification support.
@@ -28,6 +30,7 @@ abstract class _$ConfigConfigDatabaseCWProxy {
     int? maxDBdays,
     int? dBinterval,
     bool? useWAL,
+    bool? forceDisk,
     ConfigConfigDatabaseNetwork? network,
   });
 }
@@ -53,6 +56,9 @@ class _$ConfigConfigDatabaseCWProxyImpl
   ConfigConfigDatabase useWAL(bool? useWAL) => this(useWAL: useWAL);
 
   @override
+  ConfigConfigDatabase forceDisk(bool? forceDisk) => this(forceDisk: forceDisk);
+
+  @override
   ConfigConfigDatabase network(ConfigConfigDatabaseNetwork? network) =>
       this(network: network);
 
@@ -68,6 +74,7 @@ class _$ConfigConfigDatabaseCWProxyImpl
     Object? maxDBdays = const $CopyWithPlaceholder(),
     Object? dBinterval = const $CopyWithPlaceholder(),
     Object? useWAL = const $CopyWithPlaceholder(),
+    Object? forceDisk = const $CopyWithPlaceholder(),
     Object? network = const $CopyWithPlaceholder(),
   }) {
     return ConfigConfigDatabase(
@@ -87,6 +94,10 @@ class _$ConfigConfigDatabaseCWProxyImpl
           ? _value.useWAL
           // ignore: cast_nullable_to_non_nullable
           : useWAL as bool?,
+      forceDisk: forceDisk == const $CopyWithPlaceholder()
+          ? _value.forceDisk
+          // ignore: cast_nullable_to_non_nullable
+          : forceDisk as bool?,
       network: network == const $CopyWithPlaceholder()
           ? _value.network
           // ignore: cast_nullable_to_non_nullable
@@ -117,6 +128,7 @@ ConfigConfigDatabase _$ConfigConfigDatabaseFromJson(
       maxDBdays: $checkedConvert('maxDBdays', (v) => (v as num?)?.toInt()),
       dBinterval: $checkedConvert('DBinterval', (v) => (v as num?)?.toInt()),
       useWAL: $checkedConvert('useWAL', (v) => v as bool?),
+      forceDisk: $checkedConvert('forceDisk', (v) => v as bool?),
       network: $checkedConvert(
         'network',
         (v) => v == null
@@ -136,5 +148,6 @@ Map<String, dynamic> _$ConfigConfigDatabaseToJson(
   'maxDBdays': ?instance.maxDBdays,
   'DBinterval': ?instance.dBinterval,
   'useWAL': ?instance.useWAL,
+  'forceDisk': ?instance.forceDisk,
   'network': ?instance.network?.toJson(),
 };

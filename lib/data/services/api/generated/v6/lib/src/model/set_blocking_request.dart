@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'set_blocking_request.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,52 +17,33 @@ part 'set_blocking_request.g.dart';
 )
 class SetBlockingRequest {
   /// Returns a new [SetBlockingRequest] instance.
-  SetBlockingRequest({
+  SetBlockingRequest({this.blocking = true, this.timer});
 
-     this.blocking = true,
-
-     this.timer,
-  });
-
-      /// Blocking status
+  /// Blocking status
   @JsonKey(
     defaultValue: true,
     name: r'blocking',
     required: false,
     includeIfNull: false,
   )
-
-
   final bool? blocking;
 
-
-
-      /// Remaining seconds until blocking mode is automatically changed
-  @JsonKey(
-    
-    name: r'timer',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Remaining seconds until blocking mode is automatically changed
+  @JsonKey(name: r'timer', required: false, includeIfNull: false)
   final num? timer;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SetBlockingRequest &&
+          other.blocking == blocking &&
+          other.timer == timer;
 
+  @override
+  int get hashCode => blocking.hashCode + (timer == null ? 0 : timer.hashCode);
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is SetBlockingRequest &&
-      other.blocking == blocking &&
-      other.timer == timer;
-
-    @override
-    int get hashCode =>
-        blocking.hashCode +
-        (timer == null ? 0 : timer.hashCode);
-
-  factory SetBlockingRequest.fromJson(Map<String, dynamic> json) => _$SetBlockingRequestFromJson(json);
+  factory SetBlockingRequest.fromJson(Map<String, dynamic> json) =>
+      _$SetBlockingRequestFromJson(json);
 
   Map<String, dynamic> toJson() => _$SetBlockingRequestToJson(this);
 
@@ -71,6 +51,4 @@ class SetBlockingRequest {
   String toString() {
     return toJson().toString();
   }
-
 }
-

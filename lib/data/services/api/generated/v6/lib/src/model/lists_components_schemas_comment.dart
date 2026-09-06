@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'lists_components_schemas_comment.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,35 +17,22 @@ part 'lists_components_schemas_comment.g.dart';
 )
 class ListsComponentsSchemasComment {
   /// Returns a new [ListsComponentsSchemasComment] instance.
-  ListsComponentsSchemasComment({
+  ListsComponentsSchemasComment({this.comment});
 
-     this.comment,
-  });
-
-      /// User-provided free-text comment for this list
-  @JsonKey(
-    
-    name: r'comment',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// User-provided free-text comment for this list
+  @JsonKey(name: r'comment', required: false, includeIfNull: false)
   final String? comment;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ListsComponentsSchemasComment && other.comment == comment;
 
+  @override
+  int get hashCode => (comment == null ? 0 : comment.hashCode);
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is ListsComponentsSchemasComment &&
-      other.comment == comment;
-
-    @override
-    int get hashCode =>
-        (comment == null ? 0 : comment.hashCode);
-
-  factory ListsComponentsSchemasComment.fromJson(Map<String, dynamic> json) => _$ListsComponentsSchemasCommentFromJson(json);
+  factory ListsComponentsSchemasComment.fromJson(Map<String, dynamic> json) =>
+      _$ListsComponentsSchemasCommentFromJson(json);
 
   Map<String, dynamic> toJson() => _$ListsComponentsSchemasCommentToJson(this);
 
@@ -54,6 +40,4 @@ class ListsComponentsSchemasComment {
   String toString() {
     return toJson().toString();
   }
-
 }
-

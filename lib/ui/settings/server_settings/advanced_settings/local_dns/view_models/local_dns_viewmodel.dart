@@ -41,9 +41,10 @@ class LocalDnsViewModel extends ChangeNotifier {
         );
     deleteRecord = Command.createAsyncNoResult<LocalDns>(_deleteRecord);
     addCnameRecord = Command.createAsyncNoResult<CnameRecord>(_addCnameRecord);
-    updateCnameRecord = Command.createAsyncNoResult<
-      ({CnameRecord oldRecord, CnameRecord record})
-    >(_updateCnameRecord);
+    updateCnameRecord =
+        Command.createAsyncNoResult<
+          ({CnameRecord oldRecord, CnameRecord record})
+        >(_updateCnameRecord);
     deleteCnameRecord = Command.createAsyncNoResult<CnameRecord>(
       _deleteCnameRecord,
     );

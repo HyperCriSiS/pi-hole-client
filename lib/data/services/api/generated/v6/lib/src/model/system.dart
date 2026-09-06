@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'system.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,32 +18,17 @@ part 'system.g.dart';
 )
 class System {
   /// Returns a new [System] instance.
-  System({
+  System({this.system});
 
-     this.system,
-  });
-
-  @JsonKey(
-    
-    name: r'system',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'system', required: false, includeIfNull: false)
   final SystemSystem? system;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is System && other.system == system;
 
-
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is System &&
-      other.system == system;
-
-    @override
-    int get hashCode =>
-        system.hashCode;
+  @override
+  int get hashCode => system.hashCode;
 
   factory System.fromJson(Map<String, dynamic> json) => _$SystemFromJson(json);
 
@@ -54,6 +38,4 @@ class System {
   String toString() {
     return toJson().toString();
   }
-
 }
-

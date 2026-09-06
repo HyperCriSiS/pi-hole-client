@@ -10,7 +10,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'ftl_ftl_database_domains.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -20,50 +19,26 @@ part 'ftl_ftl_database_domains.g.dart';
 )
 class FtlFtlDatabaseDomains {
   /// Returns a new [FtlFtlDatabaseDomains] instance.
-  FtlFtlDatabaseDomains({
+  FtlFtlDatabaseDomains({this.allowed, this.denied});
 
-     this.allowed,
-
-     this.denied,
-  });
-
-  @JsonKey(
-    
-    name: r'allowed',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'allowed', required: false, includeIfNull: false)
   final FtlFtlDatabaseDomainsAllowed? allowed;
 
-
-
-  @JsonKey(
-    
-    name: r'denied',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'denied', required: false, includeIfNull: false)
   final FtlFtlDatabaseDomainsDenied? denied;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is FtlFtlDatabaseDomains &&
+          other.allowed == allowed &&
+          other.denied == denied;
 
+  @override
+  int get hashCode => allowed.hashCode + denied.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is FtlFtlDatabaseDomains &&
-      other.allowed == allowed &&
-      other.denied == denied;
-
-    @override
-    int get hashCode =>
-        allowed.hashCode +
-        denied.hashCode;
-
-  factory FtlFtlDatabaseDomains.fromJson(Map<String, dynamic> json) => _$FtlFtlDatabaseDomainsFromJson(json);
+  factory FtlFtlDatabaseDomains.fromJson(Map<String, dynamic> json) =>
+      _$FtlFtlDatabaseDomainsFromJson(json);
 
   Map<String, dynamic> toJson() => _$FtlFtlDatabaseDomainsToJson(this);
 
@@ -71,6 +46,4 @@ class FtlFtlDatabaseDomains {
   String toString() {
     return toJson().toString();
   }
-
 }
-

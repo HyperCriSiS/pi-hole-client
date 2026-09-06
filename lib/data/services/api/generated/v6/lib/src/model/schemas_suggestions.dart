@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'schemas_suggestions.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,34 +18,21 @@ part 'schemas_suggestions.g.dart';
 )
 class SchemasSuggestions {
   /// Returns a new [SchemasSuggestions] instance.
-  SchemasSuggestions({
+  SchemasSuggestions({this.clients});
 
-     this.clients,
-  });
-
-  @JsonKey(
-    
-    name: r'clients',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'clients', required: false, includeIfNull: false)
   final List<SchemasSuggestionsClientsInner>? clients;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SchemasSuggestions && other.clients == clients;
 
+  @override
+  int get hashCode => clients.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is SchemasSuggestions &&
-      other.clients == clients;
-
-    @override
-    int get hashCode =>
-        clients.hashCode;
-
-  factory SchemasSuggestions.fromJson(Map<String, dynamic> json) => _$SchemasSuggestionsFromJson(json);
+  factory SchemasSuggestions.fromJson(Map<String, dynamic> json) =>
+      _$SchemasSuggestionsFromJson(json);
 
   Map<String, dynamic> toJson() => _$SchemasSuggestionsToJson(this);
 
@@ -54,6 +40,4 @@ class SchemasSuggestions {
   String toString() {
     return toJson().toString();
   }
-
 }
-

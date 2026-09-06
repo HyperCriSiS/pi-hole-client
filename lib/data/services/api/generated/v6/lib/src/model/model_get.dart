@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'model_get.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,35 +18,21 @@ part 'model_get.g.dart';
 )
 class ModelGet {
   /// Returns a new [ModelGet] instance.
-  ModelGet({
+  ModelGet({this.domains});
 
-     this.domains,
-  });
-
-      /// Array of domains
-  @JsonKey(
-    
-    name: r'domains',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Array of domains
+  @JsonKey(name: r'domains', required: false, includeIfNull: false)
   final List<GetDomainsInner>? domains;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is ModelGet && other.domains == domains;
 
+  @override
+  int get hashCode => domains.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is ModelGet &&
-      other.domains == domains;
-
-    @override
-    int get hashCode =>
-        domains.hashCode;
-
-  factory ModelGet.fromJson(Map<String, dynamic> json) => _$ModelGetFromJson(json);
+  factory ModelGet.fromJson(Map<String, dynamic> json) =>
+      _$ModelGetFromJson(json);
 
   Map<String, dynamic> toJson() => _$ModelGetToJson(this);
 
@@ -55,6 +40,4 @@ class ModelGet {
   String toString() {
     return toJson().toString();
   }
-
 }
-

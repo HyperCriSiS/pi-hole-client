@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'config_config_dns_reply.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,50 +18,26 @@ part 'config_config_dns_reply.g.dart';
 )
 class ConfigConfigDnsReply {
   /// Returns a new [ConfigConfigDnsReply] instance.
-  ConfigConfigDnsReply({
+  ConfigConfigDnsReply({this.host, this.blocking});
 
-     this.host,
-
-     this.blocking,
-  });
-
-  @JsonKey(
-    
-    name: r'host',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'host', required: false, includeIfNull: false)
   final ConfigConfigDnsReplyHost? host;
 
-
-
-  @JsonKey(
-    
-    name: r'blocking',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'blocking', required: false, includeIfNull: false)
   final ConfigConfigDnsReplyHost? blocking;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ConfigConfigDnsReply &&
+          other.host == host &&
+          other.blocking == blocking;
 
+  @override
+  int get hashCode => host.hashCode + blocking.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is ConfigConfigDnsReply &&
-      other.host == host &&
-      other.blocking == blocking;
-
-    @override
-    int get hashCode =>
-        host.hashCode +
-        blocking.hashCode;
-
-  factory ConfigConfigDnsReply.fromJson(Map<String, dynamic> json) => _$ConfigConfigDnsReplyFromJson(json);
+  factory ConfigConfigDnsReply.fromJson(Map<String, dynamic> json) =>
+      _$ConfigConfigDnsReplyFromJson(json);
 
   Map<String, dynamic> toJson() => _$ConfigConfigDnsReplyToJson(this);
 
@@ -70,6 +45,4 @@ class ConfigConfigDnsReply {
   String toString() {
     return toJson().toString();
   }
-
 }
-

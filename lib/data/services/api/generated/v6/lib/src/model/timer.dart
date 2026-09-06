@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'timer.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,33 +17,18 @@ part 'timer.g.dart';
 )
 class Timer {
   /// Returns a new [Timer] instance.
-  Timer({
+  Timer({this.timer});
 
-     this.timer,
-  });
-
-      /// Remaining seconds until blocking mode is automatically changed
-  @JsonKey(
-    
-    name: r'timer',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Remaining seconds until blocking mode is automatically changed
+  @JsonKey(name: r'timer', required: false, includeIfNull: false)
   final num? timer;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is Timer && other.timer == timer;
 
-
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is Timer &&
-      other.timer == timer;
-
-    @override
-    int get hashCode =>
-        (timer == null ? 0 : timer.hashCode);
+  @override
+  int get hashCode => (timer == null ? 0 : timer.hashCode);
 
   factory Timer.fromJson(Map<String, dynamic> json) => _$TimerFromJson(json);
 
@@ -54,6 +38,4 @@ class Timer {
   String toString() {
     return toJson().toString();
   }
-
 }
-

@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'get_metricsinfo200_response.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,51 +18,27 @@ part 'get_metricsinfo200_response.g.dart';
 )
 class GetMetricsinfo200Response {
   /// Returns a new [GetMetricsinfo200Response] instance.
-  GetMetricsinfo200Response({
+  GetMetricsinfo200Response({this.metrics, this.took});
 
-     this.metrics,
-
-     this.took,
-  });
-
-  @JsonKey(
-    
-    name: r'metrics',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'metrics', required: false, includeIfNull: false)
   final MetricsMetrics? metrics;
 
-
-
-      /// Time in seconds it took to process the request
-  @JsonKey(
-    
-    name: r'took',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Time in seconds it took to process the request
+  @JsonKey(name: r'took', required: false, includeIfNull: false)
   final num? took;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GetMetricsinfo200Response &&
+          other.metrics == metrics &&
+          other.took == took;
 
+  @override
+  int get hashCode => metrics.hashCode + took.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is GetMetricsinfo200Response &&
-      other.metrics == metrics &&
-      other.took == took;
-
-    @override
-    int get hashCode =>
-        metrics.hashCode +
-        took.hashCode;
-
-  factory GetMetricsinfo200Response.fromJson(Map<String, dynamic> json) => _$GetMetricsinfo200ResponseFromJson(json);
+  factory GetMetricsinfo200Response.fromJson(Map<String, dynamic> json) =>
+      _$GetMetricsinfo200ResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$GetMetricsinfo200ResponseToJson(this);
 
@@ -71,6 +46,4 @@ class GetMetricsinfo200Response {
   String toString() {
     return toJson().toString();
   }
-
 }
-

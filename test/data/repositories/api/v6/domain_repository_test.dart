@@ -56,9 +56,7 @@ class _FakePiholeV6Service extends PiholeV6Service {
     if (shouldFailAdd) {
       return Failure(Exception('Forced addDomain failure'));
     }
-    return Success(
-      ReplaceDomain200Response.fromJson(kSrvPostDomains.toJson()),
-    );
+    return Success(ReplaceDomain200Response.fromJson(kSrvPostDomains.toJson()));
   }
 
   @override
@@ -75,9 +73,7 @@ class _FakePiholeV6Service extends PiholeV6Service {
     if (shouldFailReplace) {
       return Failure(Exception('Forced replaceDomain failure'));
     }
-    return Success(
-      ReplaceDomain200Response.fromJson(kSrvPutDomains.toJson()),
-    );
+    return Success(ReplaceDomain200Response.fromJson(kSrvPutDomains.toJson()));
   }
 
   @override

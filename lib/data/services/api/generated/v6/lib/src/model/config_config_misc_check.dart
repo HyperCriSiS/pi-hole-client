@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'config_config_misc_check.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,66 +17,30 @@ part 'config_config_misc_check.g.dart';
 )
 class ConfigConfigMiscCheck {
   /// Returns a new [ConfigConfigMiscCheck] instance.
-  ConfigConfigMiscCheck({
+  ConfigConfigMiscCheck({this.load, this.shmem, this.disk});
 
-     this.load,
-
-     this.shmem,
-
-     this.disk,
-  });
-
-  @JsonKey(
-    
-    name: r'load',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'load', required: false, includeIfNull: false)
   final bool? load;
 
-
-
-  @JsonKey(
-    
-    name: r'shmem',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'shmem', required: false, includeIfNull: false)
   final int? shmem;
 
-
-
-  @JsonKey(
-    
-    name: r'disk',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'disk', required: false, includeIfNull: false)
   final int? disk;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ConfigConfigMiscCheck &&
+          other.load == load &&
+          other.shmem == shmem &&
+          other.disk == disk;
 
+  @override
+  int get hashCode => load.hashCode + shmem.hashCode + disk.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is ConfigConfigMiscCheck &&
-      other.load == load &&
-      other.shmem == shmem &&
-      other.disk == disk;
-
-    @override
-    int get hashCode =>
-        load.hashCode +
-        shmem.hashCode +
-        disk.hashCode;
-
-  factory ConfigConfigMiscCheck.fromJson(Map<String, dynamic> json) => _$ConfigConfigMiscCheckFromJson(json);
+  factory ConfigConfigMiscCheck.fromJson(Map<String, dynamic> json) =>
+      _$ConfigConfigMiscCheckFromJson(json);
 
   Map<String, dynamic> toJson() => _$ConfigConfigMiscCheckToJson(this);
 
@@ -85,6 +48,4 @@ class ConfigConfigMiscCheck {
   String toString() {
     return toJson().toString();
   }
-
 }
-

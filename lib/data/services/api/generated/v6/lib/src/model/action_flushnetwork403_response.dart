@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'action_flushnetwork403_response.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,51 +18,27 @@ part 'action_flushnetwork403_response.g.dart';
 )
 class ActionFlushnetwork403Response {
   /// Returns a new [ActionFlushnetwork403Response] instance.
-  ActionFlushnetwork403Response({
+  ActionFlushnetwork403Response({this.error, this.took});
 
-     this.error,
-
-     this.took,
-  });
-
-  @JsonKey(
-    
-    name: r'error',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'error', required: false, includeIfNull: false)
   final ForbiddenError? error;
 
-
-
-      /// Time in seconds it took to process the request
-  @JsonKey(
-    
-    name: r'took',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Time in seconds it took to process the request
+  @JsonKey(name: r'took', required: false, includeIfNull: false)
   final num? took;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ActionFlushnetwork403Response &&
+          other.error == error &&
+          other.took == took;
 
+  @override
+  int get hashCode => error.hashCode + took.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is ActionFlushnetwork403Response &&
-      other.error == error &&
-      other.took == took;
-
-    @override
-    int get hashCode =>
-        error.hashCode +
-        took.hashCode;
-
-  factory ActionFlushnetwork403Response.fromJson(Map<String, dynamic> json) => _$ActionFlushnetwork403ResponseFromJson(json);
+  factory ActionFlushnetwork403Response.fromJson(Map<String, dynamic> json) =>
+      _$ActionFlushnetwork403ResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$ActionFlushnetwork403ResponseToJson(this);
 
@@ -71,6 +46,4 @@ class ActionFlushnetwork403Response {
   String toString() {
     return toJson().toString();
   }
-
 }
-

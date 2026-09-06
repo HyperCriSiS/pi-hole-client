@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'add_auth401_response.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,51 +18,25 @@ part 'add_auth401_response.g.dart';
 )
 class AddAuth401Response {
   /// Returns a new [AddAuth401Response] instance.
-  AddAuth401Response({
+  AddAuth401Response({this.error, this.took});
 
-     this.error,
-
-     this.took,
-  });
-
-  @JsonKey(
-    
-    name: r'error',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'error', required: false, includeIfNull: false)
   final UnauthorizedError? error;
 
-
-
-      /// Time in seconds it took to process the request
-  @JsonKey(
-    
-    name: r'took',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Time in seconds it took to process the request
+  @JsonKey(name: r'took', required: false, includeIfNull: false)
   final num? took;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AddAuth401Response && other.error == error && other.took == took;
 
+  @override
+  int get hashCode => error.hashCode + took.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is AddAuth401Response &&
-      other.error == error &&
-      other.took == took;
-
-    @override
-    int get hashCode =>
-        error.hashCode +
-        took.hashCode;
-
-  factory AddAuth401Response.fromJson(Map<String, dynamic> json) => _$AddAuth401ResponseFromJson(json);
+  factory AddAuth401Response.fromJson(Map<String, dynamic> json) =>
+      _$AddAuth401ResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$AddAuth401ResponseToJson(this);
 
@@ -71,6 +44,4 @@ class AddAuth401Response {
   String toString() {
     return toJson().toString();
   }
-
 }
-

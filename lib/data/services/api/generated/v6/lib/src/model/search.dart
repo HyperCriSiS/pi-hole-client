@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'search.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,32 +18,17 @@ part 'search.g.dart';
 )
 class Search {
   /// Returns a new [Search] instance.
-  Search({
+  Search({this.search});
 
-     this.search,
-  });
-
-  @JsonKey(
-    
-    name: r'search',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'search', required: false, includeIfNull: false)
   final SearchSearch? search;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is Search && other.search == search;
 
-
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is Search &&
-      other.search == search;
-
-    @override
-    int get hashCode =>
-        search.hashCode;
+  @override
+  int get hashCode => search.hashCode;
 
   factory Search.fromJson(Map<String, dynamic> json) => _$SearchFromJson(json);
 
@@ -54,6 +38,4 @@ class Search {
   String toString() {
     return toJson().toString();
   }
-
 }
-

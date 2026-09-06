@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'get_systeminfo200_response.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,51 +18,27 @@ part 'get_systeminfo200_response.g.dart';
 )
 class GetSysteminfo200Response {
   /// Returns a new [GetSysteminfo200Response] instance.
-  GetSysteminfo200Response({
+  GetSysteminfo200Response({this.system, this.took});
 
-     this.system,
-
-     this.took,
-  });
-
-  @JsonKey(
-    
-    name: r'system',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'system', required: false, includeIfNull: false)
   final SystemSystem? system;
 
-
-
-      /// Time in seconds it took to process the request
-  @JsonKey(
-    
-    name: r'took',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Time in seconds it took to process the request
+  @JsonKey(name: r'took', required: false, includeIfNull: false)
   final num? took;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GetSysteminfo200Response &&
+          other.system == system &&
+          other.took == took;
 
+  @override
+  int get hashCode => system.hashCode + took.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is GetSysteminfo200Response &&
-      other.system == system &&
-      other.took == took;
-
-    @override
-    int get hashCode =>
-        system.hashCode +
-        took.hashCode;
-
-  factory GetSysteminfo200Response.fromJson(Map<String, dynamic> json) => _$GetSysteminfo200ResponseFromJson(json);
+  factory GetSysteminfo200Response.fromJson(Map<String, dynamic> json) =>
+      _$GetSysteminfo200ResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$GetSysteminfo200ResponseToJson(this);
 
@@ -71,6 +46,4 @@ class GetSysteminfo200Response {
   String toString() {
     return toJson().toString();
   }
-
 }
-

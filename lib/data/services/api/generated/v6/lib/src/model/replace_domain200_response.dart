@@ -10,7 +10,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'replace_domain200_response.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -20,68 +19,35 @@ part 'replace_domain200_response.g.dart';
 )
 class ReplaceDomain200Response {
   /// Returns a new [ReplaceDomain200Response] instance.
-  ReplaceDomain200Response({
+  ReplaceDomain200Response({this.domains, this.processed, this.took});
 
-     this.domains,
-
-     this.processed,
-
-     this.took,
-  });
-
-      /// Array of domains
-  @JsonKey(
-    
-    name: r'domains',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Array of domains
+  @JsonKey(name: r'domains', required: false, includeIfNull: false)
   final List<GetDomainsInner>? domains;
 
-
-
-  @JsonKey(
-    
-    name: r'processed',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'processed', required: false, includeIfNull: false)
   final ListsProcessedProcessed? processed;
 
-
-
-      /// Time in seconds it took to process the request
-  @JsonKey(
-    
-    name: r'took',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Time in seconds it took to process the request
+  @JsonKey(name: r'took', required: false, includeIfNull: false)
   final num? took;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ReplaceDomain200Response &&
+          other.domains == domains &&
+          other.processed == processed &&
+          other.took == took;
 
+  @override
+  int get hashCode =>
+      domains.hashCode +
+      (processed == null ? 0 : processed.hashCode) +
+      took.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is ReplaceDomain200Response &&
-      other.domains == domains &&
-      other.processed == processed &&
-      other.took == took;
-
-    @override
-    int get hashCode =>
-        domains.hashCode +
-        (processed == null ? 0 : processed.hashCode) +
-        took.hashCode;
-
-  factory ReplaceDomain200Response.fromJson(Map<String, dynamic> json) => _$ReplaceDomain200ResponseFromJson(json);
+  factory ReplaceDomain200Response.fromJson(Map<String, dynamic> json) =>
+      _$ReplaceDomain200ResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$ReplaceDomain200ResponseToJson(this);
 
@@ -89,6 +55,4 @@ class ReplaceDomain200Response {
   String toString() {
     return toJson().toString();
   }
-
 }
-

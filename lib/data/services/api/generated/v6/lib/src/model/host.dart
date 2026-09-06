@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'host.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,32 +18,17 @@ part 'host.g.dart';
 )
 class Host {
   /// Returns a new [Host] instance.
-  Host({
+  Host({this.host});
 
-     this.host,
-  });
-
-  @JsonKey(
-    
-    name: r'host',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'host', required: false, includeIfNull: false)
   final HostHost? host;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is Host && other.host == host;
 
-
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is Host &&
-      other.host == host;
-
-    @override
-    int get hashCode =>
-        host.hashCode;
+  @override
+  int get hashCode => host.hashCode;
 
   factory Host.fromJson(Map<String, dynamic> json) => _$HostFromJson(json);
 
@@ -54,6 +38,4 @@ class Host {
   String toString() {
     return toJson().toString();
   }
-
 }
-

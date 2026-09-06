@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'session.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,34 +18,20 @@ part 'session.g.dart';
 )
 class Session {
   /// Returns a new [Session] instance.
-  Session({
+  Session({required this.session});
 
-    required  this.session,
-  });
-
-  @JsonKey(
-    
-    name: r'session',
-    required: true,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'session', required: true, includeIfNull: false)
   final SessionSession session;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is Session && other.session == session;
 
+  @override
+  int get hashCode => session.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is Session &&
-      other.session == session;
-
-    @override
-    int get hashCode =>
-        session.hashCode;
-
-  factory Session.fromJson(Map<String, dynamic> json) => _$SessionFromJson(json);
+  factory Session.fromJson(Map<String, dynamic> json) =>
+      _$SessionFromJson(json);
 
   Map<String, dynamic> toJson() => _$SessionToJson(this);
 
@@ -54,6 +39,4 @@ class Session {
   String toString() {
     return toJson().toString();
   }
-
 }
-

@@ -7,7 +7,7 @@ part of 'get_lists200_response.dart';
 // **************************************************************************
 
 abstract class _$GetLists200ResponseCWProxy {
-  GetLists200Response lists(List<ListsGetListsInner>? lists);
+  GetLists200Response lists(List<Get4ListsInner>? lists);
 
   GetLists200Response took(num? took);
 
@@ -17,7 +17,7 @@ abstract class _$GetLists200ResponseCWProxy {
   /// ```dart
   /// GetLists200Response(...).copyWith(id: 12, name: "My name")
   /// ````
-  GetLists200Response call({List<ListsGetListsInner>? lists, num? took});
+  GetLists200Response call({List<Get4ListsInner>? lists, num? took});
 }
 
 /// Proxy class for `copyWith` functionality. This is a callable class and can be used as follows: `instanceOfGetLists200Response.copyWith(...)`. Additionally contains functions for specific fields e.g. `instanceOfGetLists200Response.copyWith.fieldName(...)`
@@ -27,8 +27,7 @@ class _$GetLists200ResponseCWProxyImpl implements _$GetLists200ResponseCWProxy {
   final GetLists200Response _value;
 
   @override
-  GetLists200Response lists(List<ListsGetListsInner>? lists) =>
-      this(lists: lists);
+  GetLists200Response lists(List<Get4ListsInner>? lists) => this(lists: lists);
 
   @override
   GetLists200Response took(num? took) => this(took: took);
@@ -48,7 +47,7 @@ class _$GetLists200ResponseCWProxyImpl implements _$GetLists200ResponseCWProxy {
       lists: lists == const $CopyWithPlaceholder()
           ? _value.lists
           // ignore: cast_nullable_to_non_nullable
-          : lists as List<ListsGetListsInner>?,
+          : lists as List<Get4ListsInner>?,
       took: took == const $CopyWithPlaceholder()
           ? _value.took
           // ignore: cast_nullable_to_non_nullable
@@ -74,9 +73,7 @@ GetLists200Response _$GetLists200ResponseFromJson(Map<String, dynamic> json) =>
         lists: $checkedConvert(
           'lists',
           (v) => (v as List<dynamic>?)
-              ?.map(
-                (e) => ListsGetListsInner.fromJson(e as Map<String, dynamic>),
-              )
+              ?.map((e) => Get4ListsInner.fromJson(e as Map<String, dynamic>))
               .toList(),
         ),
         took: $checkedConvert('took', (v) => v as num?),

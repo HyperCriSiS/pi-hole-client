@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'search_search_parameters.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,86 +17,39 @@ part 'search_search_parameters.g.dart';
 )
 class SearchSearchParameters {
   /// Returns a new [SearchSearchParameters] instance.
-  SearchSearchParameters({
+  SearchSearchParameters({this.partial, this.N, this.domain, this.debug});
 
-     this.partial,
-
-     this.N,
-
-     this.domain,
-
-     this.debug,
-  });
-
-      /// Whether partial matching was requested. Note that partial matching may not find complex regex entries.
-  @JsonKey(
-    
-    name: r'partial',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Whether partial matching was requested. Note that partial matching may not find complex regex entries.
+  @JsonKey(name: r'partial', required: false, includeIfNull: false)
   final bool? partial;
 
-
-
-      /// Maximum number of results to be returned (per type)
-  @JsonKey(
-    
-    name: r'N',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Maximum number of results to be returned (per type)
+  @JsonKey(name: r'N', required: false, includeIfNull: false)
   final int? N;
 
-
-
-      /// (Part of) domain to be searched for
-  @JsonKey(
-    
-    name: r'domain',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// (Part of) domain to be searched for
+  @JsonKey(name: r'domain', required: false, includeIfNull: false)
   final String? domain;
 
-
-
-      /// Whether debug information was requested
-  @JsonKey(
-    
-    name: r'debug',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Whether debug information was requested
+  @JsonKey(name: r'debug', required: false, includeIfNull: false)
   final bool? debug;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SearchSearchParameters &&
+          other.partial == partial &&
+          other.N == N &&
+          other.domain == domain &&
+          other.debug == debug;
 
+  @override
+  int get hashCode =>
+      partial.hashCode + N.hashCode + domain.hashCode + debug.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is SearchSearchParameters &&
-      other.partial == partial &&
-      other.N == N &&
-      other.domain == domain &&
-      other.debug == debug;
-
-    @override
-    int get hashCode =>
-        partial.hashCode +
-        N.hashCode +
-        domain.hashCode +
-        debug.hashCode;
-
-  factory SearchSearchParameters.fromJson(Map<String, dynamic> json) => _$SearchSearchParametersFromJson(json);
+  factory SearchSearchParameters.fromJson(Map<String, dynamic> json) =>
+      _$SearchSearchParametersFromJson(json);
 
   Map<String, dynamic> toJson() => _$SearchSearchParametersToJson(this);
 
@@ -105,6 +57,4 @@ class SearchSearchParameters {
   String toString() {
     return toJson().toString();
   }
-
 }
-

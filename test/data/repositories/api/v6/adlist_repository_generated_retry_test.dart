@@ -1,7 +1,8 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pi_hole_client/data/model/v6/lists/search.dart' as legacy_search;
+import 'package:pi_hole_client/data/model/v6/lists/search.dart'
+    as legacy_search;
 import 'package:pi_hole_client/data/repositories/api/v6/adlist_repository.dart';
 import 'package:pi_hole_client/data/repositories/api/v6/v6_session_cache.dart';
 import 'package:pi_hole_client/data/services/api/utils/api_exception.dart';
@@ -170,7 +171,11 @@ void main() {
     final client = FakePiholeV6ApiClient();
     final creds = FakeSessionCredentialService();
     final service = _RetryAdlistService();
-    final repository = _repository(client: client, creds: creds, service: service);
+    final repository = _repository(
+      client: client,
+      creds: creds,
+      service: service,
+    );
 
     final result = await repository.fetchAdlists(type: ListType.block);
 
@@ -185,7 +190,11 @@ void main() {
     final client = FakePiholeV6ApiClient();
     final creds = FakeSessionCredentialService();
     final service = _RetryAdlistService();
-    final repository = _repository(client: client, creds: creds, service: service);
+    final repository = _repository(
+      client: client,
+      creds: creds,
+      service: service,
+    );
 
     final result = await repository.addAdlist(
       'https://example.com/adlist.txt',
@@ -199,7 +208,10 @@ void main() {
     expect(client.postAuthCallCount, 1);
     expect(service.addCallCount, 2);
     expect(service.lastAddType, 'block');
-    expect(service.lastAddBody?.address?.value, 'https://example.com/adlist.txt');
+    expect(
+      service.lastAddBody?.address?.value,
+      'https://example.com/adlist.txt',
+    );
     expect(service.lastAddBody?.groups, [2]);
     expect(service.lastAddBody?.comment, 'new list');
     expect(service.lastAddBody?.enabled, false);
@@ -210,7 +222,11 @@ void main() {
     final client = FakePiholeV6ApiClient();
     final creds = FakeSessionCredentialService();
     final service = _RetryAdlistService();
-    final repository = _repository(client: client, creds: creds, service: service);
+    final repository = _repository(
+      client: client,
+      creds: creds,
+      service: service,
+    );
 
     final result = await repository.updateAdlist(
       'https://example.com/adlist.txt',
@@ -236,7 +252,11 @@ void main() {
     final client = FakePiholeV6ApiClient();
     final creds = FakeSessionCredentialService();
     final service = _RetryAdlistService();
-    final repository = _repository(client: client, creds: creds, service: service);
+    final repository = _repository(
+      client: client,
+      creds: creds,
+      service: service,
+    );
 
     final result = await repository.deleteAdlist(
       'https://example.com/adlist.txt',
@@ -255,7 +275,11 @@ void main() {
     final client = FakePiholeV6ApiClient();
     final creds = FakeSessionCredentialService();
     final service = _RetryAdlistService();
-    final repository = _repository(client: client, creds: creds, service: service);
+    final repository = _repository(
+      client: client,
+      creds: creds,
+      service: service,
+    );
 
     final result = await repository.searchLists(
       domain: 'example.com',

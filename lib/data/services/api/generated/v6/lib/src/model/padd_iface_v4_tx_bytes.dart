@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'padd_iface_v4_tx_bytes.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,50 +17,24 @@ part 'padd_iface_v4_tx_bytes.g.dart';
 )
 class PaddIfaceV4TxBytes {
   /// Returns a new [PaddIfaceV4TxBytes] instance.
-  PaddIfaceV4TxBytes({
+  PaddIfaceV4TxBytes({this.value, this.unit});
 
-     this.value,
-
-     this.unit,
-  });
-
-  @JsonKey(
-    
-    name: r'value',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'value', required: false, includeIfNull: false)
   final num? value;
 
-
-
-  @JsonKey(
-    
-    name: r'unit',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'unit', required: false, includeIfNull: false)
   final String? unit;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is PaddIfaceV4TxBytes && other.value == value && other.unit == unit;
 
+  @override
+  int get hashCode => value.hashCode + unit.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is PaddIfaceV4TxBytes &&
-      other.value == value &&
-      other.unit == unit;
-
-    @override
-    int get hashCode =>
-        value.hashCode +
-        unit.hashCode;
-
-  factory PaddIfaceV4TxBytes.fromJson(Map<String, dynamic> json) => _$PaddIfaceV4TxBytesFromJson(json);
+  factory PaddIfaceV4TxBytes.fromJson(Map<String, dynamic> json) =>
+      _$PaddIfaceV4TxBytesFromJson(json);
 
   Map<String, dynamic> toJson() => _$PaddIfaceV4TxBytesToJson(this);
 
@@ -69,6 +42,4 @@ class PaddIfaceV4TxBytes {
   String toString() {
     return toJson().toString();
   }
-
 }
-

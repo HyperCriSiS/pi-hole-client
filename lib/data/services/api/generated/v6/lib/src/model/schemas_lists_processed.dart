@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'schemas_lists_processed.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,34 +18,21 @@ part 'schemas_lists_processed.g.dart';
 )
 class SchemasListsProcessed {
   /// Returns a new [SchemasListsProcessed] instance.
-  SchemasListsProcessed({
+  SchemasListsProcessed({this.processed});
 
-     this.processed,
-  });
-
-  @JsonKey(
-    
-    name: r'processed',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'processed', required: false, includeIfNull: false)
   final SchemasListsProcessedProcessed? processed;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SchemasListsProcessed && other.processed == processed;
 
+  @override
+  int get hashCode => (processed == null ? 0 : processed.hashCode);
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is SchemasListsProcessed &&
-      other.processed == processed;
-
-    @override
-    int get hashCode =>
-        (processed == null ? 0 : processed.hashCode);
-
-  factory SchemasListsProcessed.fromJson(Map<String, dynamic> json) => _$SchemasListsProcessedFromJson(json);
+  factory SchemasListsProcessed.fromJson(Map<String, dynamic> json) =>
+      _$SchemasListsProcessedFromJson(json);
 
   Map<String, dynamic> toJson() => _$SchemasListsProcessedToJson(this);
 
@@ -54,6 +40,4 @@ class SchemasListsProcessed {
   String toString() {
     return toJson().toString();
   }
-
 }
-

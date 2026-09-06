@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'endpoints_endpoints_get_inner.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,52 +17,28 @@ part 'endpoints_endpoints_get_inner.g.dart';
 )
 class EndpointsEndpointsGetInner {
   /// Returns a new [EndpointsEndpointsGetInner] instance.
-  EndpointsEndpointsGetInner({
+  EndpointsEndpointsGetInner({this.uri, this.parameters});
 
-     this.uri,
-
-     this.parameters,
-  });
-
-      /// URI
-  @JsonKey(
-    
-    name: r'uri',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// URI
+  @JsonKey(name: r'uri', required: false, includeIfNull: false)
   final String? uri;
 
-
-
-      /// Parameters
-  @JsonKey(
-    
-    name: r'parameters',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Parameters
+  @JsonKey(name: r'parameters', required: false, includeIfNull: false)
   final String? parameters;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is EndpointsEndpointsGetInner &&
+          other.uri == uri &&
+          other.parameters == parameters;
 
+  @override
+  int get hashCode => uri.hashCode + parameters.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is EndpointsEndpointsGetInner &&
-      other.uri == uri &&
-      other.parameters == parameters;
-
-    @override
-    int get hashCode =>
-        uri.hashCode +
-        parameters.hashCode;
-
-  factory EndpointsEndpointsGetInner.fromJson(Map<String, dynamic> json) => _$EndpointsEndpointsGetInnerFromJson(json);
+  factory EndpointsEndpointsGetInner.fromJson(Map<String, dynamic> json) =>
+      _$EndpointsEndpointsGetInnerFromJson(json);
 
   Map<String, dynamic> toJson() => _$EndpointsEndpointsGetInnerToJson(this);
 
@@ -71,6 +46,4 @@ class EndpointsEndpointsGetInner {
   String toString() {
     return toJson().toString();
   }
-
 }
-

@@ -91,7 +91,11 @@ void main() {
     final client = FakePiholeV6ApiClient();
     final creds = FakeSessionCredentialService();
     final service = _RetryClientService();
-    final repository = _repository(client: client, creds: creds, service: service);
+    final repository = _repository(
+      client: client,
+      creds: creds,
+      service: service,
+    );
 
     final result = await repository.fetchClients();
 
@@ -105,7 +109,11 @@ void main() {
     final client = FakePiholeV6ApiClient();
     final creds = FakeSessionCredentialService();
     final service = _RetryClientService();
-    final repository = _repository(client: client, creds: creds, service: service);
+    final repository = _repository(
+      client: client,
+      creds: creds,
+      service: service,
+    );
 
     final result = await repository.addClient(
       '10.0.0.1',
@@ -126,7 +134,11 @@ void main() {
     final client = FakePiholeV6ApiClient();
     final creds = FakeSessionCredentialService();
     final service = _RetryClientService();
-    final repository = _repository(client: client, creds: creds, service: service);
+    final repository = _repository(
+      client: client,
+      creds: creds,
+      service: service,
+    );
 
     final result = await repository.updateClient(
       '192.168.1.100',
@@ -147,7 +159,11 @@ void main() {
     final client = FakePiholeV6ApiClient();
     final creds = FakeSessionCredentialService();
     final service = _RetryClientService();
-    final repository = _repository(client: client, creds: creds, service: service);
+    final repository = _repository(
+      client: client,
+      creds: creds,
+      service: service,
+    );
 
     final result = await repository.deleteClient('192.168.1.100');
 

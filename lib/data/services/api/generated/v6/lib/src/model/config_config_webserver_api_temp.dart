@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'config_config_webserver_api_temp.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,50 +17,26 @@ part 'config_config_webserver_api_temp.g.dart';
 )
 class ConfigConfigWebserverApiTemp {
   /// Returns a new [ConfigConfigWebserverApiTemp] instance.
-  ConfigConfigWebserverApiTemp({
+  ConfigConfigWebserverApiTemp({this.limit, this.unit});
 
-     this.limit,
-
-     this.unit,
-  });
-
-  @JsonKey(
-    
-    name: r'limit',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'limit', required: false, includeIfNull: false)
   final num? limit;
 
-
-
-  @JsonKey(
-    
-    name: r'unit',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'unit', required: false, includeIfNull: false)
   final String? unit;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ConfigConfigWebserverApiTemp &&
+          other.limit == limit &&
+          other.unit == unit;
 
+  @override
+  int get hashCode => limit.hashCode + unit.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is ConfigConfigWebserverApiTemp &&
-      other.limit == limit &&
-      other.unit == unit;
-
-    @override
-    int get hashCode =>
-        limit.hashCode +
-        unit.hashCode;
-
-  factory ConfigConfigWebserverApiTemp.fromJson(Map<String, dynamic> json) => _$ConfigConfigWebserverApiTempFromJson(json);
+  factory ConfigConfigWebserverApiTemp.fromJson(Map<String, dynamic> json) =>
+      _$ConfigConfigWebserverApiTempFromJson(json);
 
   Map<String, dynamic> toJson() => _$ConfigConfigWebserverApiTempToJson(this);
 
@@ -69,6 +44,4 @@ class ConfigConfigWebserverApiTemp {
   String toString() {
     return toJson().toString();
   }
-
 }
-

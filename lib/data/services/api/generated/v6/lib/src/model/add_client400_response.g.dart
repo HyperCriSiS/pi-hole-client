@@ -9,7 +9,7 @@ part of 'add_client400_response.dart';
 abstract class _$AddClient400ResponseCWProxy {
   AddClient400Response took(num? took);
 
-  AddClient400Response error(ErrorsBadRequestError? error);
+  AddClient400Response error(BadRequest2Error? error);
 
   /// This function **does support** nullification of nullable fields. All `null` values passed to `non-nullable` fields will be ignored. You can also use `AddClient400Response(...).copyWith.fieldName(...)` to override fields one at a time with nullification support.
   ///
@@ -17,7 +17,7 @@ abstract class _$AddClient400ResponseCWProxy {
   /// ```dart
   /// AddClient400Response(...).copyWith(id: 12, name: "My name")
   /// ````
-  AddClient400Response call({num? took, ErrorsBadRequestError? error});
+  AddClient400Response call({num? took, BadRequest2Error? error});
 }
 
 /// Proxy class for `copyWith` functionality. This is a callable class and can be used as follows: `instanceOfAddClient400Response.copyWith(...)`. Additionally contains functions for specific fields e.g. `instanceOfAddClient400Response.copyWith.fieldName(...)`
@@ -31,8 +31,7 @@ class _$AddClient400ResponseCWProxyImpl
   AddClient400Response took(num? took) => this(took: took);
 
   @override
-  AddClient400Response error(ErrorsBadRequestError? error) =>
-      this(error: error);
+  AddClient400Response error(BadRequest2Error? error) => this(error: error);
 
   @override
   /// This function **does support** nullification of nullable fields. All `null` values passed to `non-nullable` fields will be ignored. You can also use `AddClient400Response(...).copyWith.fieldName(...)` to override fields one at a time with nullification support.
@@ -53,7 +52,7 @@ class _$AddClient400ResponseCWProxyImpl
       error: error == const $CopyWithPlaceholder()
           ? _value.error
           // ignore: cast_nullable_to_non_nullable
-          : error as ErrorsBadRequestError?,
+          : error as BadRequest2Error?,
     );
   }
 }
@@ -78,7 +77,7 @@ AddClient400Response _$AddClient400ResponseFromJson(
       'error',
       (v) => v == null
           ? null
-          : ErrorsBadRequestError.fromJson(v as Map<String, dynamic>),
+          : BadRequest2Error.fromJson(v as Map<String, dynamic>),
     ),
   );
   return val;

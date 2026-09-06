@@ -89,7 +89,11 @@ void main() {
     final client = FakePiholeV6ApiClient();
     final creds = FakeSessionCredentialService();
     final service = _RetryGroupService();
-    final repository = _repository(client: client, creds: creds, service: service);
+    final repository = _repository(
+      client: client,
+      creds: creds,
+      service: service,
+    );
 
     final result = await repository.fetchGroups();
 
@@ -103,7 +107,11 @@ void main() {
     final client = FakePiholeV6ApiClient();
     final creds = FakeSessionCredentialService();
     final service = _RetryGroupService();
-    final repository = _repository(client: client, creds: creds, service: service);
+    final repository = _repository(
+      client: client,
+      creds: creds,
+      service: service,
+    );
 
     final result = await repository.addGroup(
       'NewGroup',
@@ -124,7 +132,11 @@ void main() {
     final client = FakePiholeV6ApiClient();
     final creds = FakeSessionCredentialService();
     final service = _RetryGroupService();
-    final repository = _repository(client: client, creds: creds, service: service);
+    final repository = _repository(
+      client: client,
+      creds: creds,
+      service: service,
+    );
 
     final result = await repository.updateGroup(
       'test',
@@ -145,7 +157,11 @@ void main() {
     final client = FakePiholeV6ApiClient();
     final creds = FakeSessionCredentialService();
     final service = _RetryGroupService();
-    final repository = _repository(client: client, creds: creds, service: service);
+    final repository = _repository(
+      client: client,
+      creds: creds,
+      service: service,
+    );
 
     final result = await repository.deleteGroup('test');
 

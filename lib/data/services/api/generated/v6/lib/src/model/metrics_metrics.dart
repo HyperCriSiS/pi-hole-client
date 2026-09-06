@@ -10,7 +10,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'metrics_metrics.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -20,50 +19,24 @@ part 'metrics_metrics.g.dart';
 )
 class MetricsMetrics {
   /// Returns a new [MetricsMetrics] instance.
-  MetricsMetrics({
+  MetricsMetrics({this.dns, this.dhcp});
 
-     this.dns,
-
-     this.dhcp,
-  });
-
-  @JsonKey(
-    
-    name: r'dns',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'dns', required: false, includeIfNull: false)
   final MetricsMetricsDns? dns;
 
-
-
-  @JsonKey(
-    
-    name: r'dhcp',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'dhcp', required: false, includeIfNull: false)
   final MetricsMetricsDhcp? dhcp;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is MetricsMetrics && other.dns == dns && other.dhcp == dhcp;
 
+  @override
+  int get hashCode => dns.hashCode + dhcp.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is MetricsMetrics &&
-      other.dns == dns &&
-      other.dhcp == dhcp;
-
-    @override
-    int get hashCode =>
-        dns.hashCode +
-        dhcp.hashCode;
-
-  factory MetricsMetrics.fromJson(Map<String, dynamic> json) => _$MetricsMetricsFromJson(json);
+  factory MetricsMetrics.fromJson(Map<String, dynamic> json) =>
+      _$MetricsMetricsFromJson(json);
 
   Map<String, dynamic> toJson() => _$MetricsMetricsToJson(this);
 
@@ -71,6 +44,4 @@ class MetricsMetrics {
   String toString() {
     return toJson().toString();
   }
-
 }
-

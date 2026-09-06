@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'metrics_metrics_dns_cache.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -20,119 +19,65 @@ part 'metrics_metrics_dns_cache.g.dart';
 class MetricsMetricsDnsCache {
   /// Returns a new [MetricsMetricsDnsCache] instance.
   MetricsMetricsDnsCache({
+    this.size,
 
-     this.size,
+    this.inserted,
 
-     this.inserted,
+    this.evicted,
 
-     this.evicted,
+    this.expired,
 
-     this.expired,
+    this.immortal,
 
-     this.immortal,
-
-     this.content,
+    this.content,
   });
 
-      /// Cache size
-  @JsonKey(
-    
-    name: r'size',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Cache size
+  @JsonKey(name: r'size', required: false, includeIfNull: false)
   final int? size;
 
-
-
-      /// Number of inserted entries
-  @JsonKey(
-    
-    name: r'inserted',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Number of inserted entries
+  @JsonKey(name: r'inserted', required: false, includeIfNull: false)
   final int? inserted;
 
-
-
-      /// Number of evicted entries
-  @JsonKey(
-    
-    name: r'evicted',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Number of evicted entries
+  @JsonKey(name: r'evicted', required: false, includeIfNull: false)
   final int? evicted;
 
-
-
-      /// Number of expired entries
-  @JsonKey(
-    
-    name: r'expired',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Number of expired entries
+  @JsonKey(name: r'expired', required: false, includeIfNull: false)
   final int? expired;
 
-
-
-      /// Number of immortal entries
-  @JsonKey(
-    
-    name: r'immortal',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Number of immortal entries
+  @JsonKey(name: r'immortal', required: false, includeIfNull: false)
   final int? immortal;
 
-
-
-      /// Array of valid DNS cache entries
-  @JsonKey(
-    
-    name: r'content',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Array of valid DNS cache entries
+  @JsonKey(name: r'content', required: false, includeIfNull: false)
   final List<MetricsMetricsDnsCacheContentInner>? content;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is MetricsMetricsDnsCache &&
+          other.size == size &&
+          other.inserted == inserted &&
+          other.evicted == evicted &&
+          other.expired == expired &&
+          other.immortal == immortal &&
+          other.content == content;
 
+  @override
+  int get hashCode =>
+      size.hashCode +
+      inserted.hashCode +
+      evicted.hashCode +
+      expired.hashCode +
+      immortal.hashCode +
+      content.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is MetricsMetricsDnsCache &&
-      other.size == size &&
-      other.inserted == inserted &&
-      other.evicted == evicted &&
-      other.expired == expired &&
-      other.immortal == immortal &&
-      other.content == content;
-
-    @override
-    int get hashCode =>
-        size.hashCode +
-        inserted.hashCode +
-        evicted.hashCode +
-        expired.hashCode +
-        immortal.hashCode +
-        content.hashCode;
-
-  factory MetricsMetricsDnsCache.fromJson(Map<String, dynamic> json) => _$MetricsMetricsDnsCacheFromJson(json);
+  factory MetricsMetricsDnsCache.fromJson(Map<String, dynamic> json) =>
+      _$MetricsMetricsDnsCacheFromJson(json);
 
   Map<String, dynamic> toJson() => _$MetricsMetricsDnsCacheToJson(this);
 
@@ -140,6 +85,4 @@ class MetricsMetricsDnsCache {
   String toString() {
     return toJson().toString();
   }
-
 }
-

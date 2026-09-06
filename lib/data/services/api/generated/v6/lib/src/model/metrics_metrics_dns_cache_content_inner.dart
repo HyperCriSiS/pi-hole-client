@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'metrics_metrics_dns_cache_content_inner.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,75 +18,39 @@ part 'metrics_metrics_dns_cache_content_inner.g.dart';
 )
 class MetricsMetricsDnsCacheContentInner {
   /// Returns a new [MetricsMetricsDnsCacheContentInner] instance.
-  MetricsMetricsDnsCacheContentInner({
+  MetricsMetricsDnsCacheContentInner({this.type, this.name, this.count});
 
-     this.type,
-
-     this.name,
-
-     this.count,
-  });
-
-      /// RR type of cache entry
-  @JsonKey(
-    
-    name: r'type',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// RR type of cache entry
+  @JsonKey(name: r'type', required: false, includeIfNull: false)
   final int? type;
 
-
-
-      /// RR name of cache entry
-  @JsonKey(
-    
-    name: r'name',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// RR name of cache entry
+  @JsonKey(name: r'name', required: false, includeIfNull: false)
   final String? name;
 
-
-
-  @JsonKey(
-    
-    name: r'count',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'count', required: false, includeIfNull: false)
   final MetricsMetricsDnsCacheContentInnerCount? count;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is MetricsMetricsDnsCacheContentInner &&
+          other.type == type &&
+          other.name == name &&
+          other.count == count;
 
+  @override
+  int get hashCode => type.hashCode + name.hashCode + count.hashCode;
 
+  factory MetricsMetricsDnsCacheContentInner.fromJson(
+    Map<String, dynamic> json,
+  ) => _$MetricsMetricsDnsCacheContentInnerFromJson(json);
 
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is MetricsMetricsDnsCacheContentInner &&
-      other.type == type &&
-      other.name == name &&
-      other.count == count;
-
-    @override
-    int get hashCode =>
-        type.hashCode +
-        name.hashCode +
-        count.hashCode;
-
-  factory MetricsMetricsDnsCacheContentInner.fromJson(Map<String, dynamic> json) => _$MetricsMetricsDnsCacheContentInnerFromJson(json);
-
-  Map<String, dynamic> toJson() => _$MetricsMetricsDnsCacheContentInnerToJson(this);
+  Map<String, dynamic> toJson() =>
+      _$MetricsMetricsDnsCacheContentInnerToJson(this);
 
   @override
   String toString() {
     return toJson().toString();
   }
-
 }
-

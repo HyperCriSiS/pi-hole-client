@@ -17,10 +17,7 @@ void main() {
         appLogService: appLogs,
       );
 
-      await expectLater(
-        cache.getSid(),
-        throwsA(isA<SidNotFoundException>()),
-      );
+      await expectLater(cache.getSid(), throwsA(isA<SidNotFoundException>()));
 
       expect(appLogs.logs, isNotEmpty);
       expect(appLogs.logs.last.type, 'session');
@@ -47,10 +44,7 @@ void main() {
         appLogs.logs.single.message,
         contains('session could not be persisted'),
       );
-      expect(
-        appLogs.logs.single.message,
-        isNot(contains('sid-secret-value')),
-      );
+      expect(appLogs.logs.single.message, isNot(contains('sid-secret-value')));
 
       creds
         ..shouldFailSave = false

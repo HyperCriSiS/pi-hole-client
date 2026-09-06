@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'enabled.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,35 +17,26 @@ part 'enabled.g.dart';
 )
 class Enabled {
   /// Returns a new [Enabled] instance.
-  Enabled({
+  Enabled({this.enabled = true});
 
-     this.enabled = true,
-  });
-
-      /// Status of domain
+  /// Status of domain
   @JsonKey(
     defaultValue: true,
     name: r'enabled',
     required: false,
     includeIfNull: false,
   )
-
-
   final bool? enabled;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is Enabled && other.enabled == enabled;
 
+  @override
+  int get hashCode => enabled.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is Enabled &&
-      other.enabled == enabled;
-
-    @override
-    int get hashCode =>
-        enabled.hashCode;
-
-  factory Enabled.fromJson(Map<String, dynamic> json) => _$EnabledFromJson(json);
+  factory Enabled.fromJson(Map<String, dynamic> json) =>
+      _$EnabledFromJson(json);
 
   Map<String, dynamic> toJson() => _$EnabledToJson(this);
 
@@ -54,6 +44,4 @@ class Enabled {
   String toString() {
     return toJson().toString();
   }
-
 }
-

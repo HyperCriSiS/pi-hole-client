@@ -66,12 +66,15 @@ void main() {
   });
 
   group('fetchBlockingStatus', () {
-    test('should fetch DNS blocking status through generated service', () async {
-      final result = await repository.fetchBlockingStatus();
+    test(
+      'should fetch DNS blocking status through generated service',
+      () async {
+        final result = await repository.fetchBlockingStatus();
 
-      expect(result.getOrNull(), kRepoFetchDnsBlocking);
-      expect(service.lastSid, 'sid123');
-    });
+        expect(result.getOrNull(), kRepoFetchDnsBlocking);
+        expect(service.lastSid, 'sid123');
+      },
+    );
 
     test('should fail when generated DNS blocking fetch fails', () async {
       service.shouldFailGetDnsBlocking = true;

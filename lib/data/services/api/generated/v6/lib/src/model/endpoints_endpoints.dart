@@ -10,7 +10,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'endpoints_endpoints.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -21,97 +20,52 @@ part 'endpoints_endpoints.g.dart';
 class EndpointsEndpoints {
   /// Returns a new [EndpointsEndpoints] instance.
   EndpointsEndpoints({
+    this.get_,
 
-     this.get_,
+    this.post,
 
-     this.post,
+    this.put,
 
-     this.put,
+    this.patch_,
 
-     this.patch_,
-
-     this.delete,
+    this.delete,
   });
 
-  @JsonKey(
-    
-    name: r'get',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'get', required: false, includeIfNull: false)
   final List<EndpointsEndpointsGetInner>? get_;
 
-
-
-  @JsonKey(
-    
-    name: r'post',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'post', required: false, includeIfNull: false)
   final List<EndpointsEndpointsGetInner>? post;
 
-
-
-  @JsonKey(
-    
-    name: r'put',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'put', required: false, includeIfNull: false)
   final List<EndpointsEndpointsGetInner>? put;
 
-
-
-  @JsonKey(
-    
-    name: r'patch',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'patch', required: false, includeIfNull: false)
   final List<EndpointsEndpointsPatchInner>? patch_;
 
-
-
-  @JsonKey(
-    
-    name: r'delete',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'delete', required: false, includeIfNull: false)
   final List<EndpointsEndpointsPatchInner>? delete;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is EndpointsEndpoints &&
+          other.get_ == get_ &&
+          other.post == post &&
+          other.put == put &&
+          other.patch_ == patch_ &&
+          other.delete == delete;
 
+  @override
+  int get hashCode =>
+      get_.hashCode +
+      post.hashCode +
+      put.hashCode +
+      patch_.hashCode +
+      delete.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is EndpointsEndpoints &&
-      other.get_ == get_ &&
-      other.post == post &&
-      other.put == put &&
-      other.patch_ == patch_ &&
-      other.delete == delete;
-
-    @override
-    int get hashCode =>
-        get_.hashCode +
-        post.hashCode +
-        put.hashCode +
-        patch_.hashCode +
-        delete.hashCode;
-
-  factory EndpointsEndpoints.fromJson(Map<String, dynamic> json) => _$EndpointsEndpointsFromJson(json);
+  factory EndpointsEndpoints.fromJson(Map<String, dynamic> json) =>
+      _$EndpointsEndpointsFromJson(json);
 
   Map<String, dynamic> toJson() => _$EndpointsEndpointsToJson(this);
 
@@ -119,6 +73,4 @@ class EndpointsEndpoints {
   String toString() {
     return toJson().toString();
   }
-
 }
-

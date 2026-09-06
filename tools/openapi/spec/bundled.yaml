@@ -1,7 +1,7 @@
 openapi: 3.0.2
 info:
   title: Pi-hole API
-  version: '6.4.1'
+  version: '6.0'
   contact:
     name: Pi-hole API Support
     url: https://discourse.pi-hole.net
@@ -622,7 +622,7 @@ paths:
       description: |
         Request most recently blocked domain
       parameters:
-        - $ref: '#/components/parameters/recent_blocked-count'
+        - $ref: '#/components/parameters/count-2'
       responses:
         '200':
           description: OK
@@ -876,7 +876,7 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/schemas-queries'
+                  - $ref: '#/components/schemas/queries-2'
                   - $ref: '#/components/schemas/took'
         '401':
           description: Unauthorized
@@ -986,10 +986,10 @@ paths:
       - $ref: '#/components/parameters/kind'
       - $ref: '#/components/parameters/domain'
     get:
+      operationId: get_domain
       summary: Get domain
       tags:
         - Domain management
-      operationId: get_domains
       description: |
         `{type}`, `{kind}`, and `{domain}` are optional. Specifying any of these may result in only a subset of the available data being returned.
 
@@ -1075,7 +1075,7 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/errors-bad_request'
+                  - $ref: '#/components/schemas/bad_request-2'
                   - $ref: '#/components/schemas/took'
               examples:
                 list_imprecise:
@@ -1083,7 +1083,7 @@ paths:
                 item_missing:
                   $ref: '#/components/examples/item_missing'
                 no_payload:
-                  $ref: '#/components/examples/bad_request-no_payload'
+                  $ref: '#/components/examples/no_payload-2'
                 duplicate:
                   $ref: '#/components/examples/duplicate'
                 invalid_regex:
@@ -1112,7 +1112,7 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/errors-bad_request'
+                  - $ref: '#/components/schemas/bad_request-2'
                   - $ref: '#/components/schemas/took'
               examples:
                 list_imprecise:
@@ -1133,45 +1133,37 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/took'
-  /domains:
-    get:
-      summary: Get all domains
-      tags:
-        - Domain management
-      operationId: get_all_domains
-      description: |
-        Returns all configured domains (allow and deny, exact and regex).
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/get'
-                  - $ref: '#/components/schemas/took'
-              examples:
-                domains:
-                  $ref: '#/components/examples/domains'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/unauthorized'
-                  - $ref: '#/components/schemas/took'
   /domains/{type}/{kind}:
     parameters:
       - $ref: '#/components/parameters/type'
       - $ref: '#/components/parameters/kind'
     get:
-      summary: Get domains by type and kind
+      operationId: get_type_kind_domains
+      summary: Get domain
       tags:
         - Domain management
-      operationId: get_domains_by_type_kind
       description: |
-        Returns domains filtered by type (allow/deny) and kind (exact/regex).
+        `{type}`, `{kind}`, and `{domain}` are optional. Specifying any of these may result in only a subset of the available data being returned.
+
+        Valid combinations are:
+        - `/api/domains` (all domains)
+        - `/api/domains/abc.com` (all domains identical to `abc.com`)
+        - `/api/domains/allow` (only allowed domains)
+        - `/api/domains/allow/abc.com` (only allowed domains identical to `abc.com`)
+        - `/api/domains/allow/exact` (only exactly allowed domains)
+        - `/api/domains/allow/exact/abc.com` (only exactly allowed domain identical to `abc.com`)
+        - `/api/domains/allow/regex` (only allowed regex domains)
+        - `/api/domains/allow/regex/abc.com` (only allowed regex domains identical to `abc.com`)
+        - `/api/domains/deny` (only denied domains)
+        - `/api/domains/deny/abc.com` (only denied domains identical to `abc.com`)
+        - `/api/domains/deny/exact` (only exactly denied domains)
+        - `/api/domains/deny/exact/abc.com` (only exactly denied domain identical to `abc.com`)
+        - `/api/domains/deny/regex` (only denied regex domains)
+        - `/api/domains/deny/regex/abc.com` (only denied regex domains identical to `abc.com`)
+        - `/api/domains/exact` (allowed and denied exact domains)
+        - `/api/domains/exact/abc.com` (allowed and denied exact domains identical to `abc.com`)
+        - `/api/domains/regex` (allowed and denied regex domains)
+        - `/api/domains/regex/abc.com` (allowed and denied regex domains identical to `abc.com`)
       responses:
         '200':
           description: OK
@@ -1204,7 +1196,7 @@ paths:
 
         On success, a new resource is created at `/domains/{type}/{kind}/{domain}`.
 
-        The `database_error` with message `UNIQUE constraint failed` error indicates that the same entry (`domain`, `type`, `kind`) already exists.
+        The `database_error` with message `The item is already present` error indicates that the same entry (`domain`, `type`, `kind`) already exists.
 
         When adding a regular expression, ensure the request body is properly JSON-escaped.
       requestBody:
@@ -1232,17 +1224,115 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/errors-bad_request'
+                  - $ref: '#/components/schemas/bad_request-2'
                   - $ref: '#/components/schemas/took'
               examples:
                 list_imprecise:
                   $ref: '#/components/examples/list_imprecise'
                 no_payload:
-                  $ref: '#/components/examples/bad_request-no_payload'
+                  $ref: '#/components/examples/no_payload-2'
                 duplicate:
                   $ref: '#/components/examples/duplicate'
                 invalid_regex:
                   $ref: '#/components/examples/invalid_regex'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/unauthorized'
+                  - $ref: '#/components/schemas/took'
+  /domains/{type}:
+    parameters:
+      - $ref: '#/components/parameters/type'
+    get:
+      operationId: get_type_domains
+      summary: Get domain
+      tags:
+        - Domain management
+      description: |
+        `{type}`, `{kind}`, and `{domain}` are optional. Specifying any of these may result in only a subset of the available data being returned.
+
+        Valid combinations are:
+        - `/api/domains` (all domains)
+        - `/api/domains/abc.com` (all domains identical to `abc.com`)
+        - `/api/domains/allow` (only allowed domains)
+        - `/api/domains/allow/abc.com` (only allowed domains identical to `abc.com`)
+        - `/api/domains/allow/exact` (only exactly allowed domains)
+        - `/api/domains/allow/exact/abc.com` (only exactly allowed domain identical to `abc.com`)
+        - `/api/domains/allow/regex` (only allowed regex domains)
+        - `/api/domains/allow/regex/abc.com` (only allowed regex domains identical to `abc.com`)
+        - `/api/domains/deny` (only denied domains)
+        - `/api/domains/deny/abc.com` (only denied domains identical to `abc.com`)
+        - `/api/domains/deny/exact` (only exactly denied domains)
+        - `/api/domains/deny/exact/abc.com` (only exactly denied domain identical to `abc.com`)
+        - `/api/domains/deny/regex` (only denied regex domains)
+        - `/api/domains/deny/regex/abc.com` (only denied regex domains identical to `abc.com`)
+        - `/api/domains/exact` (allowed and denied exact domains)
+        - `/api/domains/exact/abc.com` (allowed and denied exact domains identical to `abc.com`)
+        - `/api/domains/regex` (allowed and denied regex domains)
+        - `/api/domains/regex/abc.com` (allowed and denied regex domains identical to `abc.com`)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/get'
+                  - $ref: '#/components/schemas/took'
+              examples:
+                domains:
+                  $ref: '#/components/examples/domains'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/unauthorized'
+                  - $ref: '#/components/schemas/took'
+  /domains:
+    get:
+      operationId: get_domains
+      summary: Get domain
+      tags:
+        - Domain management
+      description: |
+        `{type}`, `{kind}`, and `{domain}` are optional. Specifying any of these may result in only a subset of the available data being returned.
+
+        Valid combinations are:
+        - `/api/domains` (all domains)
+        - `/api/domains/abc.com` (all domains identical to `abc.com`)
+        - `/api/domains/allow` (only allowed domains)
+        - `/api/domains/allow/abc.com` (only allowed domains identical to `abc.com`)
+        - `/api/domains/allow/exact` (only exactly allowed domains)
+        - `/api/domains/allow/exact/abc.com` (only exactly allowed domain identical to `abc.com`)
+        - `/api/domains/allow/regex` (only allowed regex domains)
+        - `/api/domains/allow/regex/abc.com` (only allowed regex domains identical to `abc.com`)
+        - `/api/domains/deny` (only denied domains)
+        - `/api/domains/deny/abc.com` (only denied domains identical to `abc.com`)
+        - `/api/domains/deny/exact` (only exactly denied domains)
+        - `/api/domains/deny/exact/abc.com` (only exactly denied domain identical to `abc.com`)
+        - `/api/domains/deny/regex` (only denied regex domains)
+        - `/api/domains/deny/regex/abc.com` (only denied regex domains identical to `abc.com`)
+        - `/api/domains/exact` (allowed and denied exact domains)
+        - `/api/domains/exact/abc.com` (allowed and denied exact domains identical to `abc.com`)
+        - `/api/domains/regex` (allowed and denied regex domains)
+        - `/api/domains/regex/abc.com` (allowed and denied regex domains identical to `abc.com`)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/get'
+                  - $ref: '#/components/schemas/took'
+              examples:
+                domains:
+                  $ref: '#/components/examples/domains'
         '401':
           description: Unauthorized
           content:
@@ -1301,11 +1391,11 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/errors-bad_request'
+                  - $ref: '#/components/schemas/bad_request-2'
                   - $ref: '#/components/schemas/took'
               examples:
                 no_payload:
-                  $ref: '#/components/examples/bad_request-no_payload'
+                  $ref: '#/components/examples/no_payload-2'
         '401':
           description: Unauthorized
           content:
@@ -1342,7 +1432,7 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/groups-get'
+                  - $ref: '#/components/schemas/get-2'
                   - $ref: '#/components/schemas/took'
               examples:
                 groups:
@@ -1371,7 +1461,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/groups-put'
+              $ref: '#/components/schemas/put-2'
       responses:
         '200':
           description: Created or Updated Item
@@ -1379,8 +1469,8 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/groups-get'
-                  - $ref: '#/components/schemas/schemas-lists_processed'
+                  - $ref: '#/components/schemas/get-2'
+                  - $ref: '#/components/schemas/lists_processed-2'
                   - $ref: '#/components/schemas/took'
           headers:
             Location:
@@ -1391,13 +1481,15 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/errors-bad_request'
+                  - $ref: '#/components/schemas/bad_request-2'
                   - $ref: '#/components/schemas/took'
               examples:
                 item_missing:
-                  $ref: '#/components/examples/uri_error-item_missing'
+                  $ref: '#/components/examples/item_missing-2'
                 no_payload:
-                  $ref: '#/components/examples/bad_request-no_payload'
+                  $ref: '#/components/examples/no_payload-2'
+                duplicate:
+                  $ref: '#/components/examples/duplicate'
         '401':
           description: Unauthorized
           content:
@@ -1422,11 +1514,11 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/errors-bad_request'
+                  - $ref: '#/components/schemas/bad_request-2'
                   - $ref: '#/components/schemas/took'
               examples:
                 item_missing:
-                  $ref: '#/components/examples/uri_error-item_missing'
+                  $ref: '#/components/examples/item_missing-2'
         '401':
           description: Unauthorized
           content:
@@ -1443,12 +1535,15 @@ paths:
                 $ref: '#/components/schemas/took'
   /groups:
     get:
-      summary: Get all groups
+      summary: List all groups
       tags:
         - Group management
-      operationId: get_all_groups
+      operationId: list_groups
       description: |
-        Returns all configured groups.
+        Returns the full list of groups configured on your Pi-hole.
+
+        This is the collection form of `GET /api/groups/{name}` (see `get_groups`)
+        and returns the same array schema without requiring a `{name}` path parameter.
       responses:
         '200':
           description: OK
@@ -1456,7 +1551,7 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/groups-get'
+                  - $ref: '#/components/schemas/get-2'
                   - $ref: '#/components/schemas/took'
               examples:
                 groups:
@@ -1479,13 +1574,13 @@ paths:
 
         On success, a new resource is created at `/groups/{name}`.
 
-        The `database_error` with message `UNIQUE constraint failed` error indicates that a group with the same name already exists.
+        The `database_error` with message `The item is already present` error indicates that a group with the same name already exists.
       requestBody:
         description: Callback payload
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/groups-post'
+              $ref: '#/components/schemas/post-2'
       responses:
         '201':
           description: Created item
@@ -1493,8 +1588,8 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/groups-get'
-                  - $ref: '#/components/schemas/schemas-lists_processed'
+                  - $ref: '#/components/schemas/get-2'
+                  - $ref: '#/components/schemas/lists_processed-2'
                   - $ref: '#/components/schemas/took'
           headers:
             Location:
@@ -1505,13 +1600,13 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/errors-bad_request'
+                  - $ref: '#/components/schemas/bad_request-2'
                   - $ref: '#/components/schemas/took'
               examples:
                 no_payload:
-                  $ref: '#/components/examples/bad_request-no_payload'
+                  $ref: '#/components/examples/no_payload-2'
                 duplicate:
-                  $ref: '#/components/examples/database_error-duplicate'
+                  $ref: '#/components/examples/duplicate'
         '401':
           description: Unauthorized
           content:
@@ -1555,13 +1650,13 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/errors-bad_request'
+                  - $ref: '#/components/schemas/bad_request-2'
                   - $ref: '#/components/schemas/took'
               examples:
                 no_payload:
-                  $ref: '#/components/examples/bad_request-no_payload'
+                  $ref: '#/components/examples/no_payload-2'
                 duplicate:
-                  $ref: '#/components/examples/database_error-duplicate'
+                  $ref: '#/components/examples/duplicate'
         '401':
           description: Unauthorized
           content:
@@ -1598,7 +1693,7 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/clients-get'
+                  - $ref: '#/components/schemas/get-3'
                   - $ref: '#/components/schemas/took'
               examples:
                 clients:
@@ -1627,7 +1722,7 @@ paths:
           application/json:
             schema:
               allOf:
-                - $ref: '#/components/schemas/clients-put'
+                - $ref: '#/components/schemas/put-3'
                 - $ref: '#/components/schemas/took'
       responses:
         '200':
@@ -1636,8 +1731,8 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/clients-get'
-                  - $ref: '#/components/schemas/components-schemas-lists_processed'
+                  - $ref: '#/components/schemas/get-3'
+                  - $ref: '#/components/schemas/lists_processed-3'
                   - $ref: '#/components/schemas/took'
         '400':
           description: Bad request
@@ -1645,13 +1740,15 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/errors-bad_request'
+                  - $ref: '#/components/schemas/bad_request-2'
                   - $ref: '#/components/schemas/took'
               examples:
                 item_missing:
-                  $ref: '#/components/examples/errors-uri_error-item_missing'
+                  $ref: '#/components/examples/item_missing-3'
                 no_payload:
-                  $ref: '#/components/examples/bad_request-no_payload'
+                  $ref: '#/components/examples/no_payload-2'
+                duplicate:
+                  $ref: '#/components/examples/duplicate'
         '401':
           description: Unauthorized
           content:
@@ -1676,11 +1773,11 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/errors-bad_request'
+                  - $ref: '#/components/schemas/bad_request-2'
                   - $ref: '#/components/schemas/took'
               examples:
                 item_missing:
-                  $ref: '#/components/examples/errors-uri_error-item_missing'
+                  $ref: '#/components/examples/item_missing-3'
         '401':
           description: Unauthorized
           content:
@@ -1697,12 +1794,15 @@ paths:
                 $ref: '#/components/schemas/took'
   /clients:
     get:
-      summary: Get all clients
+      summary: List all clients
       tags:
         - Client management
-      operationId: get_all_clients
+      operationId: list_clients
       description: |
-        Returns all configured clients.
+        Returns the full list of clients configured on your Pi-hole.
+
+        This is the collection form of `GET /api/clients/{client}` (see `get_clients`)
+        and returns the same array schema without requiring a `{client}` path parameter.
       responses:
         '200':
           description: OK
@@ -1710,7 +1810,7 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/clients-get'
+                  - $ref: '#/components/schemas/get-3'
                   - $ref: '#/components/schemas/took'
               examples:
                 clients:
@@ -1739,14 +1839,14 @@ paths:
 
         On success, a new resource is created at `/clients/{client}`.
 
-        The `database_error` with message `UNIQUE constraint failed` error indicates that this client already exists.
+        The `database_error` with message `The item is already present` error indicates that this client already exists.
       requestBody:
         description: Callback payload
         content:
           application/json:
             schema:
               allOf:
-                - $ref: '#/components/schemas/clients-post'
+                - $ref: '#/components/schemas/post-3'
                 - $ref: '#/components/schemas/took'
       responses:
         '201':
@@ -1755,8 +1855,8 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/clients-get'
-                  - $ref: '#/components/schemas/components-schemas-lists_processed'
+                  - $ref: '#/components/schemas/get-3'
+                  - $ref: '#/components/schemas/lists_processed-3'
                   - $ref: '#/components/schemas/took'
           headers:
             Location:
@@ -1768,12 +1868,12 @@ paths:
               schema:
                 allOf:
                   - $ref: '#/components/schemas/took'
-                  - $ref: '#/components/schemas/errors-bad_request'
+                  - $ref: '#/components/schemas/bad_request-2'
               examples:
                 no_payload:
-                  $ref: '#/components/examples/bad_request-no_payload'
+                  $ref: '#/components/examples/no_payload-2'
                 duplicate:
-                  $ref: '#/components/examples/errors-database_error-duplicate'
+                  $ref: '#/components/examples/duplicate'
         '401':
           description: Unauthorized
           content:
@@ -1812,10 +1912,10 @@ paths:
                   - item
               example:
                 - item: 192.168.2.5
-                - item: '::1'
+                - item: ::1
                 - item: 12:34:56:78:9A:BC
                 - item: localhost
-                - item: ':eth0'
+                - item: :eth0
       responses:
         '204':
           description: Items deleted
@@ -1825,11 +1925,11 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/errors-bad_request'
+                  - $ref: '#/components/schemas/bad_request-2'
                   - $ref: '#/components/schemas/took'
               examples:
                 no_payload:
-                  $ref: '#/components/examples/bad_request-no_payload'
+                  $ref: '#/components/examples/no_payload-2'
         '401':
           description: Unauthorized
           content:
@@ -1859,7 +1959,7 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/schemas-suggestions'
+                  - $ref: '#/components/schemas/suggestions-2'
                   - $ref: '#/components/schemas/took'
         '401':
           description: Unauthorized
@@ -1892,7 +1992,7 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/lists-get'
+                  - $ref: '#/components/schemas/get-4'
                   - $ref: '#/components/schemas/took'
               examples:
                 lists:
@@ -1923,7 +2023,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/lists-put'
+              $ref: '#/components/schemas/put-4'
       responses:
         '200':
           description: Created or Updated Item
@@ -1931,8 +2031,8 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/lists-get'
-                  - $ref: '#/components/schemas/lists_components-schemas-lists_processed'
+                  - $ref: '#/components/schemas/get-4'
+                  - $ref: '#/components/schemas/lists_processed-4'
                   - $ref: '#/components/schemas/took'
         '400':
           description: Bad request
@@ -1940,13 +2040,15 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/errors-bad_request'
+                  - $ref: '#/components/schemas/bad_request-2'
                   - $ref: '#/components/schemas/took'
               examples:
                 item_missing:
-                  $ref: '#/components/examples/examples-errors-uri_error-item_missing'
+                  $ref: '#/components/examples/item_missing-4'
                 no_payload:
-                  $ref: '#/components/examples/bad_request-no_payload'
+                  $ref: '#/components/examples/no_payload-2'
+                duplicate:
+                  $ref: '#/components/examples/duplicate'
         '401':
           description: Unauthorized
           content:
@@ -1975,11 +2077,11 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/errors-bad_request'
+                  - $ref: '#/components/schemas/bad_request-2'
                   - $ref: '#/components/schemas/took'
               examples:
                 item_missing:
-                  $ref: '#/components/examples/examples-errors-uri_error-item_missing'
+                  $ref: '#/components/examples/item_missing-4'
         '401':
           description: Unauthorized
           content:
@@ -1996,14 +2098,17 @@ paths:
                 $ref: '#/components/schemas/took'
   /lists:
     get:
-      summary: Get all lists
+      summary: List all lists
       parameters:
         - $ref: '#/components/parameters/listtype_optional'
       tags:
         - List management
-      operationId: get_all_lists
+      operationId: list_lists
       description: |
-        Returns all configured lists. Optionally filter by list type.
+        Returns the full list of subscribed lists configured on your Pi-hole.
+
+        This is the collection form of `GET /api/lists/{list}` (see `get_lists`)
+        and returns the same array schema without requiring a `{list}` path parameter.
       responses:
         '200':
           description: OK
@@ -2011,7 +2116,7 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/lists-get'
+                  - $ref: '#/components/schemas/get-4'
                   - $ref: '#/components/schemas/took'
               examples:
                 lists:
@@ -2040,7 +2145,7 @@ paths:
 
         On success, a new resource is created at `/lists/{list}`.
 
-        The `database_error` with message `UNIQUE constraint failed` error indicates that this list already exists.
+        The `database_error` with message `The item is already present` error indicates that this list already exists.
       parameters:
         - $ref: '#/components/parameters/listtype'
       requestBody:
@@ -2048,7 +2153,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/lists-post'
+              $ref: '#/components/schemas/post-4'
       responses:
         '201':
           description: Created item
@@ -2056,8 +2161,8 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/lists-get'
-                  - $ref: '#/components/schemas/lists_components-schemas-lists_processed'
+                  - $ref: '#/components/schemas/get-4'
+                  - $ref: '#/components/schemas/lists_processed-4'
                   - $ref: '#/components/schemas/took'
           headers:
             Location:
@@ -2068,13 +2173,13 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/errors-bad_request'
+                  - $ref: '#/components/schemas/bad_request-2'
                   - $ref: '#/components/schemas/took'
               examples:
                 no_payload:
-                  $ref: '#/components/examples/bad_request-no_payload'
+                  $ref: '#/components/examples/no_payload-2'
                 duplicate:
-                  $ref: '#/components/examples/examples-errors-database_error-duplicate'
+                  $ref: '#/components/examples/duplicate'
         '401':
           description: Unauthorized
           content:
@@ -2124,11 +2229,11 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/errors-bad_request'
+                  - $ref: '#/components/schemas/bad_request-2'
                   - $ref: '#/components/schemas/took'
               examples:
                 no_payload:
-                  $ref: '#/components/examples/bad_request-no_payload'
+                  $ref: '#/components/examples/no_payload-2'
         '401':
           description: Unauthorized
           content:
@@ -2335,7 +2440,7 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/errors-bad_request'
+                  - $ref: '#/components/schemas/bad_request-2'
                   - $ref: '#/components/schemas/took'
               examples:
                 uri_error:
@@ -2547,7 +2652,7 @@ paths:
     get:
       summary: Get current configuration of your Pi-hole
       tags:
-        - Pi-hole Configuration
+        - Pi-hole configuration
       operationId: get_config
       description: |
         This API hook returns infos about the config of your Pi-hole.
@@ -2576,7 +2681,7 @@ paths:
     patch:
       summary: Change configuration of your Pi-hole
       tags:
-        - Pi-hole Configuration
+        - Pi-hole configuration
       operationId: patch_config
       description: |
         This API hook allows to modify the config of your Pi-hole. This endpoint supports changing multiple properties at once when you specify several in the payload. See examples below.
@@ -2617,11 +2722,39 @@ paths:
                 allOf:
                   - $ref: '#/components/schemas/unauthorized'
                   - $ref: '#/components/schemas/took'
+  /config/_properties:
+    get:
+      summary: Get special properties of your Pi-hole configuration
+      tags:
+        - Pi-hole configuration
+      operationId: get_config_props
+      description: |
+        This API hook returns a list of special properties in your Pi-hole configuration.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/props'
+                  - $ref: '#/components/schemas/took'
+              examples:
+                props:
+                  $ref: '#/components/examples/props'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/unauthorized'
+                  - $ref: '#/components/schemas/took'
   /config/{element}:
     get:
       summary: Get specific part of current configuration of your Pi-hole
       tags:
-        - Pi-hole Configuration
+        - Pi-hole configuration
       operationId: get_config_elem
       description: |
         This API hook returns infos about the requested subset of your Pi-hole's configuration.
@@ -2632,6 +2765,15 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/config'
+                  - $ref: '#/components/schemas/took'
+              examples:
+                config:
+                  $ref: '#/components/examples/config'
         '401':
           description: Unauthorized
           content:
@@ -2644,7 +2786,7 @@ paths:
     put:
       summary: Add config array item
       tags:
-        - Pi-hole Configuration
+        - Pi-hole configuration
       operationId: add_array_item
       description: |
         *Note:* There will be no content on success.
@@ -2661,7 +2803,7 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/errors-bad_request'
+                  - $ref: '#/components/schemas/bad_request-2'
                   - $ref: '#/components/schemas/took'
               examples:
                 invalid_path_depth:
@@ -2679,7 +2821,7 @@ paths:
     delete:
       summary: Delete config array item
       tags:
-        - Pi-hole Configuration
+        - Pi-hole configuration
       operationId: delete_array_item
       description: |
         *Note:* There will be no content on success.
@@ -2696,7 +2838,7 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/errors-bad_request'
+                  - $ref: '#/components/schemas/bad_request-2'
                   - $ref: '#/components/schemas/took'
               examples:
                 invalid_path_depth:
@@ -2764,7 +2906,7 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/errors-bad_request'
+                  - $ref: '#/components/schemas/bad_request-2'
                   - $ref: '#/components/schemas/took'
         '401':
           description: Unauthorized
@@ -2791,7 +2933,7 @@ paths:
 
         If the optional parameter `detailed` is set to `true`, the response will include detailed information about the individual interfaces and routes. Note that the available information is dependent on the interface type and state.
       parameters:
-        - $ref: '#/components/parameters/devices-detailed'
+        - $ref: '#/components/parameters/detailed-2'
       responses:
         '200':
           description: OK
@@ -2816,7 +2958,7 @@ paths:
         - Network information
       operationId: get_routes
       parameters:
-        - $ref: '#/components/parameters/devices-detailed'
+        - $ref: '#/components/parameters/detailed-2'
       description: |
         This API hook returns infos about the networking routes of your Pi-hole. Note that not all described fields are applicable to any routing type. Users must not rely on the presence of any field without checking the route type first.
 
@@ -2845,7 +2987,7 @@ paths:
         - Network information
       operationId: get_interfaces
       parameters:
-        - $ref: '#/components/parameters/devices-detailed'
+        - $ref: '#/components/parameters/detailed-2'
       description: |
         This API hook returns infos about the networking interfaces of your Pi-hole. Note that not all described fields are applicable to any routing type. Users must not rely on the presence of any field without checking the route type first.
 
@@ -2959,7 +3101,7 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/teleporter-post'
+                  - $ref: '#/components/schemas/post-5'
                   - $ref: '#/components/schemas/took'
               examples:
                 teleporter:
@@ -3209,11 +3351,11 @@ paths:
             application/json:
               schema:
                 allOf:
-                  - $ref: '#/components/schemas/errors-bad_request'
+                  - $ref: '#/components/schemas/bad_request-2'
                   - $ref: '#/components/schemas/took'
               examples:
                 item_missing:
-                  $ref: '#/components/examples/components-examples-errors-uri_error-item_missing'
+                  $ref: '#/components/examples/item_missing-5'
         '401':
           description: Unauthorized
           content:
@@ -3230,7 +3372,7 @@ paths:
                 $ref: '#/components/schemas/took'
   /search/{domain}:
     parameters:
-      - $ref: '#/components/parameters/parameters-domain'
+      - $ref: '#/components/parameters/domain-2'
     get:
       summary: Search domains in Pi-hole's lists
       tags:
@@ -3238,7 +3380,7 @@ paths:
       operationId: get_search
       parameters:
         - $ref: '#/components/parameters/partial'
-        - $ref: '#/components/parameters/parameters-N'
+        - $ref: '#/components/parameters/N-2'
         - $ref: '#/components/parameters/debug'
       description: |
         Search for domains in Pi-hole's list. The specified domain is automatically converted to lowercase.
@@ -4083,7 +4225,7 @@ components:
             127.0.0.1:
               name: localhost
               total: 13428
-            '::1':
+            ::1:
               name: ip6-localnet
               total: 2100
             192.168.1.1:
@@ -4114,17 +4256,17 @@ components:
             - timestamp: 1511819900.539157
               data:
                 127.0.0.1: 35
-                '::1': 63
+                ::1: 63
                 192.168.1.1: 20
                 '::': 9
                 0.0.0.0: 0
             - timestamp: 1511820500.583821
               data:
                 127.0.0.1: 10
-                '::1': 44
+                ::1: 44
                 192.168.1.1: 56
                 '::': 52
-    schemas-queries:
+    queries-2:
       type: object
       properties:
         queries:
@@ -4249,6 +4391,14 @@ components:
           type: integer
           description: DataTables-specific integer (echos input value)
           example: 1
+        earliest_timestamp:
+          type: number
+          description: Earliest timestamp of queries in in-memory database (Unix time)
+          example: 1581900000
+        earliest_timestamp_disk:
+          type: number
+          description: Earliest timestamp of queries in on-disk database (Unix time)
+          example: 1580000000
     suggestions:
       type: object
       properties:
@@ -4504,8 +4654,8 @@ components:
               - item: example3.com
             errors:
               - item: example2.com
-                error: 'UNIQUE constraint failed: domainlist.domain'
-    errors-bad_request:
+                error: The item is already present
+    bad_request-2:
       type: object
       description: Bad request
       properties:
@@ -4552,7 +4702,7 @@ components:
       properties:
         name:
           $ref: '#/components/schemas/name'
-    schemas-comment:
+    comment-2:
       type: object
       properties:
         comment:
@@ -4561,7 +4711,7 @@ components:
           nullable: true
           default: null
           example: Some comment for this group
-    schemas-enabled:
+    enabled-2:
       type: object
       properties:
         enabled:
@@ -4569,7 +4719,7 @@ components:
           type: boolean
           default: true
           example: true
-    schemas-readonly:
+    readonly-2:
       type: object
       properties:
         id:
@@ -4587,7 +4737,7 @@ components:
           type: integer
           readOnly: true
           example: 1611239099
-    groups-get:
+    get-2:
       type: object
       properties:
         groups:
@@ -4595,15 +4745,15 @@ components:
           items:
             allOf:
               - $ref: '#/components/schemas/name_object'
-              - $ref: '#/components/schemas/schemas-comment'
-              - $ref: '#/components/schemas/schemas-enabled'
-              - $ref: '#/components/schemas/schemas-readonly'
-    groups-put:
+              - $ref: '#/components/schemas/comment-2'
+              - $ref: '#/components/schemas/enabled-2'
+              - $ref: '#/components/schemas/readonly-2'
+    put-2:
       allOf:
         - $ref: '#/components/schemas/name_object'
-        - $ref: '#/components/schemas/schemas-comment'
-        - $ref: '#/components/schemas/schemas-enabled'
-    schemas-lists_processed:
+        - $ref: '#/components/schemas/comment-2'
+        - $ref: '#/components/schemas/enabled-2'
+    lists_processed-2:
       type: object
       properties:
         processed:
@@ -4643,7 +4793,7 @@ components:
               - item: Children
             errors:
               - item: Garden
-                error: 'UNIQUE constraint failed: group.name'
+                error: The item is already present
     name_array:
       description: array of group names
       type: array
@@ -4660,11 +4810,11 @@ components:
           oneOf:
             - $ref: '#/components/schemas/name'
             - $ref: '#/components/schemas/name_array'
-    groups-post:
+    post-2:
       allOf:
         - $ref: '#/components/schemas/name_maybe_array'
-        - $ref: '#/components/schemas/schemas-comment'
-        - $ref: '#/components/schemas/schemas-enabled'
+        - $ref: '#/components/schemas/comment-2'
+        - $ref: '#/components/schemas/enabled-2'
     client:
       description: client IP / MAC / hostname / interface
       type: string
@@ -4674,7 +4824,7 @@ components:
       properties:
         client:
           $ref: '#/components/schemas/client'
-    components-schemas-comment:
+    comment-3:
       type: object
       properties:
         comment:
@@ -4683,7 +4833,7 @@ components:
           nullable: true
           default: null
           example: Some comment for this client
-    schemas-groups:
+    groups-2:
       type: object
       properties:
         groups:
@@ -4693,7 +4843,7 @@ components:
             - 0
           items:
             type: integer
-    components-schemas-readonly:
+    readonly-3:
       type: object
       properties:
         id:
@@ -4717,7 +4867,7 @@ components:
           readOnly: true
           nullable: true
           example: localhost
-    clients-get:
+    get-3:
       type: object
       properties:
         clients:
@@ -4726,14 +4876,14 @@ components:
           items:
             allOf:
               - $ref: '#/components/schemas/client_object'
-              - $ref: '#/components/schemas/components-schemas-comment'
-              - $ref: '#/components/schemas/schemas-groups'
-              - $ref: '#/components/schemas/components-schemas-readonly'
-    clients-put:
+              - $ref: '#/components/schemas/comment-3'
+              - $ref: '#/components/schemas/groups-2'
+              - $ref: '#/components/schemas/readonly-3'
+    put-3:
       allOf:
-        - $ref: '#/components/schemas/components-schemas-comment'
-        - $ref: '#/components/schemas/schemas-groups'
-    components-schemas-lists_processed:
+        - $ref: '#/components/schemas/comment-3'
+        - $ref: '#/components/schemas/groups-2'
+    lists_processed-3:
       type: object
       properties:
         processed:
@@ -4770,10 +4920,10 @@ components:
           example:
             success:
               - item: 127.0.0.1
-              - item: '::1'
+              - item: ::1
             errors:
               - item: 192.168.2.5
-                error: 'UNIQUE constraint failed: client.ip'
+                error: The item is already present
     client_array:
       description: array of client IPs / MACs / hostnames / interfaces
       type: array
@@ -4789,12 +4939,12 @@ components:
           oneOf:
             - $ref: '#/components/schemas/client'
             - $ref: '#/components/schemas/client_array'
-    clients-post:
+    post-3:
       allOf:
         - $ref: '#/components/schemas/client_maybe_array'
-        - $ref: '#/components/schemas/components-schemas-comment'
-        - $ref: '#/components/schemas/schemas-groups'
-    schemas-suggestions:
+        - $ref: '#/components/schemas/comment-3'
+        - $ref: '#/components/schemas/groups-2'
+    suggestions-2:
       type: object
       properties:
         clients:
@@ -4832,7 +4982,7 @@ components:
       properties:
         address:
           $ref: '#/components/schemas/address'
-    schemas-type:
+    type-2:
       type: object
       properties:
         type:
@@ -4842,7 +4992,7 @@ components:
             - allow
             - block
           example: block
-    lists_components-schemas-comment:
+    comment-4:
       type: object
       properties:
         comment:
@@ -4851,7 +5001,7 @@ components:
           nullable: true
           default: null
           example: Some comment for this list
-    components-schemas-enabled:
+    enabled-3:
       type: object
       properties:
         enabled:
@@ -4859,7 +5009,7 @@ components:
           type: boolean
           default: true
           example: true
-    lists_components-schemas-readonly:
+    readonly-4:
       type: object
       properties:
         id:
@@ -4902,7 +5052,7 @@ components:
           type: integer
           readOnly: true
           example: 2
-    lists-get:
+    get-4:
       type: object
       properties:
         lists:
@@ -4911,18 +5061,18 @@ components:
           items:
             allOf:
               - $ref: '#/components/schemas/address_object'
-              - $ref: '#/components/schemas/schemas-type'
-              - $ref: '#/components/schemas/lists_components-schemas-comment'
-              - $ref: '#/components/schemas/schemas-groups'
-              - $ref: '#/components/schemas/components-schemas-enabled'
-              - $ref: '#/components/schemas/lists_components-schemas-readonly'
-    lists-put:
+              - $ref: '#/components/schemas/type-2'
+              - $ref: '#/components/schemas/comment-4'
+              - $ref: '#/components/schemas/groups-2'
+              - $ref: '#/components/schemas/enabled-3'
+              - $ref: '#/components/schemas/readonly-4'
+    put-4:
       allOf:
-        - $ref: '#/components/schemas/lists_components-schemas-comment'
-        - $ref: '#/components/schemas/schemas-type'
-        - $ref: '#/components/schemas/schemas-groups'
-        - $ref: '#/components/schemas/components-schemas-enabled'
-    lists_components-schemas-lists_processed:
+        - $ref: '#/components/schemas/comment-4'
+        - $ref: '#/components/schemas/type-2'
+        - $ref: '#/components/schemas/groups-2'
+        - $ref: '#/components/schemas/enabled-3'
+    lists_processed-4:
       type: object
       properties:
         processed:
@@ -4962,7 +5112,7 @@ components:
               - item: https://mirror1.malwaredomains.com/files/justdomains
             errors:
               - item: https://raw.githubusercontent.com/abc/def/master/hosts
-                error: 'UNIQUE constraint failed: adlist.address'
+                error: The item is already present
     address_array:
       description: array of list addresses
       type: array
@@ -4977,12 +5127,12 @@ components:
           oneOf:
             - $ref: '#/components/schemas/address'
             - $ref: '#/components/schemas/address_array'
-    lists-post:
+    post-4:
       allOf:
         - $ref: '#/components/schemas/address_maybe_array'
-        - $ref: '#/components/schemas/lists_components-schemas-comment'
-        - $ref: '#/components/schemas/schemas-groups'
-        - $ref: '#/components/schemas/components-schemas-enabled'
+        - $ref: '#/components/schemas/comment-4'
+        - $ref: '#/components/schemas/groups-2'
+        - $ref: '#/components/schemas/enabled-3'
     remote_addr:
       type: object
       properties:
@@ -5221,8 +5371,12 @@ components:
               properties:
                 gravity:
                   type: integer
-                  description: Number of collected exact domains on lists
+                  description: Number of collected exact domains on blocking lists
                   example: 67906
+                antigravity:
+                  type: integer
+                  description: Number of collected exact domains on allowing lists
+                  example: 0
                 groups:
                   type: integer
                   description: Number of groups
@@ -6185,6 +6339,8 @@ components:
                       type: integer
                     upstreamBlockedTTL:
                       type: integer
+                    rrtype:
+                      type: string
                 revServers:
                   type: array
                   items:
@@ -6322,6 +6478,8 @@ components:
                   type: boolean
                 resolveIPv6:
                   type: boolean
+                macNames:
+                  type: boolean
                 networkNames:
                   type: boolean
                 refreshNames:
@@ -6336,6 +6494,8 @@ components:
                 DBinterval:
                   type: integer
                 useWAL:
+                  type: boolean
+                forceDisk:
                   type: boolean
                 network:
                   type: object
@@ -6446,6 +6606,8 @@ components:
                   type: string
                 database:
                   type: string
+                tmp_db:
+                  type: string
                 gravity:
                   type: string
                 gravity_tmp:
@@ -6487,6 +6649,8 @@ components:
                 normalizeCPU:
                   type: boolean
                 hide_dnsmasq_warn:
+                  type: boolean
+                hide_connection_error:
                   type: boolean
                 check:
                   type: object
@@ -6560,8 +6724,30 @@ components:
                   type: boolean
                 timing:
                   type: boolean
+                performance:
+                  type: boolean
                 all:
                   type: boolean
+    props:
+      type: object
+      properties:
+        config:
+          type: object
+          properties:
+            read_only:
+              type: array
+              items:
+                type: object
+                properties:
+                  key:
+                    type: string
+                    description: The name of the read-only property
+                  reason:
+                    type: string
+                    description: The reason why this property is read-only (machine-readable)
+                  description:
+                    type: string
+                    description: A human-readable description of the read-only reason
     devices:
       type: object
       properties:
@@ -6675,7 +6861,7 @@ components:
                   - link
                   - mpls
                   - bridge
-                  - '???'
+                  - ???
                 description: Address family
               table:
                 type: integer
@@ -6747,7 +6933,7 @@ components:
               scope: universe
               type: local
               flags: []
-              dst: '::1'
+              dst: ::1
               priority: 0
               oif: eth0
             - family: inet6
@@ -6868,7 +7054,7 @@ components:
                         - link
                         - mpls
                         - bridge
-                        - '???'
+                        - ???
                       description: Address family
                     flags:
                       type: array
@@ -6928,9 +7114,9 @@ components:
                   valid: 4294967295
                   cstamp: 1720989931
                   tstamp: 1720989931
-                - address: '::1'
+                - address: ::1
                   address_type: loopback
-                  local: '::1'
+                  local: ::1
                   local_type: loopback
                   family: inet6
                   scope: host
@@ -7057,7 +7243,7 @@ components:
                   valid: 4294967295
                   cstamp: 1720989931.1
                   tstamp: 1720989931.1
-    teleporter-post:
+    post-5:
       type: object
       properties:
         processed:
@@ -7365,6 +7551,10 @@ components:
               type: number
               description: Percentage of blocked queries
               example: 5.18
+            query_frequency:
+              type: number
+              description: Average number of queries per second
+              example: 1.1
         cache:
           type: object
           properties:
@@ -7717,7 +7907,7 @@ components:
           message: 'Invalid request: Specify item in URI'
           hint: null
         took: 0.003
-    bad_request-no_payload:
+    no_payload-2:
       summary: No JSON payload found
       value:
         error:
@@ -7731,7 +7921,7 @@ components:
         error:
           key: database_error
           message: Could not add to gravity database
-          hint: 'UNIQUE constraint failed: domainlist.domain, domainlist.type'
+          hint: The item is already present
         took: 0.003
     invalid_regex:
       summary: Invalid regex rejected
@@ -7758,21 +7948,13 @@ components:
             date_modified: 1604871899
         took: 0.003
         processed: null
-    uri_error-item_missing:
+    item_missing-2:
       summary: Group to be modified is missing
       value:
         error:
           key: uri_error
           message: 'Invalid request: Specify item in URI'
           hint: null
-        took: 0.003
-    database_error-duplicate:
-      summary: Database error
-      value:
-        error:
-          key: database_error
-          message: Could not add to gravity database
-          hint: 'UNIQUE constraint failed: grouplist.group'
         took: 0.003
     clients:
       value:
@@ -7783,7 +7965,7 @@ components:
             id: 1
             date_added: 1604871899
             date_modified: 1604871899
-          - client: '::1'
+          - client: ::1
             name: ip6-localhost
             comment: null
             id: 2
@@ -7795,22 +7977,14 @@ components:
             - item: 127.0.0.1
           failed:
             - item: 127.0.0.2
-              error: 'UNIQUE constraint failed: clientlist.client'
-    errors-uri_error-item_missing:
+              error: The item is already present
+    item_missing-3:
       summary: Client to be modified is missing
       value:
         error:
           key: uri_error
           message: 'Invalid request: Specify item in URI'
           hint: null
-        took: 0.003
-    errors-database_error-duplicate:
-      summary: Database error
-      value:
-        error:
-          key: database_error
-          message: Could not add to gravity database
-          hint: 'UNIQUE constraint failed: clientlist.client'
         took: 0.003
     lists:
       value:
@@ -7833,21 +8007,13 @@ components:
             date_modified: 1594670974
         took: 0.012
         processed: null
-    examples-errors-uri_error-item_missing:
+    item_missing-4:
       summary: List to be modified is missing
       value:
         error:
           key: uri_error
           message: 'Invalid request: Specify item in URI'
           hint: null
-        took: 0.003
-    examples-errors-database_error-duplicate:
-      summary: Database error
-      value:
-        error:
-          key: database_error
-          message: Could not add to gravity database
-          hint: 'UNIQUE constraint failed: listlist.list'
         took: 0.003
     uri_error:
       summary: ID of message to delete is missing
@@ -7971,6 +8137,7 @@ components:
               size: 10000
               optimizer: 3600
               upstreamBlockedTTL: 86400
+              rrtype: ANY
             revServers:
               - true,192.168.0.0/24,192.168.0.1,lan
             blocking:
@@ -8029,6 +8196,7 @@ components:
           resolver:
             resolveIPv4: true
             resolveIPv6: true
+            macNames: true
             networkNames: true
             refreshNames: IPV4_ONLY
           database:
@@ -8036,6 +8204,7 @@ components:
             maxDBdays: 365
             DBinterval: 60
             useWAL: true
+            forceDisk: false
             network:
               parseARPcache: true
               expire: 365
@@ -8046,7 +8215,7 @@ components:
             threads: 0
             headers:
               - 'X-DNS-Prefetch-Control: off'
-              - 'Content-Security-Policy: default-src ''self''; style-src ''self'' ''unsafe-inline''; img-src ''self'' data:;'
+              - 'Content-Security-Policy: default-src ''none''; connect-src ''self''; font-src ''self''; frame-ancestors ''none''; img-src ''self''; manifest-src ''self''; script-src ''self''; style-src ''self'' ''unsafe-inline''; form-action ''self'''
               - 'X-Frame-Options: DENY'
               - 'X-XSS-Protection: 0'
               - 'X-Content-Type-Options: nosniff'
@@ -8093,6 +8262,7 @@ components:
           files:
             pid: /run/pihole-FTL.pid
             database: /etc/pihole/pihole-FTL.db
+            tmp_db: /etc/pihole/pihole-tmp.db
             gravity: /etc/pihole/gravity.db
             gravity_tmp: /tmp
             macvendor: /etc/pihole/macvendor.db
@@ -8112,6 +8282,7 @@ components:
             readOnly: false
             normalizeCPU: false
             hide_dnsmasq_warn: false
+            hide_connection_error: false
             check:
               load: true
               shmem: 90
@@ -8147,6 +8318,7 @@ components:
             ntp: false
             netlink: false
             timing: false
+            performance: false
             all: false
           took: 0.003
     config_one:
@@ -8164,6 +8336,17 @@ components:
               mozillaCanary: true
           misc:
             nice: -10
+    props:
+      summary: All read-only properties
+      value:
+        config:
+          read_only:
+            - key: misc.readOnly
+              reason: read_only
+              description: Variable can only be set in pihole.toml, not via API
+            - key: webserver.api.pwhash
+              reason: env_var
+              description: Set via environment variable
     invalid_path_depth:
       summary: Invalid path
       value:
@@ -8188,7 +8371,7 @@ components:
           - etc/pihole/gravity.db->adlist
           - etc/pihole/gravity.db->adlist_by_group
         took: 0.003
-    components-examples-errors-uri_error-item_missing:
+    item_missing-5:
       summary: DHCP lease to be deleted not specified accurately enough
       value:
         error:
@@ -8237,7 +8420,7 @@ components:
         type: integer
       required: false
       example: 10
-    recent_blocked-count:
+    count-2:
       in: query
       description: Number of requested blocked domains
       name: count
@@ -8403,7 +8586,7 @@ components:
         type: integer
       required: true
       example: 1
-    devices-detailed:
+    detailed-2:
       in: query
       description: (Optional) Detailed interface/routing information
       name: detailed
@@ -8428,7 +8611,7 @@ components:
       required: true
       description: IP address of lease to be modified
       example: 192.168.2.222
-    parameters-domain:
+    domain-2:
       name: domain
       in: path
       description: (Part of) domain to be searched for
@@ -8446,7 +8629,7 @@ components:
         type: boolean
         default: false
         example: false
-    parameters-N:
+    N-2:
       name: 'N'
       in: query
       description: Maximum number of results to be returned

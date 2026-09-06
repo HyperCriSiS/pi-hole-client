@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'add_auth400_response.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,51 +18,25 @@ part 'add_auth400_response.g.dart';
 )
 class AddAuth400Response {
   /// Returns a new [AddAuth400Response] instance.
-  AddAuth400Response({
+  AddAuth400Response({this.error, this.took});
 
-     this.error,
-
-     this.took,
-  });
-
-  @JsonKey(
-    
-    name: r'error',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'error', required: false, includeIfNull: false)
   final BadRequestError? error;
 
-
-
-      /// Time in seconds it took to process the request
-  @JsonKey(
-    
-    name: r'took',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Time in seconds it took to process the request
+  @JsonKey(name: r'took', required: false, includeIfNull: false)
   final num? took;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AddAuth400Response && other.error == error && other.took == took;
 
+  @override
+  int get hashCode => error.hashCode + took.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is AddAuth400Response &&
-      other.error == error &&
-      other.took == took;
-
-    @override
-    int get hashCode =>
-        error.hashCode +
-        took.hashCode;
-
-  factory AddAuth400Response.fromJson(Map<String, dynamic> json) => _$AddAuth400ResponseFromJson(json);
+  factory AddAuth400Response.fromJson(Map<String, dynamic> json) =>
+      _$AddAuth400ResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$AddAuth400ResponseToJson(this);
 
@@ -71,6 +44,4 @@ class AddAuth400Response {
   String toString() {
     return toJson().toString();
   }
-
 }
-

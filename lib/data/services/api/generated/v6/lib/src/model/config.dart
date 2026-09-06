@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'config.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,32 +18,17 @@ part 'config.g.dart';
 )
 class Config {
   /// Returns a new [Config] instance.
-  Config({
+  Config({this.config});
 
-     this.config,
-  });
-
-  @JsonKey(
-    
-    name: r'config',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'config', required: false, includeIfNull: false)
   final ConfigConfig? config;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is Config && other.config == config;
 
-
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is Config &&
-      other.config == config;
-
-    @override
-    int get hashCode =>
-        config.hashCode;
+  @override
+  int get hashCode => config.hashCode;
 
   factory Config.fromJson(Map<String, dynamic> json) => _$ConfigFromJson(json);
 
@@ -54,6 +38,4 @@ class Config {
   String toString() {
     return toJson().toString();
   }
-
 }
-

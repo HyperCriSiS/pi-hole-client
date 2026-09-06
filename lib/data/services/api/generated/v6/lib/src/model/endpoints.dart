@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'endpoints.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,34 +18,21 @@ part 'endpoints.g.dart';
 )
 class Endpoints {
   /// Returns a new [Endpoints] instance.
-  Endpoints({
+  Endpoints({this.endpoints});
 
-     this.endpoints,
-  });
-
-  @JsonKey(
-    
-    name: r'endpoints',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'endpoints', required: false, includeIfNull: false)
   final EndpointsEndpoints? endpoints;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Endpoints && other.endpoints == endpoints;
 
+  @override
+  int get hashCode => endpoints.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is Endpoints &&
-      other.endpoints == endpoints;
-
-    @override
-    int get hashCode =>
-        endpoints.hashCode;
-
-  factory Endpoints.fromJson(Map<String, dynamic> json) => _$EndpointsFromJson(json);
+  factory Endpoints.fromJson(Map<String, dynamic> json) =>
+      _$EndpointsFromJson(json);
 
   Map<String, dynamic> toJson() => _$EndpointsToJson(this);
 
@@ -54,6 +40,4 @@ class Endpoints {
   String toString() {
     return toJson().toString();
   }
-
 }
-

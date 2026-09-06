@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'name_maybe_array.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,34 +18,20 @@ part 'name_maybe_array.g.dart';
 )
 class NameMaybeArray {
   /// Returns a new [NameMaybeArray] instance.
-  NameMaybeArray({
+  NameMaybeArray({this.name});
 
-     this.name,
-  });
-
-  @JsonKey(
-    
-    name: r'name',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'name', required: false, includeIfNull: false)
   final StringOrList? name;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is NameMaybeArray && other.name == name;
 
+  @override
+  int get hashCode => name.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is NameMaybeArray &&
-      other.name == name;
-
-    @override
-    int get hashCode =>
-        name.hashCode;
-
-  factory NameMaybeArray.fromJson(Map<String, dynamic> json) => _$NameMaybeArrayFromJson(json);
+  factory NameMaybeArray.fromJson(Map<String, dynamic> json) =>
+      _$NameMaybeArrayFromJson(json);
 
   Map<String, dynamic> toJson() => _$NameMaybeArrayToJson(this);
 
@@ -54,6 +39,4 @@ class NameMaybeArray {
   String toString() {
     return toJson().toString();
   }
-
 }
-

@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'address_object.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,35 +17,22 @@ part 'address_object.g.dart';
 )
 class AddressObject {
   /// Returns a new [AddressObject] instance.
-  AddressObject({
+  AddressObject({this.address});
 
-     this.address,
-  });
-
-      /// Address of the list
-  @JsonKey(
-    
-    name: r'address',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Address of the list
+  @JsonKey(name: r'address', required: false, includeIfNull: false)
   final String? address;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AddressObject && other.address == address;
 
+  @override
+  int get hashCode => address.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is AddressObject &&
-      other.address == address;
-
-    @override
-    int get hashCode =>
-        address.hashCode;
-
-  factory AddressObject.fromJson(Map<String, dynamic> json) => _$AddressObjectFromJson(json);
+  factory AddressObject.fromJson(Map<String, dynamic> json) =>
+      _$AddressObjectFromJson(json);
 
   Map<String, dynamic> toJson() => _$AddressObjectToJson(this);
 
@@ -54,6 +40,4 @@ class AddressObject {
   String toString() {
     return toJson().toString();
   }
-
 }
-

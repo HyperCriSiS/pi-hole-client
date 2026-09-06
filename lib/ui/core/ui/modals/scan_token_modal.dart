@@ -6,7 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:pi_hole_client/ui/core/l10n/generated/app_localizations.dart';
 import 'package:zxing2/qrcode.dart';
 
-typedef ScanTokenScannerBuilder = Widget Function(ValueChanged<String> onScanned);
+typedef ScanTokenScannerBuilder =
+    Widget Function(ValueChanged<String> onScanned);
 
 Widget _buildQrScanner(ValueChanged<String> onScanned) {
   return _CameraQrScanner(onScanned: onScanned);
@@ -210,19 +211,10 @@ class _CameraQrScannerState extends State<_CameraQrScanner> {
       final sourceOffset = row * rowStride;
       if (sourceOffset + width > bytes.length) return null;
       final targetOffset = row * width;
-      compact.setRange(
-        targetOffset,
-        targetOffset + width,
-        bytes,
-        sourceOffset,
-      );
+      compact.setRange(targetOffset, targetOffset + width, bytes, sourceOffset);
     }
 
-    return _YPlaneLuminanceSource(
-      Int8List.view(compact.buffer),
-      width,
-      height,
-    );
+    return _YPlaneLuminanceSource(Int8List.view(compact.buffer), width, height);
   }
 
   @override
@@ -266,9 +258,7 @@ class _YPlaneLuminanceSource extends LuminanceSource {
       throw RangeError.range(y, 0, height - 1, 'y');
     }
 
-    final target = row != null && row.length >= width
-        ? row
-        : Int8List(width);
+    final target = row != null && row.length >= width ? row : Int8List(width);
     final offset = y * width;
     target.setRange(0, width, _luminances, offset);
     return target;

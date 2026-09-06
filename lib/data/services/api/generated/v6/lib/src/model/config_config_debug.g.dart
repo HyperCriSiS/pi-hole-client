@@ -67,6 +67,8 @@ abstract class _$ConfigConfigDebugCWProxy {
 
   ConfigConfigDebug timing(bool? timing);
 
+  ConfigConfigDebug performance(bool? performance);
+
   ConfigConfigDebug all(bool? all);
 
   /// This function **does support** nullification of nullable fields. All `null` values passed to `non-nullable` fields will be ignored. You can also use `ConfigConfigDebug(...).copyWith.fieldName(...)` to override fields one at a time with nullification support.
@@ -106,6 +108,7 @@ abstract class _$ConfigConfigDebugCWProxy {
     bool? ntp,
     bool? netlink,
     bool? timing,
+    bool? performance,
     bool? all,
   });
 }
@@ -209,6 +212,10 @@ class _$ConfigConfigDebugCWProxyImpl implements _$ConfigConfigDebugCWProxy {
   ConfigConfigDebug timing(bool? timing) => this(timing: timing);
 
   @override
+  ConfigConfigDebug performance(bool? performance) =>
+      this(performance: performance);
+
+  @override
   ConfigConfigDebug all(bool? all) => this(all: all);
 
   @override
@@ -249,6 +256,7 @@ class _$ConfigConfigDebugCWProxyImpl implements _$ConfigConfigDebugCWProxy {
     Object? ntp = const $CopyWithPlaceholder(),
     Object? netlink = const $CopyWithPlaceholder(),
     Object? timing = const $CopyWithPlaceholder(),
+    Object? performance = const $CopyWithPlaceholder(),
     Object? all = const $CopyWithPlaceholder(),
   }) {
     return ConfigConfigDebug(
@@ -372,6 +380,10 @@ class _$ConfigConfigDebugCWProxyImpl implements _$ConfigConfigDebugCWProxy {
           ? _value.timing
           // ignore: cast_nullable_to_non_nullable
           : timing as bool?,
+      performance: performance == const $CopyWithPlaceholder()
+          ? _value.performance
+          // ignore: cast_nullable_to_non_nullable
+          : performance as bool?,
       all: all == const $CopyWithPlaceholder()
           ? _value.all
           // ignore: cast_nullable_to_non_nullable
@@ -424,6 +436,7 @@ ConfigConfigDebug _$ConfigConfigDebugFromJson(Map<String, dynamic> json) =>
         ntp: $checkedConvert('ntp', (v) => v as bool?),
         netlink: $checkedConvert('netlink', (v) => v as bool?),
         timing: $checkedConvert('timing', (v) => v as bool?),
+        performance: $checkedConvert('performance', (v) => v as bool?),
         all: $checkedConvert('all', (v) => v as bool?),
       );
       return val;
@@ -461,5 +474,6 @@ Map<String, dynamic> _$ConfigConfigDebugToJson(ConfigConfigDebug instance) =>
       'ntp': ?instance.ntp,
       'netlink': ?instance.netlink,
       'timing': ?instance.timing,
+      'performance': ?instance.performance,
       'all': ?instance.all,
     };

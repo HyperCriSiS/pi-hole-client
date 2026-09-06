@@ -7,11 +7,9 @@ part of 'replace_lists200_response.dart';
 // **************************************************************************
 
 abstract class _$ReplaceLists200ResponseCWProxy {
-  ReplaceLists200Response lists(List<ListsGetListsInner>? lists);
+  ReplaceLists200Response lists(List<Get4ListsInner>? lists);
 
-  ReplaceLists200Response processed(
-    ListsComponentsSchemasListsProcessedProcessed? processed,
-  );
+  ReplaceLists200Response processed(ListsProcessed4Processed? processed);
 
   ReplaceLists200Response took(num? took);
 
@@ -22,8 +20,8 @@ abstract class _$ReplaceLists200ResponseCWProxy {
   /// ReplaceLists200Response(...).copyWith(id: 12, name: "My name")
   /// ````
   ReplaceLists200Response call({
-    List<ListsGetListsInner>? lists,
-    ListsComponentsSchemasListsProcessedProcessed? processed,
+    List<Get4ListsInner>? lists,
+    ListsProcessed4Processed? processed,
     num? took,
   });
 }
@@ -36,13 +34,12 @@ class _$ReplaceLists200ResponseCWProxyImpl
   final ReplaceLists200Response _value;
 
   @override
-  ReplaceLists200Response lists(List<ListsGetListsInner>? lists) =>
+  ReplaceLists200Response lists(List<Get4ListsInner>? lists) =>
       this(lists: lists);
 
   @override
-  ReplaceLists200Response processed(
-    ListsComponentsSchemasListsProcessedProcessed? processed,
-  ) => this(processed: processed);
+  ReplaceLists200Response processed(ListsProcessed4Processed? processed) =>
+      this(processed: processed);
 
   @override
   ReplaceLists200Response took(num? took) => this(took: took);
@@ -63,11 +60,11 @@ class _$ReplaceLists200ResponseCWProxyImpl
       lists: lists == const $CopyWithPlaceholder()
           ? _value.lists
           // ignore: cast_nullable_to_non_nullable
-          : lists as List<ListsGetListsInner>?,
+          : lists as List<Get4ListsInner>?,
       processed: processed == const $CopyWithPlaceholder()
           ? _value.processed
           // ignore: cast_nullable_to_non_nullable
-          : processed as ListsComponentsSchemasListsProcessedProcessed?,
+          : processed as ListsProcessed4Processed?,
       took: took == const $CopyWithPlaceholder()
           ? _value.took
           // ignore: cast_nullable_to_non_nullable
@@ -94,16 +91,14 @@ ReplaceLists200Response _$ReplaceLists200ResponseFromJson(
     lists: $checkedConvert(
       'lists',
       (v) => (v as List<dynamic>?)
-          ?.map((e) => ListsGetListsInner.fromJson(e as Map<String, dynamic>))
+          ?.map((e) => Get4ListsInner.fromJson(e as Map<String, dynamic>))
           .toList(),
     ),
     processed: $checkedConvert(
       'processed',
       (v) => v == null
           ? null
-          : ListsComponentsSchemasListsProcessedProcessed.fromJson(
-              v as Map<String, dynamic>,
-            ),
+          : ListsProcessed4Processed.fromJson(v as Map<String, dynamic>),
     ),
     took: $checkedConvert('took', (v) => v as num?),
   );

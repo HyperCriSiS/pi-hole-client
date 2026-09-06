@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'get_domains200_response.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,52 +18,28 @@ part 'get_domains200_response.g.dart';
 )
 class GetDomains200Response {
   /// Returns a new [GetDomains200Response] instance.
-  GetDomains200Response({
+  GetDomains200Response({this.domains, this.took});
 
-     this.domains,
-
-     this.took,
-  });
-
-      /// Array of domains
-  @JsonKey(
-    
-    name: r'domains',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Array of domains
+  @JsonKey(name: r'domains', required: false, includeIfNull: false)
   final List<GetDomainsInner>? domains;
 
-
-
-      /// Time in seconds it took to process the request
-  @JsonKey(
-    
-    name: r'took',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Time in seconds it took to process the request
+  @JsonKey(name: r'took', required: false, includeIfNull: false)
   final num? took;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GetDomains200Response &&
+          other.domains == domains &&
+          other.took == took;
 
+  @override
+  int get hashCode => domains.hashCode + took.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is GetDomains200Response &&
-      other.domains == domains &&
-      other.took == took;
-
-    @override
-    int get hashCode =>
-        domains.hashCode +
-        took.hashCode;
-
-  factory GetDomains200Response.fromJson(Map<String, dynamic> json) => _$GetDomains200ResponseFromJson(json);
+  factory GetDomains200Response.fromJson(Map<String, dynamic> json) =>
+      _$GetDomains200ResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$GetDomains200ResponseToJson(this);
 
@@ -72,6 +47,4 @@ class GetDomains200Response {
   String toString() {
     return toJson().toString();
   }
-
 }
-

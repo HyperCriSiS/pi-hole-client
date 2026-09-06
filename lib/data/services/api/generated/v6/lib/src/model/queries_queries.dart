@@ -11,7 +11,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'queries_queries.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -22,184 +21,94 @@ part 'queries_queries.g.dart';
 class QueriesQueries {
   /// Returns a new [QueriesQueries] instance.
   QueriesQueries({
+    this.total,
 
-     this.total,
+    this.blocked,
 
-     this.blocked,
+    this.percentBlocked,
 
-     this.percentBlocked,
+    this.uniqueDomains,
 
-     this.uniqueDomains,
+    this.forwarded,
 
-     this.forwarded,
+    this.cached,
 
-     this.cached,
+    this.frequency,
 
-     this.frequency,
+    this.types,
 
-     this.types,
+    this.status,
 
-     this.status,
-
-     this.replies,
+    this.replies,
   });
 
-      /// Total number of queries
-  @JsonKey(
-    
-    name: r'total',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Total number of queries
+  @JsonKey(name: r'total', required: false, includeIfNull: false)
   final int? total;
 
-
-
-      /// Number of blocked queries
-  @JsonKey(
-    
-    name: r'blocked',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Number of blocked queries
+  @JsonKey(name: r'blocked', required: false, includeIfNull: false)
   final int? blocked;
 
-
-
-      /// Percent of blocked queries
-  @JsonKey(
-    
-    name: r'percent_blocked',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Percent of blocked queries
+  @JsonKey(name: r'percent_blocked', required: false, includeIfNull: false)
   final num? percentBlocked;
 
-
-
-      /// Number of unique domains FTL knows
-  @JsonKey(
-    
-    name: r'unique_domains',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Number of unique domains FTL knows
+  @JsonKey(name: r'unique_domains', required: false, includeIfNull: false)
   final int? uniqueDomains;
 
-
-
-      /// Number of queries that have been forwarded upstream
-  @JsonKey(
-    
-    name: r'forwarded',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Number of queries that have been forwarded upstream
+  @JsonKey(name: r'forwarded', required: false, includeIfNull: false)
   final int? forwarded;
 
-
-
-      /// Number of queries replied to from cache or local configuration
-  @JsonKey(
-    
-    name: r'cached',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Number of queries replied to from cache or local configuration
+  @JsonKey(name: r'cached', required: false, includeIfNull: false)
   final int? cached;
 
-
-
-      /// Average number of queries per second
-  @JsonKey(
-    
-    name: r'frequency',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Average number of queries per second
+  @JsonKey(name: r'frequency', required: false, includeIfNull: false)
   final num? frequency;
 
-
-
-  @JsonKey(
-    
-    name: r'types',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'types', required: false, includeIfNull: false)
   final QueriesQueriesTypes? types;
 
-
-
-  @JsonKey(
-    
-    name: r'status',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'status', required: false, includeIfNull: false)
   final QueriesQueriesStatus? status;
 
-
-
-  @JsonKey(
-    
-    name: r'replies',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'replies', required: false, includeIfNull: false)
   final QueriesQueriesReplies? replies;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is QueriesQueries &&
+          other.total == total &&
+          other.blocked == blocked &&
+          other.percentBlocked == percentBlocked &&
+          other.uniqueDomains == uniqueDomains &&
+          other.forwarded == forwarded &&
+          other.cached == cached &&
+          other.frequency == frequency &&
+          other.types == types &&
+          other.status == status &&
+          other.replies == replies;
 
+  @override
+  int get hashCode =>
+      total.hashCode +
+      blocked.hashCode +
+      percentBlocked.hashCode +
+      uniqueDomains.hashCode +
+      forwarded.hashCode +
+      cached.hashCode +
+      frequency.hashCode +
+      types.hashCode +
+      status.hashCode +
+      replies.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is QueriesQueries &&
-      other.total == total &&
-      other.blocked == blocked &&
-      other.percentBlocked == percentBlocked &&
-      other.uniqueDomains == uniqueDomains &&
-      other.forwarded == forwarded &&
-      other.cached == cached &&
-      other.frequency == frequency &&
-      other.types == types &&
-      other.status == status &&
-      other.replies == replies;
-
-    @override
-    int get hashCode =>
-        total.hashCode +
-        blocked.hashCode +
-        percentBlocked.hashCode +
-        uniqueDomains.hashCode +
-        forwarded.hashCode +
-        cached.hashCode +
-        frequency.hashCode +
-        types.hashCode +
-        status.hashCode +
-        replies.hashCode;
-
-  factory QueriesQueries.fromJson(Map<String, dynamic> json) => _$QueriesQueriesFromJson(json);
+  factory QueriesQueries.fromJson(Map<String, dynamic> json) =>
+      _$QueriesQueriesFromJson(json);
 
   Map<String, dynamic> toJson() => _$QueriesQueriesToJson(this);
 
@@ -207,6 +116,4 @@ class QueriesQueries {
   String toString() {
     return toJson().toString();
   }
-
 }
-

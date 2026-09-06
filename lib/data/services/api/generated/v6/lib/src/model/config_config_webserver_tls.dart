@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'config_config_webserver_tls.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,50 +17,26 @@ part 'config_config_webserver_tls.g.dart';
 )
 class ConfigConfigWebserverTls {
   /// Returns a new [ConfigConfigWebserverTls] instance.
-  ConfigConfigWebserverTls({
+  ConfigConfigWebserverTls({this.cert, this.validity});
 
-     this.cert,
-
-     this.validity,
-  });
-
-  @JsonKey(
-    
-    name: r'cert',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'cert', required: false, includeIfNull: false)
   final String? cert;
 
-
-
-  @JsonKey(
-    
-    name: r'validity',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'validity', required: false, includeIfNull: false)
   final int? validity;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ConfigConfigWebserverTls &&
+          other.cert == cert &&
+          other.validity == validity;
 
+  @override
+  int get hashCode => cert.hashCode + validity.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is ConfigConfigWebserverTls &&
-      other.cert == cert &&
-      other.validity == validity;
-
-    @override
-    int get hashCode =>
-        cert.hashCode +
-        validity.hashCode;
-
-  factory ConfigConfigWebserverTls.fromJson(Map<String, dynamic> json) => _$ConfigConfigWebserverTlsFromJson(json);
+  factory ConfigConfigWebserverTls.fromJson(Map<String, dynamic> json) =>
+      _$ConfigConfigWebserverTlsFromJson(json);
 
   Map<String, dynamic> toJson() => _$ConfigConfigWebserverTlsToJson(this);
 
@@ -69,6 +44,4 @@ class ConfigConfigWebserverTls {
   String toString() {
     return toJson().toString();
   }
-
 }
-

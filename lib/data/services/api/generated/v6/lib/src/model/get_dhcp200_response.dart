@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'get_dhcp200_response.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,52 +18,28 @@ part 'get_dhcp200_response.g.dart';
 )
 class GetDhcp200Response {
   /// Returns a new [GetDhcp200Response] instance.
-  GetDhcp200Response({
+  GetDhcp200Response({this.leases, this.took});
 
-     this.leases,
-
-     this.took,
-  });
-
-      /// DHCP leases
-  @JsonKey(
-    
-    name: r'leases',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// DHCP leases
+  @JsonKey(name: r'leases', required: false, includeIfNull: false)
   final List<LeasesLeasesInner>? leases;
 
-
-
-      /// Time in seconds it took to process the request
-  @JsonKey(
-    
-    name: r'took',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Time in seconds it took to process the request
+  @JsonKey(name: r'took', required: false, includeIfNull: false)
   final num? took;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GetDhcp200Response &&
+          other.leases == leases &&
+          other.took == took;
 
+  @override
+  int get hashCode => leases.hashCode + took.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is GetDhcp200Response &&
-      other.leases == leases &&
-      other.took == took;
-
-    @override
-    int get hashCode =>
-        leases.hashCode +
-        took.hashCode;
-
-  factory GetDhcp200Response.fromJson(Map<String, dynamic> json) => _$GetDhcp200ResponseFromJson(json);
+  factory GetDhcp200Response.fromJson(Map<String, dynamic> json) =>
+      _$GetDhcp200ResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$GetDhcp200ResponseToJson(this);
 
@@ -72,6 +47,4 @@ class GetDhcp200Response {
   String toString() {
     return toJson().toString();
   }
-
 }
-

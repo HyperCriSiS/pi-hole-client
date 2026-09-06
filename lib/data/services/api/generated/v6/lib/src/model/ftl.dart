@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'ftl.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,32 +18,17 @@ part 'ftl.g.dart';
 )
 class Ftl {
   /// Returns a new [Ftl] instance.
-  Ftl({
+  Ftl({this.ftl});
 
-     this.ftl,
-  });
-
-  @JsonKey(
-    
-    name: r'ftl',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'ftl', required: false, includeIfNull: false)
   final FtlFtl? ftl;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is Ftl && other.ftl == ftl;
 
-
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is Ftl &&
-      other.ftl == ftl;
-
-    @override
-    int get hashCode =>
-        ftl.hashCode;
+  @override
+  int get hashCode => ftl.hashCode;
 
   factory Ftl.fromJson(Map<String, dynamic> json) => _$FtlFromJson(json);
 
@@ -54,6 +38,4 @@ class Ftl {
   String toString() {
     return toJson().toString();
   }
-
 }
-

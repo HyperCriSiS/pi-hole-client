@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'kind.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,33 +17,18 @@ part 'kind.g.dart';
 )
 class Kind {
   /// Returns a new [Kind] instance.
-  Kind({
+  Kind({this.kind});
 
-     this.kind,
-  });
-
-      /// String specifying domain kind
-  @JsonKey(
-    
-    name: r'kind',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// String specifying domain kind
+  @JsonKey(name: r'kind', required: false, includeIfNull: false)
   final KindKindEnum? kind;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is Kind && other.kind == kind;
 
-
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is Kind &&
-      other.kind == kind;
-
-    @override
-    int get hashCode =>
-        kind.hashCode;
+  @override
+  int get hashCode => kind.hashCode;
 
   factory Kind.fromJson(Map<String, dynamic> json) => _$KindFromJson(json);
 
@@ -54,24 +38,22 @@ class Kind {
   String toString() {
     return toJson().toString();
   }
-
 }
 
 /// String specifying domain kind
 enum KindKindEnum {
-    /// String specifying domain kind
-@JsonValue(r'exact')
-exact(r'exact'),
-    /// String specifying domain kind
-@JsonValue(r'regex')
-regex(r'regex');
+  /// String specifying domain kind
+  @JsonValue(r'exact')
+  exact(r'exact'),
 
-const KindKindEnum(this.value);
+  /// String specifying domain kind
+  @JsonValue(r'regex')
+  regex(r'regex');
 
-final String value;
+  const KindKindEnum(this.value);
 
-@override
-String toString() => value;
+  final String value;
+
+  @override
+  String toString() => value;
 }
-
-

@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'unauthorized.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,34 +18,20 @@ part 'unauthorized.g.dart';
 )
 class Unauthorized {
   /// Returns a new [Unauthorized] instance.
-  Unauthorized({
+  Unauthorized({this.error});
 
-     this.error,
-  });
-
-  @JsonKey(
-    
-    name: r'error',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'error', required: false, includeIfNull: false)
   final UnauthorizedError? error;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is Unauthorized && other.error == error;
 
+  @override
+  int get hashCode => error.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is Unauthorized &&
-      other.error == error;
-
-    @override
-    int get hashCode =>
-        error.hashCode;
-
-  factory Unauthorized.fromJson(Map<String, dynamic> json) => _$UnauthorizedFromJson(json);
+  factory Unauthorized.fromJson(Map<String, dynamic> json) =>
+      _$UnauthorizedFromJson(json);
 
   Map<String, dynamic> toJson() => _$UnauthorizedToJson(this);
 
@@ -54,6 +39,4 @@ class Unauthorized {
   String toString() {
     return toJson().toString();
   }
-
 }
-

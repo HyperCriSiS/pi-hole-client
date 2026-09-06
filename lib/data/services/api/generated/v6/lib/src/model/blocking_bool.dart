@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'blocking_bool.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,35 +17,27 @@ part 'blocking_bool.g.dart';
 )
 class BlockingBool {
   /// Returns a new [BlockingBool] instance.
-  BlockingBool({
+  BlockingBool({this.blocking = true});
 
-     this.blocking = true,
-  });
-
-      /// Blocking status
+  /// Blocking status
   @JsonKey(
     defaultValue: true,
     name: r'blocking',
     required: false,
     includeIfNull: false,
   )
-
-
   final bool? blocking;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is BlockingBool && other.blocking == blocking;
 
+  @override
+  int get hashCode => blocking.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is BlockingBool &&
-      other.blocking == blocking;
-
-    @override
-    int get hashCode =>
-        blocking.hashCode;
-
-  factory BlockingBool.fromJson(Map<String, dynamic> json) => _$BlockingBoolFromJson(json);
+  factory BlockingBool.fromJson(Map<String, dynamic> json) =>
+      _$BlockingBoolFromJson(json);
 
   Map<String, dynamic> toJson() => _$BlockingBoolToJson(this);
 
@@ -54,6 +45,4 @@ class BlockingBool {
   String toString() {
     return toJson().toString();
   }
-
 }
-

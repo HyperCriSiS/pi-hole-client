@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'get_metrics_top_domains200_response.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -20,92 +19,55 @@ part 'get_metrics_top_domains200_response.g.dart';
 class GetMetricsTopDomains200Response {
   /// Returns a new [GetMetricsTopDomains200Response] instance.
   GetMetricsTopDomains200Response({
+    this.domains,
 
-     this.domains,
+    this.totalQueries,
 
-     this.totalQueries,
+    this.blockedQueries,
 
-     this.blockedQueries,
-
-     this.took,
+    this.took,
   });
 
-      /// Array of domains
-  @JsonKey(
-    
-    name: r'domains',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Array of domains
+  @JsonKey(name: r'domains', required: false, includeIfNull: false)
   final List<TopDomainsDomainsInner>? domains;
 
-
-
-      /// Total number of queries
-  @JsonKey(
-    
-    name: r'total_queries',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Total number of queries
+  @JsonKey(name: r'total_queries', required: false, includeIfNull: false)
   final int? totalQueries;
 
-
-
-      /// Number of blocked queries
-  @JsonKey(
-    
-    name: r'blocked_queries',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Number of blocked queries
+  @JsonKey(name: r'blocked_queries', required: false, includeIfNull: false)
   final int? blockedQueries;
 
-
-
-      /// Time in seconds it took to process the request
-  @JsonKey(
-    
-    name: r'took',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Time in seconds it took to process the request
+  @JsonKey(name: r'took', required: false, includeIfNull: false)
   final num? took;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GetMetricsTopDomains200Response &&
+          other.domains == domains &&
+          other.totalQueries == totalQueries &&
+          other.blockedQueries == blockedQueries &&
+          other.took == took;
 
+  @override
+  int get hashCode =>
+      domains.hashCode +
+      totalQueries.hashCode +
+      blockedQueries.hashCode +
+      took.hashCode;
 
+  factory GetMetricsTopDomains200Response.fromJson(Map<String, dynamic> json) =>
+      _$GetMetricsTopDomains200ResponseFromJson(json);
 
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is GetMetricsTopDomains200Response &&
-      other.domains == domains &&
-      other.totalQueries == totalQueries &&
-      other.blockedQueries == blockedQueries &&
-      other.took == took;
-
-    @override
-    int get hashCode =>
-        domains.hashCode +
-        totalQueries.hashCode +
-        blockedQueries.hashCode +
-        took.hashCode;
-
-  factory GetMetricsTopDomains200Response.fromJson(Map<String, dynamic> json) => _$GetMetricsTopDomains200ResponseFromJson(json);
-
-  Map<String, dynamic> toJson() => _$GetMetricsTopDomains200ResponseToJson(this);
+  Map<String, dynamic> toJson() =>
+      _$GetMetricsTopDomains200ResponseToJson(this);
 
   @override
   String toString() {
     return toJson().toString();
   }
-
 }
-

@@ -1,9 +1,5 @@
 class CnameRecord {
-  const CnameRecord({
-    required this.alias,
-    required this.target,
-    this.ttl,
-  });
+  const CnameRecord({required this.alias, required this.target, this.ttl});
 
   final String alias;
   final String target;

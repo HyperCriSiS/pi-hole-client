@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'leases.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,33 +18,18 @@ part 'leases.g.dart';
 )
 class Leases {
   /// Returns a new [Leases] instance.
-  Leases({
+  Leases({this.leases});
 
-     this.leases,
-  });
-
-      /// DHCP leases
-  @JsonKey(
-    
-    name: r'leases',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// DHCP leases
+  @JsonKey(name: r'leases', required: false, includeIfNull: false)
   final List<LeasesLeasesInner>? leases;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is Leases && other.leases == leases;
 
-
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is Leases &&
-      other.leases == leases;
-
-    @override
-    int get hashCode =>
-        leases.hashCode;
+  @override
+  int get hashCode => leases.hashCode;
 
   factory Leases.fromJson(Map<String, dynamic> json) => _$LeasesFromJson(json);
 
@@ -55,6 +39,4 @@ class Leases {
   String toString() {
     return toJson().toString();
   }
-
 }
-

@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'config_config_database_network.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,50 +17,26 @@ part 'config_config_database_network.g.dart';
 )
 class ConfigConfigDatabaseNetwork {
   /// Returns a new [ConfigConfigDatabaseNetwork] instance.
-  ConfigConfigDatabaseNetwork({
+  ConfigConfigDatabaseNetwork({this.parseARPcache, this.expire});
 
-     this.parseARPcache,
-
-     this.expire,
-  });
-
-  @JsonKey(
-    
-    name: r'parseARPcache',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'parseARPcache', required: false, includeIfNull: false)
   final bool? parseARPcache;
 
-
-
-  @JsonKey(
-    
-    name: r'expire',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'expire', required: false, includeIfNull: false)
   final int? expire;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ConfigConfigDatabaseNetwork &&
+          other.parseARPcache == parseARPcache &&
+          other.expire == expire;
 
+  @override
+  int get hashCode => parseARPcache.hashCode + expire.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is ConfigConfigDatabaseNetwork &&
-      other.parseARPcache == parseARPcache &&
-      other.expire == expire;
-
-    @override
-    int get hashCode =>
-        parseARPcache.hashCode +
-        expire.hashCode;
-
-  factory ConfigConfigDatabaseNetwork.fromJson(Map<String, dynamic> json) => _$ConfigConfigDatabaseNetworkFromJson(json);
+  factory ConfigConfigDatabaseNetwork.fromJson(Map<String, dynamic> json) =>
+      _$ConfigConfigDatabaseNetworkFromJson(json);
 
   Map<String, dynamic> toJson() => _$ConfigConfigDatabaseNetworkToJson(this);
 
@@ -69,6 +44,4 @@ class ConfigConfigDatabaseNetwork {
   String toString() {
     return toJson().toString();
   }
-
 }
-

@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'headers_headers_inner.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,52 +17,28 @@ part 'headers_headers_inner.g.dart';
 )
 class HeadersHeadersInner {
   /// Returns a new [HeadersHeadersInner] instance.
-  HeadersHeadersInner({
+  HeadersHeadersInner({this.name, this.value});
 
-     this.name,
-
-     this.value,
-  });
-
-      /// Header name
-  @JsonKey(
-    
-    name: r'name',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Header name
+  @JsonKey(name: r'name', required: false, includeIfNull: false)
   final String? name;
 
-
-
-      /// Header value
-  @JsonKey(
-    
-    name: r'value',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Header value
+  @JsonKey(name: r'value', required: false, includeIfNull: false)
   final String? value;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is HeadersHeadersInner &&
+          other.name == name &&
+          other.value == value;
 
+  @override
+  int get hashCode => name.hashCode + value.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is HeadersHeadersInner &&
-      other.name == name &&
-      other.value == value;
-
-    @override
-    int get hashCode =>
-        name.hashCode +
-        value.hashCode;
-
-  factory HeadersHeadersInner.fromJson(Map<String, dynamic> json) => _$HeadersHeadersInnerFromJson(json);
+  factory HeadersHeadersInner.fromJson(Map<String, dynamic> json) =>
+      _$HeadersHeadersInnerFromJson(json);
 
   Map<String, dynamic> toJson() => _$HeadersHeadersInnerToJson(this);
 
@@ -71,6 +46,4 @@ class HeadersHeadersInner {
   String toString() {
     return toJson().toString();
   }
-
 }
-

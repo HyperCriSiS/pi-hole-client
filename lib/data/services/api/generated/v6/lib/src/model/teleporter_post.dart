@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'teleporter_post.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,34 +17,21 @@ part 'teleporter_post.g.dart';
 )
 class TeleporterPost {
   /// Returns a new [TeleporterPost] instance.
-  TeleporterPost({
+  TeleporterPost({this.processed});
 
-     this.processed,
-  });
-
-  @JsonKey(
-    
-    name: r'processed',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'processed', required: false, includeIfNull: false)
   final List<String>? processed;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is TeleporterPost && other.processed == processed;
 
+  @override
+  int get hashCode => processed.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is TeleporterPost &&
-      other.processed == processed;
-
-    @override
-    int get hashCode =>
-        processed.hashCode;
-
-  factory TeleporterPost.fromJson(Map<String, dynamic> json) => _$TeleporterPostFromJson(json);
+  factory TeleporterPost.fromJson(Map<String, dynamic> json) =>
+      _$TeleporterPostFromJson(json);
 
   Map<String, dynamic> toJson() => _$TeleporterPostToJson(this);
 
@@ -53,6 +39,4 @@ class TeleporterPost {
   String toString() {
     return toJson().toString();
   }
-
 }
-

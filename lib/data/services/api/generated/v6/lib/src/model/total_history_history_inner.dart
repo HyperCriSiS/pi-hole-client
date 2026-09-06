@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'total_history_history_inner.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,102 +18,57 @@ part 'total_history_history_inner.g.dart';
 class TotalHistoryHistoryInner {
   /// Returns a new [TotalHistoryHistoryInner] instance.
   TotalHistoryHistoryInner({
+    this.timestamp,
 
-     this.timestamp,
+    this.total,
 
-     this.total,
+    this.cached,
 
-     this.cached,
+    this.blocked,
 
-     this.blocked,
-
-     this.forwarded,
+    this.forwarded,
   });
 
-      /// Timestamp
-  @JsonKey(
-    
-    name: r'timestamp',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Timestamp
+  @JsonKey(name: r'timestamp', required: false, includeIfNull: false)
   final num? timestamp;
 
-
-
-      /// Total number of queries
-  @JsonKey(
-    
-    name: r'total',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Total number of queries
+  @JsonKey(name: r'total', required: false, includeIfNull: false)
   final int? total;
 
-
-
-      /// Number of cached queries
-  @JsonKey(
-    
-    name: r'cached',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Number of cached queries
+  @JsonKey(name: r'cached', required: false, includeIfNull: false)
   final int? cached;
 
-
-
-      /// Number of blocked queries
-  @JsonKey(
-    
-    name: r'blocked',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Number of blocked queries
+  @JsonKey(name: r'blocked', required: false, includeIfNull: false)
   final int? blocked;
 
-
-
-      /// Number of forwarded queries
-  @JsonKey(
-    
-    name: r'forwarded',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Number of forwarded queries
+  @JsonKey(name: r'forwarded', required: false, includeIfNull: false)
   final int? forwarded;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is TotalHistoryHistoryInner &&
+          other.timestamp == timestamp &&
+          other.total == total &&
+          other.cached == cached &&
+          other.blocked == blocked &&
+          other.forwarded == forwarded;
 
+  @override
+  int get hashCode =>
+      timestamp.hashCode +
+      total.hashCode +
+      cached.hashCode +
+      blocked.hashCode +
+      forwarded.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is TotalHistoryHistoryInner &&
-      other.timestamp == timestamp &&
-      other.total == total &&
-      other.cached == cached &&
-      other.blocked == blocked &&
-      other.forwarded == forwarded;
-
-    @override
-    int get hashCode =>
-        timestamp.hashCode +
-        total.hashCode +
-        cached.hashCode +
-        blocked.hashCode +
-        forwarded.hashCode;
-
-  factory TotalHistoryHistoryInner.fromJson(Map<String, dynamic> json) => _$TotalHistoryHistoryInnerFromJson(json);
+  factory TotalHistoryHistoryInner.fromJson(Map<String, dynamic> json) =>
+      _$TotalHistoryHistoryInnerFromJson(json);
 
   Map<String, dynamic> toJson() => _$TotalHistoryHistoryInnerToJson(this);
 
@@ -122,6 +76,4 @@ class TotalHistoryHistoryInner {
   String toString() {
     return toJson().toString();
   }
-
 }
-

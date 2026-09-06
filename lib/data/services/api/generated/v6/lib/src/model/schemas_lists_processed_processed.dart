@@ -10,7 +10,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'schemas_lists_processed_processed.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -20,52 +19,28 @@ part 'schemas_lists_processed_processed.g.dart';
 )
 class SchemasListsProcessedProcessed {
   /// Returns a new [SchemasListsProcessedProcessed] instance.
-  SchemasListsProcessedProcessed({
+  SchemasListsProcessedProcessed({this.success, this.errors});
 
-     this.success,
-
-     this.errors,
-  });
-
-      /// Array of groups that were successfully added to the database. 
-  @JsonKey(
-    
-    name: r'success',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Array of groups that were successfully added to the database.
+  @JsonKey(name: r'success', required: false, includeIfNull: false)
   final List<SchemasListsProcessedProcessedSuccessInner>? success;
 
-
-
-      /// Array of errors that occurred during processing. 
-  @JsonKey(
-    
-    name: r'errors',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Array of errors that occurred during processing.
+  @JsonKey(name: r'errors', required: false, includeIfNull: false)
   final List<SchemasListsProcessedProcessedErrorsInner>? errors;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SchemasListsProcessedProcessed &&
+          other.success == success &&
+          other.errors == errors;
 
+  @override
+  int get hashCode => success.hashCode + errors.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is SchemasListsProcessedProcessed &&
-      other.success == success &&
-      other.errors == errors;
-
-    @override
-    int get hashCode =>
-        success.hashCode +
-        errors.hashCode;
-
-  factory SchemasListsProcessedProcessed.fromJson(Map<String, dynamic> json) => _$SchemasListsProcessedProcessedFromJson(json);
+  factory SchemasListsProcessedProcessed.fromJson(Map<String, dynamic> json) =>
+      _$SchemasListsProcessedProcessedFromJson(json);
 
   Map<String, dynamic> toJson() => _$SchemasListsProcessedProcessedToJson(this);
 
@@ -73,6 +48,4 @@ class SchemasListsProcessedProcessed {
   String toString() {
     return toJson().toString();
   }
-
 }
-

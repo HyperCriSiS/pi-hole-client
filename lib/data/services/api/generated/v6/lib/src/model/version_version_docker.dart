@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'version_version_docker.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,52 +17,30 @@ part 'version_version_docker.g.dart';
 )
 class VersionVersionDocker {
   /// Returns a new [VersionVersionDocker] instance.
-  VersionVersionDocker({
+  VersionVersionDocker({this.local, this.remote});
 
-     this.local,
-
-     this.remote,
-  });
-
-      /// Local Pi-hole Docker image version (`null` if not running in Docker)
-  @JsonKey(
-    
-    name: r'local',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Local Pi-hole Docker image version (`null` if not running in Docker)
+  @JsonKey(name: r'local', required: false, includeIfNull: false)
   final String? local;
 
-
-
-      /// Remote (Docker Hub) Pi-hole Docker image version (`null` if not running in Docker)
-  @JsonKey(
-    
-    name: r'remote',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Remote (Docker Hub) Pi-hole Docker image version (`null` if not running in Docker)
+  @JsonKey(name: r'remote', required: false, includeIfNull: false)
   final String? remote;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is VersionVersionDocker &&
+          other.local == local &&
+          other.remote == remote;
 
+  @override
+  int get hashCode =>
+      (local == null ? 0 : local.hashCode) +
+      (remote == null ? 0 : remote.hashCode);
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is VersionVersionDocker &&
-      other.local == local &&
-      other.remote == remote;
-
-    @override
-    int get hashCode =>
-        (local == null ? 0 : local.hashCode) +
-        (remote == null ? 0 : remote.hashCode);
-
-  factory VersionVersionDocker.fromJson(Map<String, dynamic> json) => _$VersionVersionDockerFromJson(json);
+  factory VersionVersionDocker.fromJson(Map<String, dynamic> json) =>
+      _$VersionVersionDockerFromJson(json);
 
   Map<String, dynamic> toJson() => _$VersionVersionDockerToJson(this);
 
@@ -71,6 +48,4 @@ class VersionVersionDocker {
   String toString() {
     return toJson().toString();
   }
-
 }
-

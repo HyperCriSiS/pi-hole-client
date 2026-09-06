@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'method.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,33 +17,18 @@ part 'method.g.dart';
 )
 class Method {
   /// Returns a new [Method] instance.
-  Method({
+  Method({this.method});
 
-     this.method,
-  });
-
-      /// Request method
-  @JsonKey(
-    
-    name: r'method',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Request method
+  @JsonKey(name: r'method', required: false, includeIfNull: false)
   final String? method;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is Method && other.method == method;
 
-
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is Method &&
-      other.method == method;
-
-    @override
-    int get hashCode =>
-        method.hashCode;
+  @override
+  int get hashCode => method.hashCode;
 
   factory Method.fromJson(Map<String, dynamic> json) => _$MethodFromJson(json);
 
@@ -54,6 +38,4 @@ class Method {
   String toString() {
     return toJson().toString();
   }
-
 }
-

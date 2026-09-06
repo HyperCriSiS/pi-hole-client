@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'schemas_lists_processed_processed_success_inner.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,42 +17,29 @@ part 'schemas_lists_processed_processed_success_inner.g.dart';
 )
 class SchemasListsProcessedProcessedSuccessInner {
   /// Returns a new [SchemasListsProcessedProcessedSuccessInner] instance.
-  SchemasListsProcessedProcessedSuccessInner({
+  SchemasListsProcessedProcessedSuccessInner({this.item});
 
-     this.item,
-  });
-
-      /// Group that was added to the database
-  @JsonKey(
-    
-    name: r'item',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Group that was added to the database
+  @JsonKey(name: r'item', required: false, includeIfNull: false)
   final String? item;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SchemasListsProcessedProcessedSuccessInner && other.item == item;
 
+  @override
+  int get hashCode => item.hashCode;
 
+  factory SchemasListsProcessedProcessedSuccessInner.fromJson(
+    Map<String, dynamic> json,
+  ) => _$SchemasListsProcessedProcessedSuccessInnerFromJson(json);
 
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is SchemasListsProcessedProcessedSuccessInner &&
-      other.item == item;
-
-    @override
-    int get hashCode =>
-        item.hashCode;
-
-  factory SchemasListsProcessedProcessedSuccessInner.fromJson(Map<String, dynamic> json) => _$SchemasListsProcessedProcessedSuccessInnerFromJson(json);
-
-  Map<String, dynamic> toJson() => _$SchemasListsProcessedProcessedSuccessInnerToJson(this);
+  Map<String, dynamic> toJson() =>
+      _$SchemasListsProcessedProcessedSuccessInnerToJson(this);
 
   @override
   String toString() {
     return toJson().toString();
   }
-
 }
-

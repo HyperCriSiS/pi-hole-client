@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'routes.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,33 +18,18 @@ part 'routes.g.dart';
 )
 class Routes {
   /// Returns a new [Routes] instance.
-  Routes({
+  Routes({this.routes});
 
-     this.routes,
-  });
-
-      /// Array of routes
-  @JsonKey(
-    
-    name: r'routes',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Array of routes
+  @JsonKey(name: r'routes', required: false, includeIfNull: false)
   final List<RoutesRoutesInner>? routes;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is Routes && other.routes == routes;
 
-
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is Routes &&
-      other.routes == routes;
-
-    @override
-    int get hashCode =>
-        routes.hashCode;
+  @override
+  int get hashCode => routes.hashCode;
 
   factory Routes.fromJson(Map<String, dynamic> json) => _$RoutesFromJson(json);
 
@@ -55,6 +39,4 @@ class Routes {
   String toString() {
     return toJson().toString();
   }
-
 }
-

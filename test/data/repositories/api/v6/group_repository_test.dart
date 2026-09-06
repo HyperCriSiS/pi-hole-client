@@ -125,20 +125,23 @@ void main() {
   });
 
   group('updateGroup', () {
-    test('should update group successfully through generated service', () async {
-      final result = await repository.updateGroup(
-        'test',
-        comment: 'updated',
-        enabled: false,
-      );
+    test(
+      'should update group successfully through generated service',
+      () async {
+        final result = await repository.updateGroup(
+          'test',
+          comment: 'updated',
+          enabled: false,
+        );
 
-      expect(result.isSuccess(), true);
-      expect(service.lastSid, 'sid123');
-      expect(service.lastReplaceName, 'test');
-      expect(service.lastReplaceBody?.name, isNull);
-      expect(service.lastReplaceBody?.comment, 'updated');
-      expect(service.lastReplaceBody?.enabled, false);
-    });
+        expect(result.isSuccess(), true);
+        expect(service.lastSid, 'sid123');
+        expect(service.lastReplaceName, 'test');
+        expect(service.lastReplaceBody?.name, isNull);
+        expect(service.lastReplaceBody?.comment, 'updated');
+        expect(service.lastReplaceBody?.enabled, false);
+      },
+    );
 
     test('should fail when generated update group request fails', () async {
       service.shouldFailReplace = true;
@@ -149,13 +152,16 @@ void main() {
   });
 
   group('deleteGroup', () {
-    test('should delete group successfully through generated service', () async {
-      final result = await repository.deleteGroup('test');
+    test(
+      'should delete group successfully through generated service',
+      () async {
+        final result = await repository.deleteGroup('test');
 
-      expect(result.isSuccess(), true);
-      expect(service.lastSid, 'sid123');
-      expect(service.lastDeleteName, 'test');
-    });
+        expect(result.isSuccess(), true);
+        expect(service.lastSid, 'sid123');
+        expect(service.lastDeleteName, 'test');
+      },
+    );
 
     test('should fail when generated delete group request fails', () async {
       service.shouldFailDelete = true;

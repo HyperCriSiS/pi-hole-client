@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'config_config_ntp_ipv4.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,50 +17,26 @@ part 'config_config_ntp_ipv4.g.dart';
 )
 class ConfigConfigNtpIpv4 {
   /// Returns a new [ConfigConfigNtpIpv4] instance.
-  ConfigConfigNtpIpv4({
+  ConfigConfigNtpIpv4({this.active, this.address});
 
-     this.active,
-
-     this.address,
-  });
-
-  @JsonKey(
-    
-    name: r'active',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'active', required: false, includeIfNull: false)
   final bool? active;
 
-
-
-  @JsonKey(
-    
-    name: r'address',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'address', required: false, includeIfNull: false)
   final String? address;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ConfigConfigNtpIpv4 &&
+          other.active == active &&
+          other.address == address;
 
+  @override
+  int get hashCode => active.hashCode + address.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is ConfigConfigNtpIpv4 &&
-      other.active == active &&
-      other.address == address;
-
-    @override
-    int get hashCode =>
-        active.hashCode +
-        address.hashCode;
-
-  factory ConfigConfigNtpIpv4.fromJson(Map<String, dynamic> json) => _$ConfigConfigNtpIpv4FromJson(json);
+  factory ConfigConfigNtpIpv4.fromJson(Map<String, dynamic> json) =>
+      _$ConfigConfigNtpIpv4FromJson(json);
 
   Map<String, dynamic> toJson() => _$ConfigConfigNtpIpv4ToJson(this);
 
@@ -69,6 +44,4 @@ class ConfigConfigNtpIpv4 {
   String toString() {
     return toJson().toString();
   }
-
 }
-

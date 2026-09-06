@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'get_domains_inner.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,187 +18,102 @@ part 'get_domains_inner.g.dart';
 class GetDomainsInner {
   /// Returns a new [GetDomainsInner] instance.
   GetDomainsInner({
+    this.domain,
 
-     this.domain,
+    this.unicode,
 
-     this.unicode,
+    this.type,
 
-     this.type,
+    this.kind,
 
-     this.kind,
+    this.comment,
 
-     this.comment,
+    this.groups,
 
-     this.groups,
+    this.enabled = true,
 
-     this.enabled = true,
+    this.id,
 
-     this.id,
+    this.dateAdded,
 
-     this.dateAdded,
-
-     this.dateModified,
+    this.dateModified,
   });
 
-      /// Domain
-  @JsonKey(
-    
-    name: r'domain',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Domain
+  @JsonKey(name: r'domain', required: false, includeIfNull: false)
   final String? domain;
 
-
-
-      /// Unicode domain (may be different from `domain` if punycode-encoding is used)
-  @JsonKey(
-    
-    name: r'unicode',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Unicode domain (may be different from `domain` if punycode-encoding is used)
+  @JsonKey(name: r'unicode', required: false, includeIfNull: false)
   final String? unicode;
 
-
-
-      /// String specifying domain type
-  @JsonKey(
-    
-    name: r'type',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// String specifying domain type
+  @JsonKey(name: r'type', required: false, includeIfNull: false)
   final GetDomainsInnerTypeEnum? type;
 
-
-
-      /// String specifying domain kind
-  @JsonKey(
-    
-    name: r'kind',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// String specifying domain kind
+  @JsonKey(name: r'kind', required: false, includeIfNull: false)
   final GetDomainsInnerKindEnum? kind;
 
-
-
-      /// User-provided free-text comment for this domain
-  @JsonKey(
-    
-    name: r'comment',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// User-provided free-text comment for this domain
+  @JsonKey(name: r'comment', required: false, includeIfNull: false)
   final String? comment;
 
-
-
-      /// Array of group IDs
-  @JsonKey(
-    
-    name: r'groups',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Array of group IDs
+  @JsonKey(name: r'groups', required: false, includeIfNull: false)
   final List<int>? groups;
 
-
-
-      /// Status of domain
+  /// Status of domain
   @JsonKey(
     defaultValue: true,
     name: r'enabled',
     required: false,
     includeIfNull: false,
   )
-
-
   final bool? enabled;
 
-
-
-      /// Database ID
-  @JsonKey(
-    
-    name: r'id',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Database ID
+  @JsonKey(name: r'id', required: false, includeIfNull: false)
   final int? id;
 
-
-
-      /// Unix timestamp of domain addition
-  @JsonKey(
-    
-    name: r'date_added',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Unix timestamp of domain addition
+  @JsonKey(name: r'date_added', required: false, includeIfNull: false)
   final int? dateAdded;
 
-
-
-      /// Unix timestamp of last domain modification
-  @JsonKey(
-    
-    name: r'date_modified',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Unix timestamp of last domain modification
+  @JsonKey(name: r'date_modified', required: false, includeIfNull: false)
   final int? dateModified;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GetDomainsInner &&
+          other.domain == domain &&
+          other.unicode == unicode &&
+          other.type == type &&
+          other.kind == kind &&
+          other.comment == comment &&
+          other.groups == groups &&
+          other.enabled == enabled &&
+          other.id == id &&
+          other.dateAdded == dateAdded &&
+          other.dateModified == dateModified;
 
+  @override
+  int get hashCode =>
+      domain.hashCode +
+      unicode.hashCode +
+      type.hashCode +
+      kind.hashCode +
+      (comment == null ? 0 : comment.hashCode) +
+      groups.hashCode +
+      enabled.hashCode +
+      id.hashCode +
+      dateAdded.hashCode +
+      dateModified.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is GetDomainsInner &&
-      other.domain == domain &&
-      other.unicode == unicode &&
-      other.type == type &&
-      other.kind == kind &&
-      other.comment == comment &&
-      other.groups == groups &&
-      other.enabled == enabled &&
-      other.id == id &&
-      other.dateAdded == dateAdded &&
-      other.dateModified == dateModified;
-
-    @override
-    int get hashCode =>
-        domain.hashCode +
-        unicode.hashCode +
-        type.hashCode +
-        kind.hashCode +
-        (comment == null ? 0 : comment.hashCode) +
-        groups.hashCode +
-        enabled.hashCode +
-        id.hashCode +
-        dateAdded.hashCode +
-        dateModified.hashCode;
-
-  factory GetDomainsInner.fromJson(Map<String, dynamic> json) => _$GetDomainsInnerFromJson(json);
+  factory GetDomainsInner.fromJson(Map<String, dynamic> json) =>
+      _$GetDomainsInnerFromJson(json);
 
   Map<String, dynamic> toJson() => _$GetDomainsInnerToJson(this);
 
@@ -207,42 +121,40 @@ class GetDomainsInner {
   String toString() {
     return toJson().toString();
   }
-
 }
 
 /// String specifying domain type
 enum GetDomainsInnerTypeEnum {
-    /// String specifying domain type
-@JsonValue(r'allow')
-allow(r'allow'),
-    /// String specifying domain type
-@JsonValue(r'deny')
-deny(r'deny');
+  /// String specifying domain type
+  @JsonValue(r'allow')
+  allow(r'allow'),
 
-const GetDomainsInnerTypeEnum(this.value);
+  /// String specifying domain type
+  @JsonValue(r'deny')
+  deny(r'deny');
 
-final String value;
+  const GetDomainsInnerTypeEnum(this.value);
 
-@override
-String toString() => value;
+  final String value;
+
+  @override
+  String toString() => value;
 }
-
 
 /// String specifying domain kind
 enum GetDomainsInnerKindEnum {
-    /// String specifying domain kind
-@JsonValue(r'exact')
-exact(r'exact'),
-    /// String specifying domain kind
-@JsonValue(r'regex')
-regex(r'regex');
+  /// String specifying domain kind
+  @JsonValue(r'exact')
+  exact(r'exact'),
 
-const GetDomainsInnerKindEnum(this.value);
+  /// String specifying domain kind
+  @JsonValue(r'regex')
+  regex(r'regex');
 
-final String value;
+  const GetDomainsInnerKindEnum(this.value);
 
-@override
-String toString() => value;
+  final String value;
+
+  @override
+  String toString() => value;
 }
-
-

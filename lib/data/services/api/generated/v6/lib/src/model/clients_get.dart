@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'clients_get.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,35 +18,21 @@ part 'clients_get.g.dart';
 )
 class ClientsGet {
   /// Returns a new [ClientsGet] instance.
-  ClientsGet({
+  ClientsGet({this.clients});
 
-     this.clients,
-  });
-
-      /// Array of clients
-  @JsonKey(
-    
-    name: r'clients',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Array of clients
+  @JsonKey(name: r'clients', required: false, includeIfNull: false)
   final List<ClientsGetClientsInner>? clients;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is ClientsGet && other.clients == clients;
 
+  @override
+  int get hashCode => clients.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is ClientsGet &&
-      other.clients == clients;
-
-    @override
-    int get hashCode =>
-        clients.hashCode;
-
-  factory ClientsGet.fromJson(Map<String, dynamic> json) => _$ClientsGetFromJson(json);
+  factory ClientsGet.fromJson(Map<String, dynamic> json) =>
+      _$ClientsGetFromJson(json);
 
   Map<String, dynamic> toJson() => _$ClientsGetToJson(this);
 
@@ -55,6 +40,4 @@ class ClientsGet {
   String toString() {
     return toJson().toString();
   }
-
 }
-

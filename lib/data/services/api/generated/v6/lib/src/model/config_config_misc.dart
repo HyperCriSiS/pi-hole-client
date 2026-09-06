@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'config_config_misc.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -20,193 +19,105 @@ part 'config_config_misc.g.dart';
 class ConfigConfigMisc {
   /// Returns a new [ConfigConfigMisc] instance.
   ConfigConfigMisc({
+    this.nice,
 
-     this.nice,
+    this.delayStartup,
 
-     this.delayStartup,
+    this.addr2line,
 
-     this.addr2line,
+    this.etcDnsmasqD,
 
-     this.etcDnsmasqD,
+    this.privacylevel,
 
-     this.privacylevel,
+    this.dnsmasqLines,
 
-     this.dnsmasqLines,
+    this.extraLogging,
 
-     this.extraLogging,
+    this.readOnly,
 
-     this.readOnly,
+    this.normalizeCPU,
 
-     this.normalizeCPU,
+    this.hideDnsmasqWarn,
 
-     this.hideDnsmasqWarn,
+    this.hideConnectionError,
 
-     this.check,
+    this.check,
   });
 
-  @JsonKey(
-    
-    name: r'nice',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'nice', required: false, includeIfNull: false)
   final int? nice;
 
-
-
-  @JsonKey(
-    
-    name: r'delay_startup',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'delay_startup', required: false, includeIfNull: false)
   final int? delayStartup;
 
-
-
-  @JsonKey(
-    
-    name: r'addr2line',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'addr2line', required: false, includeIfNull: false)
   final bool? addr2line;
 
-
-
-  @JsonKey(
-    
-    name: r'etc_dnsmasq_d',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'etc_dnsmasq_d', required: false, includeIfNull: false)
   final bool? etcDnsmasqD;
 
-
-
-  @JsonKey(
-    
-    name: r'privacylevel',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'privacylevel', required: false, includeIfNull: false)
   final int? privacylevel;
 
-
-
-  @JsonKey(
-    
-    name: r'dnsmasq_lines',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'dnsmasq_lines', required: false, includeIfNull: false)
   final List<String>? dnsmasqLines;
 
-
-
-  @JsonKey(
-    
-    name: r'extraLogging',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'extraLogging', required: false, includeIfNull: false)
   final bool? extraLogging;
 
-
-
-  @JsonKey(
-    
-    name: r'readOnly',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'readOnly', required: false, includeIfNull: false)
   final bool? readOnly;
 
-
-
-  @JsonKey(
-    
-    name: r'normalizeCPU',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'normalizeCPU', required: false, includeIfNull: false)
   final bool? normalizeCPU;
 
-
-
-  @JsonKey(
-    
-    name: r'hide_dnsmasq_warn',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'hide_dnsmasq_warn', required: false, includeIfNull: false)
   final bool? hideDnsmasqWarn;
 
-
-
   @JsonKey(
-    
-    name: r'check',
+    name: r'hide_connection_error',
     required: false,
     includeIfNull: false,
   )
+  final bool? hideConnectionError;
 
-
+  @JsonKey(name: r'check', required: false, includeIfNull: false)
   final ConfigConfigMiscCheck? check;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ConfigConfigMisc &&
+          other.nice == nice &&
+          other.delayStartup == delayStartup &&
+          other.addr2line == addr2line &&
+          other.etcDnsmasqD == etcDnsmasqD &&
+          other.privacylevel == privacylevel &&
+          other.dnsmasqLines == dnsmasqLines &&
+          other.extraLogging == extraLogging &&
+          other.readOnly == readOnly &&
+          other.normalizeCPU == normalizeCPU &&
+          other.hideDnsmasqWarn == hideDnsmasqWarn &&
+          other.hideConnectionError == hideConnectionError &&
+          other.check == check;
 
+  @override
+  int get hashCode =>
+      nice.hashCode +
+      delayStartup.hashCode +
+      addr2line.hashCode +
+      etcDnsmasqD.hashCode +
+      privacylevel.hashCode +
+      dnsmasqLines.hashCode +
+      extraLogging.hashCode +
+      readOnly.hashCode +
+      normalizeCPU.hashCode +
+      hideDnsmasqWarn.hashCode +
+      hideConnectionError.hashCode +
+      check.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is ConfigConfigMisc &&
-      other.nice == nice &&
-      other.delayStartup == delayStartup &&
-      other.addr2line == addr2line &&
-      other.etcDnsmasqD == etcDnsmasqD &&
-      other.privacylevel == privacylevel &&
-      other.dnsmasqLines == dnsmasqLines &&
-      other.extraLogging == extraLogging &&
-      other.readOnly == readOnly &&
-      other.normalizeCPU == normalizeCPU &&
-      other.hideDnsmasqWarn == hideDnsmasqWarn &&
-      other.check == check;
-
-    @override
-    int get hashCode =>
-        nice.hashCode +
-        delayStartup.hashCode +
-        addr2line.hashCode +
-        etcDnsmasqD.hashCode +
-        privacylevel.hashCode +
-        dnsmasqLines.hashCode +
-        extraLogging.hashCode +
-        readOnly.hashCode +
-        normalizeCPU.hashCode +
-        hideDnsmasqWarn.hashCode +
-        check.hashCode;
-
-  factory ConfigConfigMisc.fromJson(Map<String, dynamic> json) => _$ConfigConfigMiscFromJson(json);
+  factory ConfigConfigMisc.fromJson(Map<String, dynamic> json) =>
+      _$ConfigConfigMiscFromJson(json);
 
   Map<String, dynamic> toJson() => _$ConfigConfigMiscToJson(this);
 
@@ -214,6 +125,4 @@ class ConfigConfigMisc {
   String toString() {
     return toJson().toString();
   }
-
 }
-

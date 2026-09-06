@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'database_summary.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,85 +18,49 @@ part 'database_summary.g.dart';
 class DatabaseSummary {
   /// Returns a new [DatabaseSummary] instance.
   DatabaseSummary({
+    this.sumQueries,
 
-     this.sumQueries,
+    this.sumBlocked,
 
-     this.sumBlocked,
+    this.percentBlocked,
 
-     this.percentBlocked,
-
-     this.totalClients,
+    this.totalClients,
   });
 
-      /// Total number of queries
-  @JsonKey(
-    
-    name: r'sum_queries',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Total number of queries
+  @JsonKey(name: r'sum_queries', required: false, includeIfNull: false)
   final int? sumQueries;
 
-
-
-      /// Total number of blocked queries
-  @JsonKey(
-    
-    name: r'sum_blocked',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Total number of blocked queries
+  @JsonKey(name: r'sum_blocked', required: false, includeIfNull: false)
   final int? sumBlocked;
 
-
-
-      /// Percentage of blocked queries
-  @JsonKey(
-    
-    name: r'percent_blocked',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Percentage of blocked queries
+  @JsonKey(name: r'percent_blocked', required: false, includeIfNull: false)
   final num? percentBlocked;
 
-
-
-      /// Total number of clients
-  @JsonKey(
-    
-    name: r'total_clients',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Total number of clients
+  @JsonKey(name: r'total_clients', required: false, includeIfNull: false)
   final int? totalClients;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is DatabaseSummary &&
+          other.sumQueries == sumQueries &&
+          other.sumBlocked == sumBlocked &&
+          other.percentBlocked == percentBlocked &&
+          other.totalClients == totalClients;
 
+  @override
+  int get hashCode =>
+      sumQueries.hashCode +
+      sumBlocked.hashCode +
+      percentBlocked.hashCode +
+      totalClients.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is DatabaseSummary &&
-      other.sumQueries == sumQueries &&
-      other.sumBlocked == sumBlocked &&
-      other.percentBlocked == percentBlocked &&
-      other.totalClients == totalClients;
-
-    @override
-    int get hashCode =>
-        sumQueries.hashCode +
-        sumBlocked.hashCode +
-        percentBlocked.hashCode +
-        totalClients.hashCode;
-
-  factory DatabaseSummary.fromJson(Map<String, dynamic> json) => _$DatabaseSummaryFromJson(json);
+  factory DatabaseSummary.fromJson(Map<String, dynamic> json) =>
+      _$DatabaseSummaryFromJson(json);
 
   Map<String, dynamic> toJson() => _$DatabaseSummaryToJson(this);
 
@@ -105,6 +68,4 @@ class DatabaseSummary {
   String toString() {
     return toJson().toString();
   }
-
 }
-
