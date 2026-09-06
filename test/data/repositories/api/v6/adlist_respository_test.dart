@@ -72,10 +72,10 @@ class _FakePiholeV6Service extends PiholeV6Service {
   String? lastFetchList;
   String? lastFetchType;
   String? lastAddType;
-  ListsPost? lastAddBody;
+  Post4? lastAddBody;
   String? lastReplaceList;
   String? lastReplaceType;
-  ListsPut? lastReplaceBody;
+  Put4? lastReplaceBody;
   String? lastDeleteList;
   String? lastDeleteType;
   String? lastSearchDomain;
@@ -113,7 +113,7 @@ class _FakePiholeV6Service extends PiholeV6Service {
   @override
   Future<Result<ReplaceLists200Response>> addList({
     required String type,
-    ListsPost? body,
+    Post4? body,
   }) async {
     lastAddType = type;
     lastAddBody = body;
@@ -127,7 +127,7 @@ class _FakePiholeV6Service extends PiholeV6Service {
   Future<Result<ReplaceLists200Response>> replaceList({
     required String list,
     required String type,
-    ListsPut? body,
+    Put4? body,
   }) async {
     lastReplaceList = list;
     lastReplaceType = type;
