@@ -4,10 +4,17 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - 'website/**'
+      - 'docs/**'
+      - 'ROADMAP.md'
+      - 'UPSTREAM_TRIAGE.md'
   pull_request:
     paths-ignore:
       - 'website/**'
       - 'docs/**'
+      - 'ROADMAP.md'
+      - 'UPSTREAM_TRIAGE.md'
 
 env:
   api_level: 35
@@ -23,6 +30,7 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
     - name: Checkout
