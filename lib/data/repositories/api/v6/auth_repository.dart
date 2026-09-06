@@ -1,8 +1,12 @@
 import 'package:pi_hole_client/data/mapper/v6/auth_mapper.dart';
+import 'package:pi_hole_client/data/model/v6/auth/auth.dart' as legacy_auth;
+import 'package:pi_hole_client/data/model/v6/auth/sessions.dart'
+    as legacy_sessions;
 import 'package:pi_hole_client/data/repositories/api/interfaces/auth_repository.dart';
 import 'package:pi_hole_client/data/repositories/api/v6/base_v6_sid_repository.dart';
 import 'package:pi_hole_client/data/repositories/utils/call_with_retry.dart';
 import 'package:pi_hole_client/data/services/api/pihole_v6_api_client.dart';
+import 'package:pi_hole_client/data/services/api/wrappers/pihole_v6_service.dart';
 import 'package:pi_hole_client/domain/model/auth/auth.dart';
 import 'package:pi_hole_client/utils/widget_channel.dart';
 import 'package:result_dart/result_dart.dart';
@@ -10,15 +14,20 @@ import 'package:result_dart/result_dart.dart';
 class AuthRepositoryV6 extends BaseV6SidRepository implements AuthRepository {
   AuthRepositoryV6({
     required PiholeV6ApiClient client,
+    required PiholeV6Service service,
     required super.sessionCache,
-  }) : _client = client;
+  }) : _client = client,
+       _service = service;
 
   final PiholeV6ApiClient _client;
+  final PiholeV6Service _service;
 
   @override
   Future<Result<Auth>> createSession(String password, {String? totp}) async {
     return runWithResultRetry<Auth>(
-      // POST /api/auth is non-idempotent - retrying creates duplicate sessions
+      // POST /api/auth is non-idempotent - retrying creates duplicate sessions.
+      // Keep this on the handwritten client because the generated Password
+      // schema does not expose Pi-hole's TOTP field.
       maxRetries: 0,
       action: () async {
         final result = await _client.postAuth(
@@ -44,14 +53,29 @@ class AuthRepositoryV6 extends BaseV6SidRepository implements AuthRepository {
 
   @override
   Future<Result<Auth>> getAuth({bool useSid = true}) async {
-    // [useSid] false reads the server's 2FA status unauthenticated.
+    // `useSid: false` must stay handwritten. PiholeV6Service retains the most
+    // recently configured generated-client API key and has no public "clear
+    // sid" operation, so using it here could accidentally authenticate the
+    // server 2FA-status probe.
+    if (!useSid) {
+      return runWithResultRetry<Auth>(
+        action: () async {
+          final result = await _client.getAuth(null);
+          return result.map((e) => e.toDomain());
+        },
+      );
+    }
+
     return runWithResultRetry<Auth>(
       action: () async {
-        final sid = useSid ? await getSid() : null;
-        final result = await _client.getAuth(sid);
-        return result.map((e) => e.toDomain());
+        final sid = await getSid();
+        _service.setSid(sid);
+        final result = await _service.getAuth();
+        return result.map(
+          (e) => legacy_auth.Session.fromJson(e.toJson()).toDomain(),
+        );
       },
-      onRetry: useSid ? (_, e) => renewSidIfExpired(e) : null,
+      onRetry: (_, e) => renewSidIfExpired(e),
     );
   }
 
@@ -60,8 +84,8 @@ class AuthRepositoryV6 extends BaseV6SidRepository implements AuthRepository {
     return runWithResultRetry<Unit>(
       action: () async {
         final sid = await getSid();
-        final result = await _client.deleteAuth(sid);
-        return result.map((_) => unit);
+        _service.setSid(sid);
+        return _service.deleteAuth();
       },
       // Known limitation: on a failed DELETE this renews (creates a throwaway
       // session) instead of retrying the same delete, so a genuinely failed
@@ -76,8 +100,11 @@ class AuthRepositoryV6 extends BaseV6SidRepository implements AuthRepository {
     return runWithResultRetry<List<AuthSession>>(
       action: () async {
         final sid = await getSid();
-        final result = await _client.getAuthSessions(sid);
-        return result.map((e) => e.toDomain());
+        _service.setSid(sid);
+        final result = await _service.getAuthSessions();
+        return result.map(
+          (e) => legacy_sessions.AuthSessions.fromJson(e.toJson()).toDomain(),
+        );
       },
       onRetry: (_, e) => renewSidIfExpired(e),
     );
@@ -88,8 +115,8 @@ class AuthRepositoryV6 extends BaseV6SidRepository implements AuthRepository {
     return runWithResultRetry<Unit>(
       action: () async {
         final sid = await getSid();
-        final result = await _client.deleteAuthSession(sid, id: id);
-        return result.map((_) => unit);
+        _service.setSid(sid);
+        return _service.deleteAuthSession(id: id);
       },
       onRetry: (_, e) => renewSidIfExpired(e),
     );
