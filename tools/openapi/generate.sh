@@ -24,7 +24,8 @@ if ! grep -Eq "\"version\"[[:space:]]*:[[:space:]]*\"$OPENAPI_GENERATOR_VERSION\
 fi
 
 echo "🔧 Generating v6 API client with wrapper $OPENAPI_GENERATOR_WRAPPER_VERSION and generator $OPENAPI_GENERATOR_VERSION..."
-pnpm dlx "@openapitools/openapi-generator-cli@$OPENAPI_GENERATOR_WRAPPER_VERSION" generate \
+pnpm --package="@openapitools/openapi-generator-cli@$OPENAPI_GENERATOR_WRAPPER_VERSION" \
+    dlx openapi-generator-cli generate \
     -c "$SCRIPT_DIR/openapi-generator-config.yaml"
 
 echo "🔧 Fixing generated pubspec.yaml..."

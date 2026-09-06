@@ -32,7 +32,7 @@ if [ "$ACTUAL_FTL_COMMIT" != "$FTL_COMMIT" ]; then
 fi
 
 echo "📦 Bundling specs with @redocly/cli@$REDOCLY_CLI_VERSION..."
-pnpm dlx "@redocly/cli@$REDOCLY_CLI_VERSION" bundle \
+pnpm --package="@redocly/cli@$REDOCLY_CLI_VERSION" dlx redocly bundle \
     "$TEMP_DIR/$SPECS_PATH/main.yaml" \
     -o "$SPEC_DIR/upstream-bundled.yaml"
 
