@@ -1,74 +1,109 @@
-name: Temporary roadmap synchronization
+name: Compile Linux build manually
 
 on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  sync:
+  get-version:
+    name: Extract Version from pubspec.yaml
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    outputs:
+      VERSION_NAME: ${{ steps.extract_version.outputs.VERSION_NAME }}
+      VERSION_NUMBER: ${{ steps.extract_version.outputs.VERSION_NUMBER }}
     steps:
-      - name: Checkout branch
+      - name: Checkout code
         uses: actions/checkout@v7
 
-      - name: Synchronize roadmap and upstream triage
-        shell: bash
+      - name: Extract version from pubspec.yaml
+        id: extract_version
         run: |
-          python - <<'PY'
-          from pathlib import Path
+          VERSION_FULL=$(grep '^version:' pubspec.yaml | sed 's/version: //')
+          VERSION_NAME=$(echo $VERSION_FULL | cut -d '+' -f 1)
+          VERSION_NUMBER=$(echo $VERSION_FULL | cut -d '+' -f 2)
+          echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
+          echo "VERSION_NUMBER=$VERSION_NUMBER" >> $GITHUB_ENV
+          echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_OUTPUT
+          echo "VERSION_NUMBER=$VERSION_NUMBER" >> $GITHUB_OUTPUT
+          echo "Extracted Version Name: $VERSION_NAME"
+          echo "Extracted Version Number: $VERSION_NUMBER"
 
-          roadmap = Path('ROADMAP.md')
-          text = roadmap.read_text()
-          replacements = [
-              (
-                  '- [ ] Keep `/api/info/ftl` on the handwritten client for now: the generated schema models v6.3 domain/regex counters only as `{total, enabled}` objects, while the existing transport model intentionally accepts the v6.2 integer representation as well.',
-                  '- [ ] Keep `/api/info/ftl` on the handwritten client for now: the generated schema models domain/regex counters only as `{total, enabled}` objects, while the existing transport model intentionally accepts the v6.2 integer representation as well; the pinned upstream FTL v6.7 spec was re-audited and still does not model that compatibility union.',
-              ),
-              (
-                  '- [ ] Continue #639 only endpoint-by-endpoint where the generated schema preserves behavior. Keep `/api/info/client` on the handwritten client because the generated schema omits request metadata used by the current model, and keep authentication on the handwritten path while generated `POST /auth` lacks TOTP support.',
-                  '- [x] Migrate `/api/info/client` to the generated service after verifying the generated response already preserves `remoteAddr`, HTTP version, method, headers and timing metadata; retain the proven legacy/domain mapping through generated-JSON roundtrip and shared SID renewal/retry coverage.\n- [ ] Keep authentication on the handwritten path while generated `POST /auth` lacks a TOTP request field.\n- [ ] Refresh the generated OpenAPI baseline reproducibly from the current Pi-hole API 6.4.1 snapshot to pinned FTL v6.7 before relying on newer schemas: pin the exact FTL commit plus Redocly/OpenAPI wrapper versions, regenerate with the already pinned OpenAPI Generator 7.19.0, and re-audit each remaining handwritten endpoint before migration.',
-              ),
-              (
-                  '**Not fully completed.** #442 remains blocked on a fresh Android 16 reproduction/current stack. #570 is implemented and CI-validated through the v6 repository and Local DNS UI layers. #134 remains the active distribution gate: secret-free unsigned packaging, Android scanner compliance and the download-free native-asset path are implemented and CI-validated; the required independent-fork package identity remains before downstream F-Droid metadata can be submitted. Deterministic #639 generated-client migration can continue in parallel only where schema and behavior parity are proven.',
-                  '**Not fully completed.** #442 remains blocked on a fresh Android 16 reproduction/current stack. #570 is implemented and CI-validated through the v6 repository and Local DNS UI layers. #134 remains the active distribution gate: secret-free unsigned packaging, Android scanner compliance and the download-free native-asset path are implemented and CI-validated; the required independent-fork package identity remains before downstream F-Droid metadata can be submitted. Deterministic #639 generated-client migration has now also moved `/api/info/client` to the generated service; the remaining migration work is limited to documented schema/behavior/encoding blockers plus a pinned FTL v6.7 OpenAPI refresh.',
-              ),
-          ]
-          for old, new in replacements:
-              if text.count(old) != 1:
-                  raise SystemExit(f'Unexpected ROADMAP match count for: {old[:80]!r}')
-              text = text.replace(old, new, 1)
-          roadmap.write_text(text)
+  build-linux:
+    name: Build Linux .tar.gz and .deb
+    runs-on: ubuntu-latest
+    needs: get-version
+    env:
+      VERSION_NAME: ${{ needs.get-version.outputs.VERSION_NAME }}
+      VERSION_NUMBER: ${{ needs.get-version.outputs.VERSION_NUMBER }}
+      LINUX_RELEASE_PATH: build/linux/x64/release/bundle
+      DEBIAN_RELEASE_PATH: build/linux/x64/release/debian
 
-          triage = Path('UPSTREAM_TRIAGE.md')
-          text = triage.read_text()
-          replacements = [
-              (
-                  '| #639 | Pi-hole v6 API | **In progress in `main`.** Generated-client migration now covers the parity-verified info/history/stats paths, `/api/queries` with legacy `start` pagination preserved, network-device reads/deletion, DNS actions, DHCP, DNS blocking, DNS query-logging config reads, and Local DNS/CNAME config reads/updates. Keep `/api/info/ftl`, `/api/info/client`, auth, detailed network gateway, ARP/network fallback flushing, gravity streaming, and Local DNS add/delete on the handwritten path until their compatibility/schema/encoding gaps are resolved. |',
-                  '| #639 | Pi-hole v6 API | **In progress in `main`.** Generated-client migration now covers the parity-verified info paths including `/api/info/client`, history/stats, `/api/queries` with legacy `start` pagination preserved, network-device reads/deletion, DNS actions, DHCP, DNS blocking, DNS query-logging config reads, and Local DNS/CNAME config reads/updates. Keep `/api/info/ftl`, auth, detailed network gateway, ARP/network fallback flushing, gravity streaming, and Local DNS add/delete handwritten until their compatibility/schema/encoding gaps are resolved. The generated snapshot is still Pi-hole API 6.4.1; a reproducible refresh to pinned FTL v6.7 is the next generator-level step. |',
-              ),
-              (
-                  '6. #639/#352: incremental generated-v6 migration remains active on `main`; the current parity-safe info/history/stats/queries/network/DHCP/DNS/config slices are integrated and validated, while documented compatibility gaps stay handwritten. #570 is complete. #134 source-build work is CI-validated but downstream submission remains blocked on the required independent-fork package identity.',
-                  '6. #639/#352: incremental generated-v6 migration remains active on `main`; `/api/info/client` is now generated as well, and the remaining handwritten paths are explicit compatibility/schema/encoding holds. Refresh the 6.4.1 generated snapshot reproducibly to pinned FTL v6.7 before re-auditing those holds. #570 is complete. #134 source-build work is CI-validated but downstream submission remains blocked on the required independent-fork package identity.',
-              ),
-          ]
-          for old, new in replacements:
-              if text.count(old) != 1:
-                  raise SystemExit(f'Unexpected TRIAGE match count for: {old[:80]!r}')
-              text = text.replace(old, new, 1)
-          triage.write_text(text)
-          PY
-          git diff --check
-          git diff -- ROADMAP.md UPSTREAM_TRIAGE.md
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
 
-      - name: Commit docs synchronization
-        shell: bash
+      - name: Install Linux dependencies
         run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add ROADMAP.md UPSTREAM_TRIAGE.md
-          git diff --cached --quiet && { echo '::error::No documentation changes produced'; exit 1; }
-          git commit -m 'docs: sync generated-v6 migration status'
-          git push origin HEAD:${GITHUB_REF_NAME}
+          sudo apt update
+          sudo apt install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libsecret-1-dev libjsoncpp-dev
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+          flutter-version: 3.44.1
+
+      - run: flutter clean
+      - run: flutter pub get
+
+      - name: Copy .env file
+        run: cp .env.sample .env
+
+      - name: Generate files
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Build Linux
+        run: flutter build linux --release
+
+      - name: Prepare .tar.gz package
+        run: |
+          cp assets/img/pi-hole-client-icon.png $LINUX_RELEASE_PATH
+          cp linux/io.github.tsutsu3.pi_hole_client.desktop $LINUX_RELEASE_PATH
+          tar czf PiHoleClient_${{ env.VERSION_NAME }}_Linux_x64.tar.gz -C $LINUX_RELEASE_PATH .
+
+      - name: Prepare Debian package
+        run: |
+          mkdir -p $DEBIAN_RELEASE_PATH/DEBIAN
+          mkdir -p $DEBIAN_RELEASE_PATH/usr/bin
+          mkdir -p $DEBIAN_RELEASE_PATH/usr/lib/pi-hole-client
+          mkdir -p $DEBIAN_RELEASE_PATH/usr/share/applications
+          mkdir -p $DEBIAN_RELEASE_PATH/usr/share/icons/hicolor/512x512/apps
+
+          cp -r $LINUX_RELEASE_PATH/* $DEBIAN_RELEASE_PATH/usr/lib/pi-hole-client
+          ln -s /usr/lib/pi-hole-client/pi-hole-client $DEBIAN_RELEASE_PATH/usr/bin/pi-hole-client
+          cp linux/io.github.tsutsu3.pi_hole_client.desktop $DEBIAN_RELEASE_PATH/usr/share/applications
+          cp assets/img/pi-hole-client-icon.png $DEBIAN_RELEASE_PATH/usr/share/icons/hicolor/512x512/apps/io.github.tsutsu3.pi_hole_client.png
+
+          cat > $DEBIAN_RELEASE_PATH/DEBIAN/control <<EOF
+          Package: pi-hole-client
+          Version: ${{ env.VERSION_NAME }}
+          Section: utils
+          Priority: optional
+          Architecture: amd64
+          Depends: libgtk-3-0, libsecret-1-0, libjsoncpp25
+          Maintainer: tsutsu3 <tsutsu3@example.com>
+          Description: A cross-platform Pi-hole client
+          EOF
+
+          dpkg-deb --build $DEBIAN_RELEASE_PATH PiHoleClient_${{ env.VERSION_NAME }}_Linux_x64.deb
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: linux
+          path: |
+            PiHoleClient_${{ env.VERSION_NAME }}_Linux_x64.tar.gz
+            PiHoleClient_${{ env.VERSION_NAME }}_Linux_x64.deb
