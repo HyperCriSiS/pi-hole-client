@@ -8,7 +8,7 @@ Maintain and improve the unofficial Pi-hole client while upstream activity is li
 
 **Status: in progress**
 
-The active maintenance branch is `dev` and is tracked by PR #2 into `main`. `UPSTREAM_TRIAGE.md` remains the detailed upstream issue/PR triage reference; this file is the project-level execution roadmap and source of truth for future work.
+The active maintenance branch is `dev`. The former long-lived PR #2 was superseded by the validated snapshot merged through PR #8 on 2026-09-01; subsequent `dev` work should be integrated through fresh, scoped PRs into `main`. `UPSTREAM_TRIAGE.md` remains the detailed upstream issue/PR triage reference; this file is the project-level execution roadmap and source of truth for future work.
 
 ## Completed foundation
 
