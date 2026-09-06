@@ -85,6 +85,7 @@ class RepositoryBundleFactory {
           ),
           config: ConfigRepositoryV6(
             client: client,
+            service: generatedService,
             sessionCache: sessionCache,
           ),
           dhcp: DhcpRepositoryV6(
