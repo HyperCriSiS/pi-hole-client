@@ -14,10 +14,6 @@ jobs:
       - name: Checkout branch
         uses: actions/checkout@v7
 
-      - name: Restore canonical main workflow before dependency resolution
-        shell: bash
-        run: git checkout origin/main -- .github/workflows/manual-build-linux.yaml
-
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
