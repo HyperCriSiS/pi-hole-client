@@ -151,6 +151,9 @@ jobs:
       - run: flutter clean
       - run: flutter pub get
 
+      - name: Verify lockfile stability
+        run: git diff --exit-code -- pubspec.lock
+
       - name: Copy .env file
         run: cp .env.sample .env
 
