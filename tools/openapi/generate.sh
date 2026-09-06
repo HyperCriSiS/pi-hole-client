@@ -3,14 +3,15 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$SCRIPT_DIR/../.."
+OPENAPI_GENERATOR_CLI_VERSION="${OPENAPI_GENERATOR_CLI_VERSION:-2.41.0}"
 
 # Run from project root so relative paths in config work
 cd "$PROJECT_ROOT"
 
 GENERATED_PKG="$PROJECT_ROOT/lib/data/services/api/generated/v6"
 
-echo "🔧 Generating v6 API client..."
-pnpm dlx @openapitools/openapi-generator-cli generate -c "$SCRIPT_DIR/openapi-generator-config.yaml"
+echo "🔧 Generating v6 API client with @openapitools/openapi-generator-cli@$OPENAPI_GENERATOR_CLI_VERSION..."
+pnpm dlx "@openapitools/openapi-generator-cli@$OPENAPI_GENERATOR_CLI_VERSION" generate -c "$SCRIPT_DIR/openapi-generator-config.yaml"
 
 echo "🔧 Fixing generated pubspec.yaml..."
 sed -i "s/sdk: '>=3.5.0 <4.0.0'/sdk: '>=3.8.0 <4.0.0'/" "$GENERATED_PKG/pubspec.yaml"
