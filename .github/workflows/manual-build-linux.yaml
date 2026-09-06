@@ -29,26 +29,27 @@ jobs:
       - name: Regenerate root artifacts
         run: dart run build_runner build --delete-conflicting-outputs
 
-      - name: Verify isolated drift
+      - name: Verify isolated generated drift
         run: |
           changed=$(git status --short | awk '{print $2}')
           echo "$changed"
-          unexpected=$(printf '%s\n' "$changed" | grep -v '^test/widgets/helpers.mocks.dart$' || true)
+          unexpected=$(printf '%s\n' "$changed" | grep -Ev '^(test/widgets/helpers\.mocks\.dart|macos/Flutter/GeneratedPluginRegistrant\.swift)$' || true)
           if [ -n "$unexpected" ]; then
             echo '::error::Root codegen changed unexpected paths:'
             echo "$unexpected"
             exit 1
           fi
           git diff --check
+          git diff -- test/widgets/helpers.mocks.dart macos/Flutter/GeneratedPluginRegistrant.swift
 
-      - name: Commit canonical generated mock
+      - name: Commit canonical generated artifacts
         run: |
-          if git diff --quiet -- test/widgets/helpers.mocks.dart; then
-            echo 'No generated mock drift to commit.'
+          if git diff --quiet -- test/widgets/helpers.mocks.dart macos/Flutter/GeneratedPluginRegistrant.swift; then
+            echo 'No generated drift to commit.'
             exit 0
           fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add test/widgets/helpers.mocks.dart
-          git commit -m 'test: normalize generated widget mocks'
+          git add test/widgets/helpers.mocks.dart macos/Flutter/GeneratedPluginRegistrant.swift
+          git commit -m 'build: normalize generated root artifacts'
           git push origin HEAD:maintenance/root-codegen-reproducibility
