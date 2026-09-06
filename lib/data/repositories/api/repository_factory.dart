@@ -104,7 +104,11 @@ class RepositoryBundleFactory {
             service: generatedService,
             sessionCache: sessionCache,
           ),
-          group: GroupRepositoryV6(client: client, sessionCache: sessionCache),
+          group: GroupRepositoryV6(
+            client: client,
+            service: generatedService,
+            sessionCache: sessionCache,
+          ),
           localDns: LocalDnsRepositoryV6(
             client: client,
             sessionCache: sessionCache,
