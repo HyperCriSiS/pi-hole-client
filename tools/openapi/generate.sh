@@ -27,6 +27,12 @@ cp "$SCRIPT_DIR/templates/string_or_list.dart" "$GENERATED_PKG/lib/src/model/str
 echo "🔧 Fixing non-const default values..."
 find "$GENERATED_PKG/lib" -name "*.dart" -exec sed -i 's/= \(\[[^]]*\]\),$/= const \1,/' {} \;
 
+# Upstream descriptions can contain trailing spaces which OpenAPI Generator copies
+# into Dart doc comments/signatures. Normalize only line-ending whitespace so
+# generated output remains diff-check clean without reformatting the whole package.
+echo "🔧 Normalizing generated Dart trailing whitespace..."
+find "$GENERATED_PKG/lib" -name "*.dart" -exec sed -i 's/[[:space:]]\+$//' {} \;
+
 echo "🧹 Removing unnecessary generated directories..."
 rm -rf "$GENERATED_PKG/test"
 rm -rf "$GENERATED_PKG/doc"
