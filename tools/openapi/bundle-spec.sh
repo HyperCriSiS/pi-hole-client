@@ -25,7 +25,7 @@ git -C "$TEMP_DIR" checkout --detach FETCH_HEAD
 cd "$SCRIPT_DIR"
 
 echo "📦 Bundling specs with @redocly/cli@$REDOCLY_CLI_VERSION..."
-pnpm dlx "@redocly/cli@$REDOCLY_CLI_VERSION" bundle "$TEMP_DIR/$SPECS_PATH/main.yaml" -o "$SPEC_DIR/upstream-bundled.yaml"
+pnpm --package="@redocly/cli@$REDOCLY_CLI_VERSION" dlx redocly bundle "$TEMP_DIR/$SPECS_PATH/main.yaml" -o "$SPEC_DIR/upstream-bundled.yaml"
 
 echo "🧹 Cleaning up..."
 rm -rf "$TEMP_DIR"
