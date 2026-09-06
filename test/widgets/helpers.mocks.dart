@@ -486,6 +486,12 @@ class MockAppConfigViewModel extends _i1.Mock
           as _i11.Future<bool>);
 
   @override
+  void dispose() => super.noSuchMethod(
+    Invocation.method(#dispose, []),
+    returnValueForMissingStub: null,
+  );
+
+  @override
   void addListener(_i13.VoidCallback? listener) => super.noSuchMethod(
     Invocation.method(#addListener, [listener]),
     returnValueForMissingStub: null,
@@ -494,12 +500,6 @@ class MockAppConfigViewModel extends _i1.Mock
   @override
   void removeListener(_i13.VoidCallback? listener) => super.noSuchMethod(
     Invocation.method(#removeListener, [listener]),
-    returnValueForMissingStub: null,
-  );
-
-  @override
-  void dispose() => super.noSuchMethod(
-    Invocation.method(#dispose, []),
     returnValueForMissingStub: null,
   );
 
