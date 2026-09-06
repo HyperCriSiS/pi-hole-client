@@ -1,8 +1,8 @@
 import 'package:pi_hole_client/domain/model/group/group.dart';
 import 'package:pihole_v6_api/pihole_v6_api.dart';
 
-/// Maps [GroupsGetGroupsInner] (OpenAPI-generated) to [Group] (domain model).
-extension GroupsGetGroupsInnerMapper on GroupsGetGroupsInner {
+/// Maps [Get2GroupsInner] (OpenAPI-generated) to [Group] (domain model).
+extension Get2GroupsInnerMapper on Get2GroupsInner {
   Group toDomain() {
     return Group(
       id: id ?? 0,

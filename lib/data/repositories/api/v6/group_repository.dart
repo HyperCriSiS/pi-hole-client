@@ -43,7 +43,7 @@ class GroupRepositoryV6 extends BaseV6SidRepository implements GroupRepository {
         final sid = await getSid();
         _service.setSid(sid);
         final result = await _service.addGroup(
-          body: GroupsPost(
+          body: Post2(
             name: StringOrList.fromString(name),
             comment: comment,
             enabled: enabled,
@@ -69,7 +69,7 @@ class GroupRepositoryV6 extends BaseV6SidRepository implements GroupRepository {
         _service.setSid(sid);
         final result = await _service.replaceGroup(
           name: name,
-          body: GroupsPut(comment: comment, enabled: enabled),
+          body: Put2(comment: comment, enabled: enabled),
         );
         return result.map(
           (e) => legacy_groups.Groups.fromJson(e.toJson()).toSingleDomain(),

@@ -56,7 +56,7 @@ class AdlistRepositoryV6 extends BaseV6SidRepository
         _service.setSid(sid);
         final result = await _service.addList(
           type: type.name,
-          body: ListsPost(
+          body: Post4(
             address: StringOrList.fromString(address),
             groups: groups,
             comment: comment,
@@ -86,7 +86,7 @@ class AdlistRepositoryV6 extends BaseV6SidRepository
         final result = await _service.replaceList(
           list: address,
           type: type.name,
-          body: ListsPut(
+          body: Put4(
             type: _generatedType(type),
             groups: groups,
             comment: comment,
@@ -136,10 +136,10 @@ class AdlistRepositoryV6 extends BaseV6SidRepository
     );
   }
 
-  ListsPutTypeEnum? _generatedType(ListType type) {
+  Put4TypeEnum? _generatedType(ListType type) {
     return switch (type) {
-      ListType.allow => ListsPutTypeEnum.allow,
-      ListType.block => ListsPutTypeEnum.block,
+      ListType.allow => Put4TypeEnum.allow,
+      ListType.block => Put4TypeEnum.block,
       ListType.unknown => null,
     };
   }

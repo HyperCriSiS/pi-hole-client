@@ -3,8 +3,8 @@ import 'package:pi_hole_client/domain/model/enums.dart';
 import 'package:pi_hole_client/domain/model/list/adlist.dart';
 import 'package:pihole_v6_api/pihole_v6_api.dart';
 
-/// Maps [ListsGetListsInner] (OpenAPI-generated) to [Adlist] (domain model).
-extension ListsGetListsInnerMapper on ListsGetListsInner {
+/// Maps [Get4ListsInner] (OpenAPI-generated) to [Adlist] (domain model).
+extension Get4ListsInnerMapper on Get4ListsInner {
   Adlist toDomain() {
     return Adlist(
       id: id ?? 0,
@@ -35,12 +35,12 @@ extension GetLists200ResponseMapper on GetLists200Response {
   }
 }
 
-/// Converts [ListsGetListsInnerTypeEnum] to [ListType].
-extension ListsGetListsInnerTypeEnumMapper on ListsGetListsInnerTypeEnum? {
+/// Converts [Get4ListsInnerTypeEnum] to [ListType].
+extension Get4ListsInnerTypeEnumMapper on Get4ListsInnerTypeEnum? {
   ListType toListType() {
     return switch (this) {
-      ListsGetListsInnerTypeEnum.allow => ListType.allow,
-      ListsGetListsInnerTypeEnum.block => ListType.block,
+      Get4ListsInnerTypeEnum.allow => ListType.allow,
+      Get4ListsInnerTypeEnum.block => ListType.block,
       null => ListType.unknown,
     };
   }
