@@ -1,0 +1,79 @@
+name: Regenerate FTL 6.7 wrapper mocks
+
+on:
+  push:
+    branches:
+      - roadmap/openapi-v67-refresh
+
+permissions:
+  contents: write
+
+jobs:
+  regenerate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: roadmap/openapi-v67-refresh
+          fetch-depth: 0
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.1'
+          channel: stable
+          cache: true
+
+      - name: Restore previous mock output and change its generator input
+        shell: bash
+        run: |
+          git show d40e01a9681574201e2bd4bce639a1af429d5adc:test/data/services/api/wrappers/mocks.mocks.dart > test/data/services/api/wrappers/mocks.mocks.dart
+          if ! grep -q 'generated v6 API changes' test/data/services/api/wrappers/mocks.dart; then
+            printf '\n// Regenerate the Mockito output whenever the generated v6 API changes.\n' >> test/data/services/api/wrappers/mocks.dart
+          fi
+
+      - name: Prepare dependencies
+        shell: bash
+        run: |
+          flutter pub get
+          cp .env.sample .env
+
+      - name: Force wrapper mock regeneration
+        shell: bash
+        run: |
+          dart run build_runner clean
+          dart run build_runner build --delete-conflicting-outputs
+          dart format \
+            lib/data/services/api/wrappers/pihole_v6_service.dart \
+            test/data/mapper/v6_generated/group_mapper_test.dart \
+            test/data/services/api/wrappers/mocks.dart \
+            test/data/services/api/wrappers/mocks.mocks.dart \
+            test/data/services/api/wrappers/pihole_v6_service_test.dart
+
+      - name: Verify regenerated FTL v6.7 mock signatures
+        shell: bash
+        run: |
+          test -s test/data/services/api/wrappers/mocks.mocks.dart
+          grep -q 'listGroups' test/data/services/api/wrappers/mocks.mocks.dart
+          grep -q 'post2' test/data/services/api/wrappers/mocks.mocks.dart
+          grep -q 'put2' test/data/services/api/wrappers/mocks.mocks.dart
+          grep -q 'getTypeKindDomains' test/data/services/api/wrappers/mocks.mocks.dart
+          grep -q 'listLists' test/data/services/api/wrappers/mocks.mocks.dart
+          grep -q 'post4' test/data/services/api/wrappers/mocks.mocks.dart
+          grep -q 'put4' test/data/services/api/wrappers/mocks.mocks.dart
+          grep -q 'listClients' test/data/services/api/wrappers/mocks.mocks.dart
+          git diff --exit-code --diff-filter=D -- test/data/services/api/wrappers/mocks.mocks.dart || true
+
+      - name: Commit regenerated mock and formatting
+        shell: bash
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -f test/data/services/api/wrappers/mocks.mocks.dart
+          git add \
+            lib/data/services/api/wrappers/pihole_v6_service.dart \
+            test/data/mapper/v6_generated/group_mapper_test.dart \
+            test/data/services/api/wrappers/mocks.dart \
+            test/data/services/api/wrappers/pihole_v6_service_test.dart
+          git commit -m "test: regenerate v6 wrapper mocks for FTL 6.7"
+          git push origin HEAD:roadmap/openapi-v67-refresh
