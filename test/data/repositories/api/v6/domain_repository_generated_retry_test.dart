@@ -37,12 +37,12 @@ class _RetryDomainService extends PiholeV6Service {
   }
 
   @override
-  Future<Result<GetDomains200Response>> getAllDomains() async {
+  Future<Result<GetDomain200Response>> getAllDomains() async {
     fetchCallCount++;
     if (fetchCallCount == 1) {
       return Failure(ApiException(message: 'Unauthorized', statusCode: 401));
     }
-    return Success(GetDomains200Response.fromJson(kSrvGetDomains.toJson()));
+    return Success(GetDomain200Response.fromJson(kSrvGetDomains.toJson()));
   }
 
   @override

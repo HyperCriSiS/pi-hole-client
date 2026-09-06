@@ -37,11 +37,11 @@ class _FakePiholeV6Service extends PiholeV6Service {
   }
 
   @override
-  Future<Result<GetDomains200Response>> getAllDomains() async {
+  Future<Result<GetDomain200Response>> getAllDomains() async {
     if (shouldFailFetch) {
       return Failure(Exception('Forced getAllDomains failure'));
     }
-    return Success(GetDomains200Response.fromJson(kSrvGetDomains.toJson()));
+    return Success(GetDomain200Response.fromJson(kSrvGetDomains.toJson()));
   }
 
   @override
