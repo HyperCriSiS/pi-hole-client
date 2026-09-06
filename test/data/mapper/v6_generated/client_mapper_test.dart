@@ -3,9 +3,9 @@ import 'package:pi_hole_client/data/mapper/v6_generated/client_mapper.dart';
 import 'package:pihole_v6_api/pihole_v6_api.dart';
 
 void main() {
-  group('ClientsGetClientsInnerMapper', () {
+  group('Get3ClientsInnerMapper', () {
     test('maps all fields correctly', () {
-      final inner = ClientsGetClientsInner(
+      final inner = Get3ClientsInner(
         id: 3,
         client: '192.168.1.100',
         name: 'my-laptop',
@@ -33,7 +33,7 @@ void main() {
     });
 
     test('maps MAC address client', () {
-      final inner = ClientsGetClientsInner(
+      final inner = Get3ClientsInner(
         client: 'AA:BB:CC:DD:EE:FF',
         name: 'printer',
       );
@@ -45,7 +45,7 @@ void main() {
     });
 
     test('uses defaults for null fields', () {
-      final inner = ClientsGetClientsInner();
+      final inner = Get3ClientsInner();
 
       final piholeClient = inner.toDomain();
 
@@ -63,9 +63,9 @@ void main() {
     test('toDomainList maps all entries', () {
       final response = GetClients200Response(
         clients: [
-          ClientsGetClientsInner(id: 1, client: '10.0.0.1'),
-          ClientsGetClientsInner(id: 2, client: '10.0.0.2'),
-          ClientsGetClientsInner(id: 3, client: '10.0.0.3'),
+          Get3ClientsInner(id: 1, client: '10.0.0.1'),
+          Get3ClientsInner(id: 2, client: '10.0.0.2'),
+          Get3ClientsInner(id: 3, client: '10.0.0.3'),
         ],
       );
 

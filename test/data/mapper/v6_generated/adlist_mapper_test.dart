@@ -4,12 +4,12 @@ import 'package:pi_hole_client/domain/model/enums.dart';
 import 'package:pihole_v6_api/pihole_v6_api.dart';
 
 void main() {
-  group('ListsGetListsInnerMapper', () {
+  group('Get4ListsInnerMapper', () {
     test('maps all fields correctly', () {
-      final inner = ListsGetListsInner(
+      final inner = Get4ListsInner(
         id: 1,
         address: 'https://example.com/hosts.txt',
-        type: ListsGetListsInnerTypeEnum.block,
+        type: Get4ListsInnerTypeEnum.block,
         groups: [0],
         enabled: true,
         dateAdded: 1700000000,
@@ -49,7 +49,7 @@ void main() {
     });
 
     test('maps allow list type', () {
-      final inner = ListsGetListsInner(type: ListsGetListsInnerTypeEnum.allow);
+      final inner = Get4ListsInner(type: Get4ListsInnerTypeEnum.allow);
 
       final adlist = inner.toDomain();
 
@@ -57,7 +57,7 @@ void main() {
     });
 
     test('uses defaults for null fields', () {
-      final inner = ListsGetListsInner();
+      final inner = Get4ListsInner();
 
       final adlist = inner.toDomain();
 
@@ -81,7 +81,7 @@ void main() {
         3: ListsStatus.unavailableCached,
         4: ListsStatus.unavailableNoCache,
       }.entries) {
-        final inner = ListsGetListsInner(status: entry.key);
+        final inner = Get4ListsInner(status: entry.key);
         final adlist = inner.toDomain();
         expect(adlist.status, entry.value, reason: 'status ${entry.key}');
       }
@@ -92,8 +92,8 @@ void main() {
     test('toDomainList maps all entries', () {
       final response = GetLists200Response(
         lists: [
-          ListsGetListsInner(id: 1, address: 'https://a.com/list.txt'),
-          ListsGetListsInner(id: 2, address: 'https://b.com/list.txt'),
+          Get4ListsInner(id: 1, address: 'https://a.com/list.txt'),
+          Get4ListsInner(id: 2, address: 'https://b.com/list.txt'),
         ],
       );
 
@@ -113,17 +113,17 @@ void main() {
     });
   });
 
-  group('ListsGetListsInnerTypeEnumMapper', () {
+  group('Get4ListsInnerTypeEnumMapper', () {
     test('maps allow', () {
-      expect(ListsGetListsInnerTypeEnum.allow.toListType(), ListType.allow);
+      expect(Get4ListsInnerTypeEnum.allow.toListType(), ListType.allow);
     });
 
     test('maps block', () {
-      expect(ListsGetListsInnerTypeEnum.block.toListType(), ListType.block);
+      expect(Get4ListsInnerTypeEnum.block.toListType(), ListType.block);
     });
 
     test('maps null to unknown', () {
-      const ListsGetListsInnerTypeEnum? value = null;
+      const Get4ListsInnerTypeEnum? value = null;
       expect(value.toListType(), ListType.unknown);
     });
   });
