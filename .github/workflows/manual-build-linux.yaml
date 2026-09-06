@@ -40,13 +40,13 @@ jobs:
       - name: Bundle pinned FTL v6.7 spec
         shell: bash
         run: |
-          tools/openapi/bundle-spec.sh
+          bash tools/openapi/bundle-spec.sh
           cp tools/openapi/spec/upstream-bundled.yaml tools/openapi/spec/bundled.yaml
           rm -f tools/openapi/spec/upstream-bundled.yaml
 
       - name: Regenerate v6 client
         shell: bash
-        run: tools/openapi/generate.sh
+        run: bash tools/openapi/generate.sh
 
       - name: Verify refresh scope
         shell: bash
