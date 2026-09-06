@@ -1,6 +1,9 @@
 name: Repair v6.7 service test
 
 on:
+  push:
+    branches:
+      - roadmap/openapi-v67-refresh
   workflow_dispatch:
 
 permissions:
@@ -8,6 +11,7 @@ permissions:
 
 jobs:
   repair:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
