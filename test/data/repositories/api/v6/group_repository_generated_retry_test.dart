@@ -19,9 +19,9 @@ class _RetryGroupService extends PiholeV6Service {
   int replaceCallCount = 0;
   int deleteCallCount = 0;
   String? lastSid;
-  GroupsPost? lastAddBody;
+  Post2? lastAddBody;
   String? lastReplaceName;
-  GroupsPut? lastReplaceBody;
+  Put2? lastReplaceBody;
   String? lastDeleteName;
 
   @override
@@ -39,7 +39,7 @@ class _RetryGroupService extends PiholeV6Service {
   }
 
   @override
-  Future<Result<ReplaceGroup200Response>> addGroup({GroupsPost? body}) async {
+  Future<Result<ReplaceGroup200Response>> addGroup({Post2? body}) async {
     addCallCount++;
     lastAddBody = body;
     if (addCallCount == 1) {
@@ -51,7 +51,7 @@ class _RetryGroupService extends PiholeV6Service {
   @override
   Future<Result<ReplaceGroup200Response>> replaceGroup({
     required String name,
-    GroupsPut? body,
+    Put2? body,
   }) async {
     replaceCallCount++;
     lastReplaceName = name;

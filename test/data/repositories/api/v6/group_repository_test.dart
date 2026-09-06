@@ -19,9 +19,9 @@ class _FakePiholeV6Service extends PiholeV6Service {
   bool shouldFailReplace = false;
   bool shouldFailDelete = false;
   String? lastSid;
-  GroupsPost? lastAddBody;
+  Post2? lastAddBody;
   String? lastReplaceName;
-  GroupsPut? lastReplaceBody;
+  Put2? lastReplaceBody;
   String? lastDeleteName;
 
   @override
@@ -38,7 +38,7 @@ class _FakePiholeV6Service extends PiholeV6Service {
   }
 
   @override
-  Future<Result<ReplaceGroup200Response>> addGroup({GroupsPost? body}) async {
+  Future<Result<ReplaceGroup200Response>> addGroup({Post2? body}) async {
     lastAddBody = body;
     if (shouldFailAdd) {
       return Failure(Exception('Forced addGroup failure'));
@@ -49,7 +49,7 @@ class _FakePiholeV6Service extends PiholeV6Service {
   @override
   Future<Result<ReplaceGroup200Response>> replaceGroup({
     required String name,
-    GroupsPut? body,
+    Put2? body,
   }) async {
     lastReplaceName = name;
     lastReplaceBody = body;
