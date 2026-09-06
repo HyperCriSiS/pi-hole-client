@@ -1,109 +1,74 @@
-name: Compile Linux build manually
+name: Temporary info-client migration preparer
 
 on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  get-version:
-    name: Extract Version from pubspec.yaml
+  prepare:
     runs-on: ubuntu-latest
-    outputs:
-      VERSION_NAME: ${{ steps.extract_version.outputs.VERSION_NAME }}
-      VERSION_NUMBER: ${{ steps.extract_version.outputs.VERSION_NUMBER }}
+    timeout-minutes: 5
     steps:
-      - name: Checkout code
+      - name: Checkout branch
         uses: actions/checkout@v7
 
-      - name: Extract version from pubspec.yaml
-        id: extract_version
+      - name: Apply generated info-client migration
+        shell: bash
         run: |
-          VERSION_FULL=$(grep '^version:' pubspec.yaml | sed 's/version: //')
-          VERSION_NAME=$(echo $VERSION_FULL | cut -d '+' -f 1)
-          VERSION_NUMBER=$(echo $VERSION_FULL | cut -d '+' -f 2)
-          echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
-          echo "VERSION_NUMBER=$VERSION_NUMBER" >> $GITHUB_ENV
-          echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_OUTPUT
-          echo "VERSION_NUMBER=$VERSION_NUMBER" >> $GITHUB_OUTPUT
-          echo "Extracted Version Name: $VERSION_NAME"
-          echo "Extracted Version Number: $VERSION_NUMBER"
+          python - <<'PY'
+          from pathlib import Path
 
-  build-linux:
-    name: Build Linux .tar.gz and .deb
-    runs-on: ubuntu-latest
-    needs: get-version
-    env:
-      VERSION_NAME: ${{ needs.get-version.outputs.VERSION_NAME }}
-      VERSION_NUMBER: ${{ needs.get-version.outputs.VERSION_NUMBER }}
-      LINUX_RELEASE_PATH: build/linux/x64/release/bundle
-      DEBIAN_RELEASE_PATH: build/linux/x64/release/debian
+          repo = Path('lib/data/repositories/api/v6/ftl_repository.dart')
+          text = repo.read_text()
+          import_anchor = "import 'package:pi_hole_client/data/mapper/v6/ftl_mapper.dart';\n"
+          new_import = import_anchor + "import 'package:pi_hole_client/data/model/v6/ftl/client.dart' as legacy_client;\n"
+          if text.count(import_anchor) != 1 or 'legacy_client' in text:
+              raise SystemExit('Unexpected FTL repository import state')
+          text = text.replace(import_anchor, new_import, 1)
+          old = '''  Future<Result<FtlClient>> fetchInfoClient() {\n    return runWithResultRetry(\n      action: () async {\n        final sid = await getSid();\n        final result = await _client.getInfoClient(sid);\n        return result.map((e) => e.toDomain());\n      },\n      onRetry: (_, e) => renewSidIfExpired(e),\n    );\n  }\n'''
+          new = '''  Future<Result<FtlClient>> fetchInfoClient() {\n    return runWithResultRetry(\n      action: () async {\n        final sid = await getSid();\n        _service.setSid(sid);\n        final result = await _service.getInfoClient();\n        return result.map(\n          (e) => legacy_client.InfoClient.fromJson(e.toJson()).toDomain(),\n        );\n      },\n      onRetry: (_, e) => renewSidIfExpired(e),\n    );\n  }\n'''
+          if text.count(old) != 1:
+              raise SystemExit(f'Unexpected fetchInfoClient match count: {text.count(old)}')
+          repo.write_text(text.replace(old, new, 1))
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v7
+          test = Path('test/data/repositories/api/v6/ftl_repository_test.dart')
+          text = test.read_text()
+          old_flags = '''  bool shouldFail = false;\n  bool shouldFailHost = false;\n'''
+          new_flags = '''  bool shouldFail = false;\n  bool shouldFailClient = false;\n  bool shouldFailHost = false;\n'''
+          if text.count(old_flags) != 1:
+              raise SystemExit('Unexpected fake flag block')
+          text = text.replace(old_flags, new_flags, 1)
 
-      - name: Install Linux dependencies
+          old_retry = '''  bool shouldReturnUnauthorizedOnce = false;\n  int getInfoVersionCallCount = 0;\n  String? lastSid;\n'''
+          new_retry = '''  bool shouldReturnUnauthorizedOnce = false;\n  bool shouldReturnClientUnauthorizedOnce = false;\n  int getInfoVersionCallCount = 0;\n  int getInfoClientCallCount = 0;\n  String? lastSid;\n'''
+          if text.count(old_retry) != 1:
+              raise SystemExit('Unexpected fake retry block')
+          text = text.replace(old_retry, new_retry, 1)
+
+          method_anchor = '''  @override\n  Future<Result<GetVersion200Response>> getInfoVersion() async {\n'''
+          method = '''  @override\n  Future<Result<GetClient200Response>> getInfoClient() async {\n    getInfoClientCallCount++;\n    if (shouldReturnClientUnauthorizedOnce && getInfoClientCallCount == 1) {\n      return Failure(ApiException(message: 'Unauthorized', statusCode: 401));\n    }\n    if (shouldFailClient) {\n      return Failure(Exception('Forced getInfoClient failure'));\n    }\n    return Success(GetClient200Response.fromJson(kSrvGetInfoClient.toJson()));\n  }\n\n'''
+          if text.count(method_anchor) != 1 or 'Future<Result<GetClient200Response>> getInfoClient()' in text:
+              raise SystemExit('Unexpected generated client fake state')
+          text = text.replace(method_anchor, method + method_anchor, 1)
+
+          old_group = '''    test('should fetch info client successfully', () async {\n      final result = await repository.fetchInfoClient();\n      expect(result.getOrNull(), kRepoFetchFtlClient);\n    });\n\n    test('should fail when fetching info client fails', () async {\n      client.shouldFail = true;\n\n      final result = await repository.fetchInfoClient();\n      expectError(result, messageContains: 'Forced getInfoClient failure');\n    });\n'''
+          new_group = '''    test(\n      'should fetch info client successfully through generated service',\n      () async {\n        final result = await repository.fetchInfoClient();\n        expect(result.getOrNull(), kRepoFetchFtlClient);\n        expect(service.lastSid, 'sid123');\n      },\n    );\n\n    test('renews SID and retries generated client request after 401', () async {\n      service.shouldReturnClientUnauthorizedOnce = true;\n\n      final result = await repository.fetchInfoClient();\n\n      expect(result.getOrNull(), kRepoFetchFtlClient);\n      expect(client.postAuthCallCount, 1);\n      expect(service.getInfoClientCallCount, 2);\n      expect(service.lastSid, 'n9n9f6c3umrumfq2ese1lvu2pg');\n    });\n\n    test('should fail when generated info client request fails', () async {\n      service.shouldFailClient = true;\n\n      final result = await repository.fetchInfoClient();\n      expectError(result, messageContains: 'Forced getInfoClient failure');\n    });\n'''
+          if text.count(old_group) != 1:
+              raise SystemExit(f'Unexpected fetchInfoClient test block count: {text.count(old_group)}')
+          test.write_text(text.replace(old_group, new_group, 1))
+          PY
+          dart format lib/data/repositories/api/v6/ftl_repository.dart test/data/repositories/api/v6/ftl_repository_test.dart
+          git diff --check
+          git diff -- lib/data/repositories/api/v6/ftl_repository.dart test/data/repositories/api/v6/ftl_repository_test.dart
+
+      - name: Commit migration
+        shell: bash
         run: |
-          sudo apt update
-          sudo apt install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libsecret-1-dev libjsoncpp-dev
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          cache: true
-          flutter-version: 3.44.1
-
-      - run: flutter clean
-      - run: flutter pub get
-
-      - name: Copy .env file
-        run: cp .env.sample .env
-
-      - name: Generate files
-        run: dart run build_runner build --delete-conflicting-outputs
-
-      - name: Build Linux
-        run: flutter build linux --release
-
-      - name: Prepare .tar.gz package
-        run: |
-          cp assets/img/pi-hole-client-icon.png $LINUX_RELEASE_PATH
-          cp linux/io.github.tsutsu3.pi_hole_client.desktop $LINUX_RELEASE_PATH
-          tar czf PiHoleClient_${{ env.VERSION_NAME }}_Linux_x64.tar.gz -C $LINUX_RELEASE_PATH .
-
-      - name: Prepare Debian package
-        run: |
-          mkdir -p $DEBIAN_RELEASE_PATH/DEBIAN
-          mkdir -p $DEBIAN_RELEASE_PATH/usr/bin
-          mkdir -p $DEBIAN_RELEASE_PATH/usr/lib/pi-hole-client
-          mkdir -p $DEBIAN_RELEASE_PATH/usr/share/applications
-          mkdir -p $DEBIAN_RELEASE_PATH/usr/share/icons/hicolor/512x512/apps
-
-          cp -r $LINUX_RELEASE_PATH/* $DEBIAN_RELEASE_PATH/usr/lib/pi-hole-client
-          ln -s /usr/lib/pi-hole-client/pi-hole-client $DEBIAN_RELEASE_PATH/usr/bin/pi-hole-client
-          cp linux/io.github.tsutsu3.pi_hole_client.desktop $DEBIAN_RELEASE_PATH/usr/share/applications
-          cp assets/img/pi-hole-client-icon.png $DEBIAN_RELEASE_PATH/usr/share/icons/hicolor/512x512/apps/io.github.tsutsu3.pi_hole_client.png
-
-          cat > $DEBIAN_RELEASE_PATH/DEBIAN/control <<EOF
-          Package: pi-hole-client
-          Version: ${{ env.VERSION_NAME }}
-          Section: utils
-          Priority: optional
-          Architecture: amd64
-          Depends: libgtk-3-0, libsecret-1-0, libjsoncpp25
-          Maintainer: tsutsu3 <tsutsu3@example.com>
-          Description: A cross-platform Pi-hole client
-          EOF
-
-          dpkg-deb --build $DEBIAN_RELEASE_PATH PiHoleClient_${{ env.VERSION_NAME }}_Linux_x64.deb
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: linux
-          path: |
-            PiHoleClient_${{ env.VERSION_NAME }}_Linux_x64.tar.gz
-            PiHoleClient_${{ env.VERSION_NAME }}_Linux_x64.deb
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add lib/data/repositories/api/v6/ftl_repository.dart test/data/repositories/api/v6/ftl_repository_test.dart
+          git diff --cached --quiet && { echo 'No migration changes produced'; exit 1; } || true
+          git commit -m 'api: migrate info client to generated v6 service'
+          git push origin HEAD:${GITHUB_REF_NAME}
