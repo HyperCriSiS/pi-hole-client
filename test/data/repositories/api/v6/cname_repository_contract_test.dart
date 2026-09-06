@@ -1,49 +1,21 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pi_hole_client/data/model/v6/config/config.dart';
 import 'package:pi_hole_client/data/repositories/api/v6/local_dns_repository.dart';
 import 'package:pi_hole_client/data/repositories/api/v6/v6_session_cache.dart';
+import 'package:pi_hole_client/data/services/api/wrappers/pihole_v6_service.dart';
 import 'package:pi_hole_client/domain/model/local_dns/cname_record.dart';
+import 'package:pihole_v6_api/pihole_v6_api.dart' hide Success;
 import 'package:result_dart/result_dart.dart';
 
 import '../../../../../testing/fakes/services/fake_pihole_v6_api_client.dart';
 import '../../../../../testing/fakes/services/fake_session_credential_service.dart';
 
 class _RecordingPiholeV6ApiClient extends FakePiholeV6ApiClient {
-  ConfigData? configData;
-  ConfigData? patchBody;
-  bool? patchRestart;
   String? putElement;
   String? putValue;
   bool? putRestart;
   String? deleteElement;
   String? deleteValue;
   bool? deleteRestart;
-
-  @override
-  Future<Result<Config>> getConfigElement(
-    String sid, {
-    String? element,
-    bool? isDetailed,
-  }) async {
-    final result = await super.getConfigElement(
-      sid,
-      element: element,
-      isDetailed: isDetailed,
-    );
-    if (configData == null) return result;
-    return result.map((config) => config.copyWith(config: configData));
-  }
-
-  @override
-  Future<Result<Config>> patchConfig(
-    String sid, {
-    required ConfigData body,
-    bool isRestart = true,
-  }) async {
-    patchBody = body;
-    patchRestart = isRestart;
-    return super.patchConfig(sid, body: body, isRestart: isRestart);
-  }
 
   @override
   Future<Result<Unit>> putConfigElement(
@@ -82,28 +54,63 @@ class _RecordingPiholeV6ApiClient extends FakePiholeV6ApiClient {
   }
 }
 
+class _RecordingPiholeV6Service extends PiholeV6Service {
+  _RecordingPiholeV6Service()
+    : super(api: PiholeV6Api(basePathOverride: 'http://localhost/api'));
+
+  List<String> cnameRecords = [];
+  GetConfig200Response? patchBody;
+  bool? patchRestart;
+  String? lastSid;
+
+  @override
+  void setSid(String sid) {
+    lastSid = sid;
+  }
+
+  @override
+  Future<Result<GetConfig200Response>> getConfig() async {
+    return Success(
+      GetConfig200Response(
+        config: ConfigConfig(
+          dns: ConfigConfigDns(cnameRecords: cnameRecords),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Future<Result<GetConfig200Response>> patchConfig({
+    GetConfig200Response? body,
+    bool? restart,
+  }) async {
+    patchBody = body;
+    patchRestart = restart;
+    return Success(body ?? GetConfig200Response());
+  }
+}
+
 void main() {
   late _RecordingPiholeV6ApiClient client;
+  late _RecordingPiholeV6Service service;
   late LocalDnsRepositoryV6 repository;
 
   setUp(() {
     client = _RecordingPiholeV6ApiClient();
+    service = _RecordingPiholeV6Service();
     final creds = FakeSessionCredentialService();
     repository = LocalDnsRepositoryV6(
       client: client,
+      service: service,
       sessionCache: V6SessionCache(creds: creds, client: client),
     );
   });
 
   test('parses CNAME TTL values from config', () async {
-    client.configData = ConfigData(
-      dns: Dns(
-        cnameRecords: [
-          'printer.example.test, printer.lan, 300',
-          'nas.example.test,nas.lan',
-        ],
-      ),
-    );
+    service.cnameRecords = [
+      'printer.example.test, printer.lan, 300',
+      'nas.example.test,nas.lan',
+    ];
 
     final result = await repository.fetchCnameRecords();
 
@@ -132,14 +139,10 @@ void main() {
       target: 'new.lan',
       ttl: 450,
     );
-    client.configData = ConfigData(
-      dns: Dns(
-        cnameRecords: [
-          'old.example.test,old.lan,300',
-          'keep.example.test,keep.lan,600',
-        ],
-      ),
-    );
+    service.cnameRecords = [
+      'old.example.test,old.lan,300',
+      'keep.example.test,keep.lan,600',
+    ];
 
     final result = await repository.updateCnameRecord(
       oldRecord: oldRecord,
@@ -147,9 +150,9 @@ void main() {
     );
 
     expect(result.isSuccess(), true);
-    expect(client.patchRestart, true);
+    expect(service.patchRestart, true);
     expect(
-      client.patchBody?.dns?.cnameRecords,
+      service.patchBody?.config?.dns?.cnameRecords,
       ['new.example.test,new.lan,450', 'keep.example.test,keep.lan,600'],
     );
   });

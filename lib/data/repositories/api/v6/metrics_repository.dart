@@ -1,9 +1,13 @@
 import 'package:pi_hole_client/data/mapper/v6/metrics_mapper.dart';
+import 'package:pi_hole_client/data/model/v6/metrics/history.dart' as legacy_history;
+import 'package:pi_hole_client/data/model/v6/metrics/query.dart' as legacy_query;
 import 'package:pi_hole_client/data/model/v6/metrics/query_filter.dart';
+import 'package:pi_hole_client/data/model/v6/metrics/stats.dart' as legacy_stats;
 import 'package:pi_hole_client/data/repositories/api/interfaces/metrics_repository.dart';
 import 'package:pi_hole_client/data/repositories/api/v6/base_v6_sid_repository.dart';
 import 'package:pi_hole_client/data/repositories/utils/call_with_retry.dart';
 import 'package:pi_hole_client/data/services/api/pihole_v6_api_client.dart';
+import 'package:pi_hole_client/data/services/api/wrappers/pihole_v6_service.dart';
 import 'package:pi_hole_client/domain/model/metrics/clients.dart';
 import 'package:pi_hole_client/domain/model/metrics/history.dart';
 import 'package:pi_hole_client/domain/model/metrics/queries.dart';
@@ -18,18 +22,22 @@ class MetricsRepositoryV6 extends BaseV6SidRepository
     implements MetricsRepository, FilteredMetricsRepository {
   MetricsRepositoryV6({
     required PiholeV6ApiClient client,
+    required PiholeV6Service service,
     required super.sessionCache,
-  }) : _client = client;
+  }) : _service = service;
 
-  final PiholeV6ApiClient _client;
+  final PiholeV6Service _service;
 
   @override
   Future<Result<History>> fetchHistory() async {
     return runWithResultRetry(
       action: () async {
         final sid = await getSid();
-        final result = await _client.getHistory(sid);
-        return result.map((e) => e.toDomain());
+        _service.setSid(sid);
+        final result = await _service.getHistory();
+        return result.map(
+          (e) => legacy_history.History.fromJson(e.toJson()).toDomain(),
+        );
       },
       onRetry: (_, e) => renewSidIfExpired(e),
     );
@@ -40,8 +48,11 @@ class MetricsRepositoryV6 extends BaseV6SidRepository
     return runWithResultRetry(
       action: () async {
         final sid = await getSid();
-        final result = await _client.getHistoryClient(sid, count: count);
-        return result.map((e) => e.toDomain());
+        _service.setSid(sid);
+        final result = await _service.getHistoryClients(count: count);
+        return result.map(
+          (e) => legacy_history.HistoryClients.fromJson(e.toJson()).toDomain(),
+        );
       },
       onRetry: (_, e) => renewSidIfExpired(e),
     );
@@ -74,17 +85,24 @@ class MetricsRepositoryV6 extends BaseV6SidRepository
     return runWithResultRetry(
       action: () async {
         final sid = await getSid();
-        final result = await _client.getQueries(
-          sid,
-          from: from,
-          until: until,
+        _service.setSid(sid);
+        final filterParameters = filter?.toQueryParameters() ?? const {};
+        final result = await _service.getQueries(
+          from: from.millisecondsSinceEpoch ~/ 1000,
+          until: until.millisecondsSinceEpoch ~/ 1000,
           length: length,
           cursor: cursor,
           start: start,
-          filter: filter,
+          domain: filterParameters['domain'],
+          clientIp: filterParameters['client_ip'],
+          status: filterParameters['status'],
+          type: filterParameters['type'],
+          reply: filterParameters['reply'],
         );
 
-        return result.map((e) => e.toDomain());
+        return result.map(
+          (e) => legacy_query.Queries.fromJson(e.toJson()).toDomain(),
+        );
       },
       onRetry: (_, e) => renewSidIfExpired(e),
     );
@@ -95,8 +113,11 @@ class MetricsRepositoryV6 extends BaseV6SidRepository
     return runWithResultRetry(
       action: () async {
         final sid = await getSid();
-        final result = await _client.getStatsSummary(sid);
-        return result.map((e) => e.toDomain());
+        _service.setSid(sid);
+        final result = await _service.getStatsSummary();
+        return result.map(
+          (e) => legacy_stats.StatsSummary.fromJson(e.toJson()).toDomain(),
+        );
       },
       onRetry: (_, e) => renewSidIfExpired(e),
     );
@@ -107,8 +128,11 @@ class MetricsRepositoryV6 extends BaseV6SidRepository
     return runWithResultRetry(
       action: () async {
         final sid = await getSid();
-        final result = await _client.getStatsUpstreams(sid);
-        return result.map((e) => e.toDomain());
+        _service.setSid(sid);
+        final result = await _service.getStatsUpstreams();
+        return result.map(
+          (e) => legacy_stats.StatsUpstreams.fromJson(e.toJson()).toDomain(),
+        );
       },
       onRetry: (_, e) => renewSidIfExpired(e),
     );
@@ -121,12 +145,16 @@ class MetricsRepositoryV6 extends BaseV6SidRepository
     return runWithResultRetry(
       action: () async {
         final sid = await getSid();
-        final result = await _client.getStatsTopDomains(
-          sid,
+        _service.setSid(sid);
+        final result = await _service.getStatsTopDomains(
           count: count,
           blocked: true,
         );
-        return result.map((e) => e.domains.map((d) => d.toDomain()).toList());
+        return result.map(
+          (e) => legacy_stats.StatsTopDomains.fromJson(
+            e.toJson(),
+          ).domains.map((d) => d.toDomain()).toList(),
+        );
       },
       onRetry: (_, e) => renewSidIfExpired(e),
     );
@@ -139,8 +167,13 @@ class MetricsRepositoryV6 extends BaseV6SidRepository
     return runWithResultRetry(
       action: () async {
         final sid = await getSid();
-        final result = await _client.getStatsTopDomains(sid, count: count);
-        return result.map((e) => e.domains.map((d) => d.toDomain()).toList());
+        _service.setSid(sid);
+        final result = await _service.getStatsTopDomains(count: count);
+        return result.map(
+          (e) => legacy_stats.StatsTopDomains.fromJson(
+            e.toJson(),
+          ).domains.map((d) => d.toDomain()).toList(),
+        );
       },
     );
   }
@@ -152,12 +185,16 @@ class MetricsRepositoryV6 extends BaseV6SidRepository
     return runWithResultRetry(
       action: () async {
         final sid = await getSid();
-        final result = await _client.getStatsTopClients(
-          sid,
+        _service.setSid(sid);
+        final result = await _service.getStatsTopClients(
           count: count,
           blocked: true,
         );
-        return result.map((e) => e.clients.map((c) => c.toDomain()).toList());
+        return result.map(
+          (e) => legacy_stats.StatsTopClients.fromJson(
+            e.toJson(),
+          ).clients.map((c) => c.toDomain()).toList(),
+        );
       },
     );
   }
@@ -169,8 +206,13 @@ class MetricsRepositoryV6 extends BaseV6SidRepository
     return runWithResultRetry(
       action: () async {
         final sid = await getSid();
-        final result = await _client.getStatsTopClients(sid, count: count);
-        return result.map((e) => e.clients.map((c) => c.toDomain()).toList());
+        _service.setSid(sid);
+        final result = await _service.getStatsTopClients(count: count);
+        return result.map(
+          (e) => legacy_stats.StatsTopClients.fromJson(
+            e.toJson(),
+          ).clients.map((c) => c.toDomain()).toList(),
+        );
       },
     );
   }

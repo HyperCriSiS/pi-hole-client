@@ -4,7 +4,21 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - 'website/**'
+      - 'docs/**'
+      - 'ROADMAP.md'
+      - 'UPSTREAM_TRIAGE.md'
+      - 'test/**'
+      - 'testing/**'
   pull_request:
+    paths-ignore:
+      - 'website/**'
+      - 'docs/**'
+      - 'ROADMAP.md'
+      - 'UPSTREAM_TRIAGE.md'
+      - 'test/**'
+      - 'testing/**'
   workflow_dispatch:
 
 # Release validation can be expensive; superseded PR runs should not keep consuming runners.
@@ -43,6 +57,7 @@ jobs:
   build-android:
     name: Build test Android .apk and .aab
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: get-version
     env:
       VERSION_NAME: ${{ needs.get-version.outputs.VERSION_NAME }}
@@ -114,6 +129,7 @@ jobs:
   build-android-source:
     name: Build unsigned Android source APK
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     if: github.event_name == 'pull_request'
     steps:
       - name: Checkout code
