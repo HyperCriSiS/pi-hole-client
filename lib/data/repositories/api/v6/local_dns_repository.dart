@@ -1,31 +1,33 @@
-import 'package:pi_hole_client/data/model/v6/config/config.dart';
 import 'package:pi_hole_client/data/repositories/api/interfaces/cname_repository.dart';
 import 'package:pi_hole_client/data/repositories/api/interfaces/local_dns_repository.dart';
 import 'package:pi_hole_client/data/repositories/api/v6/base_v6_sid_repository.dart';
 import 'package:pi_hole_client/data/repositories/utils/call_with_retry.dart';
 import 'package:pi_hole_client/data/services/api/pihole_v6_api_client.dart';
+import 'package:pi_hole_client/data/services/api/wrappers/pihole_v6_service.dart';
 import 'package:pi_hole_client/domain/model/local_dns/cname_record.dart';
 import 'package:pi_hole_client/domain/model/local_dns/local_dns.dart';
+import 'package:pihole_v6_api/pihole_v6_api.dart' as generated;
 import 'package:result_dart/result_dart.dart';
 
 class LocalDnsRepositoryV6 extends BaseV6SidRepository
     implements LocalDnsRepository, CnameRepository {
   LocalDnsRepositoryV6({
     required PiholeV6ApiClient client,
+    required PiholeV6Service service,
     required super.sessionCache,
-  }) : _client = client;
+  }) : _client = client,
+       _service = service;
 
   final PiholeV6ApiClient _client;
+  final PiholeV6Service _service;
 
   @override
   Future<Result<List<LocalDns>>> fetchRecords() async {
     return runWithResultRetry<List<LocalDns>>(
       action: () async {
         final sid = await getSid();
-        final result = await _client.getConfigElement(
-          sid,
-          element: 'dns/hosts',
-        );
+        _service.setSid(sid);
+        final result = await _service.getConfig();
         return result.map((config) => _parseHosts(config.config?.dns?.hosts));
       },
       onRetry: (_, e) => renewSidIfExpired(e),
@@ -76,11 +78,9 @@ class LocalDnsRepositoryV6 extends BaseV6SidRepository
     return runWithResultRetry<Unit>(
       action: () async {
         final sid = await getSid();
+        _service.setSid(sid);
 
-        final configResult = await _client.getConfigElement(
-          sid,
-          element: 'dns/hosts',
-        );
+        final configResult = await _service.getConfig();
         final config = configResult.getOrThrow();
         final hosts = List<String>.from(config.config?.dns?.hosts ?? []);
 
@@ -92,9 +92,13 @@ class LocalDnsRepositoryV6 extends BaseV6SidRepository
         }
         hosts[oldEntry] = '${record.ip} ${record.name}';
 
-        final patchResult = await _client.patchConfig(
-          sid,
-          body: ConfigData(dns: Dns(hosts: hosts)),
+        final patchResult = await _service.patchConfig(
+          body: generated.GetConfig200Response(
+            config: generated.ConfigConfig(
+              dns: generated.ConfigConfigDns(hosts: hosts),
+            ),
+          ),
+          restart: true,
         );
         return patchResult.map((_) => unit);
       },
@@ -107,10 +111,8 @@ class LocalDnsRepositoryV6 extends BaseV6SidRepository
     return runWithResultRetry<List<CnameRecord>>(
       action: () async {
         final sid = await getSid();
-        final result = await _client.getConfigElement(
-          sid,
-          element: 'dns/cnameRecords',
-        );
+        _service.setSid(sid);
+        final result = await _service.getConfig();
         return result.map(
           (config) => _parseCnameRecords(config.config?.dns?.cnameRecords),
         );
@@ -159,10 +161,8 @@ class LocalDnsRepositoryV6 extends BaseV6SidRepository
     return runWithResultRetry<Unit>(
       action: () async {
         final sid = await getSid();
-        final configResult = await _client.getConfigElement(
-          sid,
-          element: 'dns/cnameRecords',
-        );
+        _service.setSid(sid);
+        final configResult = await _service.getConfig();
         final config = configResult.getOrThrow();
         final records = List<String>.from(
           config.config?.dns?.cnameRecords ?? const <String>[],
@@ -178,10 +178,13 @@ class LocalDnsRepositoryV6 extends BaseV6SidRepository
         }
         records[oldIndex] = _serializeCnameRecord(record);
 
-        final patchResult = await _client.patchConfig(
-          sid,
-          body: ConfigData(dns: Dns(cnameRecords: records)),
-          isRestart: true,
+        final patchResult = await _service.patchConfig(
+          body: generated.GetConfig200Response(
+            config: generated.ConfigConfig(
+              dns: generated.ConfigConfigDns(cnameRecords: records),
+            ),
+          ),
+          restart: true,
         );
         return patchResult.map((_) => unit);
       },
