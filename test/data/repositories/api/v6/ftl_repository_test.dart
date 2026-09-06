@@ -16,6 +16,7 @@ class _FakePiholeV6Service extends PiholeV6Service {
     : super(api: PiholeV6Api(basePathOverride: 'http://localhost/api'));
 
   bool shouldFail = false;
+  bool shouldFailClient = false;
   bool shouldFailHost = false;
   bool shouldFailMessages = false;
   bool shouldFailDeleteMessage = false;
@@ -25,12 +26,26 @@ class _FakePiholeV6Service extends PiholeV6Service {
   bool shouldGetInfoSystemOld = false;
   bool shouldGetInfoVersionWithDocker = false;
   bool shouldReturnUnauthorizedOnce = false;
+  bool shouldReturnClientUnauthorizedOnce = false;
   int getInfoVersionCallCount = 0;
+  int getInfoClientCallCount = 0;
   String? lastSid;
 
   @override
   void setSid(String sid) {
     lastSid = sid;
+  }
+
+  @override
+  Future<Result<GetClient200Response>> getInfoClient() async {
+    getInfoClientCallCount++;
+    if (shouldReturnClientUnauthorizedOnce && getInfoClientCallCount == 1) {
+      return Failure(ApiException(message: 'Unauthorized', statusCode: 401));
+    }
+    if (shouldFailClient) {
+      return Failure(Exception('Forced getInfoClient failure'));
+    }
+    return Success(GetClient200Response.fromJson(kSrvGetInfoClient.toJson()));
   }
 
   @override
@@ -122,13 +137,28 @@ void main() {
       );
     });
 
-    test('should fetch info client successfully', () async {
+    test(
+      'should fetch info client successfully through generated service',
+      () async {
+        final result = await repository.fetchInfoClient();
+        expect(result.getOrNull(), kRepoFetchFtlClient);
+        expect(service.lastSid, 'sid123');
+      },
+    );
+
+    test('renews SID and retries generated client request after 401', () async {
+      service.shouldReturnClientUnauthorizedOnce = true;
+
       final result = await repository.fetchInfoClient();
+
       expect(result.getOrNull(), kRepoFetchFtlClient);
+      expect(client.postAuthCallCount, 1);
+      expect(service.getInfoClientCallCount, 2);
+      expect(service.lastSid, 'n9n9f6c3umrumfq2ese1lvu2pg');
     });
 
-    test('should fail when fetching info client fails', () async {
-      client.shouldFail = true;
+    test('should fail when generated info client request fails', () async {
+      service.shouldFailClient = true;
 
       final result = await repository.fetchInfoClient();
       expectError(result, messageContains: 'Forced getInfoClient failure');

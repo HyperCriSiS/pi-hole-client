@@ -1,4 +1,5 @@
 import 'package:pi_hole_client/data/mapper/v6/ftl_mapper.dart';
+import 'package:pi_hole_client/data/model/v6/ftl/client.dart' as legacy_client;
 import 'package:pi_hole_client/data/model/v6/ftl/host.dart' as legacy_host;
 import 'package:pi_hole_client/data/model/v6/ftl/messages.dart'
     as legacy_messages;
@@ -40,8 +41,11 @@ class FtlRepositoryV6 extends BaseV6SidRepository implements FtlRepository {
     return runWithResultRetry(
       action: () async {
         final sid = await getSid();
-        final result = await _client.getInfoClient(sid);
-        return result.map((e) => e.toDomain());
+        _service.setSid(sid);
+        final result = await _service.getInfoClient();
+        return result.map(
+          (e) => legacy_client.InfoClient.fromJson(e.toJson()).toDomain(),
+        );
       },
       onRetry: (_, e) => renewSidIfExpired(e),
     );
