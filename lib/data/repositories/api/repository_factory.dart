@@ -84,7 +84,6 @@ class RepositoryBundleFactory {
             sessionCache: sessionCache,
           ),
           config: ConfigRepositoryV6(
-            client: client,
             service: generatedService,
             sessionCache: sessionCache,
           ),

@@ -14,6 +14,7 @@ class _RetryConfigService extends PiholeV6Service {
   _RetryConfigService()
     : super(api: PiholeV6Api(basePathOverride: 'http://localhost/api'));
 
+  int getCallCount = 0;
   int patchCallCount = 0;
   String? lastSid;
   GetConfig200Response? lastPatchBody;
@@ -22,6 +23,22 @@ class _RetryConfigService extends PiholeV6Service {
   @override
   void setSid(String sid) {
     lastSid = sid;
+  }
+
+  @override
+  Future<Result<GetConfig200Response>> getConfig() async {
+    getCallCount++;
+    if (getCallCount == 1) {
+      return Failure(ApiException(message: 'Unauthorized', statusCode: 401));
+    }
+    return Success(
+      GetConfig200Response(
+        config: ConfigConfig(
+          dns: ConfigConfigDns(queryLogging: true),
+        ),
+        took: 0.003,
+      ),
+    );
   }
 
   @override
@@ -47,12 +64,28 @@ class _RetryConfigService extends PiholeV6Service {
 }
 
 void main() {
+  test('renews SID and retries generated full config read after 401', () async {
+    final client = FakePiholeV6ApiClient();
+    final creds = FakeSessionCredentialService();
+    final service = _RetryConfigService();
+    final repository = ConfigRepositoryV6(
+      service: service,
+      sessionCache: V6SessionCache(creds: creds, client: client),
+    );
+
+    final result = await repository.fetchDnsQueryLogging();
+
+    expect(result.getOrNull(), kRepoFetchDnsQueryLogging);
+    expect(client.postAuthCallCount, 1);
+    expect(service.getCallCount, 2);
+    expect(service.lastSid, isNot('sid123'));
+  });
+
   test('renews SID and retries generated query logging update after 401', () async {
     final client = FakePiholeV6ApiClient();
     final creds = FakeSessionCredentialService();
     final service = _RetryConfigService();
     final repository = ConfigRepositoryV6(
-      client: client,
       service: service,
       sessionCache: V6SessionCache(creds: creds, client: client),
     );
