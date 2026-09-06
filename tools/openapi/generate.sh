@@ -11,7 +11,7 @@ cd "$PROJECT_ROOT"
 GENERATED_PKG="$PROJECT_ROOT/lib/data/services/api/generated/v6"
 
 echo "🔧 Generating v6 API client with @openapitools/openapi-generator-cli@$OPENAPI_GENERATOR_CLI_VERSION..."
-pnpm dlx "@openapitools/openapi-generator-cli@$OPENAPI_GENERATOR_CLI_VERSION" generate -c "$SCRIPT_DIR/openapi-generator-config.yaml"
+pnpm --package="@openapitools/openapi-generator-cli@$OPENAPI_GENERATOR_CLI_VERSION" dlx openapi-generator-cli generate -c "$SCRIPT_DIR/openapi-generator-config.yaml"
 
 echo "🔧 Fixing generated pubspec.yaml..."
 sed -i "s/sdk: '>=3.5.0 <4.0.0'/sdk: '>=3.8.0 <4.0.0'/" "$GENERATED_PKG/pubspec.yaml"
