@@ -1,5 +1,6 @@
 import 'package:pi_hole_client/data/mapper/v6/metrics_mapper.dart';
 import 'package:pi_hole_client/data/model/v6/metrics/history.dart' as legacy_history;
+import 'package:pi_hole_client/data/model/v6/metrics/query.dart' as legacy_query;
 import 'package:pi_hole_client/data/model/v6/metrics/query_filter.dart';
 import 'package:pi_hole_client/data/model/v6/metrics/stats.dart' as legacy_stats;
 import 'package:pi_hole_client/data/repositories/api/interfaces/metrics_repository.dart';
@@ -23,10 +24,8 @@ class MetricsRepositoryV6 extends BaseV6SidRepository
     required PiholeV6ApiClient client,
     required PiholeV6Service service,
     required super.sessionCache,
-  }) : _client = client,
-       _service = service;
+  }) : _service = service;
 
-  final PiholeV6ApiClient _client;
   final PiholeV6Service _service;
 
   @override
@@ -86,17 +85,24 @@ class MetricsRepositoryV6 extends BaseV6SidRepository
     return runWithResultRetry(
       action: () async {
         final sid = await getSid();
-        final result = await _client.getQueries(
-          sid,
-          from: from,
-          until: until,
+        _service.setSid(sid);
+        final filterParameters = filter?.toQueryParameters() ?? const {};
+        final result = await _service.getQueries(
+          from: from.millisecondsSinceEpoch ~/ 1000,
+          until: until.millisecondsSinceEpoch ~/ 1000,
           length: length,
           cursor: cursor,
           start: start,
-          filter: filter,
+          domain: filterParameters['domain'],
+          clientIp: filterParameters['client_ip'],
+          status: filterParameters['status'],
+          type: filterParameters['type'],
+          reply: filterParameters['reply'],
         );
 
-        return result.map((e) => e.toDomain());
+        return result.map(
+          (e) => legacy_query.Queries.fromJson(e.toJson()).toDomain(),
+        );
       },
       onRetry: (_, e) => renewSidIfExpired(e),
     );
