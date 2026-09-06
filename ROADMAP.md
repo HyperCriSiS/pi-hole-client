@@ -8,7 +8,7 @@ Maintain and improve the unofficial Pi-hole client while upstream activity is li
 
 **Status: in progress**
 
-`main` is the canonical integrated baseline. The validated maintenance snapshot was merged through PR #8 on 2026-09-01; the former long-lived `dev` integration PR #2 was closed as superseded after repository-content parity was verified. Future integration work should use short-lived branches/PRs from `main` so validation remains tied to a stable candidate. `UPSTREAM_TRIAGE.md` remains the detailed upstream issue/PR triage reference; this file is the project-level execution roadmap and source of truth for future work.
+The active maintenance branch is `dev`. The former long-lived PR #2 was superseded by the validated snapshot merged through PR #8 on 2026-09-01; subsequent `dev` work should be integrated through fresh, scoped PRs into `main`. `UPSTREAM_TRIAGE.md` remains the detailed upstream issue/PR triage reference; this file is the project-level execution roadmap and source of truth for future work.
 
 ## Completed foundation
 
@@ -22,8 +22,6 @@ Maintain and improve the unofficial Pi-hole client while upstream activity is li
 - [x] Apply explicit least-privilege `GITHUB_TOKEN` permissions across all current workflows: read-only by default, with narrowly scoped write permissions only for release creation, release preparation, Winget PR creation and version updates; preserve Google Play OIDC requirements.
 - [x] Extend Dependabot coverage to the Docusaurus/pnpm website dependency tree so website security and version updates are maintained alongside Dart and GitHub Actions dependencies.
 - [x] Repair the September framework-audit CI regressions: analyze `mock_api_server` with its own resolved dependencies, stop coverage/scanner follow-up jobs after a failed test gate, restore generated Git commit metadata before Android builds, and pin pnpm 10 for the docs validation workflow.
-- [x] Reduce unnecessary GitHub Actions consumption: skip Dart/full Android validation for website/docs/roadmap-only changes, skip the unsigned Android source build for test-only changes, and cap the expensive Dart/Android jobs with conservative timeouts while keeping workflow/app changes fully validated.
-- [x] Integrate the validated maintenance snapshot into `main` through PR #8 after green Dart tests, docs validation, unsigned Android source build, CodeQL, Codecov, Sonar and static analysis; close the obsolete long-lived PR #2 after confirming `dev` and `main` resolve to identical repository objects.
 
 ## Phase 1 — deterministic UI and diagnostics work
 
@@ -37,11 +35,11 @@ Maintain and improve the unofficial Pi-hole client while upstream activity is li
   - [x] Keep suggestions and their scrollbar in the `TextField` tap group with `TextFieldTapRegion` while preserving normal outside-click dismissal.
   - [x] Add focused mouse-pointer regression coverage for suggestion selection and outside-click dismissal.
   - [x] Validate the focused autocomplete test and existing Local DNS widget suite in CI; full `Dart Tests` was green for the validated fix.
-- [ ] #442: reproduce the PopupMenu/Navigator crash on current `main` and implement only a verified lifecycle fix.
+- [ ] #442: reproduce the PopupMenu/Navigator crash on current `dev` and implement only a verified lifecycle fix.
   - [x] Confirm the upstream report: v1.7.0 on Android 16 crashes in `PopupMenuButtonState._positionBuilder` because `Navigator.of` encounters a detached/null context while laying out the popup route.
   - [x] Confirm there is no upstream closing PR or follow-up stack in the repository triage evidence.
   - [x] Audit relevant current code history: Home server navigation was migrated from direct `Navigator.push` to GoRouter, while `ServerActionsMenu` still uses `PopupMenuButton`; this is a material lifecycle change but not proof that the old crash is fixed.
-  - [ ] Reproduce on the current `main` baseline (or a short-lived branch created from it) on Android 16 while opening/closing the Home server actions popup and navigating/changing server; capture a current stack before changing menu behavior.
+  - [ ] Reproduce on the current `dev` build on Android 16 while opening/closing the Home server actions popup and navigating/changing server; capture a current stack before changing menu behavior.
   - [ ] If reproduced, add the smallest regression test that exercises the failing popup lifecycle and implement the corresponding mounted/navigation fix.
 
 ## Phase 2 — device-dependent regressions
@@ -66,26 +64,16 @@ Maintain and improve the unofficial Pi-hole client while upstream activity is li
 - [x] Migrate `/api/info/system` after verifying generated-schema parity for uptime, memory, process and CPU/load fields; preserve compatibility with pre-FTL-6.1 payloads where `%cpu` is absent, and route SID handling through the generated service.
 - [x] Migrate `/api/info/host` after verifying parity for uname, model and DMI payloads; keep the existing domain mapper by round-tripping the generated response into the proven legacy transport model, with focused SID/error regression coverage.
 - [x] Migrate `/api/info/messages` read/delete after verifying parity for message IDs, timestamps, types, plain/HTML payloads and delete semantics; preserve existing message-domain filtering while routing SID/error handling through the generated service.
-- [x] Migrate `/api/history` activity metrics to the generated service after verifying parity for timestamps and total/cached/blocked/forwarded counters; preserve the proven domain mapper by round-tripping the generated response through the legacy transport model, and keep shared SID renewal/retry behavior under focused regression coverage.
-- [x] Migrate `/api/history/clients` to the generated service after adding explicit `N`/count forwarding; preserve default/custom/null count semantics, the proven legacy domain mapper via generated-JSON roundtrip, and shared SID renewal/retry behavior. The full Dart suite, unsigned Android source APK, CodeQL/static analysis and zero open code-scanning alerts are green on the final PR #34 candidate.
-- [x] Migrate `/api/stats/summary` to the generated service after verifying summary-field parity; preserve the proven legacy domain mapper through generated-JSON roundtrip and shared SID renewal/retry behavior with focused repository regression coverage.
-- [x] Migrate `/api/stats/upstreams` to the generated service after verifying upstream IP/name/port/count/statistics and aggregate-counter parity; preserve the proven destination mapper through generated-JSON roundtrip and shared SID renewal/retry behavior with focused repository regression coverage.
-- [x] Migrate `/api/stats/top_domains` blocked/allowed reads to the generated service after verifying domain/count and aggregate-counter parity; preserve default/custom/null count semantics, blocked-filter behavior, the proven query-stat mapper, and the repository's existing retry semantics with focused regression coverage.
-- [x] Migrate `/api/stats/top_clients` blocked/allowed reads to the generated service after verifying IP/name/count and aggregate-counter parity; preserve default/custom/null count semantics, blocked-filter behavior, the proven source-stat mapper, and the repository's existing retry semantics with focused regression coverage.
-- [x] Migrate `/api/queries` after extending the generated-service wrapper to preserve legacy `start` pagination alongside cursor pagination and all currently modeled server-side filters; keep generated-response parity through the proven legacy mapper and shared SID renewal/retry coverage.
-- [x] Migrate DNS query-logging reads from handwritten `GET /config/{element}` to the generated typed `GET /config`; preserve the existing query-logging mapper and shared SID renewal/retry behavior.
-- [x] Migrate Local DNS host/CNAME reads and update operations to generated `GET /config` / `PATCH /config`; preserve replacement semantics, untouched entries and CNAME TTLs. Keep add/delete on the handwritten client until generated path-parameter encoding for slash-containing config elements and record values is proven equivalent.
-- [ ] Keep `/api/info/ftl` on the handwritten client for now: the generated schema models domain/regex counters only as `{total, enabled}` objects, while the existing transport model intentionally accepts the v6.2 integer representation as well; the pinned upstream FTL v6.7 spec was re-audited and still does not model that compatibility union.
+- [ ] Keep `/api/info/ftl` on the handwritten client for now: the generated schema models v6.3 domain/regex counters only as `{total, enabled}` objects, while the existing transport model intentionally accepts the v6.2 integer representation as well.
 - [x] Migrate `/api/network/devices/{device_id}` deletion to the generated service with shared SID/retry handling and focused error/ID regression coverage.
 - [x] Migrate `/api/network/devices` reads after extending the generated-service wrapper to preserve the existing `max_devices`/`max_addresses` limits; focused repository and wrapper tests verify SID handling, default/custom limit forwarding, response parity and failures.
+- [x] Migrate `GET /api/groups` reads after verifying generated-schema parity for group identity, comments, enabled state and timestamps; preserve the proven legacy domain mapper via response round-tripping, shared SID renewal/retry handling, and focused repository regression coverage.
 - [ ] Keep `/api/network/gateway` on the handwritten client for now: the generated response omits `interfaces` and `routes`, which are required to preserve the existing `detailed=true` behavior.
 - [x] Migrate `/api/action/flush/logs` and `/api/action/restartdns` to the generated service; both keep the shared SID renewal/retry path and map their generated responses back to the repository's `Unit` contract.
 - [x] Migrate `/api/dhcp` lease reads and `/api/dhcp/{ip}` deletion after verifying generated-schema parity for expiry, host/client identifiers, addresses and timing; preserve the existing domain mapping while moving SID/retry handling to the generated service.
 - [x] Migrate `/api/dns/blocking` reads and updates to the generated service; preserve `skipRenewal` behavior, enable/disable semantics and the disable timer while keeping the existing domain mapping.
 - [ ] Keep ARP/network flushing on the handwritten path for now because the repository intentionally falls back from the v6.3+ `/api/action/flush/network` endpoint to deprecated `/api/action/flush/arp` on HTTP 404; keep gravity update handwritten because the current client exposes the streaming progress contract while the generated endpoint does not.
-- [x] Migrate `/api/info/client` to the generated service after verifying the generated response already preserves `remoteAddr`, HTTP version, method, headers and timing metadata; retain the proven legacy/domain mapping through generated-JSON roundtrip and shared SID renewal/retry coverage.
-- [ ] Keep authentication on the handwritten path while generated `POST /auth` lacks a TOTP request field.
-- [ ] Refresh the generated OpenAPI baseline reproducibly from the current Pi-hole API 6.4.1 snapshot to pinned FTL v6.7 before relying on newer schemas: pin the exact FTL commit plus Redocly/OpenAPI wrapper versions, regenerate with the already pinned OpenAPI Generator 7.19.0, and re-audit each remaining handwritten endpoint before migration.
+- [ ] Continue #639 only endpoint-by-endpoint where the generated schema preserves behavior. Keep `/api/info/client` on the handwritten client because the generated schema omits request metadata used by the current model, and keep authentication on the handwritten path while generated `POST /auth` lacks TOTP support.
 - [x] #570: add Local CNAME management only on API paths whose behavior is verified.
   - [x] Verify the current API/repository support boundary: Pi-hole v6 already models `dns.cnameRecords` in `Dns`, while the v5 Local DNS repository/gateway path remains explicitly unsupported.
   - [x] Add v6 CNAME repository/domain operations over `dns/cnameRecords`; implementation committed (`d7c6b6e3`) with optional TTL preservation and shared v6 session/retry behavior. Repository-wide Flutter tests and Codecov completed successfully on the implementation; v5 remains explicitly unsupported.
@@ -107,8 +95,7 @@ Maintain and improve the unofficial Pi-hole client while upstream activity is li
 - [ ] Keep regression tests/builds green for each deterministic change.
 - [ ] Validate device-dependent fixes on affected devices before marking them complete.
 - [ ] Keep `UPSTREAM_TRIAGE.md` synchronized when an upstream-tracked item changes state.
-- [x] Integrate the validated maintenance snapshot into `main` through a stable short-lived PR candidate.
-- [x] Remediate all currently patchable Docusaurus/pnpm high-severity Dependabot alerts through updates generated from the current `main` dependency graph; the remaining two `image-size` high-severity advisories have no patched release and are bounded by the existing 15-minute docs-build timeout.
+- [ ] Merge the validated maintenance work from `dev` according to the repository's existing PR workflow.
 
 ## Blockers / dependencies
 
@@ -117,9 +104,7 @@ Maintain and improve the unofficial Pi-hole client while upstream activity is li
 - Larger v6 API work depends on preserving authentication and behavior parity during migration.
 - #570 is CI-validated for the v6 repository and Local DNS UI path; v5 CNAME parity must not be assumed because the current v5 Local DNS path is unsupported.
 - #134 scanner compliance is resolved: Android no longer uses `mobile_scanner`/Google ML Kit. The source-build path is also isolated from private signing material and from `sqlite3` precompiled-binary downloads and is CI-validated, including an `apksigner` check that the produced release APK is unsigned. A separate F-Droid publication of this maintenance fork still requires a fresh application ID plus corresponding name/icon/string changes before downstream metadata submission.
-- GitHub Pages is enabled with GitHub Actions as the deployment source; the two latest production docs deployments from `main` completed successfully after the repository setting was corrected.
-- Website dependency security maintenance remains active through Dependabot. The only currently open high-severity alerts are the two unpatched `image-size <=2.0.2` parser DoS advisories; retain the 15-minute build timeout as a compensating control and continue to resolve future lockfile changes reproducibly rather than hand-editing `pnpm-lock.yaml`.
 
 ## Completion status
 
-**Not fully completed.** #442 remains blocked on a fresh Android 16 reproduction/current stack. #570 is implemented and CI-validated through the v6 repository and Local DNS UI layers. #134 remains the active distribution gate: secret-free unsigned packaging, Android scanner compliance and the download-free native-asset path are implemented and CI-validated; the required independent-fork package identity remains before downstream F-Droid metadata can be submitted. Deterministic #639 generated-client migration has now also moved `/api/info/client` to the generated service; the remaining migration work is limited to documented schema/behavior/encoding blockers plus a pinned FTL v6.7 OpenAPI refresh.
+**Not fully completed.** #442 remains blocked on a fresh Android 16 reproduction/current stack. #570 is implemented and CI-validated through the v6 repository and Local DNS UI layers. #134 remains the active distribution gate: secret-free unsigned packaging, Android scanner compliance and the download-free native-asset path are implemented and CI-validated; the required independent-fork package identity remains before downstream F-Droid metadata can be submitted. Deterministic #639 generated-client migration can continue in parallel only where schema and behavior parity are proven.
