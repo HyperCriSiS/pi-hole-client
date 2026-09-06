@@ -20,6 +20,7 @@ class _FakeAuthService extends PiholeV6Service {
 
   bool shouldFailGetAuth = false;
   bool shouldFailDeleteAuth = false;
+  bool unauthorizedFirstDeleteAuth = false;
   bool shouldFailGetSessions = false;
   bool shouldFailDeleteSession = false;
   bool unauthorizedFirstGetAuth = false;
@@ -54,6 +55,9 @@ class _FakeAuthService extends PiholeV6Service {
   @override
   Future<Result<Unit>> deleteAuth() async {
     deleteAuthCallCount++;
+    if (unauthorizedFirstDeleteAuth && deleteAuthCallCount == 1) {
+      return Failure(ApiException(message: 'Unauthorized', statusCode: 401));
+    }
     if (shouldFailDeleteAuth) {
       return Failure(Exception('Forced generated deleteAuth failure'));
     }
@@ -228,6 +232,17 @@ void main() {
       final result = await repository.deleteCurrentSession();
 
       expectError(result, messageContains: 'Forced generated deleteAuth failure');
+    });
+
+    test('renews SID and retries generated logout after 401', () async {
+      service.unauthorizedFirstDeleteAuth = true;
+
+      final result = await repository.deleteCurrentSession();
+
+      expectSuccess(result);
+      expect(service.deleteAuthCallCount, 2);
+      expect(client.postAuthCallCount, 1);
+      expect(service.lastSid, isNot('sid123'));
     });
   });
 

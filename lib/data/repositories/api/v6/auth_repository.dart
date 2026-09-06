@@ -87,10 +87,8 @@ class AuthRepositoryV6 extends BaseV6SidRepository implements AuthRepository {
         _service.setSid(sid);
         return _service.deleteAuth();
       },
-      // Known limitation: on a failed DELETE this renews (creates a throwaway
-      // session) instead of retrying the same delete, so a genuinely failed
-      // logout leaves the old session to time out. Best-effort cleanup, low
-      // impact; left as-is for now.
+      // A 401 renews the shared SID and runWithResultRetry then repeats the
+      // same DELETE once with the refreshed generated-client API key.
       onRetry: (_, e) => renewSidIfExpired(e),
     );
   }
