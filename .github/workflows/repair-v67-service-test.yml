@@ -1,0 +1,55 @@
+name: Repair v6.7 service test
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: roadmap/openapi-v67-refresh
+          fetch-depth: 0
+
+      - name: Restore pre-repair test and apply FTL v6.7 symbol changes
+        shell: bash
+        run: |
+          git show 521997e6cab8f218b3e4bce29e3de9bed032883b:test/data/services/api/wrappers/pihole_v6_service_test.dart > test/data/services/api/wrappers/pihole_v6_service_test.dart
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('test/data/services/api/wrappers/pihole_v6_service_test.dart')
+          text = path.read_text()
+          replacements = {
+              'mockGroupApi.getAllGroups()': 'mockGroupApi.listGroups()',
+              "groupsPost: anyNamed('groupsPost')": "post2: anyNamed('post2')",
+              "groupsPut: anyNamed('groupsPut')": "put2: anyNamed('put2')",
+              'groupsPut: null': 'put2: null',
+              'GetDomains200Response()': 'GetDomain200Response()',
+              'mockDomainApi.getAllDomains()': 'mockDomainApi.getDomains()',
+              'mockDomainApi.getDomainsByTypeKind(': 'mockDomainApi.getTypeKindDomains(',
+              'mockDomainApi.getDomains(\n': 'mockDomainApi.getDomain(\n',
+              'mockListApi.getAllLists(': 'mockListApi.listLists(',
+              "listsPost: anyNamed('listsPost')": "post4: anyNamed('post4')",
+              "listsPut: anyNamed('listsPut')": "put4: anyNamed('put4')",
+              'mockClientApi.getAllClients()': 'mockClientApi.listClients()',
+          }
+          for old, new in replacements.items():
+              if old not in text:
+                  raise SystemExit(f'Expected symbol not found: {old!r}')
+              text = text.replace(old, new)
+          path.write_text(text)
+          PY
+
+      - name: Commit repair
+        shell: bash
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add test/data/services/api/wrappers/pihole_v6_service_test.dart
+          git commit -m "test: adapt v6 service wrapper tests to FTL 6.7"
+          git push origin HEAD:roadmap/openapi-v67-refresh
