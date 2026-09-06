@@ -45,11 +45,11 @@ jobs:
           cp .env.sample .env
           dart run tools/generate_git_commit.dart
 
-      - name: Regenerate wrapper mocks from the current generated API
+      - name: Regenerate all root codegen including wrapper mocks
         shell: bash
         run: |
           dart run build_runner clean
-          dart run build_runner build --build-filter=test/data/services/api/wrappers/mocks.mocks.dart
+          dart run build_runner build
           dart format \
             test/data/services/api/wrappers/mocks.mocks.dart \
             test/data/services/api/wrappers/pihole_v6_service_test.dart \
