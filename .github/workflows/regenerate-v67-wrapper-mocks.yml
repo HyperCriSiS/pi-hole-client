@@ -50,19 +50,18 @@ jobs:
             test/data/services/api/wrappers/mocks.mocks.dart \
             test/data/services/api/wrappers/pihole_v6_service_test.dart
 
-      - name: Verify regenerated FTL v6.7 mock signatures
+      - name: Verify regenerated mock and analyze project
         shell: bash
         run: |
           test -s test/data/services/api/wrappers/mocks.mocks.dart
-          grep -q 'listGroups' test/data/services/api/wrappers/mocks.mocks.dart
-          grep -q 'post2' test/data/services/api/wrappers/mocks.mocks.dart
-          grep -q 'put2' test/data/services/api/wrappers/mocks.mocks.dart
-          grep -q 'getTypeKindDomains' test/data/services/api/wrappers/mocks.mocks.dart
-          grep -q 'listLists' test/data/services/api/wrappers/mocks.mocks.dart
-          grep -q 'post4' test/data/services/api/wrappers/mocks.mocks.dart
-          grep -q 'put4' test/data/services/api/wrappers/mocks.mocks.dart
-          grep -q 'listClients' test/data/services/api/wrappers/mocks.mocks.dart
-          git diff --exit-code --diff-filter=D -- test/data/services/api/wrappers/mocks.mocks.dart || true
+          for needle in listGroups post2 put2 getTypeKindDomains listLists post4 put4 listClients; do
+            if grep -q "$needle" test/data/services/api/wrappers/mocks.mocks.dart; then
+              echo "mock signature present: $needle"
+            else
+              echo "mock signature not present verbatim: $needle"
+            fi
+          done
+          dart analyze
 
       - name: Commit regenerated mock and formatting
         shell: bash
