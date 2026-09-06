@@ -1,34 +1,44 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SPEC_DIR="$SCRIPT_DIR/spec"
 TEMP_DIR="$SCRIPT_DIR/.temp-ftl"
+VERSIONS_FILE="$SCRIPT_DIR/versions.env"
 
-# FTL repository
-FTL_REPO="https://github.com/pi-hole/FTL.git"
+# shellcheck disable=SC1090
+source "$VERSIONS_FILE"
+
 SPECS_PATH="src/api/docs/content/specs"
 
-echo "📥 Downloading FTL OpenAPI specs (sparse checkout)..."
+cleanup() {
+    rm -rf "$TEMP_DIR"
+}
+trap cleanup EXIT
+
+echo "📥 Downloading pinned FTL OpenAPI specs..."
 rm -rf "$TEMP_DIR"
-mkdir -p "$TEMP_DIR"
+git init -q "$TEMP_DIR"
+git -C "$TEMP_DIR" remote add origin "$FTL_REPO"
+git -C "$TEMP_DIR" sparse-checkout init --cone
+git -C "$TEMP_DIR" sparse-checkout set "$SPECS_PATH"
+git -C "$TEMP_DIR" fetch --depth 1 origin "$FTL_COMMIT"
+git -C "$TEMP_DIR" checkout -q --detach FETCH_HEAD
 
-# Shallow clone with sparse checkout (only specs directory)
-git clone --depth 1 --filter=blob:none --sparse "$FTL_REPO" "$TEMP_DIR"
-cd "$TEMP_DIR"
-git sparse-checkout set "$SPECS_PATH"
-cd "$SCRIPT_DIR"
+ACTUAL_FTL_COMMIT="$(git -C "$TEMP_DIR" rev-parse HEAD)"
+if [ "$ACTUAL_FTL_COMMIT" != "$FTL_COMMIT" ]; then
+    echo "❌ Expected FTL commit $FTL_COMMIT but checked out $ACTUAL_FTL_COMMIT" >&2
+    exit 1
+fi
 
-echo "📦 Bundling specs into single file..."
-pnpm dlx @redocly/cli bundle "$TEMP_DIR/$SPECS_PATH/main.yaml" -o "$SPEC_DIR/upstream-bundled.yaml"
+echo "📦 Bundling specs with @redocly/cli@$REDOCLY_CLI_VERSION..."
+pnpm dlx "@redocly/cli@$REDOCLY_CLI_VERSION" bundle \
+    "$TEMP_DIR/$SPECS_PATH/main.yaml" \
+    -o "$SPEC_DIR/upstream-bundled.yaml"
 
-echo "🧹 Cleaning up..."
-rm -rf "$TEMP_DIR"
-
-# Diff check
 if [ -f "$SPEC_DIR/bundled.yaml" ]; then
     echo ""
-    echo "📊 Diff between current and upstream:"
+    echo "📊 Diff between current and pinned upstream:"
     diff -u "$SPEC_DIR/bundled.yaml" "$SPEC_DIR/upstream-bundled.yaml" || true
     echo ""
     echo "⚠️  Review the diff above. If acceptable, run:"
