@@ -3,17 +3,20 @@ import 'package:pi_hole_client/data/model/v6/groups/groups.dart' as legacy_group
 import 'package:pi_hole_client/data/repositories/api/interfaces/group_repository.dart';
 import 'package:pi_hole_client/data/repositories/api/v6/base_v6_sid_repository.dart';
 import 'package:pi_hole_client/data/repositories/utils/call_with_retry.dart';
+import 'package:pi_hole_client/data/services/api/pihole_v6_api_client.dart';
 import 'package:pi_hole_client/data/services/api/wrappers/pihole_v6_service.dart';
 import 'package:pi_hole_client/domain/model/group/group.dart';
-import 'package:pihole_v6_api/pihole_v6_api.dart';
 import 'package:result_dart/result_dart.dart';
 
 class GroupRepositoryV6 extends BaseV6SidRepository implements GroupRepository {
   GroupRepositoryV6({
+    required PiholeV6ApiClient client,
     required PiholeV6Service service,
     required super.sessionCache,
-  }) : _service = service;
+  }) : _client = client,
+       _service = service;
 
+  final PiholeV6ApiClient _client;
   final PiholeV6Service _service;
 
   @override
@@ -40,17 +43,13 @@ class GroupRepositoryV6 extends BaseV6SidRepository implements GroupRepository {
     return runWithResultRetry<Group>(
       action: () async {
         final sid = await getSid();
-        _service.setSid(sid);
-        final result = await _service.addGroup(
-          body: GroupsPost(
-            name: StringOrList.fromString(name),
-            comment: comment,
-            enabled: enabled,
-          ),
+        final result = await _client.postGroups(
+          sid,
+          name: name,
+          comment: comment,
+          enabled: enabled,
         );
-        return result.map(
-          (e) => legacy_groups.Groups.fromJson(e.toJson()).toSingleDomain(),
-        );
+        return result.map((e) => e.toSingleDomain());
       },
       onRetry: (_, e) => renewSidIfExpired(e),
     );
@@ -65,14 +64,13 @@ class GroupRepositoryV6 extends BaseV6SidRepository implements GroupRepository {
     return runWithResultRetry<Group>(
       action: () async {
         final sid = await getSid();
-        _service.setSid(sid);
-        final result = await _service.replaceGroup(
+        final result = await _client.putGroups(
+          sid,
           name: name,
-          body: GroupsPut(comment: comment, enabled: enabled),
+          comment: comment,
+          enabled: enabled,
         );
-        return result.map(
-          (e) => legacy_groups.Groups.fromJson(e.toJson()).toSingleDomain(),
-        );
+        return result.map((e) => e.toSingleDomain());
       },
       onRetry: (_, e) => renewSidIfExpired(e),
     );
@@ -83,8 +81,7 @@ class GroupRepositoryV6 extends BaseV6SidRepository implements GroupRepository {
     return runWithResultRetry<Unit>(
       action: () async {
         final sid = await getSid();
-        _service.setSid(sid);
-        return _service.deleteGroup(name: name);
+        return _client.deleteGroups(sid, name: name);
       },
       onRetry: (_, e) => renewSidIfExpired(e),
     );
