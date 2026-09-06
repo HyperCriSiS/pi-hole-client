@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pi_hole_client/data/model/v6/metrics/query_filter.dart';
 import 'package:pi_hole_client/data/repositories/api/v6/metrics_repository.dart';
 import 'package:pi_hole_client/data/repositories/api/v6/v6_session_cache.dart';
 import 'package:pi_hole_client/data/services/api/wrappers/pihole_v6_service.dart';
@@ -16,12 +19,26 @@ class _FakePiholeV6Service extends PiholeV6Service {
 
   bool shouldFailHistory = false;
   bool shouldFailHistoryClients = false;
+  bool shouldFailQueries = false;
   bool shouldFailStatsSummary = false;
   bool shouldFailStatsUpstreams = false;
   bool shouldFailStatsTopDomains = false;
   bool shouldFailStatsTopClients = false;
   String? lastSid;
   int? lastHistoryClientCount;
+  num? lastQueriesFrom;
+  num? lastQueriesUntil;
+  int? lastQueriesLength;
+  int? lastQueriesStart;
+  int? lastQueriesCursor;
+  String? lastQueriesDomain;
+  String? lastQueriesClientIp;
+  String? lastQueriesClientName;
+  String? lastQueriesUpstream;
+  String? lastQueriesType;
+  String? lastQueriesStatus;
+  String? lastQueriesReply;
+  String? lastQueriesDnssec;
 
   @override
   void setSid(String sid) {
@@ -48,6 +65,44 @@ class _FakePiholeV6Service extends PiholeV6Service {
     }
     return Success(
       GetClientMetrics200Response.fromJson(kSrvGetHistoryClient.toJson()),
+    );
+  }
+
+  @override
+  Future<Result<GetQueries200Response>> getQueries({
+    num? from,
+    num? until,
+    int? length,
+    int? start,
+    int? cursor,
+    String? domain,
+    String? clientIp,
+    String? clientName,
+    String? upstream,
+    String? type,
+    String? status,
+    String? reply,
+    String? dnssec,
+  }) async {
+    lastQueriesFrom = from;
+    lastQueriesUntil = until;
+    lastQueriesLength = length;
+    lastQueriesStart = start;
+    lastQueriesCursor = cursor;
+    lastQueriesDomain = domain;
+    lastQueriesClientIp = clientIp;
+    lastQueriesClientName = clientName;
+    lastQueriesUpstream = upstream;
+    lastQueriesType = type;
+    lastQueriesStatus = status;
+    lastQueriesReply = reply;
+    lastQueriesDnssec = dnssec;
+    if (shouldFailQueries) {
+      return Failure(Exception('Forced getQueries failure'));
+    }
+    final json = jsonDecode(jsonEncode(kSrvGetQueries.toJson()));
+    return Success(
+      GetQueries200Response.fromJson(json as Map<String, dynamic>),
     );
   }
 
@@ -190,20 +245,66 @@ void main() {
       );
     });
 
-    test('should get queries successfully', () async {
+    test('gets queries successfully through generated service', () async {
       final result = await repository.fetchQueries(
-        from: DateTime.fromMicrosecondsSinceEpoch(1511819900 * 1000),
-        until: DateTime.fromMicrosecondsSinceEpoch(1511820500 * 1000),
+        from: DateTime.fromMillisecondsSinceEpoch(1511819900123),
+        until: DateTime.fromMillisecondsSinceEpoch(1511820500987),
+        length: 25,
+        cursor: 42,
+        start: 10,
       );
+
       expect(result.getOrNull(), kRepoFetchQueries);
+      expect(service.lastSid, 'sid123');
+      expect(service.lastQueriesFrom, 1511819900);
+      expect(service.lastQueriesUntil, 1511820500);
+      expect(service.lastQueriesLength, 25);
+      expect(service.lastQueriesCursor, 42);
+      expect(service.lastQueriesStart, 10);
     });
 
-    test('should fail when fetching queries', () async {
-      client.shouldFail = true;
+    test('forwards supported v6 query filters to generated service', () async {
+      final result = await repository.fetchQueriesFiltered(
+        from: DateTime.fromMillisecondsSinceEpoch(1511819900000),
+        until: DateTime.fromMillisecondsSinceEpoch(1511820500000),
+        filter: const V6QueryFilter(
+          domain: ' example.com ',
+          clientIp: ' 192.0.2.10 ',
+          status: ' FORWARDED ',
+          type: ' AAAA ',
+          reply: ' IP ',
+        ),
+      );
+
+      expect(result.getOrNull(), kRepoFetchQueries);
+      expect(service.lastQueriesDomain, 'example.com');
+      expect(service.lastQueriesClientIp, '192.0.2.10');
+      expect(service.lastQueriesStatus, 'FORWARDED');
+      expect(service.lastQueriesType, 'AAAA');
+      expect(service.lastQueriesReply, 'IP');
+      expect(service.lastQueriesClientName, isNull);
+      expect(service.lastQueriesUpstream, isNull);
+      expect(service.lastQueriesDnssec, isNull);
+    });
+
+    test('omits empty v6 query filters', () async {
+      final result = await repository.fetchQueriesFiltered(
+        from: DateTime.fromMillisecondsSinceEpoch(1511819900000),
+        until: DateTime.fromMillisecondsSinceEpoch(1511820500000),
+        filter: const V6QueryFilter(domain: ' ', clientIp: ''),
+      );
+
+      expect(result.getOrNull(), kRepoFetchQueries);
+      expect(service.lastQueriesDomain, isNull);
+      expect(service.lastQueriesClientIp, isNull);
+    });
+
+    test('fails when generated query request fails', () async {
+      service.shouldFailQueries = true;
 
       final result = await repository.fetchQueries(
-        from: DateTime.fromMicrosecondsSinceEpoch(1511819900 * 1000),
-        until: DateTime.fromMicrosecondsSinceEpoch(1511820500 * 1000),
+        from: DateTime.fromMillisecondsSinceEpoch(1511819900000),
+        until: DateTime.fromMillisecondsSinceEpoch(1511820500000),
       );
       expectError(result, messageContains: 'Forced getQueries failure');
     });
