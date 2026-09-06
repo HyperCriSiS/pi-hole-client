@@ -1,109 +1,99 @@
-name: Compile Linux build manually
+name: Temporary pinned OpenAPI v6.7 refresh v2
 
 on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  get-version:
-    name: Extract Version from pubspec.yaml
+  refresh:
     runs-on: ubuntu-latest
-    outputs:
-      VERSION_NAME: ${{ steps.extract_version.outputs.VERSION_NAME }}
-      VERSION_NUMBER: ${{ steps.extract_version.outputs.VERSION_NUMBER }}
+    timeout-minutes: 20
     steps:
-      - name: Checkout code
+      - name: Checkout branch
         uses: actions/checkout@v7
+        with:
+          ref: maintenance/openapi-v6.7-refresh-v2
+          fetch-depth: 0
 
-      - name: Extract version from pubspec.yaml
-        id: extract_version
-        run: |
-          VERSION_FULL=$(grep '^version:' pubspec.yaml | sed 's/version: //')
-          VERSION_NAME=$(echo $VERSION_FULL | cut -d '+' -f 1)
-          VERSION_NUMBER=$(echo $VERSION_FULL | cut -d '+' -f 2)
-          echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
-          echo "VERSION_NUMBER=$VERSION_NUMBER" >> $GITHUB_ENV
-          echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_OUTPUT
-          echo "VERSION_NUMBER=$VERSION_NUMBER" >> $GITHUB_OUTPUT
-          echo "Extracted Version Name: $VERSION_NAME"
-          echo "Extracted Version Number: $VERSION_NUMBER"
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
 
-  build-linux:
-    name: Build Linux .tar.gz and .deb
-    runs-on: ubuntu-latest
-    needs: get-version
-    env:
-      VERSION_NAME: ${{ needs.get-version.outputs.VERSION_NAME }}
-      VERSION_NUMBER: ${{ needs.get-version.outputs.VERSION_NUMBER }}
-      LINUX_RELEASE_PATH: build/linux/x64/release/bundle
-      DEBIAN_RELEASE_PATH: build/linux/x64/release/debian
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 10
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v7
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
 
-      - name: Install Linux dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libsecret-1-dev libjsoncpp-dev
-
-      - name: Setup Flutter
+      - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: stable
-          cache: true
           flutter-version: 3.44.1
+          cache: true
 
-      - run: flutter clean
-      - run: flutter pub get
-
-      - name: Copy .env file
-        run: cp .env.sample .env
-
-      - name: Generate files
-        run: dart run build_runner build --delete-conflicting-outputs
-
-      - name: Build Linux
-        run: flutter build linux --release
-
-      - name: Prepare .tar.gz package
+      - name: Bundle pinned FTL v6.7 spec
+        shell: bash
         run: |
-          cp assets/img/pi-hole-client-icon.png $LINUX_RELEASE_PATH
-          cp linux/io.github.tsutsu3.pi_hole_client.desktop $LINUX_RELEASE_PATH
-          tar czf PiHoleClient_${{ env.VERSION_NAME }}_Linux_x64.tar.gz -C $LINUX_RELEASE_PATH .
+          bash tools/openapi/bundle-spec.sh
+          cp tools/openapi/spec/upstream-bundled.yaml tools/openapi/spec/bundled.yaml
+          rm -f tools/openapi/spec/upstream-bundled.yaml
 
-      - name: Prepare Debian package
+      - name: Regenerate v6 client
+        shell: bash
+        run: bash tools/openapi/generate.sh
+
+      - name: Add generated-tree guards and Android path filters
+        shell: bash
         run: |
-          mkdir -p $DEBIAN_RELEASE_PATH/DEBIAN
-          mkdir -p $DEBIAN_RELEASE_PATH/usr/bin
-          mkdir -p $DEBIAN_RELEASE_PATH/usr/lib/pi-hole-client
-          mkdir -p $DEBIAN_RELEASE_PATH/usr/share/applications
-          mkdir -p $DEBIAN_RELEASE_PATH/usr/share/icons/hicolor/512x512/apps
+          python - <<'PY'
+          from pathlib import Path
 
-          cp -r $LINUX_RELEASE_PATH/* $DEBIAN_RELEASE_PATH/usr/lib/pi-hole-client
-          ln -s /usr/lib/pi-hole-client/pi-hole-client $DEBIAN_RELEASE_PATH/usr/bin/pi-hole-client
-          cp linux/io.github.tsutsu3.pi_hole_client.desktop $DEBIAN_RELEASE_PATH/usr/share/applications
-          cp assets/img/pi-hole-client-icon.png $DEBIAN_RELEASE_PATH/usr/share/icons/hicolor/512x512/apps/io.github.tsutsu3.pi_hole_client.png
+          p = Path('.github/workflows/test.yaml')
+          s = p.read_text()
+          old = """    - name: Generate files\n      run: |\n        dart run build_runner build --delete-conflicting-outputs\n        dart format .\n        dart analyze\n\n    - name: Run full coverage tool\n"""
+          new = """    - name: Generate files\n      run: |\n        dart run build_runner build --delete-conflicting-outputs\n        dart format .\n        dart analyze\n\n    - name: Verify generated tree stability\n      run: git diff --exit-code\n\n    - name: Run full coverage tool\n"""
+          assert s.count(old) == 1, 'unexpected test.yaml generate block'
+          p.write_text(s.replace(old, new, 1))
 
-          cat > $DEBIAN_RELEASE_PATH/DEBIAN/control <<EOF
-          Package: pi-hole-client
-          Version: ${{ env.VERSION_NAME }}
-          Section: utils
-          Priority: optional
-          Architecture: amd64
-          Depends: libgtk-3-0, libsecret-1-0, libjsoncpp25
-          Maintainer: tsutsu3 <tsutsu3@example.com>
-          Description: A cross-platform Pi-hole client
-          EOF
+          p = Path('.github/workflows/test-release.yaml')
+          s = p.read_text()
+          marker = "      - 'testing/**'\n"
+          platform_ignores = """      - 'testing/**'\n      - 'ios/**'\n      - 'linux/**'\n      - 'macos/**'\n      - 'windows/**'\n      - 'debian/**'\n      - 'winget/**'\n"""
+          assert s.count(marker) == 2, 'unexpected test-release paths-ignore blocks'
+          s = s.replace(marker, platform_ignores)
+          generate = """      - name: Generate files\n        run: dart run build_runner build --delete-conflicting-outputs\n"""
+          guarded = """      - name: Generate files\n        run: dart run build_runner build --delete-conflicting-outputs\n\n      - name: Verify generated tree stability\n        run: git diff --exit-code\n"""
+          assert s.count(generate) == 2, 'unexpected test-release generate blocks'
+          p.write_text(s.replace(generate, guarded))
+          PY
 
-          dpkg-deb --build $DEBIAN_RELEASE_PATH PiHoleClient_${{ env.VERSION_NAME }}_Linux_x64.deb
+      - name: Verify refresh scope
+        shell: bash
+        run: |
+          git diff --check
+          unexpected=$(git status --short | awk '{print $2}' | grep -Ev '^(tools/openapi/spec/bundled\.yaml|lib/data/services/api/generated/v6(/|$)|\.github/workflows/test\.yaml|\.github/workflows/test-release\.yaml)$' || true)
+          if [ -n "$unexpected" ]; then
+            echo '::error::OpenAPI refresh changed unexpected paths:'
+            echo "$unexpected"
+            exit 1
+          fi
+          git status --short
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: linux
-          path: |
-            PiHoleClient_${{ env.VERSION_NAME }}_Linux_x64.tar.gz
-            PiHoleClient_${{ env.VERSION_NAME }}_Linux_x64.deb
+      - name: Commit generated refresh
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add tools/openapi/spec/bundled.yaml lib/data/services/api/generated/v6 .github/workflows/test.yaml .github/workflows/test-release.yaml
+          git diff --cached --quiet && { echo '::error::No OpenAPI refresh changes produced'; exit 1; }
+          git commit -m 'api: refresh generated v6 client from pinned FTL v6.7'
+          git push origin HEAD:maintenance/openapi-v6.7-refresh-v2
