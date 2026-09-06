@@ -80,7 +80,7 @@ jobs:
         shell: bash
         run: |
           git diff --check
-          unexpected=$(git status --short | awk '{print $2}' | grep -Ev '^(tools/openapi/spec/bundled\.yaml|lib/data/services/api/generated/v6(/|$)|\.github/workflows/test\.yaml|\.github/workflows/test-release\.yaml)$' || true)
+          unexpected=$(git status --short | awk '{print $2}' | grep -Ev '^(tools/openapi/spec/bundled\.yaml|\.github/workflows/test\.yaml|\.github/workflows/test-release\.yaml|lib/data/services/api/generated/v6(/.*)?)$' || true)
           if [ -n "$unexpected" ]; then
             echo '::error::OpenAPI refresh changed unexpected paths:'
             echo "$unexpected"
