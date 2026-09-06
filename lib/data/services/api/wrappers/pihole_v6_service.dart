@@ -258,10 +258,7 @@ class PiholeV6Service {
     Put2? body,
   }) {
     return safeDioCall(() async {
-      final response = await _groupApi.replaceGroup(
-        name: name,
-        put2: body,
-      );
+      final response = await _groupApi.replaceGroup(name: name, put2: body);
       return response.requireData;
     });
   }

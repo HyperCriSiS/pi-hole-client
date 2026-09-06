@@ -31,11 +31,7 @@ void main() {
     });
 
     test('maps disabled group', () {
-      final inner = Get2GroupsInner(
-        id: 2,
-        name: 'Disabled',
-        enabled: false,
-      );
+      final inner = Get2GroupsInner(id: 2, name: 'Disabled', enabled: false);
 
       final group = inner.toDomain();
 

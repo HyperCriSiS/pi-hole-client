@@ -686,10 +686,7 @@ void main() {
       test('returns Success with created list', () async {
         final mockResponse = ReplaceLists200Response();
         when(
-          mockListApi.addList(
-            type: anyNamed('type'),
-            post4: anyNamed('post4'),
-          ),
+          mockListApi.addList(type: anyNamed('type'), post4: anyNamed('post4')),
         ).thenAnswer((_) async => dioResponse(mockResponse));
 
         final result = await service.addList(type: 'block');
