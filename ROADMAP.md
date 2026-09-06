@@ -22,6 +22,7 @@ Maintain and improve the unofficial Pi-hole client while upstream activity is li
 - [x] Apply explicit least-privilege `GITHUB_TOKEN` permissions across all current workflows: read-only by default, with narrowly scoped write permissions only for release creation, release preparation, Winget PR creation and version updates; preserve Google Play OIDC requirements.
 - [x] Extend Dependabot coverage to the Docusaurus/pnpm website dependency tree so website security and version updates are maintained alongside Dart and GitHub Actions dependencies.
 - [x] Repair the September framework-audit CI regressions: analyze `mock_api_server` with its own resolved dependencies, stop coverage/scanner follow-up jobs after a failed test gate, restore generated Git commit metadata before Android builds, and pin pnpm 10 for the docs validation workflow.
+- [x] Reduce unnecessary GitHub Actions consumption: skip Dart/full Android validation for website/docs/roadmap-only changes, skip the unsigned Android source build for test-only changes, and cap the expensive Dart/Android jobs with conservative timeouts while keeping workflow/app changes fully validated.
 - [x] Integrate the validated maintenance snapshot into `main` through PR #8 after green Dart tests, docs validation, unsigned Android source build, CodeQL, Codecov, Sonar and static analysis; close the obsolete long-lived PR #2 after confirming `dev` and `main` resolve to identical repository objects.
 
 ## Phase 1 — deterministic UI and diagnostics work
@@ -65,6 +66,15 @@ Maintain and improve the unofficial Pi-hole client while upstream activity is li
 - [x] Migrate `/api/info/system` after verifying generated-schema parity for uptime, memory, process and CPU/load fields; preserve compatibility with pre-FTL-6.1 payloads where `%cpu` is absent, and route SID handling through the generated service.
 - [x] Migrate `/api/info/host` after verifying parity for uname, model and DMI payloads; keep the existing domain mapper by round-tripping the generated response into the proven legacy transport model, with focused SID/error regression coverage.
 - [x] Migrate `/api/info/messages` read/delete after verifying parity for message IDs, timestamps, types, plain/HTML payloads and delete semantics; preserve existing message-domain filtering while routing SID/error handling through the generated service.
+- [x] Migrate `/api/history` activity metrics to the generated service after verifying parity for timestamps and total/cached/blocked/forwarded counters; preserve the proven domain mapper by round-tripping the generated response through the legacy transport model, and keep shared SID renewal/retry behavior under focused regression coverage.
+- [x] Migrate `/api/history/clients` to the generated service after adding explicit `N`/count forwarding; preserve default/custom/null count semantics, the proven legacy domain mapper via generated-JSON roundtrip, and shared SID renewal/retry behavior. The full Dart suite, unsigned Android source APK, CodeQL/static analysis and zero open code-scanning alerts are green on the final PR #34 candidate.
+- [x] Migrate `/api/stats/summary` to the generated service after verifying summary-field parity; preserve the proven legacy domain mapper through generated-JSON roundtrip and shared SID renewal/retry behavior with focused repository regression coverage.
+- [x] Migrate `/api/stats/upstreams` to the generated service after verifying upstream IP/name/port/count/statistics and aggregate-counter parity; preserve the proven destination mapper through generated-JSON roundtrip and shared SID renewal/retry behavior with focused repository regression coverage.
+- [x] Migrate `/api/stats/top_domains` blocked/allowed reads to the generated service after verifying domain/count and aggregate-counter parity; preserve default/custom/null count semantics, blocked-filter behavior, the proven query-stat mapper, and the repository's existing retry semantics with focused regression coverage.
+- [x] Migrate `/api/stats/top_clients` blocked/allowed reads to the generated service after verifying IP/name/count and aggregate-counter parity; preserve default/custom/null count semantics, blocked-filter behavior, the proven source-stat mapper, and the repository's existing retry semantics with focused regression coverage.
+- [x] Migrate `/api/queries` after extending the generated-service wrapper to preserve legacy `start` pagination alongside cursor pagination and all currently modeled server-side filters; keep generated-response parity through the proven legacy mapper and shared SID renewal/retry coverage.
+- [x] Migrate DNS query-logging reads from handwritten `GET /config/{element}` to the generated typed `GET /config`; preserve the existing query-logging mapper and shared SID renewal/retry behavior.
+- [x] Migrate Local DNS host/CNAME reads and update operations to generated `GET /config` / `PATCH /config`; preserve replacement semantics, untouched entries and CNAME TTLs. Keep add/delete on the handwritten client until generated path-parameter encoding for slash-containing config elements and record values is proven equivalent.
 - [ ] Keep `/api/info/ftl` on the handwritten client for now: the generated schema models v6.3 domain/regex counters only as `{total, enabled}` objects, while the existing transport model intentionally accepts the v6.2 integer representation as well.
 - [x] Migrate `/api/network/devices/{device_id}` deletion to the generated service with shared SID/retry handling and focused error/ID regression coverage.
 - [x] Migrate `/api/network/devices` reads after extending the generated-service wrapper to preserve the existing `max_devices`/`max_addresses` limits; focused repository and wrapper tests verify SID handling, default/custom limit forwarding, response parity and failures.
@@ -96,7 +106,7 @@ Maintain and improve the unofficial Pi-hole client while upstream activity is li
 - [ ] Validate device-dependent fixes on affected devices before marking them complete.
 - [ ] Keep `UPSTREAM_TRIAGE.md` synchronized when an upstream-tracked item changes state.
 - [x] Integrate the validated maintenance snapshot into `main` through a stable short-lived PR candidate.
-- [ ] Remediate the current Docusaurus/pnpm Dependabot alerts through updates generated from the current `main` dependency graph; validate the docs build before merging dependency changes.
+- [x] Remediate all currently patchable Docusaurus/pnpm high-severity Dependabot alerts through updates generated from the current `main` dependency graph; the remaining two `image-size` high-severity advisories have no patched release and are bounded by the existing 15-minute docs-build timeout.
 
 ## Blockers / dependencies
 
@@ -105,8 +115,8 @@ Maintain and improve the unofficial Pi-hole client while upstream activity is li
 - Larger v6 API work depends on preserving authentication and behavior parity during migration.
 - #570 is CI-validated for the v6 repository and Local DNS UI path; v5 CNAME parity must not be assumed because the current v5 Local DNS path is unsupported.
 - #134 scanner compliance is resolved: Android no longer uses `mobile_scanner`/Google ML Kit. The source-build path is also isolated from private signing material and from `sqlite3` precompiled-binary downloads and is CI-validated, including an `apksigner` check that the produced release APK is unsigned. A separate F-Droid publication of this maintenance fork still requires a fresh application ID plus corresponding name/icon/string changes before downstream metadata submission.
-- GitHub Pages deployment is repository-configuration blocked: the production docs build and Pages artifact upload succeed, but `actions/deploy-pages` receives HTTP 404 until Pages is enabled for this repository with GitHub Actions as the deployment source.
-- Website dependency security maintenance is active through Dependabot. Treat regenerated `/website` updates as the remediation path; do not hand-edit `pnpm-lock.yaml`, and do not reuse dependency PRs generated from the pre-integration graph.
+- GitHub Pages is enabled with GitHub Actions as the deployment source; the two latest production docs deployments from `main` completed successfully after the repository setting was corrected.
+- Website dependency security maintenance remains active through Dependabot. The only currently open high-severity alerts are the two unpatched `image-size <=2.0.2` parser DoS advisories; retain the 15-minute build timeout as a compensating control and continue to resolve future lockfile changes reproducibly rather than hand-editing `pnpm-lock.yaml`.
 
 ## Completion status
 

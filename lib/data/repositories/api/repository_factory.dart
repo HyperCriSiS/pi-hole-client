@@ -75,16 +75,16 @@ class RepositoryBundleFactory {
             sessionCache: sessionCache,
           ),
           adlist: AdlistRepositoryV6(
-            client: client,
+            service: generatedService,
             sessionCache: sessionCache,
           ),
           auth: AuthRepositoryV6(client: client, sessionCache: sessionCache),
           client: ClientRepositoryV6(
-            client: client,
+            service: generatedService,
             sessionCache: sessionCache,
           ),
           config: ConfigRepositoryV6(
-            client: client,
+            service: generatedService,
             sessionCache: sessionCache,
           ),
           dhcp: DhcpRepositoryV6(
@@ -96,7 +96,7 @@ class RepositoryBundleFactory {
             sessionCache: sessionCache,
           ),
           domain: DomainRepositoryV6(
-            client: client,
+            service: generatedService,
             sessionCache: sessionCache,
           ),
           ftl: FtlRepositoryV6(
@@ -104,13 +104,18 @@ class RepositoryBundleFactory {
             service: generatedService,
             sessionCache: sessionCache,
           ),
-          group: GroupRepositoryV6(client: client, sessionCache: sessionCache),
+          group: GroupRepositoryV6(
+            service: generatedService,
+            sessionCache: sessionCache,
+          ),
           localDns: LocalDnsRepositoryV6(
             client: client,
+            service: generatedService,
             sessionCache: sessionCache,
           ),
           metrics: MetricsRepositoryV6(
             client: client,
+            service: generatedService,
             sessionCache: sessionCache,
           ),
           network: NetworkRepositoryV6(
