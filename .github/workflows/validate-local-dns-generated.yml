@@ -1,0 +1,75 @@
+name: Validate generated Local DNS migration once
+
+on:
+  push:
+    branches:
+      - roadmap/generated-path-encoding
+    paths:
+      - .github/workflows/validate-local-dns-generated.yml
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v7
+        with:
+          ref: roadmap/generated-path-encoding
+          fetch-depth: 0
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Prepare environment
+        run: |
+          cp .env.sample .env
+          dart run tools/generate_git_commit.dart
+
+      - name: Repair duplicate test argument and format targets
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('test/data/repositories/api/v6/local_dns_repository_test.dart')
+          text = path.read_text()
+          needle = """      final result = await repository.addRecord(\n        ip: '192.168.1.100',\n        ip: '192.168.1.100',\n"""
+          replacement = """      final result = await repository.addRecord(\n        ip: '192.168.1.100',\n"""
+          if text.count(needle) != 1:
+              raise SystemExit(f'Expected duplicate-ip anchor once, found {text.count(needle)}')
+          path.write_text(text.replace(needle, replacement))
+          PY
+          dart format \
+            test/data/repositories/api/v6/local_dns_repository_test.dart \
+            test/data/repositories/api/v6/local_dns_repository_generated_retry_test.dart \
+            test/data/repositories/api/v6/cname_repository_contract_test.dart \
+            test/data/services/api/generated/v6_path_encoding_test.dart
+          git diff --check
+
+      - name: Run focused Local DNS tests
+        run: |
+          flutter test \
+            test/data/repositories/api/v6/local_dns_repository_test.dart \
+            test/data/repositories/api/v6/local_dns_repository_generated_retry_test.dart \
+            test/data/repositories/api/v6/cname_repository_contract_test.dart \
+            test/data/services/api/generated/v6_path_encoding_test.dart
+
+      - name: Analyze project
+        run: dart analyze
+
+      - name: Commit validated test updates and remove workflow
+        run: |
+          rm .github/workflows/validate-local-dns-generated.yml
+          git add -A
+          git diff --cached --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'test: validate generated Local DNS migration'
+          git push origin HEAD:roadmap/generated-path-encoding
