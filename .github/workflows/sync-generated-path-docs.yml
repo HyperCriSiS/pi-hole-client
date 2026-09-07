@@ -1,0 +1,83 @@
+name: Sync generated path encoding docs once
+
+on:
+  push:
+    branches:
+      - roadmap/generated-path-encoding
+    paths:
+      - .github/workflows/sync-generated-path-docs.yml
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v7
+        with:
+          ref: roadmap/generated-path-encoding
+          fetch-depth: 0
+
+      - name: Update roadmap and triage atomically
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          replacements = {
+              Path('ROADMAP.md'): [
+                  (
+                      "- [x] Migrate Local DNS host/CNAME reads and update operations to generated `GET /config` / `PATCH /config`; preserve replacement semantics, untouched entries and CNAME TTLs. Keep add/delete on the handwritten client: the pinned FTL v6.7 generator substitutes `{element}`/`{value}` path placeholders as raw strings, while the proven handwritten path uses `Uri.encodeComponent` (for example `dns/hosts` -> `dns%2Fhosts`), so generated add/delete is demonstrably not path-equivalent.",
+                      "- [x] Migrate Local DNS host/CNAME reads, add/delete and update operations fully to generated config APIs. Preserve replacement semantics, untouched entries, CNAME TTLs and DNS restart behavior; generated path parameters are now deterministically percent-encoded as independent URI components, so slash-containing elements such as `dns/hosts` and their values retain the proven handwritten transport semantics."
+                  ),
+                  (
+                      "- [x] Refresh the generated OpenAPI baseline reproducibly to pinned FTL v6.7: pin FTL commit `fa65a88f8cdef1013594d4de14108077954faea4`, Redocly CLI 2.51.2, OpenAPI Generator wrapper 2.41.0 and generator 7.19.0; regenerate the client, adapt wrapper/mapper/repository/test compatibility to the v6.7 operation/model names, restore automatic Mockito regeneration for wrapper mocks, and re-audit every remaining handwritten endpoint. The remaining handwritten paths are still explicit compatibility/schema/encoding holds rather than unreviewed migration work.",
+                      "- [x] Refresh the generated OpenAPI baseline reproducibly to pinned FTL v6.7: pin FTL commit `fa65a88f8cdef1013594d4de14108077954faea4`, Redocly CLI 2.51.2, OpenAPI Generator wrapper 2.41.0 and generator 7.19.0; regenerate the client, adapt wrapper/mapper/repository/test compatibility to the v6.7 operation/model names, restore automatic Mockito regeneration for wrapper mocks, and re-audit every remaining handwritten endpoint. Generated Dart is deterministically formatted and path parameters are normalized with `Uri.encodeComponent` after formatting; transport-level regression tests cover full Adlist URLs and slash-containing config elements. The remaining handwritten paths are explicit compatibility/schema/behavior holds rather than unreviewed migration work."
+                  ),
+                  (
+                      "Deterministic #639 generated-client migration now runs on a reproducibly pinned FTL v6.7 OpenAPI baseline; authenticated auth/session reads/deletes are generated and the remaining handwritten migration work is limited to documented compatibility/schema/behavior/encoding blockers.",
+                      "Deterministic #639 generated-client migration now runs on a reproducibly pinned FTL v6.7 OpenAPI baseline with deterministic generated-code formatting and URI-component-safe path parameters; Local DNS/CNAME CRUD plus authenticated auth/session reads/deletes are generated, and the remaining handwritten migration work is limited to documented compatibility/schema/behavior blockers."
+                  ),
+              ],
+              Path('UPSTREAM_TRIAGE.md'): [
+                  (
+                      "Generated-client migration covers the parity-verified info paths including `/api/info/client`, history/stats, `/api/queries` with legacy `start` pagination preserved, network-device reads/deletion, DNS actions, DHCP, DNS blocking, DNS query-logging config reads, Local DNS/CNAME config reads/updates, and authenticated auth/session reads/deletes.",
+                      "Generated-client migration covers the parity-verified info paths including `/api/info/client`, history/stats, `/api/queries` with legacy `start` pagination preserved, network-device reads/deletion, DNS actions, DHCP, DNS blocking, DNS query-logging config reads, complete Local DNS/CNAME config CRUD, and authenticated auth/session reads/deletes."
+                  ),
+                  (
+                      "Keep `/api/info/ftl`, session creation/renewal `POST /auth`, the unauthenticated auth capability probe, detailed network gateway, ARP/network fallback flushing, gravity streaming, and Local DNS add/delete handwritten until their explicit compatibility/schema/behavior/encoding gaps are resolved. Local DNS add/delete is now a demonstrated encoding mismatch: generated path placeholders are substituted raw while the proven handwritten client percent-encodes slash-containing element/value segments.",
+                      "Generated Dart is deterministically formatted and all generated path parameters are normalized as URI components after formatting; direct transport tests cover full Adlist URLs plus slash-containing config elements/values. Keep only `/api/info/ftl`, session creation/renewal `POST /auth`, the unauthenticated auth capability probe, detailed network gateway, ARP/network fallback flushing and gravity streaming handwritten until their explicit compatibility/schema/behavior gaps are resolved."
+                  ),
+                  (
+                      "Reads and list-replacement updates use generated config APIs; add/delete intentionally remain handwritten because generated v6.7 substitutes config path placeholders raw, whereas the existing client percent-encodes slash-containing elements/values (`dns/hosts` -> `dns%2Fhosts`). Pi-hole v5 remains unchanged because its Local DNS API path does not expose CNAME support.",
+                      "Reads, add/delete and list-replacement updates now use generated config APIs. The pinned generator output is post-processed reproducibly so path parameters are percent-encoded as independent URI components (`dns/hosts` -> `dns%2Fhosts`), with transport-level regression coverage and SID-renewal retry coverage. Pi-hole v5 remains unchanged because its Local DNS API path does not expose CNAME support."
+                  ),
+                  (
+                      "the generated snapshot is reproducibly pinned to FTL v6.7, and the remaining handwritten paths are explicit compatibility/schema/behavior/encoding holds (including the proven Local DNS path-encoding mismatch). #570 is complete.",
+                      "the generated snapshot is reproducibly pinned to FTL v6.7 with deterministic formatting and URI-component-safe generated path parameters, and the remaining handwritten paths are explicit compatibility/schema/behavior holds. #570 is complete with generated v6 Local DNS/CNAME CRUD."
+                  ),
+              ],
+          }
+
+          for path, pairs in replacements.items():
+              text = path.read_text()
+              for old, new in pairs:
+                  count = text.count(old)
+                  if count != 1:
+                      raise SystemExit(f'{path}: expected anchor once, found {count}: {old[:80]}')
+                  text = text.replace(old, new)
+              path.write_text(text)
+          PY
+          git diff --check
+          git diff -- ROADMAP.md UPSTREAM_TRIAGE.md
+
+      - name: Commit docs and self-remove
+        run: |
+          rm .github/workflows/sync-generated-path-docs.yml
+          git add -A
+          git diff --cached --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'docs: close generated Local DNS encoding hold'
+          git push origin HEAD:roadmap/generated-path-encoding
