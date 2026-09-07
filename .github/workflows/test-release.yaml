@@ -221,38 +221,39 @@ jobs:
           serviceAccountJson: ${{ steps.auth.outputs.credentials_file_path }}
           packageName: io.github.tsutsu3.pi_hole_client
           releaseFiles: PiHoleClient_${{ env.VERSION_NAME }}_Android.aab
-          track: internal
-          status: completed
+          track: alpha # Available tracks are: production,beta,alpha,internal,test
+          status: draft
+          releaseName: ${{ env.VERSION_NAME }}
 
   bump-version:
-    name: Bump version for production release
-    runs-on: ubuntu-latest
-    needs: [get-version, build-android]
-    if: startsWith(github.head_ref, 'release-v')
     permissions:
       contents: write
+    name: Bump version for production release
+    runs-on: ubuntu-latest
+    needs: [test-build-google-play]
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
         with:
-          ref: ${{ github.head_ref }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
-      - name: Configure Git
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+          flutter-version: 3.44.1
+      - run: flutter clean
+      - run: flutter pub get
 
-      - name: Update version in pubspec.yaml
-        run: |
-          sed -i "s/^version: .*/version: ${{ needs.get-version.outputs.VERSION_NAME }}+${{ needs.get-version.outputs.VERSION_NUMBER }}/" pubspec.yaml
+      - name: Bump version in pubspec.yaml
+        run: dart run pub_version_plus:main build
 
-      - name: Commit and push version bump
+      - name: Commit version bump
         run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git checkout ${{ github.head_ref }}
           git add pubspec.yaml
-          if git diff --cached --quiet; then
-            echo "No version changes to commit."
-          else
-            git commit -m "chore: bump version to ${{ needs.get-version.outputs.VERSION_NAME }}+${{ needs.get-version.outputs.VERSION_NUMBER }}"
-            git push origin HEAD:${{ github.head_ref }}
-          fi
+          git commit -m "Bump build version"
+          git push https://${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git ${{ github.head_ref }}
