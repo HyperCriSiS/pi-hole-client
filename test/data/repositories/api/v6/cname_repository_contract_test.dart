@@ -9,51 +9,6 @@ import 'package:result_dart/result_dart.dart';
 import '../../../../../testing/fakes/services/fake_pihole_v6_api_client.dart';
 import '../../../../../testing/fakes/services/fake_session_credential_service.dart';
 
-class _RecordingPiholeV6ApiClient extends FakePiholeV6ApiClient {
-  String? putElement;
-  String? putValue;
-  bool? putRestart;
-  String? deleteElement;
-  String? deleteValue;
-  bool? deleteRestart;
-
-  @override
-  Future<Result<Unit>> putConfigElement(
-    String sid, {
-    required String element,
-    required String value,
-    bool isRestart = true,
-  }) async {
-    putElement = element;
-    putValue = value;
-    putRestart = isRestart;
-    return super.putConfigElement(
-      sid,
-      element: element,
-      value: value,
-      isRestart: isRestart,
-    );
-  }
-
-  @override
-  Future<Result<Unit>> deleteConfigElement(
-    String sid, {
-    required String element,
-    required String value,
-    bool isRestart = true,
-  }) async {
-    deleteElement = element;
-    deleteValue = value;
-    deleteRestart = isRestart;
-    return super.deleteConfigElement(
-      sid,
-      element: element,
-      value: value,
-      isRestart: isRestart,
-    );
-  }
-}
-
 class _RecordingPiholeV6Service extends PiholeV6Service {
   _RecordingPiholeV6Service()
     : super(api: PiholeV6Api(basePathOverride: 'http://localhost/api'));
@@ -62,6 +17,12 @@ class _RecordingPiholeV6Service extends PiholeV6Service {
   GetConfig200Response? patchBody;
   bool? patchRestart;
   String? lastSid;
+  String? addElement;
+  String? addValue;
+  bool? addRestart;
+  String? deleteElement;
+  String? deleteValue;
+  bool? deleteRestart;
 
   @override
   void setSid(String sid) {
@@ -78,6 +39,30 @@ class _RecordingPiholeV6Service extends PiholeV6Service {
   }
 
   @override
+  Future<Result<Unit>> addConfigArrayItem({
+    required String element,
+    required String value,
+    bool? restart = true,
+  }) async {
+    addElement = element;
+    addValue = value;
+    addRestart = restart;
+    return Success(unit);
+  }
+
+  @override
+  Future<Result<Unit>> deleteConfigArrayItem({
+    required String element,
+    required String value,
+    bool? restart = true,
+  }) async {
+    deleteElement = element;
+    deleteValue = value;
+    deleteRestart = restart;
+    return Success(unit);
+  }
+
+  @override
   Future<Result<GetConfig200Response>> patchConfig({
     GetConfig200Response? body,
     bool? restart,
@@ -89,16 +74,15 @@ class _RecordingPiholeV6Service extends PiholeV6Service {
 }
 
 void main() {
-  late _RecordingPiholeV6ApiClient client;
+  late FakePiholeV6ApiClient client;
   late _RecordingPiholeV6Service service;
   late LocalDnsRepositoryV6 repository;
 
   setUp(() {
-    client = _RecordingPiholeV6ApiClient();
+    client = FakePiholeV6ApiClient();
     service = _RecordingPiholeV6Service();
     final creds = FakeSessionCredentialService();
     repository = LocalDnsRepositoryV6(
-      client: client,
       service: service,
       sessionCache: V6SessionCache(creds: creds, client: client),
     );
@@ -152,7 +136,7 @@ void main() {
     ]);
   });
 
-  test('requests DNS restart for CNAME add and delete', () async {
+  test('requests DNS restart for generated CNAME add and delete', () async {
     const record = CnameRecord(
       alias: 'printer.example.test',
       target: 'printer.lan',
@@ -162,15 +146,16 @@ void main() {
     final addResult = await repository.addCnameRecord(record: record);
 
     expect(addResult.isSuccess(), true);
-    expect(client.putElement, 'dns/cnameRecords');
-    expect(client.putValue, 'printer.example.test,printer.lan,300');
-    expect(client.putRestart, true);
+    expect(service.lastSid, 'sid123');
+    expect(service.addElement, 'dns/cnameRecords');
+    expect(service.addValue, 'printer.example.test,printer.lan,300');
+    expect(service.addRestart, true);
 
     final deleteResult = await repository.deleteCnameRecord(record: record);
 
     expect(deleteResult.isSuccess(), true);
-    expect(client.deleteElement, 'dns/cnameRecords');
-    expect(client.deleteValue, 'printer.example.test,printer.lan,300');
-    expect(client.deleteRestart, true);
+    expect(service.deleteElement, 'dns/cnameRecords');
+    expect(service.deleteValue, 'printer.example.test,printer.lan,300');
+    expect(service.deleteRestart, true);
   });
 }
