@@ -46,7 +46,7 @@ class DHCPApi {
       '{'
       r'ip'
       '}',
-      ip.toString(),
+      Uri.encodeComponent(ip.toString()),
     );
     final _options = Options(
       method: r'DELETE',

@@ -262,7 +262,7 @@ class ListManagementApi {
       '{'
       r'list'
       '}',
-      list.toString(),
+      Uri.encodeComponent(list.toString()),
     );
     final _options = Options(
       method: r'DELETE',
@@ -342,7 +342,7 @@ class ListManagementApi {
       '{'
       r'list'
       '}',
-      list.toString(),
+      Uri.encodeComponent(list.toString()),
     );
     final _options = Options(
       method: r'GET',
@@ -456,7 +456,7 @@ class ListManagementApi {
       '{'
       r'domain'
       '}',
-      domain.toString(),
+      Uri.encodeComponent(domain.toString()),
     );
     final _options = Options(
       method: r'GET',
@@ -675,7 +675,7 @@ class ListManagementApi {
       '{'
       r'list'
       '}',
-      list.toString(),
+      Uri.encodeComponent(list.toString()),
     );
     final _options = Options(
       method: r'PUT',

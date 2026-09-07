@@ -25,10 +25,7 @@ void main() {
     test('keeps a full adlist URL inside one generated path segment', () async {
       const address = 'https://example.com/lists/main.txt?source=a#fragment';
 
-      await ListManagementApi(dio).deleteLists(
-        list: address,
-        type: 'block',
-      );
+      await ListManagementApi(dio).deleteLists(list: address, type: 'block');
 
       expect(requests, hasLength(1));
       expect(
@@ -43,22 +40,25 @@ void main() {
       );
     });
 
-    test('encodes config element and value as independent path segments', () async {
-      await PiHoleConfigurationApi(dio).addArrayItem(
-        element: 'dns/hosts',
-        value: '192.0.2.10 host/name',
-        restart: false,
-      );
+    test(
+      'encodes config element and value as independent path segments',
+      () async {
+        await PiHoleConfigurationApi(dio).addArrayItem(
+          element: 'dns/hosts',
+          value: '192.0.2.10 host/name',
+          restart: false,
+        );
 
-      expect(requests, hasLength(1));
-      expect(
-        requests.single.path,
-        '/config/dns%2Fhosts/192.0.2.10%20host%2Fname',
-      );
-      expect(
-        requests.single.uri.toString(),
-        contains('/config/dns%2Fhosts/192.0.2.10%20host%2Fname'),
-      );
-    });
+        expect(requests, hasLength(1));
+        expect(
+          requests.single.path,
+          '/config/dns%2Fhosts/192.0.2.10%20host%2Fname',
+        );
+        expect(
+          requests.single.uri.toString(),
+          contains('/config/dns%2Fhosts/192.0.2.10%20host%2Fname'),
+        );
+      },
+    );
   });
 }

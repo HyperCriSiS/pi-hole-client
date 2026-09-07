@@ -58,7 +58,7 @@ class FTLInformationApi {
       '{'
       r'message_id'
       '}',
-      messageId.toString(),
+      Uri.encodeComponent(messageId.toString()),
     );
     final _options = Options(
       method: r'DELETE',
