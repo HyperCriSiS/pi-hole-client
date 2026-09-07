@@ -54,15 +54,23 @@ jobs:
         run: |
           python3 tools/openapi/encode_path_parameters.py \
             lib/data/services/api/generated/v6/lib/src/api
+
+          echo 'Generated working-tree diff:'
+          git status --short
+          git diff --stat
+
           if git diff --quiet -- lib/data/services/api/generated/v6/lib/src/api; then
             echo 'Expected encoded generated API diff is missing.' >&2
             exit 1
           fi
-          if grep -R -n -E '^[[:space:]]+[A-Za-z_][A-Za-z0-9_]*\.toString\(\),[[:space:]]*$' \
-              lib/data/services/api/generated/v6/lib/src/api/*_api.dart; then
-            echo 'Raw generated path parameter values remain.' >&2
+
+          unexpected="$(git diff --name-only | grep -Ev '^(lib/data/services/api/generated/v6/lib/src/api/[^/]+_api\.dart|test/data/services/api/generated/v6_path_encoding_test\.dart)$' || true)"
+          if [[ -n "$unexpected" ]]; then
+            echo 'Unexpected files changed by pinned regeneration:' >&2
+            printf '%s\n' "$unexpected" >&2
             exit 1
           fi
+
           git diff --check
 
       - name: Run path encoding regression tests
