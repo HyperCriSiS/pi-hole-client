@@ -153,7 +153,10 @@ void main() {
         ip: '192.168.1.100',
         name: 'mydevice',
       );
-      expectError(result, messageContains: 'Forced generated addArrayItem failure');
+      expectError(
+        result,
+        messageContains: 'Forced generated addArrayItem failure',
+      );
     });
   });
 
@@ -296,7 +299,10 @@ void main() {
           target: 'printer.lan',
         ),
       );
-      expectError(result, messageContains: 'Forced generated addArrayItem failure');
+      expectError(
+        result,
+        messageContains: 'Forced generated addArrayItem failure',
+      );
     });
 
     test('should delete CNAME record successfully', () async {
