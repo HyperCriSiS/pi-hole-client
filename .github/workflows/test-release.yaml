@@ -135,6 +135,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
 
+      - name: Audit Android package identity
+        run: bash tools/identity/audit_android_identity.sh
+
       - name: Set up JDK 17
         uses: actions/setup-java@v6
         with:
