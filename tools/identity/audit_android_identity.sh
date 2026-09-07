@@ -41,15 +41,16 @@ require_file() {
 read_gradle_value() {
   local key="$1"
   local file="$2"
-  sed -nE "s/^[[:space:]]*${key}[[:space:]]+['\"]([^'\"]+)['\"].*/\1/p" "$file" | head -n 1
+  sed -nE "s/^[[:space:]]*${key}[[:space:]]*=?[[:space:]]*['\"]([^'\"]+)['\"].*/\1/p" "$file" | head -n 1
 }
 
 BUILD_GRADLE="android/app/build.gradle"
 MANIFEST="android/app/src/main/AndroidManifest.xml"
 STRINGS="android/app/src/main/res/values/strings.xml"
 RELEASE_WORKFLOW=".github/workflows/test-release.yaml"
+WIDGET_CONSTANTS="android/app/src/main/kotlin/${EXPECTED_APPLICATION_ID//./\/}/widget/WidgetConstants.kt"
 
-for file in "$BUILD_GRADLE" "$MANIFEST" "$STRINGS" "$RELEASE_WORKFLOW"; do
+for file in "$BUILD_GRADLE" "$MANIFEST" "$STRINGS" "$RELEASE_WORKFLOW" "$WIDGET_CONSTANTS"; do
   require_file "$file"
 done
 
@@ -81,16 +82,22 @@ if (( failures == 0 )); then
     || fail "Google Play packageName is '$play_package'; expected '$EXPECTED_APPLICATION_ID'."
 
   mapfile -t widget_actions < <(
-    sed -nE 's/.*android:name="([^"]*\.action\.WIDGET_[^"]*)".*/\1/p' "$MANIFEST"
+    sed -nE 's/.*<action android:name="([^"]+\.widget\.(REFRESH|TOGGLE))".*/\1/p' "$MANIFEST"
   )
   if (( ${#widget_actions[@]} == 0 )); then
-    fail "No widget broadcast actions were found in $MANIFEST."
+    fail "No package-prefixed widget broadcast actions were found in $MANIFEST."
   else
     for action in "${widget_actions[@]}"; do
-      [[ "$action" == "$EXPECTED_APPLICATION_ID".action.WIDGET_* ]] \
-        || fail "Widget action '$action' does not use '$EXPECTED_APPLICATION_ID' as its prefix."
+      [[ "$action" == "$EXPECTED_APPLICATION_ID".widget.* ]] \
+        || fail "Widget action '$action' does not use '$EXPECTED_APPLICATION_ID.widget' as its prefix."
     done
   fi
+
+  for action_name in REFRESH TOGGLE; do
+    expected_action="$EXPECTED_APPLICATION_ID.widget.$action_name"
+    grep -Fq "const val ACTION_${action_name} = \"$expected_action\"" "$WIDGET_CONSTANTS" \
+      || fail "WidgetConstants ACTION_${action_name} does not match '$expected_action'."
+  done
 fi
 
 expected_package_path="${EXPECTED_APPLICATION_ID//./\/}"
@@ -169,4 +176,4 @@ if (( failures > 0 )); then
 fi
 
 echo "Android identity audit passed for $EXPECTED_APPLICATION_ID."
-echo "Validated Gradle identity, Kotlin package/path parity, widget actions, display strings, launcher assets, and release packageName."
+echo "Validated Gradle identity, Kotlin package/path parity, widget manifest/constants actions, display strings, launcher assets, and release packageName."
