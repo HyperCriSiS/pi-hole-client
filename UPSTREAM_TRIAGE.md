@@ -1,8 +1,10 @@
-# Upstream Triage
+# Upstream maintenance triage
 
-This document tracks upstream issues/PRs that affect the maintenance fork and records whether they are imported, reworked, held, or already addressed locally.
+Upstream: `tsutsu3/pi-hole-client`
 
-## Dependency / build maintenance
+This file tracks the open upstream pull requests and issues reviewed while maintaining this fork.
+
+## Pull requests
 
 | Upstream | Topic | Fork status | Notes |
 |---|---|---|---|
@@ -13,30 +15,41 @@ This document tracks upstream issues/PRs that affect the maintenance fork and re
 
 ## Live Log reliability
 
-| Upstream | Topic | Fork status | Notes |
-|---|---|---|---|
-| #647 | Live Log watchdog / stale stream recovery | Implemented locally | Watchdog/reconnect behavior is in the fork with regression coverage. |
-| #648 | Live Log filtering cleanup | Implemented locally | Filtering/state cleanup was integrated with the watchdog work. |
+### Symptom
+Live Log stops receiving new data until the app is restarted.
 
-## Pi-hole v6 API / feature work
+### Root cause found
+`LiveLogsService.tickOnce()` serializes requests with `_liveLoading`, and `LogsViewModel` serializes ticks with `_isLiveTickInProgress`. If a pagination/network future never completes, both guards can remain active indefinitely. Every later timer tick is then skipped. Restarting the app recreates the service/view model and clears the stuck state, matching the reported behavior.
 
-| Upstream | Topic | Fork status | Notes |
-|---|---|---|---|
-| #639 | Generated Pi-hole v6 client migration | **Active / bounded.** Generated-client migration is integrated behind the adapter seam and the snapshot is reproducibly refreshed to pinned FTL v6.7 (`fa65a88f8cdef1013594d4de14108077954faea4`) with pinned Redocly/OpenAPI Generator tooling. The remaining handwritten paths were re-audited against v6.7 and remain explicit compatibility/schema/encoding holds rather than unreviewed migration work. |
-| #570 | Local CNAME management | **Implemented in `main`.** v6 repository/domain/UI support is present with TTL preservation and regression coverage. v5 remains unsupported because its Local DNS path does not expose equivalent capability. |
-| #352 | v6 server-side log filtering | Hold | Performance feature; overlaps generated v6 migration. Keep v5 local filtering. |
+### Fix in `main`
+- Added a per-page timeout watchdog to `LiveLogsService`.
+- Timeout/error always releases `_liveLoading` through `finally`.
+- The live cursor (`_lastEnd`) advances only after a successful tick, so a timeout does not silently create a data gap.
+- Added a regression test with a pagination service that never completes; the test verifies that a timed-out tick unlocks the service and preserves the cursor for retry.
 
-## Deterministic UI / behavior fixes
+The dependency update from upstream #660 also moves Dio from 5.9.2 to 5.11.0. Dio 5.10/5.11 contains fixes for request/interceptor hangs, which is complementary to the application-level watchdog.
 
-| Upstream | Topic | Fork status | Notes |
-|---|---|---|---|
-| #604 | UI cleanup | Implemented | Deterministic UI cleanup imported/validated. |
+## Open issues
+
+| Issue | Area | Triage / next action |
+|---|---|---|
+| #639 | Pi-hole v6 API | **In progress in `main`.** Generated-client migration covers the parity-verified info paths including `/api/info/client`, history/stats, `/api/queries` with legacy `start` pagination preserved, network-device reads/deletion, DNS actions, DHCP, DNS blocking, DNS query-logging config reads, and Local DNS/CNAME config reads/updates. The generated client is now reproducibly refreshed to pinned FTL v6.7 (`fa65a88f8cdef1013594d4de14108077954faea4`) with pinned Redocly/OpenAPI Generator tooling, and the remaining handwritten paths were re-audited against that schema. Keep `/api/info/ftl`, auth, detailed network gateway, ARP/network fallback flushing, gravity streaming, and Local DNS add/delete handwritten until their explicit compatibility/schema/encoding gaps are resolved. |
+| #638 | Error UI | **Implemented in `main`**. Twelve duplicated generic error states were migrated to the shared `ErrorMessage` component; a final repository audit found no further generic duplicates requiring migration. |
+| #636 | Android 17 connectivity | Needs device/log reproduction. Dependency refresh in #660 is relevant; collect App Log around connection/auth and verify network/TLS behavior on Android 17. |
+| #632 | App Log diagnostics | **Implemented in `main`**. Added a shared App Log service with central secret redaction, diagnostics for connection/auth/v6 session/secure-storage failures, and persistence-result handling so password/token/SID write errors are no longer silently ignored. Added regression tests for redaction and storage/session failures. |
+| #622 | Group/Client sheets | **Implemented in `main` (`c2765e31`)**. Add sheets are content-sized; edit sheets use centered content with `minHeight: 360` and `maxHeight: 480`, matching Adlist/Domain/Local DNS patterns. |
+| #604 | Domain Log Details | **Implemented in `main`**. Added filter-by-domain and copy-domain actions while retaining the browser action, with focused widget coverage. |
+| #598 | Android widgets no data | Needs Android reproduction/logging. Verify widget update channel/session restore on the current pinned secure-storage stack. |
+| #593 | v5 navigation | **Already addressed by current code** (`dc683828`, upstream #591): Adlists/Network expose explicit Back buttons with Home fallback and Home tiles push destinations directly. No duplicate production change needed. |
+| #592 | Tablet navigation | **Already addressed by current code** (`dc683828`, upstream #591): Settings root uses `PopScope` to route Back to Home; AppShell handles root-tab Back consistently. No duplicate production change needed. |
+| #570 | Local CNAME | **Implemented and CI-validated in `main` for Pi-hole v6.** Added verified CNAME domain/repository CRUD with optional TTL preservation plus a capability-gated Host/CNAME Local DNS UI. Reads and list-replacement updates use generated config APIs; add/delete intentionally remain handwritten because the pinned FTL v6.7 schema still does not define slash-containing config path-parameter encoding precisely enough to prove generated-path equivalence. Pi-hole v5 remains unchanged because its Local DNS API path does not expose CNAME support. |
+| #501 | Android widget layout | Device/density-specific UI work; needs widget size tests across Android display scales. |
+| #442 | PopupMenu/Navigator crash | **Current reproduction required.** The only known stack is from v1.7.0 on Android 16. Current `main` uses GoRouter-based Home navigation but still has `ServerActionsMenu` on `PopupMenuButton`; capture a fresh Android 16 stack before changing popup lifecycle behavior. |
+| #438 | disableServer Provider/context crash | Current code already obtains providers before awaiting and checks `context.mounted` before post-request UI work, so the reported v1.7.0 stack appears mitigated in current `main`; retain regression monitoring. |
+| #432 | Logs oldest→newest pagination | **Implemented in `main` (`d4e879da`, tests restored/extended in `6fef1232`)**. Infinite scrolling now follows visual sort direction: newest-first extends older history; oldest-first fetches newer logs from the live baseline, including while automatic Live Log is paused. |
 | #404 | Translation docs | **Implemented in `main`**. Added `docs/translations.md` documenting ARB-based translation contributions and the process for adding new locales. |
 | #397 | Windows LocalDNS suggestions | **Implemented and CI-validated in `main`**. `TextFieldTapRegion` keeps suggestion-list mouse interaction inside the field tap group while outside clicks still dismiss; focused regression tests cover both behaviors. |
-| #442 | Android 16 popup-menu crash | Device reproduction required | Old v1.7.0 stack is insufficient to justify a current lifecycle change; reproduce on Android 16/current `main` first. |
-| #636 | Empty Network tab after long-running use | Device reproduction required | Soak/reproduce on current dependencies and capture logs before changing state/repository behavior. |
-| #598 | Logout/back-loop | Device reproduction required | Reproduce repeated logout/back-stack sequence before altering navigation. |
-| #501 | Widget display/configuration | Device reproduction required | Validate real widget resize/layout states first. |
+| #352 | v6 server-side log filtering | Performance feature. Depends on v6 API capabilities and overlaps #639; keep v5 local filtering. |
 | #293 | Android auth/secure-storage crash | Current `main` deliberately remains on `flutter_secure_storage` 10.x because 11.x requires compileSdk 37 while the project is on 36. Re-test affected Galaxy devices and migration from older app versions before considering resolved; do not conflate that device validation with the F-Droid build-compatibility pin. |
 | #178 | App Lock after passcode removal | **Implemented in `main` (`cc501770`, tests `e6bb9311`)**. Removing the passcode now immediately unlocks the in-memory app state, and loading persisted config synchronizes the lock state with whether a passcode actually exists. |
 | #134 | F-Droid | **In progress in `main`.** Secret-free unsigned Android packaging is isolated from private release signing. `mobile_scanner`/Google ML Kit has been removed and replaced by `camera` + pure-Dart `zxing2`; the F-Droid source-build checkout also switches `sqlite3` to Android system SQLite so it does not fetch a precompiled native library during the build. The download-free unsigned build and `apksigner` unsigned-artifact verification are CI-validated on `3d3e3d74`. The Android identity migration surface is now inventoried and guarded in the existing unsigned PR build (Gradle ID/namespace, Kotlin package paths, widget actions, display strings/assets, and release metadata). F-Droid policy still requires choosing and applying a fresh Android ID plus corresponding name/icon/string changes for an independent submission, so the actual package identity remains the final product-level gate before downstream `fdroiddata` metadata. |
