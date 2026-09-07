@@ -42,6 +42,14 @@ cp "$SCRIPT_DIR/templates/string_or_list.dart" "$GENERATED_PKG/lib/src/model/str
 echo "🔧 Fixing non-const default values..."
 find "$GENERATED_PKG/lib" -name "*.dart" -exec sed -i 's/= \(\[[^]]*\]\),$/= const \1,/' {} \;
 
+# OpenAPI Generator 7.19.0's dart-dio target inserts path values raw into
+# route templates. Percent-encode each generated path parameter as one URI
+# segment so reserved characters (for example adlist URLs or `dns/hosts`) do
+# not change the route structure.
+echo "🔧 Encoding generated path parameters..."
+python3 "$SCRIPT_DIR/encode_path_parameters.py" \
+    "$GENERATED_PKG/lib/src/api"
+
 echo "🧹 Removing unnecessary generated directories..."
 rm -rf "$GENERATED_PKG/test"
 rm -rf "$GENERATED_PKG/doc"
