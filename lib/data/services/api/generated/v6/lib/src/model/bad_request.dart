@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'bad_request.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,34 +18,20 @@ part 'bad_request.g.dart';
 )
 class BadRequest {
   /// Returns a new [BadRequest] instance.
-  BadRequest({
+  BadRequest({this.error});
 
-     this.error,
-  });
-
-  @JsonKey(
-    
-    name: r'error',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'error', required: false, includeIfNull: false)
   final BadRequestError? error;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is BadRequest && other.error == error;
 
+  @override
+  int get hashCode => error.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is BadRequest &&
-      other.error == error;
-
-    @override
-    int get hashCode =>
-        error.hashCode;
-
-  factory BadRequest.fromJson(Map<String, dynamic> json) => _$BadRequestFromJson(json);
+  factory BadRequest.fromJson(Map<String, dynamic> json) =>
+      _$BadRequestFromJson(json);
 
   Map<String, dynamic> toJson() => _$BadRequestToJson(this);
 
@@ -54,6 +39,4 @@ class BadRequest {
   String toString() {
     return toJson().toString();
   }
-
 }
-

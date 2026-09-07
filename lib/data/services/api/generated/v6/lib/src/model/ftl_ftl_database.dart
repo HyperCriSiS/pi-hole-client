@@ -10,7 +10,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'ftl_ftl_database.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -21,117 +20,71 @@ part 'ftl_ftl_database.g.dart';
 class FtlFtlDatabase {
   /// Returns a new [FtlFtlDatabase] instance.
   FtlFtlDatabase({
+    this.gravity,
 
-     this.gravity,
+    this.antigravity,
 
-     this.groups,
+    this.groups,
 
-     this.lists,
+    this.lists,
 
-     this.clients,
+    this.clients,
 
-     this.domains,
+    this.domains,
 
-     this.regex,
+    this.regex,
   });
 
-      /// Number of collected exact domains on lists
-  @JsonKey(
-    
-    name: r'gravity',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Number of collected exact domains on blocking lists
+  @JsonKey(name: r'gravity', required: false, includeIfNull: false)
   final int? gravity;
 
+  /// Number of collected exact domains on allowing lists
+  @JsonKey(name: r'antigravity', required: false, includeIfNull: false)
+  final int? antigravity;
 
-
-      /// Number of groups
-  @JsonKey(
-    
-    name: r'groups',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Number of groups
+  @JsonKey(name: r'groups', required: false, includeIfNull: false)
   final int? groups;
 
-
-
-      /// Number of lists
-  @JsonKey(
-    
-    name: r'lists',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Number of lists
+  @JsonKey(name: r'lists', required: false, includeIfNull: false)
   final int? lists;
 
-
-
-      /// Number of configured clients
-  @JsonKey(
-    
-    name: r'clients',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Number of configured clients
+  @JsonKey(name: r'clients', required: false, includeIfNull: false)
   final int? clients;
 
-
-
-  @JsonKey(
-    
-    name: r'domains',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'domains', required: false, includeIfNull: false)
   final FtlFtlDatabaseDomains? domains;
 
-
-
-  @JsonKey(
-    
-    name: r'regex',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'regex', required: false, includeIfNull: false)
   final FtlFtlDatabaseRegex? regex;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is FtlFtlDatabase &&
+          other.gravity == gravity &&
+          other.antigravity == antigravity &&
+          other.groups == groups &&
+          other.lists == lists &&
+          other.clients == clients &&
+          other.domains == domains &&
+          other.regex == regex;
 
+  @override
+  int get hashCode =>
+      gravity.hashCode +
+      antigravity.hashCode +
+      groups.hashCode +
+      lists.hashCode +
+      clients.hashCode +
+      domains.hashCode +
+      regex.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is FtlFtlDatabase &&
-      other.gravity == gravity &&
-      other.groups == groups &&
-      other.lists == lists &&
-      other.clients == clients &&
-      other.domains == domains &&
-      other.regex == regex;
-
-    @override
-    int get hashCode =>
-        gravity.hashCode +
-        groups.hashCode +
-        lists.hashCode +
-        clients.hashCode +
-        domains.hashCode +
-        regex.hashCode;
-
-  factory FtlFtlDatabase.fromJson(Map<String, dynamic> json) => _$FtlFtlDatabaseFromJson(json);
+  factory FtlFtlDatabase.fromJson(Map<String, dynamic> json) =>
+      _$FtlFtlDatabaseFromJson(json);
 
   Map<String, dynamic> toJson() => _$FtlFtlDatabaseToJson(this);
 
@@ -139,6 +92,4 @@ class FtlFtlDatabase {
   String toString() {
     return toJson().toString();
   }
-
 }
-

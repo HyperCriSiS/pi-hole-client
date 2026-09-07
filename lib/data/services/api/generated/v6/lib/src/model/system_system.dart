@@ -11,7 +11,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'system_system.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -21,100 +20,45 @@ part 'system_system.g.dart';
 )
 class SystemSystem {
   /// Returns a new [SystemSystem] instance.
-  SystemSystem({
+  SystemSystem({this.uptime, this.memory, this.procs, this.cpu, this.ftl});
 
-     this.uptime,
-
-     this.memory,
-
-     this.procs,
-
-     this.cpu,
-
-     this.ftl,
-  });
-
-      /// How long the system has been running (seconds)
-  @JsonKey(
-    
-    name: r'uptime',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// How long the system has been running (seconds)
+  @JsonKey(name: r'uptime', required: false, includeIfNull: false)
   final int? uptime;
 
-
-
-  @JsonKey(
-    
-    name: r'memory',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'memory', required: false, includeIfNull: false)
   final SystemSystemMemory? memory;
 
-
-
-      /// Number of current processes
-  @JsonKey(
-    
-    name: r'procs',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Number of current processes
+  @JsonKey(name: r'procs', required: false, includeIfNull: false)
   final int? procs;
 
-
-
-  @JsonKey(
-    
-    name: r'cpu',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'cpu', required: false, includeIfNull: false)
   final SystemSystemCpu? cpu;
 
-
-
-  @JsonKey(
-    
-    name: r'ftl',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'ftl', required: false, includeIfNull: false)
   final SystemSystemFtl? ftl;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SystemSystem &&
+          other.uptime == uptime &&
+          other.memory == memory &&
+          other.procs == procs &&
+          other.cpu == cpu &&
+          other.ftl == ftl;
 
+  @override
+  int get hashCode =>
+      uptime.hashCode +
+      memory.hashCode +
+      procs.hashCode +
+      cpu.hashCode +
+      ftl.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is SystemSystem &&
-      other.uptime == uptime &&
-      other.memory == memory &&
-      other.procs == procs &&
-      other.cpu == cpu &&
-      other.ftl == ftl;
-
-    @override
-    int get hashCode =>
-        uptime.hashCode +
-        memory.hashCode +
-        procs.hashCode +
-        cpu.hashCode +
-        ftl.hashCode;
-
-  factory SystemSystem.fromJson(Map<String, dynamic> json) => _$SystemSystemFromJson(json);
+  factory SystemSystem.fromJson(Map<String, dynamic> json) =>
+      _$SystemSystemFromJson(json);
 
   Map<String, dynamic> toJson() => _$SystemSystemToJson(this);
 
@@ -122,6 +66,4 @@ class SystemSystem {
   String toString() {
     return toJson().toString();
   }
-
 }
-

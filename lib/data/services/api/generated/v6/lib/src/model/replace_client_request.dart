@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'replace_client_request.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,69 +17,41 @@ part 'replace_client_request.g.dart';
 )
 class ReplaceClientRequest {
   /// Returns a new [ReplaceClientRequest] instance.
-  ReplaceClientRequest({
+  ReplaceClientRequest({this.comment, this.groups = const [0], this.took});
 
-     this.comment,
-
-     this.groups = const [0],
-
-     this.took,
-  });
-
-      /// User-provided free-text comment for this client
-  @JsonKey(
-    
-    name: r'comment',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// User-provided free-text comment for this client
+  @JsonKey(name: r'comment', required: false, includeIfNull: false)
   final String? comment;
 
-
-
-      /// Array of group IDs
+  /// Array of group IDs
   @JsonKey(
     defaultValue: [0],
     name: r'groups',
     required: false,
     includeIfNull: false,
   )
-
-
   final List<int>? groups;
 
-
-
-      /// Time in seconds it took to process the request
-  @JsonKey(
-    
-    name: r'took',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Time in seconds it took to process the request
+  @JsonKey(name: r'took', required: false, includeIfNull: false)
   final num? took;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ReplaceClientRequest &&
+          other.comment == comment &&
+          other.groups == groups &&
+          other.took == took;
 
+  @override
+  int get hashCode =>
+      (comment == null ? 0 : comment.hashCode) +
+      groups.hashCode +
+      took.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is ReplaceClientRequest &&
-      other.comment == comment &&
-      other.groups == groups &&
-      other.took == took;
-
-    @override
-    int get hashCode =>
-        (comment == null ? 0 : comment.hashCode) +
-        groups.hashCode +
-        took.hashCode;
-
-  factory ReplaceClientRequest.fromJson(Map<String, dynamic> json) => _$ReplaceClientRequestFromJson(json);
+  factory ReplaceClientRequest.fromJson(Map<String, dynamic> json) =>
+      _$ReplaceClientRequestFromJson(json);
 
   Map<String, dynamic> toJson() => _$ReplaceClientRequestToJson(this);
 
@@ -88,6 +59,4 @@ class ReplaceClientRequest {
   String toString() {
     return toJson().toString();
   }
-
 }
-

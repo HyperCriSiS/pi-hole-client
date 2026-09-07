@@ -27,13 +27,12 @@ import 'package:pihole_v6_api/src/model/replace_domain400_response.dart';
 import 'package:pihole_v6_api/src/model/took.dart';
 
 class FTLInformationApi {
-
   final Dio _dio;
 
   const FTLInformationApi(this._dio);
 
   /// Delete Pi-hole diagnosis message
-  /// You may specify multiple IDs to delete multiple messages at once (comma-separated in the path like &#x60;1,2,3&#x60;) 
+  /// You may specify multiple IDs to delete multiple messages at once (comma-separated in the path like &#x60;1,2,3&#x60;)
   ///
   /// Parameters:
   /// * [messageId] - ID of the message to be deleted
@@ -46,7 +45,7 @@ class FTLInformationApi {
   ///
   /// Returns a [Future]
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<void>> deleteMessage({ 
+  Future<Response<void>> deleteMessage({
     required int messageId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -55,12 +54,15 @@ class FTLInformationApi {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/info/messages/{message_id}'.replaceAll('{' r'message_id' '}', messageId.toString());
+    final _path = r'/info/messages/{message_id}'.replaceAll(
+      '{'
+      r'message_id'
+      '}',
+      messageId.toString(),
+    );
     final _options = Options(
       method: r'DELETE',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
+      headers: <String, dynamic>{...?headers},
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
@@ -68,17 +70,20 @@ class FTLInformationApi {
             'name': 'x_header_sid',
             'keyName': 'X-FTL-SID',
             'where': 'header',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'query_sid',
             'keyName': 'sid',
             'where': 'query',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'cookie_sid',
             'keyName': 'sid',
             'where': '',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'header_sid',
             'keyName': 'sid',
@@ -102,7 +107,7 @@ class FTLInformationApi {
   }
 
   /// Get information about requesting client
-  /// The property &#x60;timer&#x60; may contain additional details concerning a temporary en-/disabling. It is &#x60;null&#x60; when no timer is active (the current status is permanent). 
+  /// The property &#x60;timer&#x60; may contain additional details concerning a temporary en-/disabling. It is &#x60;null&#x60; when no timer is active (the current status is permanent).
   ///
   /// Parameters:
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
@@ -114,7 +119,7 @@ class FTLInformationApi {
   ///
   /// Returns a [Future] containing a [Response] with a [GetClient200Response] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<GetClient200Response>> getClient({ 
+  Future<Response<GetClient200Response>> getClient({
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -125,13 +130,8 @@ class FTLInformationApi {
     final _path = r'/info/client';
     final _options = Options(
       method: r'GET',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
-      extra: <String, dynamic>{
-        'secure': <Map<String, String>>[],
-        ...?extra,
-      },
+      headers: <String, dynamic>{...?headers},
+      extra: <String, dynamic>{'secure': <Map<String, String>>[], ...?extra},
       validateStatus: validateStatus,
     );
 
@@ -146,9 +146,14 @@ class FTLInformationApi {
     GetClient200Response? _responseData;
 
     try {
-final rawData = _response.data;
-_responseData = rawData == null ? null : deserialize<GetClient200Response, GetClient200Response>(rawData, 'GetClient200Response', growable: true);
-
+      final rawData = _response.data;
+      _responseData = rawData == null
+          ? null
+          : deserialize<GetClient200Response, GetClient200Response>(
+              rawData,
+              'GetClient200Response',
+              growable: true,
+            );
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -172,7 +177,7 @@ _responseData = rawData == null ? null : deserialize<GetClient200Response, GetCl
   }
 
   /// Get info about long-term database
-  /// This API hook returns a collection of various long-term database properties infos. 
+  /// This API hook returns a collection of various long-term database properties infos.
   ///
   /// Parameters:
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
@@ -184,7 +189,7 @@ _responseData = rawData == null ? null : deserialize<GetClient200Response, GetCl
   ///
   /// Returns a [Future] containing a [Response] with a [GetDbinfo200Response] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<GetDbinfo200Response>> getDbinfo({ 
+  Future<Response<GetDbinfo200Response>> getDbinfo({
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -195,9 +200,7 @@ _responseData = rawData == null ? null : deserialize<GetClient200Response, GetCl
     final _path = r'/info/database';
     final _options = Options(
       method: r'GET',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
+      headers: <String, dynamic>{...?headers},
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
@@ -205,17 +208,20 @@ _responseData = rawData == null ? null : deserialize<GetClient200Response, GetCl
             'name': 'x_header_sid',
             'keyName': 'X-FTL-SID',
             'where': 'header',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'query_sid',
             'keyName': 'sid',
             'where': 'query',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'cookie_sid',
             'keyName': 'sid',
             'where': '',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'header_sid',
             'keyName': 'sid',
@@ -238,9 +244,14 @@ _responseData = rawData == null ? null : deserialize<GetClient200Response, GetCl
     GetDbinfo200Response? _responseData;
 
     try {
-final rawData = _response.data;
-_responseData = rawData == null ? null : deserialize<GetDbinfo200Response, GetDbinfo200Response>(rawData, 'GetDbinfo200Response', growable: true);
-
+      final rawData = _response.data;
+      _responseData = rawData == null
+          ? null
+          : deserialize<GetDbinfo200Response, GetDbinfo200Response>(
+              rawData,
+              'GetDbinfo200Response',
+              growable: true,
+            );
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -264,7 +275,7 @@ _responseData = rawData == null ? null : deserialize<GetDbinfo200Response, GetDb
   }
 
   /// Get DNS log content
-  /// This API hook returns content from the log of the embedded DNS resolver &#x60;dnsmasq&#x60;.  Every successful request will return a &#x60;nextID&#x60;. This ID can be used on the next request to only get lines which were added *after* the last request. This makes periodic polling for new log lines easy as no check for duplicated log lines is necessary. The expected behavior for an immediate re-request of a log line with the same ID is an empty response. As soon as the next message arrived, this will be included in your request and &#x60;nextID&#x60; is incremented by one. 
+  /// This API hook returns content from the log of the embedded DNS resolver &#x60;dnsmasq&#x60;.  Every successful request will return a &#x60;nextID&#x60;. This ID can be used on the next request to only get lines which were added *after* the last request. This makes periodic polling for new log lines easy as no check for duplicated log lines is necessary. The expected behavior for an immediate re-request of a log line with the same ID is an empty response. As soon as the next message arrived, this will be included in your request and &#x60;nextID&#x60; is incremented by one.
   ///
   /// Parameters:
   /// * [nextID] - (Optional) ID of next line to return
@@ -277,7 +288,7 @@ _responseData = rawData == null ? null : deserialize<GetDbinfo200Response, GetDb
   ///
   /// Returns a [Future] containing a [Response] with a [GetDnsLog200Response] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<GetDnsLog200Response>> getDnsLog({ 
+  Future<Response<GetDnsLog200Response>> getDnsLog({
     int? nextID,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -289,9 +300,7 @@ _responseData = rawData == null ? null : deserialize<GetDbinfo200Response, GetDb
     final _path = r'/logs/dnsmasq';
     final _options = Options(
       method: r'GET',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
+      headers: <String, dynamic>{...?headers},
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
@@ -299,17 +308,20 @@ _responseData = rawData == null ? null : deserialize<GetDbinfo200Response, GetDb
             'name': 'x_header_sid',
             'keyName': 'X-FTL-SID',
             'where': 'header',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'query_sid',
             'keyName': 'sid',
             'where': 'query',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'cookie_sid',
             'keyName': 'sid',
             'where': '',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'header_sid',
             'keyName': 'sid',
@@ -337,9 +349,14 @@ _responseData = rawData == null ? null : deserialize<GetDbinfo200Response, GetDb
     GetDnsLog200Response? _responseData;
 
     try {
-final rawData = _response.data;
-_responseData = rawData == null ? null : deserialize<GetDnsLog200Response, GetDnsLog200Response>(rawData, 'GetDnsLog200Response', growable: true);
-
+      final rawData = _response.data;
+      _responseData = rawData == null
+          ? null
+          : deserialize<GetDnsLog200Response, GetDnsLog200Response>(
+              rawData,
+              'GetDnsLog200Response',
+              growable: true,
+            );
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -363,7 +380,7 @@ _responseData = rawData == null ? null : deserialize<GetDnsLog200Response, GetDn
   }
 
   /// Get list of available API endpoints
-  /// This API hook returns the list of all available API endpoints. 
+  /// This API hook returns the list of all available API endpoints.
   ///
   /// Parameters:
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
@@ -375,7 +392,7 @@ _responseData = rawData == null ? null : deserialize<GetDnsLog200Response, GetDn
   ///
   /// Returns a [Future] containing a [Response] with a [GetEndpoints200Response] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<GetEndpoints200Response>> getEndpoints({ 
+  Future<Response<GetEndpoints200Response>> getEndpoints({
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -386,9 +403,7 @@ _responseData = rawData == null ? null : deserialize<GetDnsLog200Response, GetDn
     final _path = r'/endpoints';
     final _options = Options(
       method: r'GET',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
+      headers: <String, dynamic>{...?headers},
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
@@ -396,17 +411,20 @@ _responseData = rawData == null ? null : deserialize<GetDnsLog200Response, GetDn
             'name': 'x_header_sid',
             'keyName': 'X-FTL-SID',
             'where': 'header',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'query_sid',
             'keyName': 'sid',
             'where': 'query',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'cookie_sid',
             'keyName': 'sid',
             'where': '',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'header_sid',
             'keyName': 'sid',
@@ -429,9 +447,14 @@ _responseData = rawData == null ? null : deserialize<GetDnsLog200Response, GetDn
     GetEndpoints200Response? _responseData;
 
     try {
-final rawData = _response.data;
-_responseData = rawData == null ? null : deserialize<GetEndpoints200Response, GetEndpoints200Response>(rawData, 'GetEndpoints200Response', growable: true);
-
+      final rawData = _response.data;
+      _responseData = rawData == null
+          ? null
+          : deserialize<GetEndpoints200Response, GetEndpoints200Response>(
+              rawData,
+              'GetEndpoints200Response',
+              growable: true,
+            );
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -455,7 +478,7 @@ _responseData = rawData == null ? null : deserialize<GetEndpoints200Response, Ge
   }
 
   /// Get DNS log content
-  /// This API hook returns content from the log of FTL.  Every successful request will return a &#x60;nextID&#x60;. This ID can be used on the next request to only get lines which were added *after* the last request. This makes periodic polling for new log lines easy as no check for duplicated log lines is necessary. The expected behavior for an immediate re-request of a log line with the same ID is an empty response. As soon as the next message arrived, this will be included in your request and &#x60;nextID&#x60; is incremented by one. 
+  /// This API hook returns content from the log of FTL.  Every successful request will return a &#x60;nextID&#x60;. This ID can be used on the next request to only get lines which were added *after* the last request. This makes periodic polling for new log lines easy as no check for duplicated log lines is necessary. The expected behavior for an immediate re-request of a log line with the same ID is an empty response. As soon as the next message arrived, this will be included in your request and &#x60;nextID&#x60; is incremented by one.
   ///
   /// Parameters:
   /// * [nextID] - (Optional) ID of next line to return
@@ -468,7 +491,7 @@ _responseData = rawData == null ? null : deserialize<GetEndpoints200Response, Ge
   ///
   /// Returns a [Future] containing a [Response] with a [GetDnsLog200Response] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<GetDnsLog200Response>> getFtlLog({ 
+  Future<Response<GetDnsLog200Response>> getFtlLog({
     int? nextID,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -480,9 +503,7 @@ _responseData = rawData == null ? null : deserialize<GetEndpoints200Response, Ge
     final _path = r'/logs/ftl';
     final _options = Options(
       method: r'GET',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
+      headers: <String, dynamic>{...?headers},
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
@@ -490,17 +511,20 @@ _responseData = rawData == null ? null : deserialize<GetEndpoints200Response, Ge
             'name': 'x_header_sid',
             'keyName': 'X-FTL-SID',
             'where': 'header',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'query_sid',
             'keyName': 'sid',
             'where': 'query',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'cookie_sid',
             'keyName': 'sid',
             'where': '',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'header_sid',
             'keyName': 'sid',
@@ -528,9 +552,14 @@ _responseData = rawData == null ? null : deserialize<GetEndpoints200Response, Ge
     GetDnsLog200Response? _responseData;
 
     try {
-final rawData = _response.data;
-_responseData = rawData == null ? null : deserialize<GetDnsLog200Response, GetDnsLog200Response>(rawData, 'GetDnsLog200Response', growable: true);
-
+      final rawData = _response.data;
+      _responseData = rawData == null
+          ? null
+          : deserialize<GetDnsLog200Response, GetDnsLog200Response>(
+              rawData,
+              'GetDnsLog200Response',
+              growable: true,
+            );
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -554,7 +583,7 @@ _responseData = rawData == null ? null : deserialize<GetDnsLog200Response, GetDn
   }
 
   /// Get info about various ftl parameters
-  /// This API hook returns a collection of various ftl infos. 
+  /// This API hook returns a collection of various ftl infos.
   ///
   /// Parameters:
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
@@ -566,7 +595,7 @@ _responseData = rawData == null ? null : deserialize<GetDnsLog200Response, GetDn
   ///
   /// Returns a [Future] containing a [Response] with a [GetFtlinfo200Response] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<GetFtlinfo200Response>> getFtlinfo({ 
+  Future<Response<GetFtlinfo200Response>> getFtlinfo({
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -577,9 +606,7 @@ _responseData = rawData == null ? null : deserialize<GetDnsLog200Response, GetDn
     final _path = r'/info/ftl';
     final _options = Options(
       method: r'GET',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
+      headers: <String, dynamic>{...?headers},
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
@@ -587,17 +614,20 @@ _responseData = rawData == null ? null : deserialize<GetDnsLog200Response, GetDn
             'name': 'x_header_sid',
             'keyName': 'X-FTL-SID',
             'where': 'header',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'query_sid',
             'keyName': 'sid',
             'where': 'query',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'cookie_sid',
             'keyName': 'sid',
             'where': '',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'header_sid',
             'keyName': 'sid',
@@ -620,9 +650,14 @@ _responseData = rawData == null ? null : deserialize<GetDnsLog200Response, GetDn
     GetFtlinfo200Response? _responseData;
 
     try {
-final rawData = _response.data;
-_responseData = rawData == null ? null : deserialize<GetFtlinfo200Response, GetFtlinfo200Response>(rawData, 'GetFtlinfo200Response', growable: true);
-
+      final rawData = _response.data;
+      _responseData = rawData == null
+          ? null
+          : deserialize<GetFtlinfo200Response, GetFtlinfo200Response>(
+              rawData,
+              'GetFtlinfo200Response',
+              growable: true,
+            );
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -646,7 +681,7 @@ _responseData = rawData == null ? null : deserialize<GetFtlinfo200Response, GetF
   }
 
   /// Get info about various host parameters
-  /// This API hook returns a collection of host infos. 
+  /// This API hook returns a collection of host infos.
   ///
   /// Parameters:
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
@@ -658,7 +693,7 @@ _responseData = rawData == null ? null : deserialize<GetFtlinfo200Response, GetF
   ///
   /// Returns a [Future] containing a [Response] with a [GetHostinfo200Response] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<GetHostinfo200Response>> getHostinfo({ 
+  Future<Response<GetHostinfo200Response>> getHostinfo({
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -669,9 +704,7 @@ _responseData = rawData == null ? null : deserialize<GetFtlinfo200Response, GetF
     final _path = r'/info/host';
     final _options = Options(
       method: r'GET',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
+      headers: <String, dynamic>{...?headers},
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
@@ -679,17 +712,20 @@ _responseData = rawData == null ? null : deserialize<GetFtlinfo200Response, GetF
             'name': 'x_header_sid',
             'keyName': 'X-FTL-SID',
             'where': 'header',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'query_sid',
             'keyName': 'sid',
             'where': 'query',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'cookie_sid',
             'keyName': 'sid',
             'where': '',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'header_sid',
             'keyName': 'sid',
@@ -712,9 +748,14 @@ _responseData = rawData == null ? null : deserialize<GetFtlinfo200Response, GetF
     GetHostinfo200Response? _responseData;
 
     try {
-final rawData = _response.data;
-_responseData = rawData == null ? null : deserialize<GetHostinfo200Response, GetHostinfo200Response>(rawData, 'GetHostinfo200Response', growable: true);
-
+      final rawData = _response.data;
+      _responseData = rawData == null
+          ? null
+          : deserialize<GetHostinfo200Response, GetHostinfo200Response>(
+              rawData,
+              'GetHostinfo200Response',
+              growable: true,
+            );
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -738,7 +779,7 @@ _responseData = rawData == null ? null : deserialize<GetHostinfo200Response, Get
   }
 
   /// Login page related information
-  /// This API hook returns information used on the login page to possibly display messages/warnings. 
+  /// This API hook returns information used on the login page to possibly display messages/warnings.
   ///
   /// Parameters:
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
@@ -750,7 +791,7 @@ _responseData = rawData == null ? null : deserialize<GetHostinfo200Response, Get
   ///
   /// Returns a [Future] containing a [Response] with a [GetLogininfo200Response] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<GetLogininfo200Response>> getLogininfo({ 
+  Future<Response<GetLogininfo200Response>> getLogininfo({
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -761,13 +802,8 @@ _responseData = rawData == null ? null : deserialize<GetHostinfo200Response, Get
     final _path = r'/info/login';
     final _options = Options(
       method: r'GET',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
-      extra: <String, dynamic>{
-        'secure': <Map<String, String>>[],
-        ...?extra,
-      },
+      headers: <String, dynamic>{...?headers},
+      extra: <String, dynamic>{'secure': <Map<String, String>>[], ...?extra},
       validateStatus: validateStatus,
     );
 
@@ -782,9 +818,14 @@ _responseData = rawData == null ? null : deserialize<GetHostinfo200Response, Get
     GetLogininfo200Response? _responseData;
 
     try {
-final rawData = _response.data;
-_responseData = rawData == null ? null : deserialize<GetLogininfo200Response, GetLogininfo200Response>(rawData, 'GetLogininfo200Response', growable: true);
-
+      final rawData = _response.data;
+      _responseData = rawData == null
+          ? null
+          : deserialize<GetLogininfo200Response, GetLogininfo200Response>(
+              rawData,
+              'GetLogininfo200Response',
+              growable: true,
+            );
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -808,7 +849,7 @@ _responseData = rawData == null ? null : deserialize<GetLogininfo200Response, Ge
   }
 
   /// Get Pi-hole diagnosis messages
-  /// Request Pi-hole diagnosis messages 
+  /// Request Pi-hole diagnosis messages
   ///
   /// Parameters:
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
@@ -820,7 +861,7 @@ _responseData = rawData == null ? null : deserialize<GetLogininfo200Response, Ge
   ///
   /// Returns a [Future] containing a [Response] with a [GetMessages200Response] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<GetMessages200Response>> getMessages({ 
+  Future<Response<GetMessages200Response>> getMessages({
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -831,9 +872,7 @@ _responseData = rawData == null ? null : deserialize<GetLogininfo200Response, Ge
     final _path = r'/info/messages';
     final _options = Options(
       method: r'GET',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
+      headers: <String, dynamic>{...?headers},
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
@@ -841,17 +880,20 @@ _responseData = rawData == null ? null : deserialize<GetLogininfo200Response, Ge
             'name': 'x_header_sid',
             'keyName': 'X-FTL-SID',
             'where': 'header',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'query_sid',
             'keyName': 'sid',
             'where': 'query',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'cookie_sid',
             'keyName': 'sid',
             'where': '',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'header_sid',
             'keyName': 'sid',
@@ -874,9 +916,14 @@ _responseData = rawData == null ? null : deserialize<GetLogininfo200Response, Ge
     GetMessages200Response? _responseData;
 
     try {
-final rawData = _response.data;
-_responseData = rawData == null ? null : deserialize<GetMessages200Response, GetMessages200Response>(rawData, 'GetMessages200Response', growable: true);
-
+      final rawData = _response.data;
+      _responseData = rawData == null
+          ? null
+          : deserialize<GetMessages200Response, GetMessages200Response>(
+              rawData,
+              'GetMessages200Response',
+              growable: true,
+            );
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -900,7 +947,7 @@ _responseData = rawData == null ? null : deserialize<GetMessages200Response, Get
   }
 
   /// Get count of Pi-hole diagnosis messages
-  /// Request number of Pi-hole diagnosis messages 
+  /// Request number of Pi-hole diagnosis messages
   ///
   /// Parameters:
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
@@ -912,7 +959,7 @@ _responseData = rawData == null ? null : deserialize<GetMessages200Response, Get
   ///
   /// Returns a [Future] containing a [Response] with a [GetMessagesCount200Response] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<GetMessagesCount200Response>> getMessagesCount({ 
+  Future<Response<GetMessagesCount200Response>> getMessagesCount({
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -923,9 +970,7 @@ _responseData = rawData == null ? null : deserialize<GetMessages200Response, Get
     final _path = r'/info/messages/count';
     final _options = Options(
       method: r'GET',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
+      headers: <String, dynamic>{...?headers},
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
@@ -933,17 +978,20 @@ _responseData = rawData == null ? null : deserialize<GetMessages200Response, Get
             'name': 'x_header_sid',
             'keyName': 'X-FTL-SID',
             'where': 'header',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'query_sid',
             'keyName': 'sid',
             'where': 'query',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'cookie_sid',
             'keyName': 'sid',
             'where': '',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'header_sid',
             'keyName': 'sid',
@@ -966,9 +1014,13 @@ _responseData = rawData == null ? null : deserialize<GetMessages200Response, Get
     GetMessagesCount200Response? _responseData;
 
     try {
-final rawData = _response.data;
-_responseData = rawData == null ? null : deserialize<GetMessagesCount200Response, GetMessagesCount200Response>(rawData, 'GetMessagesCount200Response', growable: true);
-
+      final rawData = _response.data;
+      _responseData = rawData == null
+          ? null
+          : deserialize<
+              GetMessagesCount200Response,
+              GetMessagesCount200Response
+            >(rawData, 'GetMessagesCount200Response', growable: true);
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -992,7 +1044,7 @@ _responseData = rawData == null ? null : deserialize<GetMessagesCount200Response
   }
 
   /// Get metrics info
-  /// This API hook returns live information about the DNS and DHCP metrics. 
+  /// This API hook returns live information about the DNS and DHCP metrics.
   ///
   /// Parameters:
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
@@ -1004,7 +1056,7 @@ _responseData = rawData == null ? null : deserialize<GetMessagesCount200Response
   ///
   /// Returns a [Future] containing a [Response] with a [GetMetricsinfo200Response] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<GetMetricsinfo200Response>> getMetricsinfo({ 
+  Future<Response<GetMetricsinfo200Response>> getMetricsinfo({
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1015,9 +1067,7 @@ _responseData = rawData == null ? null : deserialize<GetMessagesCount200Response
     final _path = r'/info/metrics';
     final _options = Options(
       method: r'GET',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
+      headers: <String, dynamic>{...?headers},
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
@@ -1025,17 +1075,20 @@ _responseData = rawData == null ? null : deserialize<GetMessagesCount200Response
             'name': 'x_header_sid',
             'keyName': 'X-FTL-SID',
             'where': 'header',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'query_sid',
             'keyName': 'sid',
             'where': 'query',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'cookie_sid',
             'keyName': 'sid',
             'where': '',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'header_sid',
             'keyName': 'sid',
@@ -1058,9 +1111,14 @@ _responseData = rawData == null ? null : deserialize<GetMessagesCount200Response
     GetMetricsinfo200Response? _responseData;
 
     try {
-final rawData = _response.data;
-_responseData = rawData == null ? null : deserialize<GetMetricsinfo200Response, GetMetricsinfo200Response>(rawData, 'GetMetricsinfo200Response', growable: true);
-
+      final rawData = _response.data;
+      _responseData = rawData == null
+          ? null
+          : deserialize<GetMetricsinfo200Response, GetMetricsinfo200Response>(
+              rawData,
+              'GetMetricsinfo200Response',
+              growable: true,
+            );
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -1084,7 +1142,7 @@ _responseData = rawData == null ? null : deserialize<GetMetricsinfo200Response, 
   }
 
   /// Get info about various sensors
-  /// This API hook returns a collection of various sensors. 
+  /// This API hook returns a collection of various sensors.
   ///
   /// Parameters:
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
@@ -1096,7 +1154,7 @@ _responseData = rawData == null ? null : deserialize<GetMetricsinfo200Response, 
   ///
   /// Returns a [Future] containing a [Response] with a [GetSensors200Response] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<GetSensors200Response>> getSensors({ 
+  Future<Response<GetSensors200Response>> getSensors({
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1107,9 +1165,7 @@ _responseData = rawData == null ? null : deserialize<GetMetricsinfo200Response, 
     final _path = r'/info/sensors';
     final _options = Options(
       method: r'GET',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
+      headers: <String, dynamic>{...?headers},
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
@@ -1117,17 +1173,20 @@ _responseData = rawData == null ? null : deserialize<GetMetricsinfo200Response, 
             'name': 'x_header_sid',
             'keyName': 'X-FTL-SID',
             'where': 'header',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'query_sid',
             'keyName': 'sid',
             'where': 'query',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'cookie_sid',
             'keyName': 'sid',
             'where': '',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'header_sid',
             'keyName': 'sid',
@@ -1150,9 +1209,14 @@ _responseData = rawData == null ? null : deserialize<GetMetricsinfo200Response, 
     GetSensors200Response? _responseData;
 
     try {
-final rawData = _response.data;
-_responseData = rawData == null ? null : deserialize<GetSensors200Response, GetSensors200Response>(rawData, 'GetSensors200Response', growable: true);
-
+      final rawData = _response.data;
+      _responseData = rawData == null
+          ? null
+          : deserialize<GetSensors200Response, GetSensors200Response>(
+              rawData,
+              'GetSensors200Response',
+              growable: true,
+            );
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -1176,7 +1240,7 @@ _responseData = rawData == null ? null : deserialize<GetSensors200Response, GetS
   }
 
   /// Get info about various system parameters
-  /// This API hook returns a collection of various system infos. 
+  /// This API hook returns a collection of various system infos.
   ///
   /// Parameters:
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
@@ -1188,7 +1252,7 @@ _responseData = rawData == null ? null : deserialize<GetSensors200Response, GetS
   ///
   /// Returns a [Future] containing a [Response] with a [GetSysteminfo200Response] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<GetSysteminfo200Response>> getSysteminfo({ 
+  Future<Response<GetSysteminfo200Response>> getSysteminfo({
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1199,9 +1263,7 @@ _responseData = rawData == null ? null : deserialize<GetSensors200Response, GetS
     final _path = r'/info/system';
     final _options = Options(
       method: r'GET',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
+      headers: <String, dynamic>{...?headers},
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
@@ -1209,17 +1271,20 @@ _responseData = rawData == null ? null : deserialize<GetSensors200Response, GetS
             'name': 'x_header_sid',
             'keyName': 'X-FTL-SID',
             'where': 'header',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'query_sid',
             'keyName': 'sid',
             'where': 'query',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'cookie_sid',
             'keyName': 'sid',
             'where': '',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'header_sid',
             'keyName': 'sid',
@@ -1242,9 +1307,14 @@ _responseData = rawData == null ? null : deserialize<GetSensors200Response, GetS
     GetSysteminfo200Response? _responseData;
 
     try {
-final rawData = _response.data;
-_responseData = rawData == null ? null : deserialize<GetSysteminfo200Response, GetSysteminfo200Response>(rawData, 'GetSysteminfo200Response', growable: true);
-
+      final rawData = _response.data;
+      _responseData = rawData == null
+          ? null
+          : deserialize<GetSysteminfo200Response, GetSysteminfo200Response>(
+              rawData,
+              'GetSysteminfo200Response',
+              growable: true,
+            );
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -1268,7 +1338,7 @@ _responseData = rawData == null ? null : deserialize<GetSysteminfo200Response, G
   }
 
   /// Get Pi-hole version
-  /// Request versions of the individual Pi-hole components 
+  /// Request versions of the individual Pi-hole components
   ///
   /// Parameters:
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
@@ -1280,7 +1350,7 @@ _responseData = rawData == null ? null : deserialize<GetSysteminfo200Response, G
   ///
   /// Returns a [Future] containing a [Response] with a [GetVersion200Response] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<GetVersion200Response>> getVersion({ 
+  Future<Response<GetVersion200Response>> getVersion({
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1291,9 +1361,7 @@ _responseData = rawData == null ? null : deserialize<GetSysteminfo200Response, G
     final _path = r'/info/version';
     final _options = Options(
       method: r'GET',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
+      headers: <String, dynamic>{...?headers},
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
@@ -1301,17 +1369,20 @@ _responseData = rawData == null ? null : deserialize<GetSysteminfo200Response, G
             'name': 'x_header_sid',
             'keyName': 'X-FTL-SID',
             'where': 'header',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'query_sid',
             'keyName': 'sid',
             'where': 'query',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'cookie_sid',
             'keyName': 'sid',
             'where': '',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'header_sid',
             'keyName': 'sid',
@@ -1334,9 +1405,14 @@ _responseData = rawData == null ? null : deserialize<GetSysteminfo200Response, G
     GetVersion200Response? _responseData;
 
     try {
-final rawData = _response.data;
-_responseData = rawData == null ? null : deserialize<GetVersion200Response, GetVersion200Response>(rawData, 'GetVersion200Response', growable: true);
-
+      final rawData = _response.data;
+      _responseData = rawData == null
+          ? null
+          : deserialize<GetVersion200Response, GetVersion200Response>(
+              rawData,
+              'GetVersion200Response',
+              growable: true,
+            );
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -1360,7 +1436,7 @@ _responseData = rawData == null ? null : deserialize<GetVersion200Response, GetV
   }
 
   /// Get DNS log content
-  /// This API hook returns content from the log of the embedded CivetWeb HTTP server.  Every successful request will return a &#x60;nextID&#x60;. This ID can be used on the next request to only get lines which were added *after* the last request. This makes periodic polling for new log lines easy as no check for duplicated log lines is necessary. The expected behavior for an immediate re-request of a log line with the same ID is an empty response. As soon as the next message arrived, this will be included in your request and &#x60;nextID&#x60; is incremented by one. 
+  /// This API hook returns content from the log of the embedded CivetWeb HTTP server.  Every successful request will return a &#x60;nextID&#x60;. This ID can be used on the next request to only get lines which were added *after* the last request. This makes periodic polling for new log lines easy as no check for duplicated log lines is necessary. The expected behavior for an immediate re-request of a log line with the same ID is an empty response. As soon as the next message arrived, this will be included in your request and &#x60;nextID&#x60; is incremented by one.
   ///
   /// Parameters:
   /// * [nextID] - (Optional) ID of next line to return
@@ -1373,7 +1449,7 @@ _responseData = rawData == null ? null : deserialize<GetVersion200Response, GetV
   ///
   /// Returns a [Future] containing a [Response] with a [GetDnsLog200Response] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<GetDnsLog200Response>> getWebserverLog({ 
+  Future<Response<GetDnsLog200Response>> getWebserverLog({
     int? nextID,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -1385,9 +1461,7 @@ _responseData = rawData == null ? null : deserialize<GetVersion200Response, GetV
     final _path = r'/logs/webserver';
     final _options = Options(
       method: r'GET',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
+      headers: <String, dynamic>{...?headers},
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
@@ -1395,17 +1469,20 @@ _responseData = rawData == null ? null : deserialize<GetVersion200Response, GetV
             'name': 'x_header_sid',
             'keyName': 'X-FTL-SID',
             'where': 'header',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'query_sid',
             'keyName': 'sid',
             'where': 'query',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'cookie_sid',
             'keyName': 'sid',
             'where': '',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'header_sid',
             'keyName': 'sid',
@@ -1433,9 +1510,14 @@ _responseData = rawData == null ? null : deserialize<GetVersion200Response, GetV
     GetDnsLog200Response? _responseData;
 
     try {
-final rawData = _response.data;
-_responseData = rawData == null ? null : deserialize<GetDnsLog200Response, GetDnsLog200Response>(rawData, 'GetDnsLog200Response', growable: true);
-
+      final rawData = _response.data;
+      _responseData = rawData == null
+          ? null
+          : deserialize<GetDnsLog200Response, GetDnsLog200Response>(
+              rawData,
+              'GetDnsLog200Response',
+              growable: true,
+            );
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -1457,5 +1539,4 @@ _responseData = rawData == null ? null : deserialize<GetDnsLog200Response, GetDn
       extra: _response.extra,
     );
   }
-
 }

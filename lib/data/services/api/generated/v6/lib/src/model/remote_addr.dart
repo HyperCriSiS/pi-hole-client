@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'remote_addr.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,35 +17,22 @@ part 'remote_addr.g.dart';
 )
 class RemoteAddr {
   /// Returns a new [RemoteAddr] instance.
-  RemoteAddr({
+  RemoteAddr({this.remoteAddr});
 
-     this.remoteAddr,
-  });
-
-      /// Address of requesting client
-  @JsonKey(
-    
-    name: r'remote_addr',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Address of requesting client
+  @JsonKey(name: r'remote_addr', required: false, includeIfNull: false)
   final String? remoteAddr;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is RemoteAddr && other.remoteAddr == remoteAddr;
 
+  @override
+  int get hashCode => remoteAddr.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is RemoteAddr &&
-      other.remoteAddr == remoteAddr;
-
-    @override
-    int get hashCode =>
-        remoteAddr.hashCode;
-
-  factory RemoteAddr.fromJson(Map<String, dynamic> json) => _$RemoteAddrFromJson(json);
+  factory RemoteAddr.fromJson(Map<String, dynamic> json) =>
+      _$RemoteAddrFromJson(json);
 
   Map<String, dynamic> toJson() => _$RemoteAddrToJson(this);
 
@@ -54,6 +40,4 @@ class RemoteAddr {
   String toString() {
     return toJson().toString();
   }
-
 }
-

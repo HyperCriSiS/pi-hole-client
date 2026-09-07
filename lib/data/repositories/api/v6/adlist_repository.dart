@@ -1,7 +1,8 @@
 import 'package:pi_hole_client/data/mapper/v6/adlist_mapper.dart';
 import 'package:pi_hole_client/data/mapper/v6/list_search_mapper.dart';
 import 'package:pi_hole_client/data/model/v6/lists/lists.dart' as legacy_lists;
-import 'package:pi_hole_client/data/model/v6/lists/search.dart' as legacy_search;
+import 'package:pi_hole_client/data/model/v6/lists/search.dart'
+    as legacy_search;
 import 'package:pi_hole_client/data/repositories/api/interfaces/adlist_repository.dart';
 import 'package:pi_hole_client/data/repositories/api/v6/base_v6_sid_repository.dart';
 import 'package:pi_hole_client/data/repositories/utils/call_with_retry.dart';
@@ -55,7 +56,7 @@ class AdlistRepositoryV6 extends BaseV6SidRepository
         _service.setSid(sid);
         final result = await _service.addList(
           type: type.name,
-          body: ListsPost(
+          body: Post4(
             address: StringOrList.fromString(address),
             groups: groups,
             comment: comment,
@@ -85,7 +86,7 @@ class AdlistRepositoryV6 extends BaseV6SidRepository
         final result = await _service.replaceList(
           list: address,
           type: type.name,
-          body: ListsPut(
+          body: Put4(
             type: _generatedType(type),
             groups: groups,
             comment: comment,
@@ -135,10 +136,10 @@ class AdlistRepositoryV6 extends BaseV6SidRepository
     );
   }
 
-  ListsPutTypeEnum? _generatedType(ListType type) {
+  Put4TypeEnum? _generatedType(ListType type) {
     return switch (type) {
-      ListType.allow => ListsPutTypeEnum.allow,
-      ListType.block => ListsPutTypeEnum.block,
+      ListType.allow => Put4TypeEnum.allow,
+      ListType.block => Put4TypeEnum.block,
       ListType.unknown => null,
     };
   }

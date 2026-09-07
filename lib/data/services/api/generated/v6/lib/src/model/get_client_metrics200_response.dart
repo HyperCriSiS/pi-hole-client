@@ -10,7 +10,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'get_client_metrics200_response.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -20,69 +19,33 @@ part 'get_client_metrics200_response.g.dart';
 )
 class GetClientMetrics200Response {
   /// Returns a new [GetClientMetrics200Response] instance.
-  GetClientMetrics200Response({
+  GetClientMetrics200Response({this.clients, this.history, this.took});
 
-     this.clients,
-
-     this.history,
-
-     this.took,
-  });
-
-      /// Data corresponding to the individual clients
-  @JsonKey(
-    
-    name: r'clients',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Data corresponding to the individual clients
+  @JsonKey(name: r'clients', required: false, includeIfNull: false)
   final Map<String, ClientHistoryClientsValue>? clients;
 
-
-
-      /// Data array
-  @JsonKey(
-    
-    name: r'history',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Data array
+  @JsonKey(name: r'history', required: false, includeIfNull: false)
   final List<ClientHistoryHistoryInner>? history;
 
-
-
-      /// Time in seconds it took to process the request
-  @JsonKey(
-    
-    name: r'took',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Time in seconds it took to process the request
+  @JsonKey(name: r'took', required: false, includeIfNull: false)
   final num? took;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GetClientMetrics200Response &&
+          other.clients == clients &&
+          other.history == history &&
+          other.took == took;
 
+  @override
+  int get hashCode => clients.hashCode + history.hashCode + took.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is GetClientMetrics200Response &&
-      other.clients == clients &&
-      other.history == history &&
-      other.took == took;
-
-    @override
-    int get hashCode =>
-        clients.hashCode +
-        history.hashCode +
-        took.hashCode;
-
-  factory GetClientMetrics200Response.fromJson(Map<String, dynamic> json) => _$GetClientMetrics200ResponseFromJson(json);
+  factory GetClientMetrics200Response.fromJson(Map<String, dynamic> json) =>
+      _$GetClientMetrics200ResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$GetClientMetrics200ResponseToJson(this);
 
@@ -90,6 +53,4 @@ class GetClientMetrics200Response {
   String toString() {
     return toJson().toString();
   }
-
 }
-

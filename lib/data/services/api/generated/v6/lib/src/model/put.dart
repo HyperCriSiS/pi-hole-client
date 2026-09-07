@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'put.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,101 +17,50 @@ part 'put.g.dart';
 )
 class Put {
   /// Returns a new [Put] instance.
-  Put({
+  Put({this.type, this.kind, this.comment, this.groups, this.enabled = true});
 
-     this.type,
-
-     this.kind,
-
-     this.comment,
-
-     this.groups,
-
-     this.enabled = true,
-  });
-
-      /// String specifying domain type
-  @JsonKey(
-    
-    name: r'type',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// String specifying domain type
+  @JsonKey(name: r'type', required: false, includeIfNull: false)
   final PutTypeEnum? type;
 
-
-
-      /// String specifying domain kind
-  @JsonKey(
-    
-    name: r'kind',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// String specifying domain kind
+  @JsonKey(name: r'kind', required: false, includeIfNull: false)
   final PutKindEnum? kind;
 
-
-
-      /// User-provided free-text comment for this domain
-  @JsonKey(
-    
-    name: r'comment',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// User-provided free-text comment for this domain
+  @JsonKey(name: r'comment', required: false, includeIfNull: false)
   final String? comment;
 
-
-
-      /// Array of group IDs
-  @JsonKey(
-    
-    name: r'groups',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Array of group IDs
+  @JsonKey(name: r'groups', required: false, includeIfNull: false)
   final List<int>? groups;
 
-
-
-      /// Status of domain
+  /// Status of domain
   @JsonKey(
     defaultValue: true,
     name: r'enabled',
     required: false,
     includeIfNull: false,
   )
-
-
   final bool? enabled;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Put &&
+          other.type == type &&
+          other.kind == kind &&
+          other.comment == comment &&
+          other.groups == groups &&
+          other.enabled == enabled;
 
-
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is Put &&
-      other.type == type &&
-      other.kind == kind &&
-      other.comment == comment &&
-      other.groups == groups &&
-      other.enabled == enabled;
-
-    @override
-    int get hashCode =>
-        type.hashCode +
-        kind.hashCode +
-        (comment == null ? 0 : comment.hashCode) +
-        groups.hashCode +
-        enabled.hashCode;
+  @override
+  int get hashCode =>
+      type.hashCode +
+      kind.hashCode +
+      (comment == null ? 0 : comment.hashCode) +
+      groups.hashCode +
+      enabled.hashCode;
 
   factory Put.fromJson(Map<String, dynamic> json) => _$PutFromJson(json);
 
@@ -122,42 +70,40 @@ class Put {
   String toString() {
     return toJson().toString();
   }
-
 }
 
 /// String specifying domain type
 enum PutTypeEnum {
-    /// String specifying domain type
-@JsonValue(r'allow')
-allow(r'allow'),
-    /// String specifying domain type
-@JsonValue(r'deny')
-deny(r'deny');
+  /// String specifying domain type
+  @JsonValue(r'allow')
+  allow(r'allow'),
 
-const PutTypeEnum(this.value);
+  /// String specifying domain type
+  @JsonValue(r'deny')
+  deny(r'deny');
 
-final String value;
+  const PutTypeEnum(this.value);
 
-@override
-String toString() => value;
+  final String value;
+
+  @override
+  String toString() => value;
 }
-
 
 /// String specifying domain kind
 enum PutKindEnum {
-    /// String specifying domain kind
-@JsonValue(r'exact')
-exact(r'exact'),
-    /// String specifying domain kind
-@JsonValue(r'regex')
-regex(r'regex');
+  /// String specifying domain kind
+  @JsonValue(r'exact')
+  exact(r'exact'),
 
-const PutKindEnum(this.value);
+  /// String specifying domain kind
+  @JsonValue(r'regex')
+  regex(r'regex');
 
-final String value;
+  const PutKindEnum(this.value);
 
-@override
-String toString() => value;
+  final String value;
+
+  @override
+  String toString() => value;
 }
-
-

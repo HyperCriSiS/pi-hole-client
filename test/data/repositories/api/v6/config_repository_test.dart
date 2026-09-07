@@ -32,9 +32,7 @@ class _FakePiholeV6Service extends PiholeV6Service {
     }
     return Success(
       GetConfig200Response(
-        config: ConfigConfig(
-          dns: ConfigConfigDns(queryLogging: true),
-        ),
+        config: ConfigConfig(dns: ConfigConfigDns(queryLogging: true)),
         took: 0.003,
       ),
     );
@@ -52,9 +50,7 @@ class _FakePiholeV6Service extends PiholeV6Service {
     }
     return Success(
       GetConfig200Response(
-        config: ConfigConfig(
-          dns: ConfigConfigDns(queryLogging: false),
-        ),
+        config: ConfigConfig(dns: ConfigConfigDns(queryLogging: false)),
         took: 0.003,
       ),
     );
@@ -78,19 +74,25 @@ void main() {
   });
 
   group('fetchDnsQueryLogging', () {
-    test('reads query logging through generated full config endpoint', () async {
-      final result = await repository.fetchDnsQueryLogging();
+    test(
+      'reads query logging through generated full config endpoint',
+      () async {
+        final result = await repository.fetchDnsQueryLogging();
 
-      expect(result.getOrNull(), kRepoFetchDnsQueryLogging);
-      expect(service.lastSid, 'sid123');
-      expect(service.lastPatchBody, isNull);
-    });
+        expect(result.getOrNull(), kRepoFetchDnsQueryLogging);
+        expect(service.lastSid, 'sid123');
+        expect(service.lastPatchBody, isNull);
+      },
+    );
 
     test('fails when generated full config read fails', () async {
       service.shouldFailGet = true;
 
       final result = await repository.fetchDnsQueryLogging();
-      expectError(result, messageContains: 'Forced generated getConfig failure');
+      expectError(
+        result,
+        messageContains: 'Forced generated getConfig failure',
+      );
     });
   });
 

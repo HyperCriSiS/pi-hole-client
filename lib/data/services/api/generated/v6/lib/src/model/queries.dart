@@ -11,7 +11,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'queries.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -21,66 +20,30 @@ part 'queries.g.dart';
 )
 class Queries {
   /// Returns a new [Queries] instance.
-  Queries({
+  Queries({this.queries, this.clients, this.gravity});
 
-     this.queries,
-
-     this.clients,
-
-     this.gravity,
-  });
-
-  @JsonKey(
-    
-    name: r'queries',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'queries', required: false, includeIfNull: false)
   final QueriesQueries? queries;
 
-
-
-  @JsonKey(
-    
-    name: r'clients',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'clients', required: false, includeIfNull: false)
   final QueriesClients? clients;
 
-
-
-  @JsonKey(
-    
-    name: r'gravity',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'gravity', required: false, includeIfNull: false)
   final QueriesGravity? gravity;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Queries &&
+          other.queries == queries &&
+          other.clients == clients &&
+          other.gravity == gravity;
 
+  @override
+  int get hashCode => queries.hashCode + clients.hashCode + gravity.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is Queries &&
-      other.queries == queries &&
-      other.clients == clients &&
-      other.gravity == gravity;
-
-    @override
-    int get hashCode =>
-        queries.hashCode +
-        clients.hashCode +
-        gravity.hashCode;
-
-  factory Queries.fromJson(Map<String, dynamic> json) => _$QueriesFromJson(json);
+  factory Queries.fromJson(Map<String, dynamic> json) =>
+      _$QueriesFromJson(json);
 
   Map<String, dynamic> toJson() => _$QueriesToJson(this);
 
@@ -88,6 +51,4 @@ class Queries {
   String toString() {
     return toJson().toString();
   }
-
 }
-

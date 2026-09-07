@@ -1,16 +1,32 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$SCRIPT_DIR/../.."
+VERSIONS_FILE="$SCRIPT_DIR/versions.env"
+
+# shellcheck disable=SC1090
+source "$VERSIONS_FILE"
 
 # Run from project root so relative paths in config work
 cd "$PROJECT_ROOT"
 
 GENERATED_PKG="$PROJECT_ROOT/lib/data/services/api/generated/v6"
 
-echo "🔧 Generating v6 API client..."
-pnpm dlx @openapitools/openapi-generator-cli generate -c "$SCRIPT_DIR/openapi-generator-config.yaml"
+if ! grep -Eq "\"version\"[[:space:]]*:[[:space:]]*\"$OPENAPI_GENERATOR_VERSION\"" "$PROJECT_ROOT/openapitools.json"; then
+    echo "❌ Root openapitools.json is not pinned to OpenAPI Generator $OPENAPI_GENERATOR_VERSION" >&2
+    exit 1
+fi
+
+if ! grep -Eq "\"version\"[[:space:]]*:[[:space:]]*\"$OPENAPI_GENERATOR_VERSION\"" "$SCRIPT_DIR/openapitools.json"; then
+    echo "❌ tools/openapi/openapitools.json is not pinned to OpenAPI Generator $OPENAPI_GENERATOR_VERSION" >&2
+    exit 1
+fi
+
+echo "🔧 Generating v6 API client with wrapper $OPENAPI_GENERATOR_WRAPPER_VERSION and generator $OPENAPI_GENERATOR_VERSION..."
+pnpm --package="@openapitools/openapi-generator-cli@$OPENAPI_GENERATOR_WRAPPER_VERSION" \
+    dlx openapi-generator-cli generate \
+    -c "$SCRIPT_DIR/openapi-generator-config.yaml"
 
 echo "🔧 Fixing generated pubspec.yaml..."
 sed -i "s/sdk: '>=3.5.0 <4.0.0'/sdk: '>=3.8.0 <4.0.0'/" "$GENERATED_PKG/pubspec.yaml"

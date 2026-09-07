@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'invalid_zip.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,34 +18,20 @@ part 'invalid_zip.g.dart';
 )
 class InvalidZip {
   /// Returns a new [InvalidZip] instance.
-  InvalidZip({
+  InvalidZip({this.error});
 
-     this.error,
-  });
-
-  @JsonKey(
-    
-    name: r'error',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'error', required: false, includeIfNull: false)
   final InvalidZipError? error;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is InvalidZip && other.error == error;
 
+  @override
+  int get hashCode => error.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is InvalidZip &&
-      other.error == error;
-
-    @override
-    int get hashCode =>
-        error.hashCode;
-
-  factory InvalidZip.fromJson(Map<String, dynamic> json) => _$InvalidZipFromJson(json);
+  factory InvalidZip.fromJson(Map<String, dynamic> json) =>
+      _$InvalidZipFromJson(json);
 
   Map<String, dynamic> toJson() => _$InvalidZipToJson(this);
 
@@ -54,6 +39,4 @@ class InvalidZip {
   String toString() {
     return toJson().toString();
   }
-
 }
-

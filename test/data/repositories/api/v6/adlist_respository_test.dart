@@ -1,7 +1,8 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pi_hole_client/data/model/v6/lists/search.dart' as legacy_search;
+import 'package:pi_hole_client/data/model/v6/lists/search.dart'
+    as legacy_search;
 import 'package:pi_hole_client/data/repositories/api/v6/adlist_repository.dart';
 import 'package:pi_hole_client/data/repositories/api/v6/v6_session_cache.dart';
 import 'package:pi_hole_client/data/services/api/wrappers/pihole_v6_service.dart';
@@ -71,10 +72,10 @@ class _FakePiholeV6Service extends PiholeV6Service {
   String? lastFetchList;
   String? lastFetchType;
   String? lastAddType;
-  ListsPost? lastAddBody;
+  Post4? lastAddBody;
   String? lastReplaceList;
   String? lastReplaceType;
-  ListsPut? lastReplaceBody;
+  Put4? lastReplaceBody;
   String? lastDeleteList;
   String? lastDeleteType;
   String? lastSearchDomain;
@@ -112,7 +113,7 @@ class _FakePiholeV6Service extends PiholeV6Service {
   @override
   Future<Result<ReplaceLists200Response>> addList({
     required String type,
-    ListsPost? body,
+    Post4? body,
   }) async {
     lastAddType = type;
     lastAddBody = body;
@@ -126,7 +127,7 @@ class _FakePiholeV6Service extends PiholeV6Service {
   Future<Result<ReplaceLists200Response>> replaceList({
     required String list,
     required String type,
-    ListsPut? body,
+    Put4? body,
   }) async {
     lastReplaceList = list;
     lastReplaceType = type;
@@ -202,17 +203,20 @@ void main() {
       expect(service.lastFetchType, 'block');
     });
 
-    test('forwards requested adlist address through generated service', () async {
-      const address = 'https://example.com/adlist.txt';
-      final result = await repository.fetchAdlists(
-        adlist: address,
-        type: ListType.allow,
-      );
+    test(
+      'forwards requested adlist address through generated service',
+      () async {
+        const address = 'https://example.com/adlist.txt';
+        final result = await repository.fetchAdlists(
+          adlist: address,
+          type: ListType.allow,
+        );
 
-      expect(result.isSuccess(), true);
-      expect(service.lastFetchList, address);
-      expect(service.lastFetchType, 'allow');
-    });
+        expect(result.isSuccess(), true);
+        expect(service.lastFetchList, address);
+        expect(service.lastFetchType, 'allow');
+      },
+    );
 
     test('fails when generated adlist read fails', () async {
       service.shouldFailFetch = true;
@@ -274,24 +278,27 @@ void main() {
       expect(service.lastReplaceBody?.enabled, false);
     });
 
-    test('keeps unknown type in endpoint and omits unsupported body enum', () async {
-      const address = 'https://example.com/adlist.txt';
-      final result = await repository.updateAdlist(
-        address,
-        ListType.unknown,
-        groups: const [3],
-        comment: 'unknown type',
-        enabled: true,
-      );
+    test(
+      'keeps unknown type in endpoint and omits unsupported body enum',
+      () async {
+        const address = 'https://example.com/adlist.txt';
+        final result = await repository.updateAdlist(
+          address,
+          ListType.unknown,
+          groups: const [3],
+          comment: 'unknown type',
+          enabled: true,
+        );
 
-      expect(result.isSuccess(), true);
-      expect(service.lastReplaceList, address);
-      expect(service.lastReplaceType, 'unknown');
-      expect(service.lastReplaceBody?.type, isNull);
-      expect(service.lastReplaceBody?.groups, [3]);
-      expect(service.lastReplaceBody?.comment, 'unknown type');
-      expect(service.lastReplaceBody?.enabled, true);
-    });
+        expect(result.isSuccess(), true);
+        expect(service.lastReplaceList, address);
+        expect(service.lastReplaceType, 'unknown');
+        expect(service.lastReplaceBody?.type, isNull);
+        expect(service.lastReplaceBody?.groups, [3]);
+        expect(service.lastReplaceBody?.comment, 'unknown type');
+        expect(service.lastReplaceBody?.enabled, true);
+      },
+    );
 
     test('fails when generated replace request fails', () async {
       service.shouldFailReplace = true;

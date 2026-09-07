@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'readonly.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,69 +17,33 @@ part 'readonly.g.dart';
 )
 class Readonly {
   /// Returns a new [Readonly] instance.
-  Readonly({
+  Readonly({this.id, this.dateAdded, this.dateModified});
 
-     this.id,
-
-     this.dateAdded,
-
-     this.dateModified,
-  });
-
-      /// Database ID
-  @JsonKey(
-    
-    name: r'id',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Database ID
+  @JsonKey(name: r'id', required: false, includeIfNull: false)
   final int? id;
 
-
-
-      /// Unix timestamp of domain addition
-  @JsonKey(
-    
-    name: r'date_added',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Unix timestamp of domain addition
+  @JsonKey(name: r'date_added', required: false, includeIfNull: false)
   final int? dateAdded;
 
-
-
-      /// Unix timestamp of last domain modification
-  @JsonKey(
-    
-    name: r'date_modified',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Unix timestamp of last domain modification
+  @JsonKey(name: r'date_modified', required: false, includeIfNull: false)
   final int? dateModified;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Readonly &&
+          other.id == id &&
+          other.dateAdded == dateAdded &&
+          other.dateModified == dateModified;
 
+  @override
+  int get hashCode => id.hashCode + dateAdded.hashCode + dateModified.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is Readonly &&
-      other.id == id &&
-      other.dateAdded == dateAdded &&
-      other.dateModified == dateModified;
-
-    @override
-    int get hashCode =>
-        id.hashCode +
-        dateAdded.hashCode +
-        dateModified.hashCode;
-
-  factory Readonly.fromJson(Map<String, dynamic> json) => _$ReadonlyFromJson(json);
+  factory Readonly.fromJson(Map<String, dynamic> json) =>
+      _$ReadonlyFromJson(json);
 
   Map<String, dynamic> toJson() => _$ReadonlyToJson(this);
 
@@ -88,6 +51,4 @@ class Readonly {
   String toString() {
     return toJson().toString();
   }
-
 }
-

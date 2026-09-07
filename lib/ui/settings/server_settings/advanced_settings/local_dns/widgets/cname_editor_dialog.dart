@@ -29,7 +29,9 @@ class _CnameEditorDialogState extends State<CnameEditorDialog> {
   void initState() {
     super.initState();
     _aliasController = TextEditingController(text: widget.record?.alias ?? '');
-    _targetController = TextEditingController(text: widget.record?.target ?? '');
+    _targetController = TextEditingController(
+      text: widget.record?.target ?? '',
+    );
     _ttlController = TextEditingController(
       text: widget.record?.ttl?.toString() ?? '',
     );

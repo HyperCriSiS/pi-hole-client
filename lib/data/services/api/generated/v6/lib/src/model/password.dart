@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'password.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,35 +17,21 @@ part 'password.g.dart';
 )
 class Password {
   /// Returns a new [Password] instance.
-  Password({
+  Password({this.password});
 
-     this.password,
-  });
-
-      /// Password to be used for login
-  @JsonKey(
-    
-    name: r'password',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Password to be used for login
+  @JsonKey(name: r'password', required: false, includeIfNull: false)
   final String? password;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is Password && other.password == password;
 
+  @override
+  int get hashCode => password.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is Password &&
-      other.password == password;
-
-    @override
-    int get hashCode =>
-        password.hashCode;
-
-  factory Password.fromJson(Map<String, dynamic> json) => _$PasswordFromJson(json);
+  factory Password.fromJson(Map<String, dynamic> json) =>
+      _$PasswordFromJson(json);
 
   Map<String, dynamic> toJson() => _$PasswordToJson(this);
 
@@ -54,6 +39,4 @@ class Password {
   String toString() {
     return toJson().toString();
   }
-
 }
-

@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'client_maybe_array.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,34 +18,21 @@ part 'client_maybe_array.g.dart';
 )
 class ClientMaybeArray {
   /// Returns a new [ClientMaybeArray] instance.
-  ClientMaybeArray({
+  ClientMaybeArray({this.client});
 
-     this.client,
-  });
-
-  @JsonKey(
-    
-    name: r'client',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'client', required: false, includeIfNull: false)
   final StringOrList? client;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ClientMaybeArray && other.client == client;
 
+  @override
+  int get hashCode => client.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is ClientMaybeArray &&
-      other.client == client;
-
-    @override
-    int get hashCode =>
-        client.hashCode;
-
-  factory ClientMaybeArray.fromJson(Map<String, dynamic> json) => _$ClientMaybeArrayFromJson(json);
+  factory ClientMaybeArray.fromJson(Map<String, dynamic> json) =>
+      _$ClientMaybeArrayFromJson(json);
 
   Map<String, dynamic> toJson() => _$ClientMaybeArrayToJson(this);
 
@@ -54,6 +40,4 @@ class ClientMaybeArray {
   String toString() {
     return toJson().toString();
   }
-
 }
-

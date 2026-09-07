@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'groups_post.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,68 +18,40 @@ part 'groups_post.g.dart';
 )
 class GroupsPost {
   /// Returns a new [GroupsPost] instance.
-  GroupsPost({
+  GroupsPost({this.name, this.comment, this.enabled = true});
 
-     this.name,
-
-     this.comment,
-
-     this.enabled = true,
-  });
-
-  @JsonKey(
-    
-    name: r'name',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'name', required: false, includeIfNull: false)
   final StringOrList? name;
 
-
-
-      /// User-provided free-text comment for this group
-  @JsonKey(
-    
-    name: r'comment',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// User-provided free-text comment for this group
+  @JsonKey(name: r'comment', required: false, includeIfNull: false)
   final String? comment;
 
-
-
-      /// Status of item
+  /// Status of item
   @JsonKey(
     defaultValue: true,
     name: r'enabled',
     required: false,
     includeIfNull: false,
   )
-
-
   final bool? enabled;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GroupsPost &&
+          other.name == name &&
+          other.comment == comment &&
+          other.enabled == enabled;
 
+  @override
+  int get hashCode =>
+      name.hashCode +
+      (comment == null ? 0 : comment.hashCode) +
+      enabled.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is GroupsPost &&
-      other.name == name &&
-      other.comment == comment &&
-      other.enabled == enabled;
-
-    @override
-    int get hashCode =>
-        name.hashCode +
-        (comment == null ? 0 : comment.hashCode) +
-        enabled.hashCode;
-
-  factory GroupsPost.fromJson(Map<String, dynamic> json) => _$GroupsPostFromJson(json);
+  factory GroupsPost.fromJson(Map<String, dynamic> json) =>
+      _$GroupsPostFromJson(json);
 
   Map<String, dynamic> toJson() => _$GroupsPostToJson(this);
 
@@ -88,6 +59,4 @@ class GroupsPost {
   String toString() {
     return toJson().toString();
   }
-
 }
-

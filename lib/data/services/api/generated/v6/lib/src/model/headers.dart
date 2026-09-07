@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'headers.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,35 +18,21 @@ part 'headers.g.dart';
 )
 class Headers {
   /// Returns a new [Headers] instance.
-  Headers({
+  Headers({this.headers});
 
-     this.headers,
-  });
-
-      /// Request headers
-  @JsonKey(
-    
-    name: r'headers',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Request headers
+  @JsonKey(name: r'headers', required: false, includeIfNull: false)
   final List<HeadersHeadersInner>? headers;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is Headers && other.headers == headers;
 
+  @override
+  int get hashCode => headers.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is Headers &&
-      other.headers == headers;
-
-    @override
-    int get hashCode =>
-        headers.hashCode;
-
-  factory Headers.fromJson(Map<String, dynamic> json) => _$HeadersFromJson(json);
+  factory Headers.fromJson(Map<String, dynamic> json) =>
+      _$HeadersFromJson(json);
 
   Map<String, dynamic> toJson() => _$HeadersToJson(this);
 
@@ -55,6 +40,4 @@ class Headers {
   String toString() {
     return toJson().toString();
   }
-
 }
-

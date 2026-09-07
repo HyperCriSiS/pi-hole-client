@@ -86,7 +86,10 @@ void main() {
     test('should fail when generated config fetch fails', () async {
       service.shouldFailGet = true;
       final result = await repository.fetchRecords();
-      expectError(result, messageContains: 'Forced generated getConfig failure');
+      expectError(
+        result,
+        messageContains: 'Forced generated getConfig failure',
+      );
     });
   });
 
@@ -159,7 +162,10 @@ void main() {
         record: const LocalDns(ip: '192.168.1.100', name: 'mydevice'),
         oldIp: '192.168.1.1',
       );
-      expectError(result, messageContains: 'Forced generated getConfig failure');
+      expectError(
+        result,
+        messageContains: 'Forced generated getConfig failure',
+      );
     });
 
     test('should update record through generated config patch', () async {
@@ -172,10 +178,10 @@ void main() {
 
       expect(result.isSuccess(), true);
       expect(service.lastRestart, true);
-      expect(
-        service.lastPatchBody?.config?.dns?.hosts,
-        ['192.168.1.100 newname', '192.168.1.2 keep'],
-      );
+      expect(service.lastPatchBody?.config?.dns?.hosts, [
+        '192.168.1.100 newname',
+        '192.168.1.2 keep',
+      ]);
     });
 
     test('should surface generated record patch errors', () async {
@@ -219,7 +225,10 @@ void main() {
     test('should surface generated CNAME fetch errors', () async {
       service.shouldFailGet = true;
       final result = await repository.fetchCnameRecords();
-      expectError(result, messageContains: 'Forced generated getConfig failure');
+      expectError(
+        result,
+        messageContains: 'Forced generated getConfig failure',
+      );
     });
 
     test('should add CNAME record successfully', () async {
@@ -263,16 +272,25 @@ void main() {
           target: 'printer.lan',
         ),
       );
-      expectError(result, messageContains: 'Forced deleteConfigElement failure');
+      expectError(
+        result,
+        messageContains: 'Forced deleteConfigElement failure',
+      );
     });
 
     test('should surface generated CNAME update fetch errors', () async {
       service.shouldFailGet = true;
       final result = await repository.updateCnameRecord(
-        oldRecord: const CnameRecord(alias: 'old.example.test', target: 'old.lan'),
+        oldRecord: const CnameRecord(
+          alias: 'old.example.test',
+          target: 'old.lan',
+        ),
         record: const CnameRecord(alias: 'new.example.test', target: 'new.lan'),
       );
-      expectError(result, messageContains: 'Forced generated getConfig failure');
+      expectError(
+        result,
+        messageContains: 'Forced generated getConfig failure',
+      );
     });
 
     test('should update CNAME through generated config patch', () async {
@@ -296,10 +314,10 @@ void main() {
 
       expect(result.isSuccess(), true);
       expect(service.lastRestart, true);
-      expect(
-        service.lastPatchBody?.config?.dns?.cnameRecords,
-        ['new.example.test,new.lan,450', 'keep.example.test,keep.lan,600'],
-      );
+      expect(service.lastPatchBody?.config?.dns?.cnameRecords, [
+        'new.example.test,new.lan,450',
+        'keep.example.test,keep.lan,600',
+      ]);
     });
 
     test('should surface generated CNAME patch errors', () async {
@@ -311,10 +329,7 @@ void main() {
           alias: 'old.example.test',
           target: 'old.lan',
         ),
-        record: const CnameRecord(
-          alias: 'new.example.test',
-          target: 'new.lan',
-        ),
+        record: const CnameRecord(alias: 'new.example.test', target: 'new.lan'),
       );
 
       expectError(
@@ -325,7 +340,10 @@ void main() {
 
     test('should fail update when old CNAME record is absent', () async {
       final result = await repository.updateCnameRecord(
-        oldRecord: const CnameRecord(alias: 'old.example.test', target: 'old.lan'),
+        oldRecord: const CnameRecord(
+          alias: 'old.example.test',
+          target: 'old.lan',
+        ),
         record: const CnameRecord(alias: 'new.example.test', target: 'new.lan'),
       );
       expectError(result, messageContains: 'CNAME record');

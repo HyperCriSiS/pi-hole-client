@@ -1,5 +1,6 @@
 import 'package:pi_hole_client/data/mapper/v6/group_mapper.dart';
-import 'package:pi_hole_client/data/model/v6/groups/groups.dart' as legacy_groups;
+import 'package:pi_hole_client/data/model/v6/groups/groups.dart'
+    as legacy_groups;
 import 'package:pi_hole_client/data/repositories/api/interfaces/group_repository.dart';
 import 'package:pi_hole_client/data/repositories/api/v6/base_v6_sid_repository.dart';
 import 'package:pi_hole_client/data/repositories/utils/call_with_retry.dart';
@@ -42,7 +43,7 @@ class GroupRepositoryV6 extends BaseV6SidRepository implements GroupRepository {
         final sid = await getSid();
         _service.setSid(sid);
         final result = await _service.addGroup(
-          body: GroupsPost(
+          body: Post2(
             name: StringOrList.fromString(name),
             comment: comment,
             enabled: enabled,
@@ -68,7 +69,7 @@ class GroupRepositoryV6 extends BaseV6SidRepository implements GroupRepository {
         _service.setSid(sid);
         final result = await _service.replaceGroup(
           name: name,
-          body: GroupsPut(comment: comment, enabled: enabled),
+          body: Put2(comment: comment, enabled: enabled),
         );
         return result.map(
           (e) => legacy_groups.Groups.fromJson(e.toJson()).toSingleDomain(),

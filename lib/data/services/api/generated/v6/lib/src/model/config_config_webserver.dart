@@ -13,7 +13,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'config_config_webserver.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -24,209 +23,101 @@ part 'config_config_webserver.g.dart';
 class ConfigConfigWebserver {
   /// Returns a new [ConfigConfigWebserver] instance.
   ConfigConfigWebserver({
+    this.domain,
 
-     this.domain,
+    this.acl,
 
-     this.acl,
+    this.port,
 
-     this.port,
+    this.threads,
 
-     this.threads,
+    this.headers,
 
-     this.headers,
+    this.serveAll,
 
-     this.serveAll,
+    this.advancedOpts,
 
-     this.advancedOpts,
+    this.session,
 
-     this.session,
+    this.tls,
 
-     this.tls,
+    this.paths,
 
-     this.paths,
+    this.interface_,
 
-     this.interface_,
-
-     this.api,
+    this.api,
   });
 
-  @JsonKey(
-    
-    name: r'domain',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'domain', required: false, includeIfNull: false)
   final String? domain;
 
-
-
-  @JsonKey(
-    
-    name: r'acl',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'acl', required: false, includeIfNull: false)
   final String? acl;
 
-
-
-  @JsonKey(
-    
-    name: r'port',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'port', required: false, includeIfNull: false)
   final String? port;
 
-
-
-  @JsonKey(
-    
-    name: r'threads',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'threads', required: false, includeIfNull: false)
   final int? threads;
 
-
-
-  @JsonKey(
-    
-    name: r'headers',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'headers', required: false, includeIfNull: false)
   final List<String>? headers;
 
-
-
-  @JsonKey(
-    
-    name: r'serve_all',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'serve_all', required: false, includeIfNull: false)
   final bool? serveAll;
 
-
-
-  @JsonKey(
-    
-    name: r'advancedOpts',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'advancedOpts', required: false, includeIfNull: false)
   final List<String>? advancedOpts;
 
-
-
-  @JsonKey(
-    
-    name: r'session',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'session', required: false, includeIfNull: false)
   final ConfigConfigWebserverSession? session;
 
-
-
-  @JsonKey(
-    
-    name: r'tls',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'tls', required: false, includeIfNull: false)
   final ConfigConfigWebserverTls? tls;
 
-
-
-  @JsonKey(
-    
-    name: r'paths',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'paths', required: false, includeIfNull: false)
   final ConfigConfigWebserverPaths? paths;
 
-
-
-  @JsonKey(
-    
-    name: r'interface',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'interface', required: false, includeIfNull: false)
   final ConfigConfigWebserverInterface? interface_;
 
-
-
-  @JsonKey(
-    
-    name: r'api',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'api', required: false, includeIfNull: false)
   final ConfigConfigWebserverApi? api;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ConfigConfigWebserver &&
+          other.domain == domain &&
+          other.acl == acl &&
+          other.port == port &&
+          other.threads == threads &&
+          other.headers == headers &&
+          other.serveAll == serveAll &&
+          other.advancedOpts == advancedOpts &&
+          other.session == session &&
+          other.tls == tls &&
+          other.paths == paths &&
+          other.interface_ == interface_ &&
+          other.api == api;
 
+  @override
+  int get hashCode =>
+      domain.hashCode +
+      acl.hashCode +
+      port.hashCode +
+      threads.hashCode +
+      headers.hashCode +
+      serveAll.hashCode +
+      advancedOpts.hashCode +
+      session.hashCode +
+      tls.hashCode +
+      paths.hashCode +
+      interface_.hashCode +
+      api.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is ConfigConfigWebserver &&
-      other.domain == domain &&
-      other.acl == acl &&
-      other.port == port &&
-      other.threads == threads &&
-      other.headers == headers &&
-      other.serveAll == serveAll &&
-      other.advancedOpts == advancedOpts &&
-      other.session == session &&
-      other.tls == tls &&
-      other.paths == paths &&
-      other.interface_ == interface_ &&
-      other.api == api;
-
-    @override
-    int get hashCode =>
-        domain.hashCode +
-        acl.hashCode +
-        port.hashCode +
-        threads.hashCode +
-        headers.hashCode +
-        serveAll.hashCode +
-        advancedOpts.hashCode +
-        session.hashCode +
-        tls.hashCode +
-        paths.hashCode +
-        interface_.hashCode +
-        api.hashCode;
-
-  factory ConfigConfigWebserver.fromJson(Map<String, dynamic> json) => _$ConfigConfigWebserverFromJson(json);
+  factory ConfigConfigWebserver.fromJson(Map<String, dynamic> json) =>
+      _$ConfigConfigWebserverFromJson(json);
 
   Map<String, dynamic> toJson() => _$ConfigConfigWebserverToJson(this);
 
@@ -234,6 +125,4 @@ class ConfigConfigWebserver {
   String toString() {
     return toJson().toString();
   }
-
 }
-

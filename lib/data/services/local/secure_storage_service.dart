@@ -62,12 +62,7 @@ class SecureStorageService {
       logger.d('Secure value saved successfully: ${_safeKeyLabel(key)}');
       return Success.unit();
     } catch (e, st) {
-      _recordFailure(
-        operation: 'write',
-        key: key,
-        error: e,
-        stackTrace: st,
-      );
+      _recordFailure(operation: 'write', key: key, error: e, stackTrace: st);
       return Failure(Exception('Failed to save value: $e\n$st'));
     }
   }
@@ -87,12 +82,7 @@ class SecureStorageService {
       logger.d('Secure value retrieved successfully: ${_safeKeyLabel(key)}');
       return Success(value);
     } catch (e, st) {
-      _recordFailure(
-        operation: 'read',
-        key: key,
-        error: e,
-        stackTrace: st,
-      );
+      _recordFailure(operation: 'read', key: key, error: e, stackTrace: st);
       return Failure(Exception('Failed to read value: $e\n$st'));
     }
   }
@@ -108,12 +98,7 @@ class SecureStorageService {
       logger.d('Secure value deleted successfully: ${_safeKeyLabel(key)}');
       return Success.unit();
     } catch (e, st) {
-      _recordFailure(
-        operation: 'delete',
-        key: key,
-        error: e,
-        stackTrace: st,
-      );
+      _recordFailure(operation: 'delete', key: key, error: e, stackTrace: st);
       return Failure(Exception('Failed to delete value: $e\n$st'));
     }
   }
@@ -129,11 +114,7 @@ class SecureStorageService {
       logger.d('All values cleared successfully');
       return Success.unit();
     } catch (e, st) {
-      _recordFailure(
-        operation: 'clear',
-        error: e,
-        stackTrace: st,
-      );
+      _recordFailure(operation: 'clear', error: e, stackTrace: st);
       return Failure(Exception('Failed to clear all values: $e\n$st'));
     }
   }
@@ -149,11 +130,7 @@ class SecureStorageService {
       logger.d('All values read successfully: ${allValues.length} items');
       return Success(allValues);
     } catch (e, st) {
-      _recordFailure(
-        operation: 'read-all',
-        error: e,
-        stackTrace: st,
-      );
+      _recordFailure(operation: 'read-all', error: e, stackTrace: st);
       return Failure(Exception('Failed to read all values: $e\n$st'));
     }
   }

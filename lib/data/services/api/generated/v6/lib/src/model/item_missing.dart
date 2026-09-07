@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'item_missing.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,34 +18,20 @@ part 'item_missing.g.dart';
 )
 class ItemMissing {
   /// Returns a new [ItemMissing] instance.
-  ItemMissing({
+  ItemMissing({this.error});
 
-     this.error,
-  });
-
-  @JsonKey(
-    
-    name: r'error',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'error', required: false, includeIfNull: false)
   final ItemMissingError? error;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is ItemMissing && other.error == error;
 
+  @override
+  int get hashCode => error.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is ItemMissing &&
-      other.error == error;
-
-    @override
-    int get hashCode =>
-        error.hashCode;
-
-  factory ItemMissing.fromJson(Map<String, dynamic> json) => _$ItemMissingFromJson(json);
+  factory ItemMissing.fromJson(Map<String, dynamic> json) =>
+      _$ItemMissingFromJson(json);
 
   Map<String, dynamic> toJson() => _$ItemMissingToJson(this);
 
@@ -54,6 +39,4 @@ class ItemMissing {
   String toString() {
     return toJson().toString();
   }
-
 }
-

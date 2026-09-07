@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'components_schemas_lists_processed_processed_success_inner.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,42 +17,30 @@ part 'components_schemas_lists_processed_processed_success_inner.g.dart';
 )
 class ComponentsSchemasListsProcessedProcessedSuccessInner {
   /// Returns a new [ComponentsSchemasListsProcessedProcessedSuccessInner] instance.
-  ComponentsSchemasListsProcessedProcessedSuccessInner({
+  ComponentsSchemasListsProcessedProcessedSuccessInner({this.item});
 
-     this.item,
-  });
-
-      /// Client that was added to the database
-  @JsonKey(
-    
-    name: r'item',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Client that was added to the database
+  @JsonKey(name: r'item', required: false, includeIfNull: false)
   final String? item;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ComponentsSchemasListsProcessedProcessedSuccessInner &&
+          other.item == item;
 
+  @override
+  int get hashCode => item.hashCode;
 
+  factory ComponentsSchemasListsProcessedProcessedSuccessInner.fromJson(
+    Map<String, dynamic> json,
+  ) => _$ComponentsSchemasListsProcessedProcessedSuccessInnerFromJson(json);
 
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is ComponentsSchemasListsProcessedProcessedSuccessInner &&
-      other.item == item;
-
-    @override
-    int get hashCode =>
-        item.hashCode;
-
-  factory ComponentsSchemasListsProcessedProcessedSuccessInner.fromJson(Map<String, dynamic> json) => _$ComponentsSchemasListsProcessedProcessedSuccessInnerFromJson(json);
-
-  Map<String, dynamic> toJson() => _$ComponentsSchemasListsProcessedProcessedSuccessInnerToJson(this);
+  Map<String, dynamic> toJson() =>
+      _$ComponentsSchemasListsProcessedProcessedSuccessInnerToJson(this);
 
   @override
   String toString() {
     return toJson().toString();
   }
-
 }
-

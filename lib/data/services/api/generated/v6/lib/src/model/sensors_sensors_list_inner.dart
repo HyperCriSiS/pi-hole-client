@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'sensors_sensors_list_inner.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,85 +18,41 @@ part 'sensors_sensors_list_inner.g.dart';
 )
 class SensorsSensorsListInner {
   /// Returns a new [SensorsSensorsListInner] instance.
-  SensorsSensorsListInner({
+  SensorsSensorsListInner({this.name, this.path, this.source_, this.temps});
 
-     this.name,
-
-     this.path,
-
-     this.source_,
-
-     this.temps,
-  });
-
-      /// Description of temperature sensor (if available, `null` otherwise)
-  @JsonKey(
-    
-    name: r'name',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Description of temperature sensor (if available, `null` otherwise)
+  @JsonKey(name: r'name', required: false, includeIfNull: false)
   final String? name;
 
-
-
-      /// Short path of temperature sensor
-  @JsonKey(
-    
-    name: r'path',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Short path of temperature sensor
+  @JsonKey(name: r'path', required: false, includeIfNull: false)
   final String? path;
 
-
-
-      /// Path-like device description
-  @JsonKey(
-    
-    name: r'source',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Path-like device description
+  @JsonKey(name: r'source', required: false, includeIfNull: false)
   final String? source_;
 
-
-
-  @JsonKey(
-    
-    name: r'temps',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'temps', required: false, includeIfNull: false)
   final List<SensorsSensorsListInnerTempsInner>? temps;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SensorsSensorsListInner &&
+          other.name == name &&
+          other.path == path &&
+          other.source_ == source_ &&
+          other.temps == temps;
 
+  @override
+  int get hashCode =>
+      (name == null ? 0 : name.hashCode) +
+      path.hashCode +
+      source_.hashCode +
+      temps.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is SensorsSensorsListInner &&
-      other.name == name &&
-      other.path == path &&
-      other.source_ == source_ &&
-      other.temps == temps;
-
-    @override
-    int get hashCode =>
-        (name == null ? 0 : name.hashCode) +
-        path.hashCode +
-        source_.hashCode +
-        temps.hashCode;
-
-  factory SensorsSensorsListInner.fromJson(Map<String, dynamic> json) => _$SensorsSensorsListInnerFromJson(json);
+  factory SensorsSensorsListInner.fromJson(Map<String, dynamic> json) =>
+      _$SensorsSensorsListInnerFromJson(json);
 
   Map<String, dynamic> toJson() => _$SensorsSensorsListInnerToJson(this);
 
@@ -105,6 +60,4 @@ class SensorsSensorsListInner {
   String toString() {
     return toJson().toString();
   }
-
 }
-

@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'search_search_gravity_inner.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,254 +18,128 @@ part 'search_search_gravity_inner.g.dart';
 class SearchSearchGravityInner {
   /// Returns a new [SearchSearchGravityInner] instance.
   SearchSearchGravityInner({
+    this.domain,
 
-     this.domain,
+    this.address,
 
-     this.address,
+    this.comment,
 
-     this.comment,
+    this.enabled,
 
-     this.enabled,
+    this.id,
 
-     this.id,
+    this.type,
 
-     this.type,
+    this.dateAdded,
 
-     this.dateAdded,
+    this.dateModified,
 
-     this.dateModified,
+    this.dateUpdated,
 
-     this.dateUpdated,
+    this.number,
 
-     this.number,
+    this.invalidDomains,
 
-     this.invalidDomains,
+    this.abpEntries,
 
-     this.abpEntries,
+    this.status,
 
-     this.status,
-
-     this.groups,
+    this.groups,
   });
 
-  @JsonKey(
-    
-    name: r'domain',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'domain', required: false, includeIfNull: false)
   final String? domain;
 
-
-
-      /// Address of the list this domain was found on
-  @JsonKey(
-    
-    name: r'address',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Address of the list this domain was found on
+  @JsonKey(name: r'address', required: false, includeIfNull: false)
   final String? address;
 
-
-
-      /// Optional comment of the list
-  @JsonKey(
-    
-    name: r'comment',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Optional comment of the list
+  @JsonKey(name: r'comment', required: false, includeIfNull: false)
   final String? comment;
 
-
-
-      /// Whether this list is enabled
-  @JsonKey(
-    
-    name: r'enabled',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Whether this list is enabled
+  @JsonKey(name: r'enabled', required: false, includeIfNull: false)
   final bool? enabled;
 
-
-
-      /// Database ID of the associated list
-  @JsonKey(
-    
-    name: r'id',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Database ID of the associated list
+  @JsonKey(name: r'id', required: false, includeIfNull: false)
   final int? id;
 
-
-
-      /// String specifying list type
-  @JsonKey(
-    
-    name: r'type',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// String specifying list type
+  @JsonKey(name: r'type', required: false, includeIfNull: false)
   final SearchSearchGravityInnerTypeEnum? type;
 
-
-
-      /// Unix timestamp of list addition
-  @JsonKey(
-    
-    name: r'date_added',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Unix timestamp of list addition
+  @JsonKey(name: r'date_added', required: false, includeIfNull: false)
   final int? dateAdded;
 
-
-
-      /// Unix timestamp of last list modification
-  @JsonKey(
-    
-    name: r'date_modified',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Unix timestamp of last list modification
+  @JsonKey(name: r'date_modified', required: false, includeIfNull: false)
   final int? dateModified;
 
-
-
-      /// Unix timestamp of last local update of this list
-  @JsonKey(
-    
-    name: r'date_updated',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Unix timestamp of last local update of this list
+  @JsonKey(name: r'date_updated', required: false, includeIfNull: false)
   final int? dateUpdated;
 
-
-
-      /// Number of entries in the list
-  @JsonKey(
-    
-    name: r'number',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Number of entries in the list
+  @JsonKey(name: r'number', required: false, includeIfNull: false)
   final int? number;
 
-
-
-      /// Number of invalid domains in the list
-  @JsonKey(
-    
-    name: r'invalid_domains',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Number of invalid domains in the list
+  @JsonKey(name: r'invalid_domains', required: false, includeIfNull: false)
   final int? invalidDomains;
 
-
-
-      /// Number of ABP entries in the list
-  @JsonKey(
-    
-    name: r'abp_entries',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Number of ABP entries in the list
+  @JsonKey(name: r'abp_entries', required: false, includeIfNull: false)
   final int? abpEntries;
 
-
-
-      /// Status of the list
-  @JsonKey(
-    
-    name: r'status',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Status of the list
+  @JsonKey(name: r'status', required: false, includeIfNull: false)
   final int? status;
 
-
-
-      /// Array of IDs corresponding to associated groups
-  @JsonKey(
-    
-    name: r'groups',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Array of IDs corresponding to associated groups
+  @JsonKey(name: r'groups', required: false, includeIfNull: false)
   final List<int>? groups;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SearchSearchGravityInner &&
+          other.domain == domain &&
+          other.address == address &&
+          other.comment == comment &&
+          other.enabled == enabled &&
+          other.id == id &&
+          other.type == type &&
+          other.dateAdded == dateAdded &&
+          other.dateModified == dateModified &&
+          other.dateUpdated == dateUpdated &&
+          other.number == number &&
+          other.invalidDomains == invalidDomains &&
+          other.abpEntries == abpEntries &&
+          other.status == status &&
+          other.groups == groups;
 
+  @override
+  int get hashCode =>
+      domain.hashCode +
+      address.hashCode +
+      (comment == null ? 0 : comment.hashCode) +
+      enabled.hashCode +
+      id.hashCode +
+      type.hashCode +
+      dateAdded.hashCode +
+      dateModified.hashCode +
+      dateUpdated.hashCode +
+      number.hashCode +
+      invalidDomains.hashCode +
+      abpEntries.hashCode +
+      status.hashCode +
+      groups.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is SearchSearchGravityInner &&
-      other.domain == domain &&
-      other.address == address &&
-      other.comment == comment &&
-      other.enabled == enabled &&
-      other.id == id &&
-      other.type == type &&
-      other.dateAdded == dateAdded &&
-      other.dateModified == dateModified &&
-      other.dateUpdated == dateUpdated &&
-      other.number == number &&
-      other.invalidDomains == invalidDomains &&
-      other.abpEntries == abpEntries &&
-      other.status == status &&
-      other.groups == groups;
-
-    @override
-    int get hashCode =>
-        domain.hashCode +
-        address.hashCode +
-        (comment == null ? 0 : comment.hashCode) +
-        enabled.hashCode +
-        id.hashCode +
-        type.hashCode +
-        dateAdded.hashCode +
-        dateModified.hashCode +
-        dateUpdated.hashCode +
-        number.hashCode +
-        invalidDomains.hashCode +
-        abpEntries.hashCode +
-        status.hashCode +
-        groups.hashCode;
-
-  factory SearchSearchGravityInner.fromJson(Map<String, dynamic> json) => _$SearchSearchGravityInnerFromJson(json);
+  factory SearchSearchGravityInner.fromJson(Map<String, dynamic> json) =>
+      _$SearchSearchGravityInnerFromJson(json);
 
   Map<String, dynamic> toJson() => _$SearchSearchGravityInnerToJson(this);
 
@@ -274,24 +147,22 @@ class SearchSearchGravityInner {
   String toString() {
     return toJson().toString();
   }
-
 }
 
 /// String specifying list type
 enum SearchSearchGravityInnerTypeEnum {
-    /// String specifying list type
-@JsonValue(r'allow')
-allow(r'allow'),
-    /// String specifying list type
-@JsonValue(r'block')
-block(r'block');
+  /// String specifying list type
+  @JsonValue(r'allow')
+  allow(r'allow'),
 
-const SearchSearchGravityInnerTypeEnum(this.value);
+  /// String specifying list type
+  @JsonValue(r'block')
+  block(r'block');
 
-final String value;
+  const SearchSearchGravityInnerTypeEnum(this.value);
 
-@override
-String toString() => value;
+  final String value;
+
+  @override
+  String toString() => value;
 }
-
-

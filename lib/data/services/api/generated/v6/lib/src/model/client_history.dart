@@ -10,7 +10,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'client_history.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -20,52 +19,28 @@ part 'client_history.g.dart';
 )
 class ClientHistory {
   /// Returns a new [ClientHistory] instance.
-  ClientHistory({
+  ClientHistory({this.clients, this.history});
 
-     this.clients,
-
-     this.history,
-  });
-
-      /// Data corresponding to the individual clients
-  @JsonKey(
-    
-    name: r'clients',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Data corresponding to the individual clients
+  @JsonKey(name: r'clients', required: false, includeIfNull: false)
   final Map<String, ClientHistoryClientsValue>? clients;
 
-
-
-      /// Data array
-  @JsonKey(
-    
-    name: r'history',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Data array
+  @JsonKey(name: r'history', required: false, includeIfNull: false)
   final List<ClientHistoryHistoryInner>? history;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ClientHistory &&
+          other.clients == clients &&
+          other.history == history;
 
+  @override
+  int get hashCode => clients.hashCode + history.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is ClientHistory &&
-      other.clients == clients &&
-      other.history == history;
-
-    @override
-    int get hashCode =>
-        clients.hashCode +
-        history.hashCode;
-
-  factory ClientHistory.fromJson(Map<String, dynamic> json) => _$ClientHistoryFromJson(json);
+  factory ClientHistory.fromJson(Map<String, dynamic> json) =>
+      _$ClientHistoryFromJson(json);
 
   Map<String, dynamic> toJson() => _$ClientHistoryToJson(this);
 
@@ -73,6 +48,4 @@ class ClientHistory {
   String toString() {
     return toJson().toString();
   }
-
 }
-

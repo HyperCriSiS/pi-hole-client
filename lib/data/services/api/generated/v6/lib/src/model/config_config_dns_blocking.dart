@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'config_config_dns_blocking.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,66 +17,30 @@ part 'config_config_dns_blocking.g.dart';
 )
 class ConfigConfigDnsBlocking {
   /// Returns a new [ConfigConfigDnsBlocking] instance.
-  ConfigConfigDnsBlocking({
+  ConfigConfigDnsBlocking({this.active, this.mode, this.edns});
 
-     this.active,
-
-     this.mode,
-
-     this.edns,
-  });
-
-  @JsonKey(
-    
-    name: r'active',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'active', required: false, includeIfNull: false)
   final bool? active;
 
-
-
-  @JsonKey(
-    
-    name: r'mode',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'mode', required: false, includeIfNull: false)
   final String? mode;
 
-
-
-  @JsonKey(
-    
-    name: r'edns',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'edns', required: false, includeIfNull: false)
   final String? edns;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ConfigConfigDnsBlocking &&
+          other.active == active &&
+          other.mode == mode &&
+          other.edns == edns;
 
+  @override
+  int get hashCode => active.hashCode + mode.hashCode + edns.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is ConfigConfigDnsBlocking &&
-      other.active == active &&
-      other.mode == mode &&
-      other.edns == edns;
-
-    @override
-    int get hashCode =>
-        active.hashCode +
-        mode.hashCode +
-        edns.hashCode;
-
-  factory ConfigConfigDnsBlocking.fromJson(Map<String, dynamic> json) => _$ConfigConfigDnsBlockingFromJson(json);
+  factory ConfigConfigDnsBlocking.fromJson(Map<String, dynamic> json) =>
+      _$ConfigConfigDnsBlockingFromJson(json);
 
   Map<String, dynamic> toJson() => _$ConfigConfigDnsBlockingToJson(this);
 
@@ -85,6 +48,4 @@ class ConfigConfigDnsBlocking {
   String toString() {
     return toJson().toString();
   }
-
 }
-

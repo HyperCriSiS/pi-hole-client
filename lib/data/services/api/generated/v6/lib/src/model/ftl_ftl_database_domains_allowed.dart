@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'ftl_ftl_database_domains_allowed.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,52 +17,28 @@ part 'ftl_ftl_database_domains_allowed.g.dart';
 )
 class FtlFtlDatabaseDomainsAllowed {
   /// Returns a new [FtlFtlDatabaseDomainsAllowed] instance.
-  FtlFtlDatabaseDomainsAllowed({
+  FtlFtlDatabaseDomainsAllowed({this.total, this.enabled});
 
-     this.total,
-
-     this.enabled,
-  });
-
-      /// Number of allowed domains (total)
-  @JsonKey(
-    
-    name: r'total',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Number of allowed domains (total)
+  @JsonKey(name: r'total', required: false, includeIfNull: false)
   final int? total;
 
-
-
-      /// Number of allowed domains (enabled)
-  @JsonKey(
-    
-    name: r'enabled',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Number of allowed domains (enabled)
+  @JsonKey(name: r'enabled', required: false, includeIfNull: false)
   final int? enabled;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is FtlFtlDatabaseDomainsAllowed &&
+          other.total == total &&
+          other.enabled == enabled;
 
+  @override
+  int get hashCode => total.hashCode + enabled.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is FtlFtlDatabaseDomainsAllowed &&
-      other.total == total &&
-      other.enabled == enabled;
-
-    @override
-    int get hashCode =>
-        total.hashCode +
-        enabled.hashCode;
-
-  factory FtlFtlDatabaseDomainsAllowed.fromJson(Map<String, dynamic> json) => _$FtlFtlDatabaseDomainsAllowedFromJson(json);
+  factory FtlFtlDatabaseDomainsAllowed.fromJson(Map<String, dynamic> json) =>
+      _$FtlFtlDatabaseDomainsAllowedFromJson(json);
 
   Map<String, dynamic> toJson() => _$FtlFtlDatabaseDomainsAllowedToJson(this);
 
@@ -71,6 +46,4 @@ class FtlFtlDatabaseDomainsAllowed {
   String toString() {
     return toJson().toString();
   }
-
 }
-

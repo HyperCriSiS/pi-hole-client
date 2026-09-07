@@ -13,13 +13,20 @@ abstract class _$PaddQueriesCWProxy {
 
   PaddQueries percentBlocked(num? percentBlocked);
 
+  PaddQueries queryFrequency(num? queryFrequency);
+
   /// This function **does support** nullification of nullable fields. All `null` values passed to `non-nullable` fields will be ignored. You can also use `PaddQueries(...).copyWith.fieldName(...)` to override fields one at a time with nullification support.
   ///
   /// Usage
   /// ```dart
   /// PaddQueries(...).copyWith(id: 12, name: "My name")
   /// ````
-  PaddQueries call({int? total, int? blocked, num? percentBlocked});
+  PaddQueries call({
+    int? total,
+    int? blocked,
+    num? percentBlocked,
+    num? queryFrequency,
+  });
 }
 
 /// Proxy class for `copyWith` functionality. This is a callable class and can be used as follows: `instanceOfPaddQueries.copyWith(...)`. Additionally contains functions for specific fields e.g. `instanceOfPaddQueries.copyWith.fieldName(...)`
@@ -39,6 +46,10 @@ class _$PaddQueriesCWProxyImpl implements _$PaddQueriesCWProxy {
       this(percentBlocked: percentBlocked);
 
   @override
+  PaddQueries queryFrequency(num? queryFrequency) =>
+      this(queryFrequency: queryFrequency);
+
+  @override
   /// This function **does support** nullification of nullable fields. All `null` values passed to `non-nullable` fields will be ignored. You can also use `PaddQueries(...).copyWith.fieldName(...)` to override fields one at a time with nullification support.
   ///
   /// Usage
@@ -49,6 +60,7 @@ class _$PaddQueriesCWProxyImpl implements _$PaddQueriesCWProxy {
     Object? total = const $CopyWithPlaceholder(),
     Object? blocked = const $CopyWithPlaceholder(),
     Object? percentBlocked = const $CopyWithPlaceholder(),
+    Object? queryFrequency = const $CopyWithPlaceholder(),
   }) {
     return PaddQueries(
       total: total == const $CopyWithPlaceholder()
@@ -63,6 +75,10 @@ class _$PaddQueriesCWProxyImpl implements _$PaddQueriesCWProxy {
           ? _value.percentBlocked
           // ignore: cast_nullable_to_non_nullable
           : percentBlocked as num?,
+      queryFrequency: queryFrequency == const $CopyWithPlaceholder()
+          ? _value.queryFrequency
+          // ignore: cast_nullable_to_non_nullable
+          : queryFrequency as num?,
     );
   }
 }
@@ -77,19 +93,28 @@ extension $PaddQueriesCopyWith on PaddQueries {
 // JsonSerializableGenerator
 // **************************************************************************
 
-PaddQueries _$PaddQueriesFromJson(Map<String, dynamic> json) =>
-    $checkedCreate('PaddQueries', json, ($checkedConvert) {
-      final val = PaddQueries(
-        total: $checkedConvert('total', (v) => (v as num?)?.toInt()),
-        blocked: $checkedConvert('blocked', (v) => (v as num?)?.toInt()),
-        percentBlocked: $checkedConvert('percent_blocked', (v) => v as num?),
-      );
-      return val;
-    }, fieldKeyMap: const {'percentBlocked': 'percent_blocked'});
+PaddQueries _$PaddQueriesFromJson(Map<String, dynamic> json) => $checkedCreate(
+  'PaddQueries',
+  json,
+  ($checkedConvert) {
+    final val = PaddQueries(
+      total: $checkedConvert('total', (v) => (v as num?)?.toInt()),
+      blocked: $checkedConvert('blocked', (v) => (v as num?)?.toInt()),
+      percentBlocked: $checkedConvert('percent_blocked', (v) => v as num?),
+      queryFrequency: $checkedConvert('query_frequency', (v) => v as num?),
+    );
+    return val;
+  },
+  fieldKeyMap: const {
+    'percentBlocked': 'percent_blocked',
+    'queryFrequency': 'query_frequency',
+  },
+);
 
 Map<String, dynamic> _$PaddQueriesToJson(PaddQueries instance) =>
     <String, dynamic>{
       'total': ?instance.total,
       'blocked': ?instance.blocked,
       'percent_blocked': ?instance.percentBlocked,
+      'query_frequency': ?instance.queryFrequency,
     };

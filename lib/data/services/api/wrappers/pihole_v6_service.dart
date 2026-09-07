@@ -234,7 +234,7 @@ class PiholeV6Service {
 
   Future<Result<GetGroups200Response>> getAllGroups() {
     return safeDioCall(() async {
-      final response = await _groupApi.getAllGroups();
+      final response = await _groupApi.listGroups();
       return response.requireData;
     });
   }
@@ -246,22 +246,19 @@ class PiholeV6Service {
     });
   }
 
-  Future<Result<ReplaceGroup200Response>> addGroup({GroupsPost? body}) {
+  Future<Result<ReplaceGroup200Response>> addGroup({Post2? body}) {
     return safeDioCall(() async {
-      final response = await _groupApi.addGroup(groupsPost: body);
+      final response = await _groupApi.addGroup(post2: body);
       return response.requireData;
     });
   }
 
   Future<Result<ReplaceGroup200Response>> replaceGroup({
     required String name,
-    GroupsPut? body,
+    Put2? body,
   }) {
     return safeDioCall(() async {
-      final response = await _groupApi.replaceGroup(
-        name: name,
-        groupsPut: body,
-      );
+      final response = await _groupApi.replaceGroup(name: name, put2: body);
       return response.requireData;
     });
   }
@@ -277,19 +274,19 @@ class PiholeV6Service {
   // Domains
   // ===========================================================================
 
-  Future<Result<GetDomains200Response>> getAllDomains() {
+  Future<Result<GetDomain200Response>> getAllDomains() {
     return safeDioCall(() async {
-      final response = await _domainApi.getAllDomains();
+      final response = await _domainApi.getDomains();
       return response.requireData;
     });
   }
 
-  Future<Result<GetDomains200Response>> getDomainsByTypeKind({
+  Future<Result<GetDomain200Response>> getDomainsByTypeKind({
     required String type,
     required String kind,
   }) {
     return safeDioCall(() async {
-      final response = await _domainApi.getDomainsByTypeKind(
+      final response = await _domainApi.getTypeKindDomains(
         type: type,
         kind: kind,
       );
@@ -297,13 +294,13 @@ class PiholeV6Service {
     });
   }
 
-  Future<Result<GetDomains200Response>> getDomains({
+  Future<Result<GetDomain200Response>> getDomains({
     required String type,
     required String kind,
     required String domain,
   }) {
     return safeDioCall(() async {
-      final response = await _domainApi.getDomains(
+      final response = await _domainApi.getDomain(
         type: type,
         kind: kind,
         domain: domain,
@@ -361,7 +358,7 @@ class PiholeV6Service {
 
   Future<Result<GetLists200Response>> getAllLists({String? type}) {
     return safeDioCall(() async {
-      final response = await _listApi.getAllLists(type: type);
+      final response = await _listApi.listLists(type: type);
       return response.requireData;
     });
   }
@@ -378,10 +375,10 @@ class PiholeV6Service {
 
   Future<Result<ReplaceLists200Response>> addList({
     required String type,
-    ListsPost? body,
+    Post4? body,
   }) {
     return safeDioCall(() async {
-      final response = await _listApi.addList(type: type, listsPost: body);
+      final response = await _listApi.addList(type: type, post4: body);
       return response.requireData;
     });
   }
@@ -389,13 +386,13 @@ class PiholeV6Service {
   Future<Result<ReplaceLists200Response>> replaceList({
     required String list,
     required String type,
-    ListsPut? body,
+    Put4? body,
   }) {
     return safeDioCall(() async {
       final response = await _listApi.replaceLists(
         list: list,
         type: type,
-        listsPut: body,
+        put4: body,
       );
       return response.requireData;
     });
@@ -432,7 +429,7 @@ class PiholeV6Service {
 
   Future<Result<GetClients200Response>> getAllClients() {
     return safeDioCall(() async {
-      final response = await _clientApi.getAllClients();
+      final response = await _clientApi.listClients();
       return response.requireData;
     });
   }

@@ -7,7 +7,7 @@ part of 'get_clients200_response.dart';
 // **************************************************************************
 
 abstract class _$GetClients200ResponseCWProxy {
-  GetClients200Response clients(List<ClientsGetClientsInner>? clients);
+  GetClients200Response clients(List<Get3ClientsInner>? clients);
 
   GetClients200Response took(num? took);
 
@@ -17,10 +17,7 @@ abstract class _$GetClients200ResponseCWProxy {
   /// ```dart
   /// GetClients200Response(...).copyWith(id: 12, name: "My name")
   /// ````
-  GetClients200Response call({
-    List<ClientsGetClientsInner>? clients,
-    num? took,
-  });
+  GetClients200Response call({List<Get3ClientsInner>? clients, num? took});
 }
 
 /// Proxy class for `copyWith` functionality. This is a callable class and can be used as follows: `instanceOfGetClients200Response.copyWith(...)`. Additionally contains functions for specific fields e.g. `instanceOfGetClients200Response.copyWith.fieldName(...)`
@@ -31,7 +28,7 @@ class _$GetClients200ResponseCWProxyImpl
   final GetClients200Response _value;
 
   @override
-  GetClients200Response clients(List<ClientsGetClientsInner>? clients) =>
+  GetClients200Response clients(List<Get3ClientsInner>? clients) =>
       this(clients: clients);
 
   @override
@@ -52,7 +49,7 @@ class _$GetClients200ResponseCWProxyImpl
       clients: clients == const $CopyWithPlaceholder()
           ? _value.clients
           // ignore: cast_nullable_to_non_nullable
-          : clients as List<ClientsGetClientsInner>?,
+          : clients as List<Get3ClientsInner>?,
       took: took == const $CopyWithPlaceholder()
           ? _value.took
           // ignore: cast_nullable_to_non_nullable
@@ -79,9 +76,7 @@ GetClients200Response _$GetClients200ResponseFromJson(
     clients: $checkedConvert(
       'clients',
       (v) => (v as List<dynamic>?)
-          ?.map(
-            (e) => ClientsGetClientsInner.fromJson(e as Map<String, dynamic>),
-          )
+          ?.map((e) => Get3ClientsInner.fromJson(e as Map<String, dynamic>))
           .toList(),
     ),
     took: $checkedConvert('took', (v) => v as num?),

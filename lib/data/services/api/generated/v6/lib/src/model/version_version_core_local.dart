@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'version_version_core_local.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,69 +17,36 @@ part 'version_version_core_local.g.dart';
 )
 class VersionVersionCoreLocal {
   /// Returns a new [VersionVersionCoreLocal] instance.
-  VersionVersionCoreLocal({
+  VersionVersionCoreLocal({this.branch, this.version, this.hash});
 
-     this.branch,
-
-     this.version,
-
-     this.hash,
-  });
-
-      /// Local Pi-hole Core branch
-  @JsonKey(
-    
-    name: r'branch',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Local Pi-hole Core branch
+  @JsonKey(name: r'branch', required: false, includeIfNull: false)
   final String? branch;
 
-
-
-      /// Local Pi-hole Core version
-  @JsonKey(
-    
-    name: r'version',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Local Pi-hole Core version
+  @JsonKey(name: r'version', required: false, includeIfNull: false)
   final String? version;
 
-
-
-      /// Local Pi-hole Core hash
-  @JsonKey(
-    
-    name: r'hash',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Local Pi-hole Core hash
+  @JsonKey(name: r'hash', required: false, includeIfNull: false)
   final String? hash;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is VersionVersionCoreLocal &&
+          other.branch == branch &&
+          other.version == version &&
+          other.hash == hash;
 
+  @override
+  int get hashCode =>
+      (branch == null ? 0 : branch.hashCode) +
+      (version == null ? 0 : version.hashCode) +
+      (hash == null ? 0 : hash.hashCode);
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is VersionVersionCoreLocal &&
-      other.branch == branch &&
-      other.version == version &&
-      other.hash == hash;
-
-    @override
-    int get hashCode =>
-        (branch == null ? 0 : branch.hashCode) +
-        (version == null ? 0 : version.hashCode) +
-        (hash == null ? 0 : hash.hashCode);
-
-  factory VersionVersionCoreLocal.fromJson(Map<String, dynamic> json) => _$VersionVersionCoreLocalFromJson(json);
+  factory VersionVersionCoreLocal.fromJson(Map<String, dynamic> json) =>
+      _$VersionVersionCoreLocalFromJson(json);
 
   Map<String, dynamic> toJson() => _$VersionVersionCoreLocalToJson(this);
 
@@ -88,6 +54,4 @@ class VersionVersionCoreLocal {
   String toString() {
     return toJson().toString();
   }
-
 }
-

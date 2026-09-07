@@ -10,7 +10,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'components_schemas_lists_processed_processed.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -20,59 +19,35 @@ part 'components_schemas_lists_processed_processed.g.dart';
 )
 class ComponentsSchemasListsProcessedProcessed {
   /// Returns a new [ComponentsSchemasListsProcessedProcessed] instance.
-  ComponentsSchemasListsProcessedProcessed({
+  ComponentsSchemasListsProcessedProcessed({this.success, this.errors});
 
-     this.success,
-
-     this.errors,
-  });
-
-      /// Array of clients that were successfully added to the database. 
-  @JsonKey(
-    
-    name: r'success',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Array of clients that were successfully added to the database.
+  @JsonKey(name: r'success', required: false, includeIfNull: false)
   final List<ComponentsSchemasListsProcessedProcessedSuccessInner>? success;
 
-
-
-      /// Array of errors that occurred during processing. 
-  @JsonKey(
-    
-    name: r'errors',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Array of errors that occurred during processing.
+  @JsonKey(name: r'errors', required: false, includeIfNull: false)
   final List<ComponentsSchemasListsProcessedProcessedErrorsInner>? errors;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ComponentsSchemasListsProcessedProcessed &&
+          other.success == success &&
+          other.errors == errors;
 
+  @override
+  int get hashCode => success.hashCode + errors.hashCode;
 
+  factory ComponentsSchemasListsProcessedProcessed.fromJson(
+    Map<String, dynamic> json,
+  ) => _$ComponentsSchemasListsProcessedProcessedFromJson(json);
 
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is ComponentsSchemasListsProcessedProcessed &&
-      other.success == success &&
-      other.errors == errors;
-
-    @override
-    int get hashCode =>
-        success.hashCode +
-        errors.hashCode;
-
-  factory ComponentsSchemasListsProcessedProcessed.fromJson(Map<String, dynamic> json) => _$ComponentsSchemasListsProcessedProcessedFromJson(json);
-
-  Map<String, dynamic> toJson() => _$ComponentsSchemasListsProcessedProcessedToJson(this);
+  Map<String, dynamic> toJson() =>
+      _$ComponentsSchemasListsProcessedProcessedToJson(this);
 
   @override
   String toString() {
     return toJson().toString();
   }
-
 }
-

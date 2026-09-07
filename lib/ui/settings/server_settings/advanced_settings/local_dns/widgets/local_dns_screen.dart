@@ -144,10 +144,7 @@ class _LocalDnsScreenState extends State<LocalDnsScreen> {
     }
   }
 
-  Future<bool> _onUpdateCname(
-    CnameRecord oldRecord,
-    CnameRecord record,
-  ) async {
+  Future<bool> _onUpdateCname(CnameRecord oldRecord, CnameRecord record) async {
     try {
       await widget.viewModel.updateCnameRecord.runAsync((
         oldRecord: oldRecord,

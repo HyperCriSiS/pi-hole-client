@@ -10,7 +10,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'version_version_web.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -20,50 +19,26 @@ part 'version_version_web.g.dart';
 )
 class VersionVersionWeb {
   /// Returns a new [VersionVersionWeb] instance.
-  VersionVersionWeb({
+  VersionVersionWeb({this.local, this.remote});
 
-     this.local,
-
-     this.remote,
-  });
-
-  @JsonKey(
-    
-    name: r'local',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'local', required: false, includeIfNull: false)
   final VersionVersionWebLocal? local;
 
-
-
-  @JsonKey(
-    
-    name: r'remote',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'remote', required: false, includeIfNull: false)
   final VersionVersionWebRemote? remote;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is VersionVersionWeb &&
+          other.local == local &&
+          other.remote == remote;
 
+  @override
+  int get hashCode => local.hashCode + remote.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is VersionVersionWeb &&
-      other.local == local &&
-      other.remote == remote;
-
-    @override
-    int get hashCode =>
-        local.hashCode +
-        remote.hashCode;
-
-  factory VersionVersionWeb.fromJson(Map<String, dynamic> json) => _$VersionVersionWebFromJson(json);
+  factory VersionVersionWeb.fromJson(Map<String, dynamic> json) =>
+      _$VersionVersionWebFromJson(json);
 
   Map<String, dynamic> toJson() => _$VersionVersionWebToJson(this);
 
@@ -71,6 +46,4 @@ class VersionVersionWeb {
   String toString() {
     return toJson().toString();
   }
-
 }
-

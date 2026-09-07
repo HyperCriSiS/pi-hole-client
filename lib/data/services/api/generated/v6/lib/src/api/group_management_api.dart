@@ -12,23 +12,22 @@ import 'package:dio/dio.dart';
 import 'package:pihole_v6_api/src/model/add_auth401_response.dart';
 import 'package:pihole_v6_api/src/model/batch_delete_groups_request_inner.dart';
 import 'package:pihole_v6_api/src/model/get_groups200_response.dart';
-import 'package:pihole_v6_api/src/model/groups_post.dart';
-import 'package:pihole_v6_api/src/model/groups_put.dart';
+import 'package:pihole_v6_api/src/model/post2.dart';
+import 'package:pihole_v6_api/src/model/put2.dart';
 import 'package:pihole_v6_api/src/model/replace_domain400_response.dart';
 import 'package:pihole_v6_api/src/model/replace_group200_response.dart';
 import 'package:pihole_v6_api/src/model/took.dart';
 
 class GroupManagementApi {
-
   final Dio _dio;
 
   const GroupManagementApi(this._dio);
 
   /// Add new group
-  /// Creates a new group in the &#x60;groups&#x60; object. The &#x60;{group}&#x60; itself is specified in the request body (POST JSON).  On success, a new resource is created at &#x60;/groups/{name}&#x60;.  The &#x60;database_error&#x60; with message &#x60;UNIQUE constraint failed&#x60; error indicates that a group with the same name already exists. 
+  /// Creates a new group in the &#x60;groups&#x60; object. The &#x60;{group}&#x60; itself is specified in the request body (POST JSON).  On success, a new resource is created at &#x60;/groups/{name}&#x60;.  The &#x60;database_error&#x60; with message &#x60;The item is already present&#x60; error indicates that a group with the same name already exists.
   ///
   /// Parameters:
-  /// * [groupsPost] - Callback payload
+  /// * [post2] - Callback payload
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -38,8 +37,8 @@ class GroupManagementApi {
   ///
   /// Returns a [Future] containing a [Response] with a [ReplaceGroup200Response] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<ReplaceGroup200Response>> addGroup({ 
-    GroupsPost? groupsPost,
+  Future<Response<ReplaceGroup200Response>> addGroup({
+    Post2? post2,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -50,9 +49,7 @@ class GroupManagementApi {
     final _path = r'/groups';
     final _options = Options(
       method: r'POST',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
+      headers: <String, dynamic>{...?headers},
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
@@ -60,17 +57,20 @@ class GroupManagementApi {
             'name': 'x_header_sid',
             'keyName': 'X-FTL-SID',
             'where': 'header',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'query_sid',
             'keyName': 'sid',
             'where': 'query',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'cookie_sid',
             'keyName': 'sid',
             'where': '',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'header_sid',
             'keyName': 'sid',
@@ -86,13 +86,10 @@ class GroupManagementApi {
     dynamic _bodyData;
 
     try {
-_bodyData=jsonEncode(groupsPost);
-    } catch(error, stackTrace) {
+      _bodyData = jsonEncode(post2);
+    } catch (error, stackTrace) {
       throw DioException(
-         requestOptions: _options.compose(
-          _dio.options,
-          _path,
-        ),
+        requestOptions: _options.compose(_dio.options, _path),
         type: DioExceptionType.unknown,
         error: error,
         stackTrace: stackTrace,
@@ -111,9 +108,14 @@ _bodyData=jsonEncode(groupsPost);
     ReplaceGroup200Response? _responseData;
 
     try {
-final rawData = _response.data;
-_responseData = rawData == null ? null : deserialize<ReplaceGroup200Response, ReplaceGroup200Response>(rawData, 'ReplaceGroup200Response', growable: true);
-
+      final rawData = _response.data;
+      _responseData = rawData == null
+          ? null
+          : deserialize<ReplaceGroup200Response, ReplaceGroup200Response>(
+              rawData,
+              'ReplaceGroup200Response',
+              growable: true,
+            );
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -137,7 +139,7 @@ _responseData = rawData == null ? null : deserialize<ReplaceGroup200Response, Re
   }
 
   /// Delete multiple groups
-  /// Deletes multiple groups in the &#x60;groups&#x60; object. The &#x60;{groups}&#x60; themselves are specified in the request body (POST JSON). 
+  /// Deletes multiple groups in the &#x60;groups&#x60; object. The &#x60;{groups}&#x60; themselves are specified in the request body (POST JSON).
   ///
   /// Parameters:
   /// * [batchDeleteGroupsRequestInner] - Callback payload
@@ -150,7 +152,7 @@ _responseData = rawData == null ? null : deserialize<ReplaceGroup200Response, Re
   ///
   /// Returns a [Future]
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<void>> batchDeleteGroups({ 
+  Future<Response<void>> batchDeleteGroups({
     required List<BatchDeleteGroupsRequestInner> batchDeleteGroupsRequestInner,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -162,9 +164,7 @@ _responseData = rawData == null ? null : deserialize<ReplaceGroup200Response, Re
     final _path = r'/groups:batchDelete';
     final _options = Options(
       method: r'POST',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
+      headers: <String, dynamic>{...?headers},
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
@@ -172,17 +172,20 @@ _responseData = rawData == null ? null : deserialize<ReplaceGroup200Response, Re
             'name': 'x_header_sid',
             'keyName': 'X-FTL-SID',
             'where': 'header',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'query_sid',
             'keyName': 'sid',
             'where': 'query',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'cookie_sid',
             'keyName': 'sid',
             'where': '',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'header_sid',
             'keyName': 'sid',
@@ -198,13 +201,10 @@ _responseData = rawData == null ? null : deserialize<ReplaceGroup200Response, Re
     dynamic _bodyData;
 
     try {
-_bodyData=jsonEncode(batchDeleteGroupsRequestInner);
-    } catch(error, stackTrace) {
+      _bodyData = jsonEncode(batchDeleteGroupsRequestInner);
+    } catch (error, stackTrace) {
       throw DioException(
-         requestOptions: _options.compose(
-          _dio.options,
-          _path,
-        ),
+        requestOptions: _options.compose(_dio.options, _path),
         type: DioExceptionType.unknown,
         error: error,
         stackTrace: stackTrace,
@@ -224,7 +224,7 @@ _bodyData=jsonEncode(batchDeleteGroupsRequestInner);
   }
 
   /// Delete group
-  /// *Note:* There will be no content on success. 
+  /// *Note:* There will be no content on success.
   ///
   /// Parameters:
   /// * [name] - Group name
@@ -237,7 +237,7 @@ _bodyData=jsonEncode(batchDeleteGroupsRequestInner);
   ///
   /// Returns a [Future]
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<void>> deleteGroup({ 
+  Future<Response<void>> deleteGroup({
     required String name,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -246,12 +246,15 @@ _bodyData=jsonEncode(batchDeleteGroupsRequestInner);
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/groups/{name}'.replaceAll('{' r'name' '}', name.toString());
+    final _path = r'/groups/{name}'.replaceAll(
+      '{'
+      r'name'
+      '}',
+      name.toString(),
+    );
     final _options = Options(
       method: r'DELETE',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
+      headers: <String, dynamic>{...?headers},
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
@@ -259,17 +262,20 @@ _bodyData=jsonEncode(batchDeleteGroupsRequestInner);
             'name': 'x_header_sid',
             'keyName': 'X-FTL-SID',
             'where': 'header',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'query_sid',
             'keyName': 'sid',
             'where': 'query',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'cookie_sid',
             'keyName': 'sid',
             'where': '',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'header_sid',
             'keyName': 'sid',
@@ -292,10 +298,11 @@ _bodyData=jsonEncode(batchDeleteGroupsRequestInner);
     return _response;
   }
 
-  /// Get all groups
-  /// Returns all configured groups. 
+  /// Get groups
+  /// &#x60;{name}&#x60; is optional. Specifying it will result in only the requested group being returned.  Valid combinations are: - &#x60;/api/groups&#x60; (all groups) - &#x60;/api/groups/my_group&#x60; (group identical to &#x60;my_group&#x60;)
   ///
   /// Parameters:
+  /// * [name] - Group name
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -305,7 +312,8 @@ _bodyData=jsonEncode(batchDeleteGroupsRequestInner);
   ///
   /// Returns a [Future] containing a [Response] with a [GetGroups200Response] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<GetGroups200Response>> getAllGroups({ 
+  Future<Response<GetGroups200Response>> getGroups({
+    required String name,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -313,12 +321,15 @@ _bodyData=jsonEncode(batchDeleteGroupsRequestInner);
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/groups';
+    final _path = r'/groups/{name}'.replaceAll(
+      '{'
+      r'name'
+      '}',
+      name.toString(),
+    );
     final _options = Options(
       method: r'GET',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
+      headers: <String, dynamic>{...?headers},
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
@@ -326,17 +337,20 @@ _bodyData=jsonEncode(batchDeleteGroupsRequestInner);
             'name': 'x_header_sid',
             'keyName': 'X-FTL-SID',
             'where': 'header',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'query_sid',
             'keyName': 'sid',
             'where': 'query',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'cookie_sid',
             'keyName': 'sid',
             'where': '',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'header_sid',
             'keyName': 'sid',
@@ -359,9 +373,14 @@ _bodyData=jsonEncode(batchDeleteGroupsRequestInner);
     GetGroups200Response? _responseData;
 
     try {
-final rawData = _response.data;
-_responseData = rawData == null ? null : deserialize<GetGroups200Response, GetGroups200Response>(rawData, 'GetGroups200Response', growable: true);
-
+      final rawData = _response.data;
+      _responseData = rawData == null
+          ? null
+          : deserialize<GetGroups200Response, GetGroups200Response>(
+              rawData,
+              'GetGroups200Response',
+              growable: true,
+            );
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -384,11 +403,10 @@ _responseData = rawData == null ? null : deserialize<GetGroups200Response, GetGr
     );
   }
 
-  /// Get groups
-  /// &#x60;{name}&#x60; is optional. Specifying it will result in only the requested group being returned.  Valid combinations are: - &#x60;/api/groups&#x60; (all groups) - &#x60;/api/groups/my_group&#x60; (group identical to &#x60;my_group&#x60;) 
+  /// List all groups
+  /// Returns the full list of groups configured on your Pi-hole.  This is the collection form of &#x60;GET /api/groups/{name}&#x60; (see &#x60;get_groups&#x60;) and returns the same array schema without requiring a &#x60;{name}&#x60; path parameter.
   ///
   /// Parameters:
-  /// * [name] - Group name
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -398,8 +416,7 @@ _responseData = rawData == null ? null : deserialize<GetGroups200Response, GetGr
   ///
   /// Returns a [Future] containing a [Response] with a [GetGroups200Response] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<GetGroups200Response>> getGroups({ 
-    required String name,
+  Future<Response<GetGroups200Response>> listGroups({
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -407,12 +424,10 @@ _responseData = rawData == null ? null : deserialize<GetGroups200Response, GetGr
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/groups/{name}'.replaceAll('{' r'name' '}', name.toString());
+    final _path = r'/groups';
     final _options = Options(
       method: r'GET',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
+      headers: <String, dynamic>{...?headers},
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
@@ -420,17 +435,20 @@ _responseData = rawData == null ? null : deserialize<GetGroups200Response, GetGr
             'name': 'x_header_sid',
             'keyName': 'X-FTL-SID',
             'where': 'header',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'query_sid',
             'keyName': 'sid',
             'where': 'query',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'cookie_sid',
             'keyName': 'sid',
             'where': '',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'header_sid',
             'keyName': 'sid',
@@ -453,9 +471,14 @@ _responseData = rawData == null ? null : deserialize<GetGroups200Response, GetGr
     GetGroups200Response? _responseData;
 
     try {
-final rawData = _response.data;
-_responseData = rawData == null ? null : deserialize<GetGroups200Response, GetGroups200Response>(rawData, 'GetGroups200Response', growable: true);
-
+      final rawData = _response.data;
+      _responseData = rawData == null
+          ? null
+          : deserialize<GetGroups200Response, GetGroups200Response>(
+              rawData,
+              'GetGroups200Response',
+              growable: true,
+            );
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -479,11 +502,11 @@ _responseData = rawData == null ? null : deserialize<GetGroups200Response, GetGr
   }
 
   /// Replace group
-  /// Items may be updated by replacing them. &#x60;{name}&#x60; is required.  Ensure to send all the required parameters (such as &#x60;comment&#x60;) to ensure these properties are retained. By specifying a different &#x60;name&#x60;, the group with the former name as specified in the URI will be renamed. The read-only fields &#x60;id&#x60; and &#x60;date_added&#x60; are preserved, &#x60;date_modified&#x60; is automatically updated on success. 
+  /// Items may be updated by replacing them. &#x60;{name}&#x60; is required.  Ensure to send all the required parameters (such as &#x60;comment&#x60;) to ensure these properties are retained. By specifying a different &#x60;name&#x60;, the group with the former name as specified in the URI will be renamed. The read-only fields &#x60;id&#x60; and &#x60;date_added&#x60; are preserved, &#x60;date_modified&#x60; is automatically updated on success.
   ///
   /// Parameters:
   /// * [name] - Group name
-  /// * [groupsPut] - Callback payload
+  /// * [put2] - Callback payload
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -493,9 +516,9 @@ _responseData = rawData == null ? null : deserialize<GetGroups200Response, GetGr
   ///
   /// Returns a [Future] containing a [Response] with a [ReplaceGroup200Response] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<ReplaceGroup200Response>> replaceGroup({ 
+  Future<Response<ReplaceGroup200Response>> replaceGroup({
     required String name,
-    GroupsPut? groupsPut,
+    Put2? put2,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -503,12 +526,15 @@ _responseData = rawData == null ? null : deserialize<GetGroups200Response, GetGr
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/groups/{name}'.replaceAll('{' r'name' '}', name.toString());
+    final _path = r'/groups/{name}'.replaceAll(
+      '{'
+      r'name'
+      '}',
+      name.toString(),
+    );
     final _options = Options(
       method: r'PUT',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
+      headers: <String, dynamic>{...?headers},
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
@@ -516,17 +542,20 @@ _responseData = rawData == null ? null : deserialize<GetGroups200Response, GetGr
             'name': 'x_header_sid',
             'keyName': 'X-FTL-SID',
             'where': 'header',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'query_sid',
             'keyName': 'sid',
             'where': 'query',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'cookie_sid',
             'keyName': 'sid',
             'where': '',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'header_sid',
             'keyName': 'sid',
@@ -542,13 +571,10 @@ _responseData = rawData == null ? null : deserialize<GetGroups200Response, GetGr
     dynamic _bodyData;
 
     try {
-_bodyData=jsonEncode(groupsPut);
-    } catch(error, stackTrace) {
+      _bodyData = jsonEncode(put2);
+    } catch (error, stackTrace) {
       throw DioException(
-         requestOptions: _options.compose(
-          _dio.options,
-          _path,
-        ),
+        requestOptions: _options.compose(_dio.options, _path),
         type: DioExceptionType.unknown,
         error: error,
         stackTrace: stackTrace,
@@ -567,9 +593,14 @@ _bodyData=jsonEncode(groupsPut);
     ReplaceGroup200Response? _responseData;
 
     try {
-final rawData = _response.data;
-_responseData = rawData == null ? null : deserialize<ReplaceGroup200Response, ReplaceGroup200Response>(rawData, 'ReplaceGroup200Response', growable: true);
-
+      final rawData = _response.data;
+      _responseData = rawData == null
+          ? null
+          : deserialize<ReplaceGroup200Response, ReplaceGroup200Response>(
+              rawData,
+              'ReplaceGroup200Response',
+              growable: true,
+            );
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -591,5 +622,4 @@ _responseData = rawData == null ? null : deserialize<ReplaceGroup200Response, Re
       extra: _response.extra,
     );
   }
-
 }

@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'app_app.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,48 +17,21 @@ part 'app_app.g.dart';
 )
 class AppApp {
   /// Returns a new [AppApp] instance.
-  AppApp({
+  AppApp({this.password, this.hash});
 
-     this.password,
-
-     this.hash,
-  });
-
-  @JsonKey(
-    
-    name: r'password',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'password', required: false, includeIfNull: false)
   final String? password;
 
-
-
-  @JsonKey(
-    
-    name: r'hash',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'hash', required: false, includeIfNull: false)
   final String? hash;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AppApp && other.password == password && other.hash == hash;
 
-
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is AppApp &&
-      other.password == password &&
-      other.hash == hash;
-
-    @override
-    int get hashCode =>
-        password.hashCode +
-        hash.hashCode;
+  @override
+  int get hashCode => password.hashCode + hash.hashCode;
 
   factory AppApp.fromJson(Map<String, dynamic> json) => _$AppAppFromJson(json);
 
@@ -69,6 +41,4 @@ class AppApp {
   String toString() {
     return toJson().toString();
   }
-
 }
-

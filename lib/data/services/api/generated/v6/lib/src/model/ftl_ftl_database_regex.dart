@@ -10,7 +10,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'ftl_ftl_database_regex.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -20,50 +19,26 @@ part 'ftl_ftl_database_regex.g.dart';
 )
 class FtlFtlDatabaseRegex {
   /// Returns a new [FtlFtlDatabaseRegex] instance.
-  FtlFtlDatabaseRegex({
+  FtlFtlDatabaseRegex({this.allowed, this.denied});
 
-     this.allowed,
-
-     this.denied,
-  });
-
-  @JsonKey(
-    
-    name: r'allowed',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'allowed', required: false, includeIfNull: false)
   final FtlFtlDatabaseRegexAllowed? allowed;
 
-
-
-  @JsonKey(
-    
-    name: r'denied',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'denied', required: false, includeIfNull: false)
   final FtlFtlDatabaseRegexDenied? denied;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is FtlFtlDatabaseRegex &&
+          other.allowed == allowed &&
+          other.denied == denied;
 
+  @override
+  int get hashCode => allowed.hashCode + denied.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is FtlFtlDatabaseRegex &&
-      other.allowed == allowed &&
-      other.denied == denied;
-
-    @override
-    int get hashCode =>
-        allowed.hashCode +
-        denied.hashCode;
-
-  factory FtlFtlDatabaseRegex.fromJson(Map<String, dynamic> json) => _$FtlFtlDatabaseRegexFromJson(json);
+  factory FtlFtlDatabaseRegex.fromJson(Map<String, dynamic> json) =>
+      _$FtlFtlDatabaseRegexFromJson(json);
 
   Map<String, dynamic> toJson() => _$FtlFtlDatabaseRegexToJson(this);
 
@@ -71,6 +46,4 @@ class FtlFtlDatabaseRegex {
   String toString() {
     return toJson().toString();
   }
-
 }
-

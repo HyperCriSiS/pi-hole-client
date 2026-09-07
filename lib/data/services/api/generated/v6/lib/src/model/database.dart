@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'database.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -20,220 +19,116 @@ part 'database.g.dart';
 class Database {
   /// Returns a new [Database] instance.
   Database({
+    this.size,
 
-     this.size,
+    this.type,
 
-     this.type,
+    this.mode,
 
-     this.mode,
+    this.atime,
 
-     this.atime,
+    this.mtime,
 
-     this.mtime,
+    this.ctime,
 
-     this.ctime,
+    this.owner,
 
-     this.owner,
+    this.queries,
 
-     this.queries,
+    this.earliestTimestamp,
 
-     this.earliestTimestamp,
+    this.queriesDisk,
 
-     this.queriesDisk,
+    this.earliestTimestampDisk,
 
-     this.earliestTimestampDisk,
-
-     this.sqliteVersion,
+    this.sqliteVersion,
   });
 
-      /// Database size in bytes
-  @JsonKey(
-    
-    name: r'size',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Database size in bytes
+  @JsonKey(name: r'size', required: false, includeIfNull: false)
   final int? size;
 
-
-
-      /// Database file type
-  @JsonKey(
-    
-    name: r'type',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Database file type
+  @JsonKey(name: r'type', required: false, includeIfNull: false)
   final String? type;
 
-
-
-      /// Database file mode
-  @JsonKey(
-    
-    name: r'mode',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Database file mode
+  @JsonKey(name: r'mode', required: false, includeIfNull: false)
   final String? mode;
 
-
-
-      /// Timestamp of last access
-  @JsonKey(
-    
-    name: r'atime',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Timestamp of last access
+  @JsonKey(name: r'atime', required: false, includeIfNull: false)
   final int? atime;
 
-
-
-      /// Timestamp of last modification
-  @JsonKey(
-    
-    name: r'mtime',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Timestamp of last modification
+  @JsonKey(name: r'mtime', required: false, includeIfNull: false)
   final int? mtime;
 
-
-
-      /// Timestamp of last status change
-  @JsonKey(
-    
-    name: r'ctime',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Timestamp of last status change
+  @JsonKey(name: r'ctime', required: false, includeIfNull: false)
   final int? ctime;
 
-
-
-  @JsonKey(
-    
-    name: r'owner',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'owner', required: false, includeIfNull: false)
   final DatabaseOwner? owner;
 
-
-
-      /// Number of queries in in-memory database
-  @JsonKey(
-    
-    name: r'queries',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Number of queries in in-memory database
+  @JsonKey(name: r'queries', required: false, includeIfNull: false)
   final int? queries;
 
-
-
-      /// Unix timestamp of the earliest query in the in-memory database (Defaults to 0.0 if no queries are stored in memory)
-  @JsonKey(
-    
-    name: r'earliest_timestamp',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Unix timestamp of the earliest query in the in-memory database (Defaults to 0.0 if no queries are stored in memory)
+  @JsonKey(name: r'earliest_timestamp', required: false, includeIfNull: false)
   final num? earliestTimestamp;
 
-
-
-      /// Number of queries in on-disk database
-  @JsonKey(
-    
-    name: r'queries_disk',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Number of queries in on-disk database
+  @JsonKey(name: r'queries_disk', required: false, includeIfNull: false)
   final int? queriesDisk;
 
-
-
-      /// Unix timestamp of the earliest query in the on-disk database (Defaults to 0.0 if no queries are stored on disk)
+  /// Unix timestamp of the earliest query in the on-disk database (Defaults to 0.0 if no queries are stored on disk)
   @JsonKey(
-    
     name: r'earliest_timestamp_disk',
     required: false,
     includeIfNull: false,
   )
-
-
   final num? earliestTimestampDisk;
 
-
-
-      /// Version of embedded SQLite3 engine
-  @JsonKey(
-    
-    name: r'sqlite_version',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Version of embedded SQLite3 engine
+  @JsonKey(name: r'sqlite_version', required: false, includeIfNull: false)
   final String? sqliteVersion;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Database &&
+          other.size == size &&
+          other.type == type &&
+          other.mode == mode &&
+          other.atime == atime &&
+          other.mtime == mtime &&
+          other.ctime == ctime &&
+          other.owner == owner &&
+          other.queries == queries &&
+          other.earliestTimestamp == earliestTimestamp &&
+          other.queriesDisk == queriesDisk &&
+          other.earliestTimestampDisk == earliestTimestampDisk &&
+          other.sqliteVersion == sqliteVersion;
 
+  @override
+  int get hashCode =>
+      size.hashCode +
+      type.hashCode +
+      mode.hashCode +
+      atime.hashCode +
+      mtime.hashCode +
+      ctime.hashCode +
+      owner.hashCode +
+      queries.hashCode +
+      earliestTimestamp.hashCode +
+      queriesDisk.hashCode +
+      earliestTimestampDisk.hashCode +
+      sqliteVersion.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is Database &&
-      other.size == size &&
-      other.type == type &&
-      other.mode == mode &&
-      other.atime == atime &&
-      other.mtime == mtime &&
-      other.ctime == ctime &&
-      other.owner == owner &&
-      other.queries == queries &&
-      other.earliestTimestamp == earliestTimestamp &&
-      other.queriesDisk == queriesDisk &&
-      other.earliestTimestampDisk == earliestTimestampDisk &&
-      other.sqliteVersion == sqliteVersion;
-
-    @override
-    int get hashCode =>
-        size.hashCode +
-        type.hashCode +
-        mode.hashCode +
-        atime.hashCode +
-        mtime.hashCode +
-        ctime.hashCode +
-        owner.hashCode +
-        queries.hashCode +
-        earliestTimestamp.hashCode +
-        queriesDisk.hashCode +
-        earliestTimestampDisk.hashCode +
-        sqliteVersion.hashCode;
-
-  factory Database.fromJson(Map<String, dynamic> json) => _$DatabaseFromJson(json);
+  factory Database.fromJson(Map<String, dynamic> json) =>
+      _$DatabaseFromJson(json);
 
   Map<String, dynamic> toJson() => _$DatabaseToJson(this);
 
@@ -241,6 +136,4 @@ class Database {
   String toString() {
     return toJson().toString();
   }
-
 }
-

@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'schemas_enabled.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,35 +17,27 @@ part 'schemas_enabled.g.dart';
 )
 class SchemasEnabled {
   /// Returns a new [SchemasEnabled] instance.
-  SchemasEnabled({
+  SchemasEnabled({this.enabled = true});
 
-     this.enabled = true,
-  });
-
-      /// Status of item
+  /// Status of item
   @JsonKey(
     defaultValue: true,
     name: r'enabled',
     required: false,
     includeIfNull: false,
   )
-
-
   final bool? enabled;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SchemasEnabled && other.enabled == enabled;
 
+  @override
+  int get hashCode => enabled.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is SchemasEnabled &&
-      other.enabled == enabled;
-
-    @override
-    int get hashCode =>
-        enabled.hashCode;
-
-  factory SchemasEnabled.fromJson(Map<String, dynamic> json) => _$SchemasEnabledFromJson(json);
+  factory SchemasEnabled.fromJson(Map<String, dynamic> json) =>
+      _$SchemasEnabledFromJson(json);
 
   Map<String, dynamic> toJson() => _$SchemasEnabledToJson(this);
 
@@ -54,6 +45,4 @@ class SchemasEnabled {
   String toString() {
     return toJson().toString();
   }
-
 }
-

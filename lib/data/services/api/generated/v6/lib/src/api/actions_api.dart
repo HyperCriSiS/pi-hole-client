@@ -15,13 +15,12 @@ import 'package:pihole_v6_api/src/model/add_auth401_response.dart';
 import 'package:pihole_v6_api/src/model/forbidden.dart';
 
 class ActionsApi {
-
   final Dio _dio;
 
   const ActionsApi(this._dio);
 
   /// Flush the network table
-  /// Deprecated! Use &#39;/action/flush/network&#39; instead. Flushes the network table. This includes removing both all known devices and their associated addresses. 
+  /// Deprecated! Use &#39;/action/flush/network&#39; instead. Flushes the network table. This includes removing both all known devices and their associated addresses.
   ///
   /// Parameters:
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
@@ -34,7 +33,7 @@ class ActionsApi {
   /// Returns a [Future] containing a [Response] with a [ActionRestartdns200Response] as data
   /// Throws [DioException] if API call or serialization fails
   @Deprecated('This operation has been deprecated')
-  Future<Response<ActionRestartdns200Response>> actionFlusharp({ 
+  Future<Response<ActionRestartdns200Response>> actionFlusharp({
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -45,9 +44,7 @@ class ActionsApi {
     final _path = r'/action/flush/arp';
     final _options = Options(
       method: r'POST',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
+      headers: <String, dynamic>{...?headers},
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
@@ -55,17 +52,20 @@ class ActionsApi {
             'name': 'x_header_sid',
             'keyName': 'X-FTL-SID',
             'where': 'header',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'query_sid',
             'keyName': 'sid',
             'where': 'query',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'cookie_sid',
             'keyName': 'sid',
             'where': '',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'header_sid',
             'keyName': 'sid',
@@ -88,9 +88,13 @@ class ActionsApi {
     ActionRestartdns200Response? _responseData;
 
     try {
-final rawData = _response.data;
-_responseData = rawData == null ? null : deserialize<ActionRestartdns200Response, ActionRestartdns200Response>(rawData, 'ActionRestartdns200Response', growable: true);
-
+      final rawData = _response.data;
+      _responseData = rawData == null
+          ? null
+          : deserialize<
+              ActionRestartdns200Response,
+              ActionRestartdns200Response
+            >(rawData, 'ActionRestartdns200Response', growable: true);
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -114,7 +118,7 @@ _responseData = rawData == null ? null : deserialize<ActionRestartdns200Response
   }
 
   /// Flush the DNS logs
-  /// Flushes the DNS logs. This includes emptying the DNS log file and purging the most recent 24 hours from both the database and FTL&#39;s internal memory. 
+  /// Flushes the DNS logs. This includes emptying the DNS log file and purging the most recent 24 hours from both the database and FTL&#39;s internal memory.
   ///
   /// Parameters:
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
@@ -126,7 +130,7 @@ _responseData = rawData == null ? null : deserialize<ActionRestartdns200Response
   ///
   /// Returns a [Future] containing a [Response] with a [ActionRestartdns200Response] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<ActionRestartdns200Response>> actionFlushlogs({ 
+  Future<Response<ActionRestartdns200Response>> actionFlushlogs({
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -137,9 +141,7 @@ _responseData = rawData == null ? null : deserialize<ActionRestartdns200Response
     final _path = r'/action/flush/logs';
     final _options = Options(
       method: r'POST',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
+      headers: <String, dynamic>{...?headers},
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
@@ -147,17 +149,20 @@ _responseData = rawData == null ? null : deserialize<ActionRestartdns200Response
             'name': 'x_header_sid',
             'keyName': 'X-FTL-SID',
             'where': 'header',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'query_sid',
             'keyName': 'sid',
             'where': 'query',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'cookie_sid',
             'keyName': 'sid',
             'where': '',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'header_sid',
             'keyName': 'sid',
@@ -180,9 +185,13 @@ _responseData = rawData == null ? null : deserialize<ActionRestartdns200Response
     ActionRestartdns200Response? _responseData;
 
     try {
-final rawData = _response.data;
-_responseData = rawData == null ? null : deserialize<ActionRestartdns200Response, ActionRestartdns200Response>(rawData, 'ActionRestartdns200Response', growable: true);
-
+      final rawData = _response.data;
+      _responseData = rawData == null
+          ? null
+          : deserialize<
+              ActionRestartdns200Response,
+              ActionRestartdns200Response
+            >(rawData, 'ActionRestartdns200Response', growable: true);
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -206,7 +215,7 @@ _responseData = rawData == null ? null : deserialize<ActionRestartdns200Response
   }
 
   /// Flush the network table
-  /// Flushes the network table. This includes removing both all known devices and their associated addresses. 
+  /// Flushes the network table. This includes removing both all known devices and their associated addresses.
   ///
   /// Parameters:
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
@@ -218,7 +227,7 @@ _responseData = rawData == null ? null : deserialize<ActionRestartdns200Response
   ///
   /// Returns a [Future] containing a [Response] with a [ActionRestartdns200Response] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<ActionRestartdns200Response>> actionFlushnetwork({ 
+  Future<Response<ActionRestartdns200Response>> actionFlushnetwork({
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -229,9 +238,7 @@ _responseData = rawData == null ? null : deserialize<ActionRestartdns200Response
     final _path = r'/action/flush/network';
     final _options = Options(
       method: r'POST',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
+      headers: <String, dynamic>{...?headers},
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
@@ -239,17 +246,20 @@ _responseData = rawData == null ? null : deserialize<ActionRestartdns200Response
             'name': 'x_header_sid',
             'keyName': 'X-FTL-SID',
             'where': 'header',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'query_sid',
             'keyName': 'sid',
             'where': 'query',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'cookie_sid',
             'keyName': 'sid',
             'where': '',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'header_sid',
             'keyName': 'sid',
@@ -272,9 +282,13 @@ _responseData = rawData == null ? null : deserialize<ActionRestartdns200Response
     ActionRestartdns200Response? _responseData;
 
     try {
-final rawData = _response.data;
-_responseData = rawData == null ? null : deserialize<ActionRestartdns200Response, ActionRestartdns200Response>(rawData, 'ActionRestartdns200Response', growable: true);
-
+      final rawData = _response.data;
+      _responseData = rawData == null
+          ? null
+          : deserialize<
+              ActionRestartdns200Response,
+              ActionRestartdns200Response
+            >(rawData, 'ActionRestartdns200Response', growable: true);
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -298,7 +312,7 @@ _responseData = rawData == null ? null : deserialize<ActionRestartdns200Response
   }
 
   /// Run gravity
-  /// Update Pi-hole&#39;s adlists by running &#x60;pihole -g&#x60;. The output of the process is streamed with chunked encoding. Use the optional &#x60;color&#x60; query parameter to include ANSI color escape codes in the output. 
+  /// Update Pi-hole&#39;s adlists by running &#x60;pihole -g&#x60;. The output of the process is streamed with chunked encoding. Use the optional &#x60;color&#x60; query parameter to include ANSI color escape codes in the output.
   ///
   /// Parameters:
   /// * [color] - Include ANSI color escape codes in the streamed output. Defaults to false to prevent colored output for API consumers that don't need formatting.
@@ -311,7 +325,7 @@ _responseData = rawData == null ? null : deserialize<ActionRestartdns200Response
   ///
   /// Returns a [Future] containing a [Response] with a [String] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<String>> actionGravity({ 
+  Future<Response<String>> actionGravity({
     bool? color = false,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -323,9 +337,7 @@ _responseData = rawData == null ? null : deserialize<ActionRestartdns200Response
     final _path = r'/action/gravity';
     final _options = Options(
       method: r'POST',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
+      headers: <String, dynamic>{...?headers},
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
@@ -333,17 +345,20 @@ _responseData = rawData == null ? null : deserialize<ActionRestartdns200Response
             'name': 'x_header_sid',
             'keyName': 'X-FTL-SID',
             'where': 'header',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'query_sid',
             'keyName': 'sid',
             'where': 'query',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'cookie_sid',
             'keyName': 'sid',
             'where': '',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'header_sid',
             'keyName': 'sid',
@@ -371,9 +386,10 @@ _responseData = rawData == null ? null : deserialize<ActionRestartdns200Response
     String? _responseData;
 
     try {
-final rawData = _response.data;
-_responseData = rawData == null ? null : deserialize<String, String>(rawData, 'String', growable: true);
-
+      final rawData = _response.data;
+      _responseData = rawData == null
+          ? null
+          : deserialize<String, String>(rawData, 'String', growable: true);
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -397,7 +413,7 @@ _responseData = rawData == null ? null : deserialize<String, String>(rawData, 'S
   }
 
   /// Restart pihole-FTL
-  /// Restarts the pihole-FTL service 
+  /// Restarts the pihole-FTL service
   ///
   /// Parameters:
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
@@ -409,7 +425,7 @@ _responseData = rawData == null ? null : deserialize<String, String>(rawData, 'S
   ///
   /// Returns a [Future] containing a [Response] with a [ActionRestartdns200Response] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<ActionRestartdns200Response>> actionRestartdns({ 
+  Future<Response<ActionRestartdns200Response>> actionRestartdns({
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -420,9 +436,7 @@ _responseData = rawData == null ? null : deserialize<String, String>(rawData, 'S
     final _path = r'/action/restartdns';
     final _options = Options(
       method: r'POST',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
+      headers: <String, dynamic>{...?headers},
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
@@ -430,17 +444,20 @@ _responseData = rawData == null ? null : deserialize<String, String>(rawData, 'S
             'name': 'x_header_sid',
             'keyName': 'X-FTL-SID',
             'where': 'header',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'query_sid',
             'keyName': 'sid',
             'where': 'query',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'cookie_sid',
             'keyName': 'sid',
             'where': '',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'header_sid',
             'keyName': 'sid',
@@ -463,9 +480,13 @@ _responseData = rawData == null ? null : deserialize<String, String>(rawData, 'S
     ActionRestartdns200Response? _responseData;
 
     try {
-final rawData = _response.data;
-_responseData = rawData == null ? null : deserialize<ActionRestartdns200Response, ActionRestartdns200Response>(rawData, 'ActionRestartdns200Response', growable: true);
-
+      final rawData = _response.data;
+      _responseData = rawData == null
+          ? null
+          : deserialize<
+              ActionRestartdns200Response,
+              ActionRestartdns200Response
+            >(rawData, 'ActionRestartdns200Response', growable: true);
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -487,5 +508,4 @@ _responseData = rawData == null ? null : deserialize<ActionRestartdns200Response
       extra: _response.extra,
     );
   }
-
 }

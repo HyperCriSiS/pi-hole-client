@@ -10,7 +10,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'system_system_memory.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -20,50 +19,24 @@ part 'system_system_memory.g.dart';
 )
 class SystemSystemMemory {
   /// Returns a new [SystemSystemMemory] instance.
-  SystemSystemMemory({
+  SystemSystemMemory({this.ram, this.swap});
 
-     this.ram,
-
-     this.swap,
-  });
-
-  @JsonKey(
-    
-    name: r'ram',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'ram', required: false, includeIfNull: false)
   final SystemSystemMemoryRam? ram;
 
-
-
-  @JsonKey(
-    
-    name: r'swap',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'swap', required: false, includeIfNull: false)
   final SystemSystemMemorySwap? swap;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SystemSystemMemory && other.ram == ram && other.swap == swap;
 
+  @override
+  int get hashCode => ram.hashCode + swap.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is SystemSystemMemory &&
-      other.ram == ram &&
-      other.swap == swap;
-
-    @override
-    int get hashCode =>
-        ram.hashCode +
-        swap.hashCode;
-
-  factory SystemSystemMemory.fromJson(Map<String, dynamic> json) => _$SystemSystemMemoryFromJson(json);
+  factory SystemSystemMemory.fromJson(Map<String, dynamic> json) =>
+      _$SystemSystemMemoryFromJson(json);
 
   Map<String, dynamic> toJson() => _$SystemSystemMemoryToJson(this);
 
@@ -71,6 +44,4 @@ class SystemSystemMemory {
   String toString() {
     return toJson().toString();
   }
-
 }
-

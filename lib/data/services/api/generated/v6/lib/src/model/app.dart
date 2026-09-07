@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'app.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,32 +18,17 @@ part 'app.g.dart';
 )
 class App {
   /// Returns a new [App] instance.
-  App({
+  App({this.app});
 
-     this.app,
-  });
-
-  @JsonKey(
-    
-    name: r'app',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'app', required: false, includeIfNull: false)
   final AppApp? app;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is App && other.app == app;
 
-
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is App &&
-      other.app == app;
-
-    @override
-    int get hashCode =>
-        app.hashCode;
+  @override
+  int get hashCode => app.hashCode;
 
   factory App.fromJson(Map<String, dynamic> json) => _$AppFromJson(json);
 
@@ -54,6 +38,4 @@ class App {
   String toString() {
     return toJson().toString();
   }
-
 }
-

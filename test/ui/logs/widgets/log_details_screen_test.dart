@@ -178,7 +178,9 @@ void main() async {
       expect(calledWith, 'white');
     });
 
-    testWidgets('filters logs by the selected domain', (WidgetTester tester) async {
+    testWidgets('filters logs by the selected domain', (
+      WidgetTester tester,
+    ) async {
       final vm = FakeLogsViewModel();
       await tester.pumpWidget(_buildScreen(_forwardedLog, viewModel: vm));
 
@@ -188,7 +190,9 @@ void main() async {
       expect(vm.selectedDomain, 'example.com');
     });
 
-    testWidgets('copies the domain to the clipboard', (WidgetTester tester) async {
+    testWidgets('copies the domain to the clipboard', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(_buildScreen(_forwardedLog));
       String? clipboardText;
       tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(

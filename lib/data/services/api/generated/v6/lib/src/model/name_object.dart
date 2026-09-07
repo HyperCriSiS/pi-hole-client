@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'name_object.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,35 +17,21 @@ part 'name_object.g.dart';
 )
 class NameObject {
   /// Returns a new [NameObject] instance.
-  NameObject({
+  NameObject({this.name});
 
-     this.name,
-  });
-
-      /// Group name
-  @JsonKey(
-    
-    name: r'name',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Group name
+  @JsonKey(name: r'name', required: false, includeIfNull: false)
   final String? name;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is NameObject && other.name == name;
 
+  @override
+  int get hashCode => name.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is NameObject &&
-      other.name == name;
-
-    @override
-    int get hashCode =>
-        name.hashCode;
-
-  factory NameObject.fromJson(Map<String, dynamic> json) => _$NameObjectFromJson(json);
+  factory NameObject.fromJson(Map<String, dynamic> json) =>
+      _$NameObjectFromJson(json);
 
   Map<String, dynamic> toJson() => _$NameObjectToJson(this);
 
@@ -54,6 +39,4 @@ class NameObject {
   String toString() {
     return toJson().toString();
   }
-
 }
-

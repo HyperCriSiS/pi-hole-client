@@ -10,7 +10,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'lists_components_schemas_lists_processed_processed.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -20,59 +19,36 @@ part 'lists_components_schemas_lists_processed_processed.g.dart';
 )
 class ListsComponentsSchemasListsProcessedProcessed {
   /// Returns a new [ListsComponentsSchemasListsProcessedProcessed] instance.
-  ListsComponentsSchemasListsProcessedProcessed({
+  ListsComponentsSchemasListsProcessedProcessed({this.success, this.errors});
 
-     this.success,
+  /// Array of lists that were successfully added to the database.
+  @JsonKey(name: r'success', required: false, includeIfNull: false)
+  final List<ListsComponentsSchemasListsProcessedProcessedSuccessInner>?
+  success;
 
-     this.errors,
-  });
-
-      /// Array of lists that were successfully added to the database. 
-  @JsonKey(
-    
-    name: r'success',
-    required: false,
-    includeIfNull: false,
-  )
-
-
-  final List<ListsComponentsSchemasListsProcessedProcessedSuccessInner>? success;
-
-
-
-      /// Array of errors that occurred during processing. 
-  @JsonKey(
-    
-    name: r'errors',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Array of errors that occurred during processing.
+  @JsonKey(name: r'errors', required: false, includeIfNull: false)
   final List<ListsComponentsSchemasListsProcessedProcessedErrorsInner>? errors;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ListsComponentsSchemasListsProcessedProcessed &&
+          other.success == success &&
+          other.errors == errors;
 
+  @override
+  int get hashCode => success.hashCode + errors.hashCode;
 
+  factory ListsComponentsSchemasListsProcessedProcessed.fromJson(
+    Map<String, dynamic> json,
+  ) => _$ListsComponentsSchemasListsProcessedProcessedFromJson(json);
 
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is ListsComponentsSchemasListsProcessedProcessed &&
-      other.success == success &&
-      other.errors == errors;
-
-    @override
-    int get hashCode =>
-        success.hashCode +
-        errors.hashCode;
-
-  factory ListsComponentsSchemasListsProcessedProcessed.fromJson(Map<String, dynamic> json) => _$ListsComponentsSchemasListsProcessedProcessedFromJson(json);
-
-  Map<String, dynamic> toJson() => _$ListsComponentsSchemasListsProcessedProcessedToJson(this);
+  Map<String, dynamic> toJson() =>
+      _$ListsComponentsSchemasListsProcessedProcessedToJson(this);
 
   @override
   String toString() {
     return toJson().toString();
   }
-
 }
-

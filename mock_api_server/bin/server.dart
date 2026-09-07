@@ -201,10 +201,9 @@ void main(List<String> args) async {
       .addMiddleware(sleepMiddleware(delay: Duration(milliseconds: delayMs)))
       .addHandler(router.call);
 
-  final address =
-      (host == '0.0.0.0')
-          ? InternetAddress.anyIPv4
-          : InternetAddress.loopbackIPv4;
+  final address = (host == '0.0.0.0')
+      ? InternetAddress.anyIPv4
+      : InternetAddress.loopbackIPv4;
 
   if (useHttps) {
     final certFile = File(certPath);
@@ -220,10 +219,9 @@ void main(List<String> args) async {
     }
 
     try {
-      final context =
-          SecurityContext.defaultContext
-            ..useCertificateChain(certPath)
-            ..usePrivateKey(keyPath);
+      final context = SecurityContext.defaultContext
+        ..useCertificateChain(certPath)
+        ..usePrivateKey(keyPath);
 
       final httpsServer = await HttpServer.bindSecure(address, 8888, context);
 

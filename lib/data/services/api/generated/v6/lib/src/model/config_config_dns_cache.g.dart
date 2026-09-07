@@ -13,6 +13,8 @@ abstract class _$ConfigConfigDnsCacheCWProxy {
 
   ConfigConfigDnsCache upstreamBlockedTTL(int? upstreamBlockedTTL);
 
+  ConfigConfigDnsCache rrtype(String? rrtype);
+
   /// This function **does support** nullification of nullable fields. All `null` values passed to `non-nullable` fields will be ignored. You can also use `ConfigConfigDnsCache(...).copyWith.fieldName(...)` to override fields one at a time with nullification support.
   ///
   /// Usage
@@ -23,6 +25,7 @@ abstract class _$ConfigConfigDnsCacheCWProxy {
     int? size,
     int? optimizer,
     int? upstreamBlockedTTL,
+    String? rrtype,
   });
 }
 
@@ -44,6 +47,9 @@ class _$ConfigConfigDnsCacheCWProxyImpl
       this(upstreamBlockedTTL: upstreamBlockedTTL);
 
   @override
+  ConfigConfigDnsCache rrtype(String? rrtype) => this(rrtype: rrtype);
+
+  @override
   /// This function **does support** nullification of nullable fields. All `null` values passed to `non-nullable` fields will be ignored. You can also use `ConfigConfigDnsCache(...).copyWith.fieldName(...)` to override fields one at a time with nullification support.
   ///
   /// Usage
@@ -54,6 +60,7 @@ class _$ConfigConfigDnsCacheCWProxyImpl
     Object? size = const $CopyWithPlaceholder(),
     Object? optimizer = const $CopyWithPlaceholder(),
     Object? upstreamBlockedTTL = const $CopyWithPlaceholder(),
+    Object? rrtype = const $CopyWithPlaceholder(),
   }) {
     return ConfigConfigDnsCache(
       size: size == const $CopyWithPlaceholder()
@@ -68,6 +75,10 @@ class _$ConfigConfigDnsCacheCWProxyImpl
           ? _value.upstreamBlockedTTL
           // ignore: cast_nullable_to_non_nullable
           : upstreamBlockedTTL as int?,
+      rrtype: rrtype == const $CopyWithPlaceholder()
+          ? _value.rrtype
+          // ignore: cast_nullable_to_non_nullable
+          : rrtype as String?,
     );
   }
 }
@@ -93,6 +104,7 @@ ConfigConfigDnsCache _$ConfigConfigDnsCacheFromJson(
       'upstreamBlockedTTL',
       (v) => (v as num?)?.toInt(),
     ),
+    rrtype: $checkedConvert('rrtype', (v) => v as String?),
   );
   return val;
 });
@@ -103,4 +115,5 @@ Map<String, dynamic> _$ConfigConfigDnsCacheToJson(
   'size': ?instance.size,
   'optimizer': ?instance.optimizer,
   'upstreamBlockedTTL': ?instance.upstreamBlockedTTL,
+  'rrtype': ?instance.rrtype,
 };

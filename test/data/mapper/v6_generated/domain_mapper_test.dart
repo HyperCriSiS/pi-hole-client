@@ -89,9 +89,9 @@ void main() {
     });
   });
 
-  group('GetDomains200ResponseMapper', () {
+  group('GetDomain200ResponseMapper', () {
     test('toDomainList maps all entries', () {
-      final response = GetDomains200Response(
+      final response = GetDomain200Response(
         domains: [
           GetDomainsInner(id: 1, domain: 'a.com'),
           GetDomainsInner(id: 2, domain: 'b.com'),
@@ -106,7 +106,7 @@ void main() {
     });
 
     test('toDomainList returns empty list when domains is null', () {
-      final response = GetDomains200Response();
+      final response = GetDomain200Response();
 
       final list = response.toDomainList();
 
@@ -114,7 +114,7 @@ void main() {
     });
 
     test('toDomainLists categorizes domains correctly', () {
-      final response = GetDomains200Response(
+      final response = GetDomain200Response(
         domains: [
           GetDomainsInner(
             id: 1,
@@ -156,7 +156,7 @@ void main() {
     });
 
     test('toDomainLists returns empty lists when no domains', () {
-      final response = GetDomains200Response();
+      final response = GetDomain200Response();
 
       final lists = response.toDomainLists();
 

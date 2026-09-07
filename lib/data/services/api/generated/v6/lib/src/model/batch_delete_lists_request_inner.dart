@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'batch_delete_lists_request_inner.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,52 +17,28 @@ part 'batch_delete_lists_request_inner.g.dart';
 )
 class BatchDeleteListsRequestInner {
   /// Returns a new [BatchDeleteListsRequestInner] instance.
-  BatchDeleteListsRequestInner({
+  BatchDeleteListsRequestInner({this.item, this.type});
 
-     this.item,
-
-     this.type,
-  });
-
-      /// group name
-  @JsonKey(
-    
-    name: r'item',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// group name
+  @JsonKey(name: r'item', required: false, includeIfNull: false)
   final String? item;
 
-
-
-      /// Type of list
-  @JsonKey(
-    
-    name: r'type',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Type of list
+  @JsonKey(name: r'type', required: false, includeIfNull: false)
   final BatchDeleteListsRequestInnerTypeEnum? type;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is BatchDeleteListsRequestInner &&
+          other.item == item &&
+          other.type == type;
 
+  @override
+  int get hashCode => item.hashCode + type.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is BatchDeleteListsRequestInner &&
-      other.item == item &&
-      other.type == type;
-
-    @override
-    int get hashCode =>
-        item.hashCode +
-        type.hashCode;
-
-  factory BatchDeleteListsRequestInner.fromJson(Map<String, dynamic> json) => _$BatchDeleteListsRequestInnerFromJson(json);
+  factory BatchDeleteListsRequestInner.fromJson(Map<String, dynamic> json) =>
+      _$BatchDeleteListsRequestInnerFromJson(json);
 
   Map<String, dynamic> toJson() => _$BatchDeleteListsRequestInnerToJson(this);
 
@@ -71,24 +46,22 @@ class BatchDeleteListsRequestInner {
   String toString() {
     return toJson().toString();
   }
-
 }
 
 /// Type of list
 enum BatchDeleteListsRequestInnerTypeEnum {
-    /// Type of list
-@JsonValue(r'allow')
-allow(r'allow'),
-    /// Type of list
-@JsonValue(r'block')
-block(r'block');
+  /// Type of list
+  @JsonValue(r'allow')
+  allow(r'allow'),
 
-const BatchDeleteListsRequestInnerTypeEnum(this.value);
+  /// Type of list
+  @JsonValue(r'block')
+  block(r'block');
 
-final String value;
+  const BatchDeleteListsRequestInnerTypeEnum(this.value);
 
-@override
-String toString() => value;
+  final String value;
+
+  @override
+  String toString() => value;
 }
-
-

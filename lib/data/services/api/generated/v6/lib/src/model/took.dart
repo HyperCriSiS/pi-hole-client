@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'took.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,33 +17,18 @@ part 'took.g.dart';
 )
 class Took {
   /// Returns a new [Took] instance.
-  Took({
+  Took({this.took});
 
-     this.took,
-  });
-
-      /// Time in seconds it took to process the request
-  @JsonKey(
-    
-    name: r'took',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Time in seconds it took to process the request
+  @JsonKey(name: r'took', required: false, includeIfNull: false)
   final num? took;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is Took && other.took == took;
 
-
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is Took &&
-      other.took == took;
-
-    @override
-    int get hashCode =>
-        took.hashCode;
+  @override
+  int get hashCode => took.hashCode;
 
   factory Took.fromJson(Map<String, dynamic> json) => _$TookFromJson(json);
 
@@ -54,6 +38,4 @@ class Took {
   String toString() {
     return toJson().toString();
   }
-
 }
-

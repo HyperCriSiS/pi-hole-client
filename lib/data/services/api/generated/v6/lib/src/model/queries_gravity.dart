@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'queries_gravity.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,52 +17,32 @@ part 'queries_gravity.g.dart';
 )
 class QueriesGravity {
   /// Returns a new [QueriesGravity] instance.
-  QueriesGravity({
+  QueriesGravity({this.domainsBeingBlocked, this.lastUpdate});
 
-     this.domainsBeingBlocked,
-
-     this.lastUpdate,
-  });
-
-      /// Number of domain on your Pi-hole's gravity list
+  /// Number of domain on your Pi-hole's gravity list
   @JsonKey(
-    
     name: r'domains_being_blocked',
     required: false,
     includeIfNull: false,
   )
-
-
   final int? domainsBeingBlocked;
 
-
-
-      /// Unix timestamp of last gravity update (may be `0` if unknown)
-  @JsonKey(
-    
-    name: r'last_update',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Unix timestamp of last gravity update (may be `0` if unknown)
+  @JsonKey(name: r'last_update', required: false, includeIfNull: false)
   final int? lastUpdate;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is QueriesGravity &&
+          other.domainsBeingBlocked == domainsBeingBlocked &&
+          other.lastUpdate == lastUpdate;
 
+  @override
+  int get hashCode => domainsBeingBlocked.hashCode + lastUpdate.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is QueriesGravity &&
-      other.domainsBeingBlocked == domainsBeingBlocked &&
-      other.lastUpdate == lastUpdate;
-
-    @override
-    int get hashCode =>
-        domainsBeingBlocked.hashCode +
-        lastUpdate.hashCode;
-
-  factory QueriesGravity.fromJson(Map<String, dynamic> json) => _$QueriesGravityFromJson(json);
+  factory QueriesGravity.fromJson(Map<String, dynamic> json) =>
+      _$QueriesGravityFromJson(json);
 
   Map<String, dynamic> toJson() => _$QueriesGravityToJson(this);
 
@@ -71,6 +50,4 @@ class QueriesGravity {
   String toString() {
     return toJson().toString();
   }
-
 }
-

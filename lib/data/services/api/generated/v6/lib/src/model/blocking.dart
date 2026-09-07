@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'blocking.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,35 +17,21 @@ part 'blocking.g.dart';
 )
 class Blocking {
   /// Returns a new [Blocking] instance.
-  Blocking({
+  Blocking({this.blocking});
 
-     this.blocking,
-  });
-
-      /// Blocking status
-  @JsonKey(
-    
-    name: r'blocking',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Blocking status
+  @JsonKey(name: r'blocking', required: false, includeIfNull: false)
   final BlockingBlockingEnum? blocking;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is Blocking && other.blocking == blocking;
 
+  @override
+  int get hashCode => blocking.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is Blocking &&
-      other.blocking == blocking;
-
-    @override
-    int get hashCode =>
-        blocking.hashCode;
-
-  factory Blocking.fromJson(Map<String, dynamic> json) => _$BlockingFromJson(json);
+  factory Blocking.fromJson(Map<String, dynamic> json) =>
+      _$BlockingFromJson(json);
 
   Map<String, dynamic> toJson() => _$BlockingToJson(this);
 
@@ -54,30 +39,30 @@ class Blocking {
   String toString() {
     return toJson().toString();
   }
-
 }
 
 /// Blocking status
 enum BlockingBlockingEnum {
-    /// Blocking status
-@JsonValue(r'enabled')
-enabled(r'enabled'),
-    /// Blocking status
-@JsonValue(r'disabled')
-disabled(r'disabled'),
-    /// Blocking status
-@JsonValue(r'failed')
-failed(r'failed'),
-    /// Blocking status
-@JsonValue(r'unknown')
-unknown(r'unknown');
+  /// Blocking status
+  @JsonValue(r'enabled')
+  enabled(r'enabled'),
 
-const BlockingBlockingEnum(this.value);
+  /// Blocking status
+  @JsonValue(r'disabled')
+  disabled(r'disabled'),
 
-final String value;
+  /// Blocking status
+  @JsonValue(r'failed')
+  failed(r'failed'),
 
-@override
-String toString() => value;
+  /// Blocking status
+  @JsonValue(r'unknown')
+  unknown(r'unknown');
+
+  const BlockingBlockingEnum(this.value);
+
+  final String value;
+
+  @override
+  String toString() => value;
 }
-
-

@@ -7,7 +7,7 @@ part of 'get_groups200_response.dart';
 // **************************************************************************
 
 abstract class _$GetGroups200ResponseCWProxy {
-  GetGroups200Response groups(List<GroupsGetGroupsInner>? groups);
+  GetGroups200Response groups(List<Get2GroupsInner>? groups);
 
   GetGroups200Response took(num? took);
 
@@ -17,7 +17,7 @@ abstract class _$GetGroups200ResponseCWProxy {
   /// ```dart
   /// GetGroups200Response(...).copyWith(id: 12, name: "My name")
   /// ````
-  GetGroups200Response call({List<GroupsGetGroupsInner>? groups, num? took});
+  GetGroups200Response call({List<Get2GroupsInner>? groups, num? took});
 }
 
 /// Proxy class for `copyWith` functionality. This is a callable class and can be used as follows: `instanceOfGetGroups200Response.copyWith(...)`. Additionally contains functions for specific fields e.g. `instanceOfGetGroups200Response.copyWith.fieldName(...)`
@@ -28,7 +28,7 @@ class _$GetGroups200ResponseCWProxyImpl
   final GetGroups200Response _value;
 
   @override
-  GetGroups200Response groups(List<GroupsGetGroupsInner>? groups) =>
+  GetGroups200Response groups(List<Get2GroupsInner>? groups) =>
       this(groups: groups);
 
   @override
@@ -49,7 +49,7 @@ class _$GetGroups200ResponseCWProxyImpl
       groups: groups == const $CopyWithPlaceholder()
           ? _value.groups
           // ignore: cast_nullable_to_non_nullable
-          : groups as List<GroupsGetGroupsInner>?,
+          : groups as List<Get2GroupsInner>?,
       took: took == const $CopyWithPlaceholder()
           ? _value.took
           // ignore: cast_nullable_to_non_nullable
@@ -76,7 +76,7 @@ GetGroups200Response _$GetGroups200ResponseFromJson(
     groups: $checkedConvert(
       'groups',
       (v) => (v as List<dynamic>?)
-          ?.map((e) => GroupsGetGroupsInner.fromJson(e as Map<String, dynamic>))
+          ?.map((e) => Get2GroupsInner.fromJson(e as Map<String, dynamic>))
           .toList(),
     ),
     took: $checkedConvert('took', (v) => v as num?),

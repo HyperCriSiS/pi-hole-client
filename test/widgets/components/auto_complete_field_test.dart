@@ -31,10 +31,7 @@ void main() {
         ),
       );
 
-      await tester.tap(
-        find.byType(TextField),
-        kind: PointerDeviceKind.mouse,
-      );
+      await tester.tap(find.byType(TextField), kind: PointerDeviceKind.mouse);
       await tester.pump();
       expect(find.text('192.168.1.10'), findsOneWidget);
 
@@ -76,10 +73,7 @@ void main() {
       ),
     );
 
-    await tester.tap(
-      find.byType(TextField),
-      kind: PointerDeviceKind.mouse,
-    );
+    await tester.tap(find.byType(TextField), kind: PointerDeviceKind.mouse);
     await tester.pump();
     expect(find.text('192.168.1.10'), findsOneWidget);
 

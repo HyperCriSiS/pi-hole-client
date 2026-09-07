@@ -7,7 +7,7 @@ part of 'get_queries200_response.dart';
 // **************************************************************************
 
 abstract class _$GetQueries200ResponseCWProxy {
-  GetQueries200Response queries(List<SchemasQueriesQueriesInner>? queries);
+  GetQueries200Response queries(List<Queries2QueriesInner>? queries);
 
   GetQueries200Response cursor(int? cursor);
 
@@ -16,6 +16,10 @@ abstract class _$GetQueries200ResponseCWProxy {
   GetQueries200Response recordsFiltered(int? recordsFiltered);
 
   GetQueries200Response draw(int? draw);
+
+  GetQueries200Response earliestTimestamp(num? earliestTimestamp);
+
+  GetQueries200Response earliestTimestampDisk(num? earliestTimestampDisk);
 
   GetQueries200Response took(num? took);
 
@@ -26,11 +30,13 @@ abstract class _$GetQueries200ResponseCWProxy {
   /// GetQueries200Response(...).copyWith(id: 12, name: "My name")
   /// ````
   GetQueries200Response call({
-    List<SchemasQueriesQueriesInner>? queries,
+    List<Queries2QueriesInner>? queries,
     int? cursor,
     int? recordsTotal,
     int? recordsFiltered,
     int? draw,
+    num? earliestTimestamp,
+    num? earliestTimestampDisk,
     num? took,
   });
 }
@@ -43,7 +49,7 @@ class _$GetQueries200ResponseCWProxyImpl
   final GetQueries200Response _value;
 
   @override
-  GetQueries200Response queries(List<SchemasQueriesQueriesInner>? queries) =>
+  GetQueries200Response queries(List<Queries2QueriesInner>? queries) =>
       this(queries: queries);
 
   @override
@@ -61,6 +67,14 @@ class _$GetQueries200ResponseCWProxyImpl
   GetQueries200Response draw(int? draw) => this(draw: draw);
 
   @override
+  GetQueries200Response earliestTimestamp(num? earliestTimestamp) =>
+      this(earliestTimestamp: earliestTimestamp);
+
+  @override
+  GetQueries200Response earliestTimestampDisk(num? earliestTimestampDisk) =>
+      this(earliestTimestampDisk: earliestTimestampDisk);
+
+  @override
   GetQueries200Response took(num? took) => this(took: took);
 
   @override
@@ -76,13 +90,15 @@ class _$GetQueries200ResponseCWProxyImpl
     Object? recordsTotal = const $CopyWithPlaceholder(),
     Object? recordsFiltered = const $CopyWithPlaceholder(),
     Object? draw = const $CopyWithPlaceholder(),
+    Object? earliestTimestamp = const $CopyWithPlaceholder(),
+    Object? earliestTimestampDisk = const $CopyWithPlaceholder(),
     Object? took = const $CopyWithPlaceholder(),
   }) {
     return GetQueries200Response(
       queries: queries == const $CopyWithPlaceholder()
           ? _value.queries
           // ignore: cast_nullable_to_non_nullable
-          : queries as List<SchemasQueriesQueriesInner>?,
+          : queries as List<Queries2QueriesInner>?,
       cursor: cursor == const $CopyWithPlaceholder()
           ? _value.cursor
           // ignore: cast_nullable_to_non_nullable
@@ -99,6 +115,15 @@ class _$GetQueries200ResponseCWProxyImpl
           ? _value.draw
           // ignore: cast_nullable_to_non_nullable
           : draw as int?,
+      earliestTimestamp: earliestTimestamp == const $CopyWithPlaceholder()
+          ? _value.earliestTimestamp
+          // ignore: cast_nullable_to_non_nullable
+          : earliestTimestamp as num?,
+      earliestTimestampDisk:
+          earliestTimestampDisk == const $CopyWithPlaceholder()
+          ? _value.earliestTimestampDisk
+          // ignore: cast_nullable_to_non_nullable
+          : earliestTimestampDisk as num?,
       took: took == const $CopyWithPlaceholder()
           ? _value.took
           // ignore: cast_nullable_to_non_nullable
@@ -120,28 +145,46 @@ extension $GetQueries200ResponseCopyWith on GetQueries200Response {
 
 GetQueries200Response _$GetQueries200ResponseFromJson(
   Map<String, dynamic> json,
-) => $checkedCreate('GetQueries200Response', json, ($checkedConvert) {
-  final val = GetQueries200Response(
-    queries: $checkedConvert(
-      'queries',
-      (v) => (v as List<dynamic>?)
-          ?.map(
-            (e) =>
-                SchemasQueriesQueriesInner.fromJson(e as Map<String, dynamic>),
-          )
-          .toList(),
-    ),
-    cursor: $checkedConvert('cursor', (v) => (v as num?)?.toInt()),
-    recordsTotal: $checkedConvert('recordsTotal', (v) => (v as num?)?.toInt()),
-    recordsFiltered: $checkedConvert(
-      'recordsFiltered',
-      (v) => (v as num?)?.toInt(),
-    ),
-    draw: $checkedConvert('draw', (v) => (v as num?)?.toInt()),
-    took: $checkedConvert('took', (v) => v as num?),
-  );
-  return val;
-});
+) => $checkedCreate(
+  'GetQueries200Response',
+  json,
+  ($checkedConvert) {
+    final val = GetQueries200Response(
+      queries: $checkedConvert(
+        'queries',
+        (v) => (v as List<dynamic>?)
+            ?.map(
+              (e) => Queries2QueriesInner.fromJson(e as Map<String, dynamic>),
+            )
+            .toList(),
+      ),
+      cursor: $checkedConvert('cursor', (v) => (v as num?)?.toInt()),
+      recordsTotal: $checkedConvert(
+        'recordsTotal',
+        (v) => (v as num?)?.toInt(),
+      ),
+      recordsFiltered: $checkedConvert(
+        'recordsFiltered',
+        (v) => (v as num?)?.toInt(),
+      ),
+      draw: $checkedConvert('draw', (v) => (v as num?)?.toInt()),
+      earliestTimestamp: $checkedConvert(
+        'earliest_timestamp',
+        (v) => v as num?,
+      ),
+      earliestTimestampDisk: $checkedConvert(
+        'earliest_timestamp_disk',
+        (v) => v as num?,
+      ),
+      took: $checkedConvert('took', (v) => v as num?),
+    );
+    return val;
+  },
+  fieldKeyMap: const {
+    'earliestTimestamp': 'earliest_timestamp',
+    'earliestTimestampDisk': 'earliest_timestamp_disk',
+  },
+);
 
 Map<String, dynamic> _$GetQueries200ResponseToJson(
   GetQueries200Response instance,
@@ -151,5 +194,7 @@ Map<String, dynamic> _$GetQueries200ResponseToJson(
   'recordsTotal': ?instance.recordsTotal,
   'recordsFiltered': ?instance.recordsFiltered,
   'draw': ?instance.draw,
+  'earliest_timestamp': ?instance.earliestTimestamp,
+  'earliest_timestamp_disk': ?instance.earliestTimestampDisk,
   'took': ?instance.took,
 };

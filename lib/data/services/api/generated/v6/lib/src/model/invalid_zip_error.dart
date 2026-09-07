@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'invalid_zip_error.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,69 +17,34 @@ part 'invalid_zip_error.g.dart';
 )
 class InvalidZipError {
   /// Returns a new [InvalidZipError] instance.
-  InvalidZipError({
+  InvalidZipError({this.key, this.message, this.hint});
 
-     this.key,
-
-     this.message,
-
-     this.hint,
-  });
-
-      /// Machine-readable error type
-  @JsonKey(
-    
-    name: r'key',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Machine-readable error type
+  @JsonKey(name: r'key', required: false, includeIfNull: false)
   final String? key;
 
-
-
-      /// Human-readable error message
-  @JsonKey(
-    
-    name: r'message',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Human-readable error message
+  @JsonKey(name: r'message', required: false, includeIfNull: false)
   final String? message;
 
-
-
-      /// No additional data available
-  @JsonKey(
-    
-    name: r'hint',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// No additional data available
+  @JsonKey(name: r'hint', required: false, includeIfNull: false)
   final String? hint;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is InvalidZipError &&
+          other.key == key &&
+          other.message == message &&
+          other.hint == hint;
 
+  @override
+  int get hashCode =>
+      key.hashCode + message.hashCode + (hint == null ? 0 : hint.hashCode);
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is InvalidZipError &&
-      other.key == key &&
-      other.message == message &&
-      other.hint == hint;
-
-    @override
-    int get hashCode =>
-        key.hashCode +
-        message.hashCode +
-        (hint == null ? 0 : hint.hashCode);
-
-  factory InvalidZipError.fromJson(Map<String, dynamic> json) => _$InvalidZipErrorFromJson(json);
+  factory InvalidZipError.fromJson(Map<String, dynamic> json) =>
+      _$InvalidZipErrorFromJson(json);
 
   Map<String, dynamic> toJson() => _$InvalidZipErrorToJson(this);
 
@@ -88,6 +52,4 @@ class InvalidZipError {
   String toString() {
     return toJson().toString();
   }
-
 }
-

@@ -1,9 +1,9 @@
 import 'package:pi_hole_client/domain/model/client/managed_client.dart';
 import 'package:pihole_v6_api/pihole_v6_api.dart';
 
-/// Maps [ClientsGetClientsInner] (OpenAPI-generated) to [ManagedClient]
+/// Maps [Get3ClientsInner] (OpenAPI-generated) to [ManagedClient]
 /// (domain model).
-extension ClientsGetClientsInnerMapper on ClientsGetClientsInner {
+extension Get3ClientsInnerMapper on Get3ClientsInner {
   ManagedClient toDomain() {
     return ManagedClient(
       id: id ?? 0,

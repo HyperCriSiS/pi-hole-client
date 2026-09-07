@@ -9,15 +9,13 @@ import 'dart:convert';
 import 'package:pihole_v6_api/src/deserialize.dart';
 import 'package:dio/dio.dart';
 
-
 class DocumentationApi {
-
   final Dio _dio;
 
   const DocumentationApi(this._dio);
 
   /// Get the embedded API documentation rendered as HTML
-  /// This API hook returns the embedded API documentation rendered as HTML. Note that this endpoint is supposed to be accessed from web browsers only. The automatically generated &#x60;curl&#x60; example will *not* create a *full* (as in: self-contained) clone of the documentation. 
+  /// This API hook returns the embedded API documentation rendered as HTML. Note that this endpoint is supposed to be accessed from web browsers only. The automatically generated &#x60;curl&#x60; example will *not* create a *full* (as in: self-contained) clone of the documentation.
   ///
   /// Parameters:
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
@@ -29,7 +27,7 @@ class DocumentationApi {
   ///
   /// Returns a [Future] containing a [Response] with a [String] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<String>> getDocs({ 
+  Future<Response<String>> getDocs({
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -40,13 +38,8 @@ class DocumentationApi {
     final _path = r'/docs';
     final _options = Options(
       method: r'GET',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
-      extra: <String, dynamic>{
-        'secure': <Map<String, String>>[],
-        ...?extra,
-      },
+      headers: <String, dynamic>{...?headers},
+      extra: <String, dynamic>{'secure': <Map<String, String>>[], ...?extra},
       validateStatus: validateStatus,
     );
 
@@ -61,9 +54,10 @@ class DocumentationApi {
     String? _responseData;
 
     try {
-final rawData = _response.data;
-_responseData = rawData == null ? null : deserialize<String, String>(rawData, 'String', growable: true);
-
+      final rawData = _response.data;
+      _responseData = rawData == null
+          ? null
+          : deserialize<String, String>(rawData, 'String', growable: true);
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -85,5 +79,4 @@ _responseData = rawData == null ? null : deserialize<String, String>(rawData, 'S
       extra: _response.extra,
     );
   }
-
 }

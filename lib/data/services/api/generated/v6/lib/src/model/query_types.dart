@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'query_types.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,34 +18,20 @@ part 'query_types.g.dart';
 )
 class QueryTypes {
   /// Returns a new [QueryTypes] instance.
-  QueryTypes({
+  QueryTypes({this.types});
 
-     this.types,
-  });
-
-  @JsonKey(
-    
-    name: r'types',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'types', required: false, includeIfNull: false)
   final QueryTypesTypes? types;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is QueryTypes && other.types == types;
 
+  @override
+  int get hashCode => types.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is QueryTypes &&
-      other.types == types;
-
-    @override
-    int get hashCode =>
-        types.hashCode;
-
-  factory QueryTypes.fromJson(Map<String, dynamic> json) => _$QueryTypesFromJson(json);
+  factory QueryTypes.fromJson(Map<String, dynamic> json) =>
+      _$QueryTypesFromJson(json);
 
   Map<String, dynamic> toJson() => _$QueryTypesToJson(this);
 
@@ -54,6 +39,4 @@ class QueryTypes {
   String toString() {
     return toJson().toString();
   }
-
 }
-

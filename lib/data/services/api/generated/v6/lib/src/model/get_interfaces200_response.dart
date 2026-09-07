@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'get_interfaces200_response.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,52 +18,28 @@ part 'get_interfaces200_response.g.dart';
 )
 class GetInterfaces200Response {
   /// Returns a new [GetInterfaces200Response] instance.
-  GetInterfaces200Response({
+  GetInterfaces200Response({this.interfaces, this.took});
 
-     this.interfaces,
-
-     this.took,
-  });
-
-      /// Interface information
-  @JsonKey(
-    
-    name: r'interfaces',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Interface information
+  @JsonKey(name: r'interfaces', required: false, includeIfNull: false)
   final List<InterfacesInterfacesInner>? interfaces;
 
-
-
-      /// Time in seconds it took to process the request
-  @JsonKey(
-    
-    name: r'took',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Time in seconds it took to process the request
+  @JsonKey(name: r'took', required: false, includeIfNull: false)
   final num? took;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GetInterfaces200Response &&
+          other.interfaces == interfaces &&
+          other.took == took;
 
+  @override
+  int get hashCode => interfaces.hashCode + took.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is GetInterfaces200Response &&
-      other.interfaces == interfaces &&
-      other.took == took;
-
-    @override
-    int get hashCode =>
-        interfaces.hashCode +
-        took.hashCode;
-
-  factory GetInterfaces200Response.fromJson(Map<String, dynamic> json) => _$GetInterfaces200ResponseFromJson(json);
+  factory GetInterfaces200Response.fromJson(Map<String, dynamic> json) =>
+      _$GetInterfaces200ResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$GetInterfaces200ResponseToJson(this);
 
@@ -72,6 +47,4 @@ class GetInterfaces200Response {
   String toString() {
     return toJson().toString();
   }
-
 }
-

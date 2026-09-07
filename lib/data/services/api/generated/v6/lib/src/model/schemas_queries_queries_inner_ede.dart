@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'schemas_queries_queries_inner_ede.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,52 +17,28 @@ part 'schemas_queries_queries_inner_ede.g.dart';
 )
 class SchemasQueriesQueriesInnerEde {
   /// Returns a new [SchemasQueriesQueriesInnerEde] instance.
-  SchemasQueriesQueriesInnerEde({
+  SchemasQueriesQueriesInnerEde({this.code, this.text});
 
-     this.code,
-
-     this.text,
-  });
-
-      /// EDE code
-  @JsonKey(
-    
-    name: r'code',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// EDE code
+  @JsonKey(name: r'code', required: false, includeIfNull: false)
   final int? code;
 
-
-
-      /// EDE message (if available)
-  @JsonKey(
-    
-    name: r'text',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// EDE message (if available)
+  @JsonKey(name: r'text', required: false, includeIfNull: false)
   final String? text;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SchemasQueriesQueriesInnerEde &&
+          other.code == code &&
+          other.text == text;
 
+  @override
+  int get hashCode => code.hashCode + (text == null ? 0 : text.hashCode);
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is SchemasQueriesQueriesInnerEde &&
-      other.code == code &&
-      other.text == text;
-
-    @override
-    int get hashCode =>
-        code.hashCode +
-        (text == null ? 0 : text.hashCode);
-
-  factory SchemasQueriesQueriesInnerEde.fromJson(Map<String, dynamic> json) => _$SchemasQueriesQueriesInnerEdeFromJson(json);
+  factory SchemasQueriesQueriesInnerEde.fromJson(Map<String, dynamic> json) =>
+      _$SchemasQueriesQueriesInnerEdeFromJson(json);
 
   Map<String, dynamic> toJson() => _$SchemasQueriesQueriesInnerEdeToJson(this);
 
@@ -71,6 +46,4 @@ class SchemasQueriesQueriesInnerEde {
   String toString() {
     return toJson().toString();
   }
-
 }
-

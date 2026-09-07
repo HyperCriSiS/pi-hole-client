@@ -27,6 +27,8 @@ abstract class _$ConfigConfigMiscCWProxy {
 
   ConfigConfigMisc hideDnsmasqWarn(bool? hideDnsmasqWarn);
 
+  ConfigConfigMisc hideConnectionError(bool? hideConnectionError);
+
   ConfigConfigMisc check(ConfigConfigMiscCheck? check);
 
   /// This function **does support** nullification of nullable fields. All `null` values passed to `non-nullable` fields will be ignored. You can also use `ConfigConfigMisc(...).copyWith.fieldName(...)` to override fields one at a time with nullification support.
@@ -46,6 +48,7 @@ abstract class _$ConfigConfigMiscCWProxy {
     bool? readOnly,
     bool? normalizeCPU,
     bool? hideDnsmasqWarn,
+    bool? hideConnectionError,
     ConfigConfigMiscCheck? check,
   });
 }
@@ -94,6 +97,10 @@ class _$ConfigConfigMiscCWProxyImpl implements _$ConfigConfigMiscCWProxy {
       this(hideDnsmasqWarn: hideDnsmasqWarn);
 
   @override
+  ConfigConfigMisc hideConnectionError(bool? hideConnectionError) =>
+      this(hideConnectionError: hideConnectionError);
+
+  @override
   ConfigConfigMisc check(ConfigConfigMiscCheck? check) => this(check: check);
 
   @override
@@ -114,6 +121,7 @@ class _$ConfigConfigMiscCWProxyImpl implements _$ConfigConfigMiscCWProxy {
     Object? readOnly = const $CopyWithPlaceholder(),
     Object? normalizeCPU = const $CopyWithPlaceholder(),
     Object? hideDnsmasqWarn = const $CopyWithPlaceholder(),
+    Object? hideConnectionError = const $CopyWithPlaceholder(),
     Object? check = const $CopyWithPlaceholder(),
   }) {
     return ConfigConfigMisc(
@@ -157,6 +165,10 @@ class _$ConfigConfigMiscCWProxyImpl implements _$ConfigConfigMiscCWProxy {
           ? _value.hideDnsmasqWarn
           // ignore: cast_nullable_to_non_nullable
           : hideDnsmasqWarn as bool?,
+      hideConnectionError: hideConnectionError == const $CopyWithPlaceholder()
+          ? _value.hideConnectionError
+          // ignore: cast_nullable_to_non_nullable
+          : hideConnectionError as bool?,
       check: check == const $CopyWithPlaceholder()
           ? _value.check
           // ignore: cast_nullable_to_non_nullable
@@ -203,6 +215,10 @@ ConfigConfigMisc _$ConfigConfigMiscFromJson(Map<String, dynamic> json) =>
             'hide_dnsmasq_warn',
             (v) => v as bool?,
           ),
+          hideConnectionError: $checkedConvert(
+            'hide_connection_error',
+            (v) => v as bool?,
+          ),
           check: $checkedConvert(
             'check',
             (v) => v == null
@@ -217,6 +233,7 @@ ConfigConfigMisc _$ConfigConfigMiscFromJson(Map<String, dynamic> json) =>
         'etcDnsmasqD': 'etc_dnsmasq_d',
         'dnsmasqLines': 'dnsmasq_lines',
         'hideDnsmasqWarn': 'hide_dnsmasq_warn',
+        'hideConnectionError': 'hide_connection_error',
       },
     );
 
@@ -232,5 +249,6 @@ Map<String, dynamic> _$ConfigConfigMiscToJson(ConfigConfigMisc instance) =>
       'readOnly': ?instance.readOnly,
       'normalizeCPU': ?instance.normalizeCPU,
       'hide_dnsmasq_warn': ?instance.hideDnsmasqWarn,
+      'hide_connection_error': ?instance.hideConnectionError,
       'check': ?instance.check?.toJson(),
     };

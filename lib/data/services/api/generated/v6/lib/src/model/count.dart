@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'count.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,33 +17,18 @@ part 'count.g.dart';
 )
 class Count {
   /// Returns a new [Count] instance.
-  Count({
+  Count({this.count});
 
-     this.count,
-  });
-
-      /// Number of items
-  @JsonKey(
-    
-    name: r'count',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Number of items
+  @JsonKey(name: r'count', required: false, includeIfNull: false)
   final int? count;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is Count && other.count == count;
 
-
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is Count &&
-      other.count == count;
-
-    @override
-    int get hashCode =>
-        count.hashCode;
+  @override
+  int get hashCode => count.hashCode;
 
   factory Count.fromJson(Map<String, dynamic> json) => _$CountFromJson(json);
 
@@ -54,6 +38,4 @@ class Count {
   String toString() {
     return toJson().toString();
   }
-
 }
-

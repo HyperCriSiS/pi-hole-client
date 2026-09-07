@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'type.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,33 +17,18 @@ part 'type.g.dart';
 )
 class Type {
   /// Returns a new [Type] instance.
-  Type({
+  Type({this.type});
 
-     this.type,
-  });
-
-      /// String specifying domain type
-  @JsonKey(
-    
-    name: r'type',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// String specifying domain type
+  @JsonKey(name: r'type', required: false, includeIfNull: false)
   final TypeTypeEnum? type;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is Type && other.type == type;
 
-
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is Type &&
-      other.type == type;
-
-    @override
-    int get hashCode =>
-        type.hashCode;
+  @override
+  int get hashCode => type.hashCode;
 
   factory Type.fromJson(Map<String, dynamic> json) => _$TypeFromJson(json);
 
@@ -54,24 +38,22 @@ class Type {
   String toString() {
     return toJson().toString();
   }
-
 }
 
 /// String specifying domain type
 enum TypeTypeEnum {
-    /// String specifying domain type
-@JsonValue(r'allow')
-allow(r'allow'),
-    /// String specifying domain type
-@JsonValue(r'deny')
-deny(r'deny');
+  /// String specifying domain type
+  @JsonValue(r'allow')
+  allow(r'allow'),
 
-const TypeTypeEnum(this.value);
+  /// String specifying domain type
+  @JsonValue(r'deny')
+  deny(r'deny');
 
-final String value;
+  const TypeTypeEnum(this.value);
 
-@override
-String toString() => value;
+  final String value;
+
+  @override
+  String toString() => value;
 }
-
-

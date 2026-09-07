@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'get_version200_response.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,51 +18,27 @@ part 'get_version200_response.g.dart';
 )
 class GetVersion200Response {
   /// Returns a new [GetVersion200Response] instance.
-  GetVersion200Response({
+  GetVersion200Response({this.version, this.took});
 
-     this.version,
-
-     this.took,
-  });
-
-  @JsonKey(
-    
-    name: r'version',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'version', required: false, includeIfNull: false)
   final VersionVersion? version;
 
-
-
-      /// Time in seconds it took to process the request
-  @JsonKey(
-    
-    name: r'took',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Time in seconds it took to process the request
+  @JsonKey(name: r'took', required: false, includeIfNull: false)
   final num? took;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GetVersion200Response &&
+          other.version == version &&
+          other.took == took;
 
+  @override
+  int get hashCode => version.hashCode + took.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is GetVersion200Response &&
-      other.version == version &&
-      other.took == took;
-
-    @override
-    int get hashCode =>
-        version.hashCode +
-        took.hashCode;
-
-  factory GetVersion200Response.fromJson(Map<String, dynamic> json) => _$GetVersion200ResponseFromJson(json);
+  factory GetVersion200Response.fromJson(Map<String, dynamic> json) =>
+      _$GetVersion200ResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$GetVersion200ResponseToJson(this);
 
@@ -71,6 +46,4 @@ class GetVersion200Response {
   String toString() {
     return toJson().toString();
   }
-
 }
-

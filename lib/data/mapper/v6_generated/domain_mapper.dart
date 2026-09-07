@@ -22,8 +22,8 @@ extension GetDomainsInnerMapper on GetDomainsInner {
   }
 }
 
-/// Maps [GetDomains200Response] (OpenAPI-generated) to domain model lists.
-extension GetDomains200ResponseMapper on GetDomains200Response {
+/// Maps [GetDomain200Response] (OpenAPI-generated) to domain model lists.
+extension GetDomain200ResponseMapper on GetDomain200Response {
   List<Domain> toDomainList() {
     return (domains ?? []).map((d) => d.toDomain()).toList();
   }

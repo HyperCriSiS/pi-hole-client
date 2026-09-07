@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'metrics.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,34 +18,20 @@ part 'metrics.g.dart';
 )
 class Metrics {
   /// Returns a new [Metrics] instance.
-  Metrics({
+  Metrics({this.metrics});
 
-     this.metrics,
-  });
-
-  @JsonKey(
-    
-    name: r'metrics',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'metrics', required: false, includeIfNull: false)
   final MetricsMetrics? metrics;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is Metrics && other.metrics == metrics;
 
+  @override
+  int get hashCode => metrics.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is Metrics &&
-      other.metrics == metrics;
-
-    @override
-    int get hashCode =>
-        metrics.hashCode;
-
-  factory Metrics.fromJson(Map<String, dynamic> json) => _$MetricsFromJson(json);
+  factory Metrics.fromJson(Map<String, dynamic> json) =>
+      _$MetricsFromJson(json);
 
   Map<String, dynamic> toJson() => _$MetricsToJson(this);
 
@@ -54,6 +39,4 @@ class Metrics {
   String toString() {
     return toJson().toString();
   }
-
 }
-

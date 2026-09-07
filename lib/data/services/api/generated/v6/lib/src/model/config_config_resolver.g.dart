@@ -11,6 +11,8 @@ abstract class _$ConfigConfigResolverCWProxy {
 
   ConfigConfigResolver resolveIPv6(bool? resolveIPv6);
 
+  ConfigConfigResolver macNames(bool? macNames);
+
   ConfigConfigResolver networkNames(bool? networkNames);
 
   ConfigConfigResolver refreshNames(String? refreshNames);
@@ -24,6 +26,7 @@ abstract class _$ConfigConfigResolverCWProxy {
   ConfigConfigResolver call({
     bool? resolveIPv4,
     bool? resolveIPv6,
+    bool? macNames,
     bool? networkNames,
     String? refreshNames,
   });
@@ -45,6 +48,9 @@ class _$ConfigConfigResolverCWProxyImpl
       this(resolveIPv6: resolveIPv6);
 
   @override
+  ConfigConfigResolver macNames(bool? macNames) => this(macNames: macNames);
+
+  @override
   ConfigConfigResolver networkNames(bool? networkNames) =>
       this(networkNames: networkNames);
 
@@ -62,6 +68,7 @@ class _$ConfigConfigResolverCWProxyImpl
   ConfigConfigResolver call({
     Object? resolveIPv4 = const $CopyWithPlaceholder(),
     Object? resolveIPv6 = const $CopyWithPlaceholder(),
+    Object? macNames = const $CopyWithPlaceholder(),
     Object? networkNames = const $CopyWithPlaceholder(),
     Object? refreshNames = const $CopyWithPlaceholder(),
   }) {
@@ -74,6 +81,10 @@ class _$ConfigConfigResolverCWProxyImpl
           ? _value.resolveIPv6
           // ignore: cast_nullable_to_non_nullable
           : resolveIPv6 as bool?,
+      macNames: macNames == const $CopyWithPlaceholder()
+          ? _value.macNames
+          // ignore: cast_nullable_to_non_nullable
+          : macNames as bool?,
       networkNames: networkNames == const $CopyWithPlaceholder()
           ? _value.networkNames
           // ignore: cast_nullable_to_non_nullable
@@ -103,6 +114,7 @@ ConfigConfigResolver _$ConfigConfigResolverFromJson(
   final val = ConfigConfigResolver(
     resolveIPv4: $checkedConvert('resolveIPv4', (v) => v as bool?),
     resolveIPv6: $checkedConvert('resolveIPv6', (v) => v as bool?),
+    macNames: $checkedConvert('macNames', (v) => v as bool?),
     networkNames: $checkedConvert('networkNames', (v) => v as bool?),
     refreshNames: $checkedConvert('refreshNames', (v) => v as String?),
   );
@@ -114,6 +126,7 @@ Map<String, dynamic> _$ConfigConfigResolverToJson(
 ) => <String, dynamic>{
   'resolveIPv4': ?instance.resolveIPv4,
   'resolveIPv6': ?instance.resolveIPv6,
+  'macNames': ?instance.macNames,
   'networkNames': ?instance.networkNames,
   'refreshNames': ?instance.refreshNames,
 };

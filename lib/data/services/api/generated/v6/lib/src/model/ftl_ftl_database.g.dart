@@ -9,6 +9,8 @@ part of 'ftl_ftl_database.dart';
 abstract class _$FtlFtlDatabaseCWProxy {
   FtlFtlDatabase gravity(int? gravity);
 
+  FtlFtlDatabase antigravity(int? antigravity);
+
   FtlFtlDatabase groups(int? groups);
 
   FtlFtlDatabase lists(int? lists);
@@ -27,6 +29,7 @@ abstract class _$FtlFtlDatabaseCWProxy {
   /// ````
   FtlFtlDatabase call({
     int? gravity,
+    int? antigravity,
     int? groups,
     int? lists,
     int? clients,
@@ -43,6 +46,10 @@ class _$FtlFtlDatabaseCWProxyImpl implements _$FtlFtlDatabaseCWProxy {
 
   @override
   FtlFtlDatabase gravity(int? gravity) => this(gravity: gravity);
+
+  @override
+  FtlFtlDatabase antigravity(int? antigravity) =>
+      this(antigravity: antigravity);
 
   @override
   FtlFtlDatabase groups(int? groups) => this(groups: groups);
@@ -69,6 +76,7 @@ class _$FtlFtlDatabaseCWProxyImpl implements _$FtlFtlDatabaseCWProxy {
   /// ````
   FtlFtlDatabase call({
     Object? gravity = const $CopyWithPlaceholder(),
+    Object? antigravity = const $CopyWithPlaceholder(),
     Object? groups = const $CopyWithPlaceholder(),
     Object? lists = const $CopyWithPlaceholder(),
     Object? clients = const $CopyWithPlaceholder(),
@@ -80,6 +88,10 @@ class _$FtlFtlDatabaseCWProxyImpl implements _$FtlFtlDatabaseCWProxy {
           ? _value.gravity
           // ignore: cast_nullable_to_non_nullable
           : gravity as int?,
+      antigravity: antigravity == const $CopyWithPlaceholder()
+          ? _value.antigravity
+          // ignore: cast_nullable_to_non_nullable
+          : antigravity as int?,
       groups: groups == const $CopyWithPlaceholder()
           ? _value.groups
           // ignore: cast_nullable_to_non_nullable
@@ -118,6 +130,10 @@ FtlFtlDatabase _$FtlFtlDatabaseFromJson(Map<String, dynamic> json) =>
     $checkedCreate('FtlFtlDatabase', json, ($checkedConvert) {
       final val = FtlFtlDatabase(
         gravity: $checkedConvert('gravity', (v) => (v as num?)?.toInt()),
+        antigravity: $checkedConvert(
+          'antigravity',
+          (v) => (v as num?)?.toInt(),
+        ),
         groups: $checkedConvert('groups', (v) => (v as num?)?.toInt()),
         lists: $checkedConvert('lists', (v) => (v as num?)?.toInt()),
         clients: $checkedConvert('clients', (v) => (v as num?)?.toInt()),
@@ -140,6 +156,7 @@ FtlFtlDatabase _$FtlFtlDatabaseFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$FtlFtlDatabaseToJson(FtlFtlDatabase instance) =>
     <String, dynamic>{
       'gravity': ?instance.gravity,
+      'antigravity': ?instance.antigravity,
       'groups': ?instance.groups,
       'lists': ?instance.lists,
       'clients': ?instance.clients,

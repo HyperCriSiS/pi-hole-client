@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'lists_components_schemas_lists_processed.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,41 +18,29 @@ part 'lists_components_schemas_lists_processed.g.dart';
 )
 class ListsComponentsSchemasListsProcessed {
   /// Returns a new [ListsComponentsSchemasListsProcessed] instance.
-  ListsComponentsSchemasListsProcessed({
+  ListsComponentsSchemasListsProcessed({this.processed});
 
-     this.processed,
-  });
-
-  @JsonKey(
-    
-    name: r'processed',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'processed', required: false, includeIfNull: false)
   final ListsComponentsSchemasListsProcessedProcessed? processed;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ListsComponentsSchemasListsProcessed &&
+          other.processed == processed;
 
+  @override
+  int get hashCode => (processed == null ? 0 : processed.hashCode);
 
+  factory ListsComponentsSchemasListsProcessed.fromJson(
+    Map<String, dynamic> json,
+  ) => _$ListsComponentsSchemasListsProcessedFromJson(json);
 
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is ListsComponentsSchemasListsProcessed &&
-      other.processed == processed;
-
-    @override
-    int get hashCode =>
-        (processed == null ? 0 : processed.hashCode);
-
-  factory ListsComponentsSchemasListsProcessed.fromJson(Map<String, dynamic> json) => _$ListsComponentsSchemasListsProcessedFromJson(json);
-
-  Map<String, dynamic> toJson() => _$ListsComponentsSchemasListsProcessedToJson(this);
+  Map<String, dynamic> toJson() =>
+      _$ListsComponentsSchemasListsProcessedToJson(this);
 
   @override
   String toString() {
     return toJson().toString();
   }
-
 }
-

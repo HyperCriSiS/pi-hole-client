@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'lists_processed.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,34 +18,21 @@ part 'lists_processed.g.dart';
 )
 class ListsProcessed {
   /// Returns a new [ListsProcessed] instance.
-  ListsProcessed({
+  ListsProcessed({this.processed});
 
-     this.processed,
-  });
-
-  @JsonKey(
-    
-    name: r'processed',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'processed', required: false, includeIfNull: false)
   final ListsProcessedProcessed? processed;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ListsProcessed && other.processed == processed;
 
+  @override
+  int get hashCode => (processed == null ? 0 : processed.hashCode);
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is ListsProcessed &&
-      other.processed == processed;
-
-    @override
-    int get hashCode =>
-        (processed == null ? 0 : processed.hashCode);
-
-  factory ListsProcessed.fromJson(Map<String, dynamic> json) => _$ListsProcessedFromJson(json);
+  factory ListsProcessed.fromJson(Map<String, dynamic> json) =>
+      _$ListsProcessedFromJson(json);
 
   Map<String, dynamic> toJson() => _$ListsProcessedToJson(this);
 
@@ -54,6 +40,4 @@ class ListsProcessed {
   String toString() {
     return toJson().toString();
   }
-
 }
-

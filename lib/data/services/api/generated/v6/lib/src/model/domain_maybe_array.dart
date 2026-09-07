@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'domain_maybe_array.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,34 +18,21 @@ part 'domain_maybe_array.g.dart';
 )
 class DomainMaybeArray {
   /// Returns a new [DomainMaybeArray] instance.
-  DomainMaybeArray({
+  DomainMaybeArray({this.domain});
 
-     this.domain,
-  });
-
-  @JsonKey(
-    
-    name: r'domain',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'domain', required: false, includeIfNull: false)
   final StringOrList? domain;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is DomainMaybeArray && other.domain == domain;
 
+  @override
+  int get hashCode => domain.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is DomainMaybeArray &&
-      other.domain == domain;
-
-    @override
-    int get hashCode =>
-        domain.hashCode;
-
-  factory DomainMaybeArray.fromJson(Map<String, dynamic> json) => _$DomainMaybeArrayFromJson(json);
+  factory DomainMaybeArray.fromJson(Map<String, dynamic> json) =>
+      _$DomainMaybeArrayFromJson(json);
 
   Map<String, dynamic> toJson() => _$DomainMaybeArrayToJson(this);
 
@@ -54,6 +40,4 @@ class DomainMaybeArray {
   String toString() {
     return toJson().toString();
   }
-
 }
-

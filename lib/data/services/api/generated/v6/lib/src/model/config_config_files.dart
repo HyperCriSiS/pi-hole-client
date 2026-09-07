@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'config_config_files.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -20,129 +19,73 @@ part 'config_config_files.g.dart';
 class ConfigConfigFiles {
   /// Returns a new [ConfigConfigFiles] instance.
   ConfigConfigFiles({
+    this.pid,
 
-     this.pid,
+    this.database,
 
-     this.database,
+    this.tmpDb,
 
-     this.gravity,
+    this.gravity,
 
-     this.gravityTmp,
+    this.gravityTmp,
 
-     this.macvendor,
+    this.macvendor,
 
-     this.pcap,
+    this.pcap,
 
-     this.log,
+    this.log,
   });
 
-  @JsonKey(
-    
-    name: r'pid',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'pid', required: false, includeIfNull: false)
   final String? pid;
 
-
-
-  @JsonKey(
-    
-    name: r'database',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'database', required: false, includeIfNull: false)
   final String? database;
 
+  @JsonKey(name: r'tmp_db', required: false, includeIfNull: false)
+  final String? tmpDb;
 
-
-  @JsonKey(
-    
-    name: r'gravity',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'gravity', required: false, includeIfNull: false)
   final String? gravity;
 
-
-
-  @JsonKey(
-    
-    name: r'gravity_tmp',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'gravity_tmp', required: false, includeIfNull: false)
   final String? gravityTmp;
 
-
-
-  @JsonKey(
-    
-    name: r'macvendor',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'macvendor', required: false, includeIfNull: false)
   final String? macvendor;
 
-
-
-  @JsonKey(
-    
-    name: r'pcap',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'pcap', required: false, includeIfNull: false)
   final String? pcap;
 
-
-
-  @JsonKey(
-    
-    name: r'log',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'log', required: false, includeIfNull: false)
   final ConfigConfigFilesLog? log;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ConfigConfigFiles &&
+          other.pid == pid &&
+          other.database == database &&
+          other.tmpDb == tmpDb &&
+          other.gravity == gravity &&
+          other.gravityTmp == gravityTmp &&
+          other.macvendor == macvendor &&
+          other.pcap == pcap &&
+          other.log == log;
 
+  @override
+  int get hashCode =>
+      pid.hashCode +
+      database.hashCode +
+      tmpDb.hashCode +
+      gravity.hashCode +
+      gravityTmp.hashCode +
+      macvendor.hashCode +
+      pcap.hashCode +
+      log.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is ConfigConfigFiles &&
-      other.pid == pid &&
-      other.database == database &&
-      other.gravity == gravity &&
-      other.gravityTmp == gravityTmp &&
-      other.macvendor == macvendor &&
-      other.pcap == pcap &&
-      other.log == log;
-
-    @override
-    int get hashCode =>
-        pid.hashCode +
-        database.hashCode +
-        gravity.hashCode +
-        gravityTmp.hashCode +
-        macvendor.hashCode +
-        pcap.hashCode +
-        log.hashCode;
-
-  factory ConfigConfigFiles.fromJson(Map<String, dynamic> json) => _$ConfigConfigFilesFromJson(json);
+  factory ConfigConfigFiles.fromJson(Map<String, dynamic> json) =>
+      _$ConfigConfigFilesFromJson(json);
 
   Map<String, dynamic> toJson() => _$ConfigConfigFilesToJson(this);
 
@@ -150,6 +93,4 @@ class ConfigConfigFiles {
   String toString() {
     return toJson().toString();
   }
-
 }
-

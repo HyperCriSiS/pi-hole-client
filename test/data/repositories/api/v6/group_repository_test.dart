@@ -19,9 +19,9 @@ class _FakePiholeV6Service extends PiholeV6Service {
   bool shouldFailReplace = false;
   bool shouldFailDelete = false;
   String? lastSid;
-  GroupsPost? lastAddBody;
+  Post2? lastAddBody;
   String? lastReplaceName;
-  GroupsPut? lastReplaceBody;
+  Put2? lastReplaceBody;
   String? lastDeleteName;
 
   @override
@@ -38,7 +38,7 @@ class _FakePiholeV6Service extends PiholeV6Service {
   }
 
   @override
-  Future<Result<ReplaceGroup200Response>> addGroup({GroupsPost? body}) async {
+  Future<Result<ReplaceGroup200Response>> addGroup({Post2? body}) async {
     lastAddBody = body;
     if (shouldFailAdd) {
       return Failure(Exception('Forced addGroup failure'));
@@ -49,7 +49,7 @@ class _FakePiholeV6Service extends PiholeV6Service {
   @override
   Future<Result<ReplaceGroup200Response>> replaceGroup({
     required String name,
-    GroupsPut? body,
+    Put2? body,
   }) async {
     lastReplaceName = name;
     lastReplaceBody = body;
@@ -125,20 +125,23 @@ void main() {
   });
 
   group('updateGroup', () {
-    test('should update group successfully through generated service', () async {
-      final result = await repository.updateGroup(
-        'test',
-        comment: 'updated',
-        enabled: false,
-      );
+    test(
+      'should update group successfully through generated service',
+      () async {
+        final result = await repository.updateGroup(
+          'test',
+          comment: 'updated',
+          enabled: false,
+        );
 
-      expect(result.isSuccess(), true);
-      expect(service.lastSid, 'sid123');
-      expect(service.lastReplaceName, 'test');
-      expect(service.lastReplaceBody?.name, isNull);
-      expect(service.lastReplaceBody?.comment, 'updated');
-      expect(service.lastReplaceBody?.enabled, false);
-    });
+        expect(result.isSuccess(), true);
+        expect(service.lastSid, 'sid123');
+        expect(service.lastReplaceName, 'test');
+        expect(service.lastReplaceBody?.name, isNull);
+        expect(service.lastReplaceBody?.comment, 'updated');
+        expect(service.lastReplaceBody?.enabled, false);
+      },
+    );
 
     test('should fail when generated update group request fails', () async {
       service.shouldFailReplace = true;
@@ -149,13 +152,16 @@ void main() {
   });
 
   group('deleteGroup', () {
-    test('should delete group successfully through generated service', () async {
-      final result = await repository.deleteGroup('test');
+    test(
+      'should delete group successfully through generated service',
+      () async {
+        final result = await repository.deleteGroup('test');
 
-      expect(result.isSuccess(), true);
-      expect(service.lastSid, 'sid123');
-      expect(service.lastDeleteName, 'test');
-    });
+        expect(result.isSuccess(), true);
+        expect(service.lastSid, 'sid123');
+        expect(service.lastDeleteName, 'test');
+      },
+    );
 
     test('should fail when generated delete group request fails', () async {
       service.shouldFailDelete = true;

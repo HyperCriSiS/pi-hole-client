@@ -11,6 +11,8 @@ abstract class _$ConfigConfigFilesCWProxy {
 
   ConfigConfigFiles database(String? database);
 
+  ConfigConfigFiles tmpDb(String? tmpDb);
+
   ConfigConfigFiles gravity(String? gravity);
 
   ConfigConfigFiles gravityTmp(String? gravityTmp);
@@ -30,6 +32,7 @@ abstract class _$ConfigConfigFilesCWProxy {
   ConfigConfigFiles call({
     String? pid,
     String? database,
+    String? tmpDb,
     String? gravity,
     String? gravityTmp,
     String? macvendor,
@@ -49,6 +52,9 @@ class _$ConfigConfigFilesCWProxyImpl implements _$ConfigConfigFilesCWProxy {
 
   @override
   ConfigConfigFiles database(String? database) => this(database: database);
+
+  @override
+  ConfigConfigFiles tmpDb(String? tmpDb) => this(tmpDb: tmpDb);
 
   @override
   ConfigConfigFiles gravity(String? gravity) => this(gravity: gravity);
@@ -76,6 +82,7 @@ class _$ConfigConfigFilesCWProxyImpl implements _$ConfigConfigFilesCWProxy {
   ConfigConfigFiles call({
     Object? pid = const $CopyWithPlaceholder(),
     Object? database = const $CopyWithPlaceholder(),
+    Object? tmpDb = const $CopyWithPlaceholder(),
     Object? gravity = const $CopyWithPlaceholder(),
     Object? gravityTmp = const $CopyWithPlaceholder(),
     Object? macvendor = const $CopyWithPlaceholder(),
@@ -91,6 +98,10 @@ class _$ConfigConfigFilesCWProxyImpl implements _$ConfigConfigFilesCWProxy {
           ? _value.database
           // ignore: cast_nullable_to_non_nullable
           : database as String?,
+      tmpDb: tmpDb == const $CopyWithPlaceholder()
+          ? _value.tmpDb
+          // ignore: cast_nullable_to_non_nullable
+          : tmpDb as String?,
       gravity: gravity == const $CopyWithPlaceholder()
           ? _value.gravity
           // ignore: cast_nullable_to_non_nullable
@@ -127,28 +138,35 @@ extension $ConfigConfigFilesCopyWith on ConfigConfigFiles {
 // **************************************************************************
 
 ConfigConfigFiles _$ConfigConfigFilesFromJson(Map<String, dynamic> json) =>
-    $checkedCreate('ConfigConfigFiles', json, ($checkedConvert) {
-      final val = ConfigConfigFiles(
-        pid: $checkedConvert('pid', (v) => v as String?),
-        database: $checkedConvert('database', (v) => v as String?),
-        gravity: $checkedConvert('gravity', (v) => v as String?),
-        gravityTmp: $checkedConvert('gravity_tmp', (v) => v as String?),
-        macvendor: $checkedConvert('macvendor', (v) => v as String?),
-        pcap: $checkedConvert('pcap', (v) => v as String?),
-        log: $checkedConvert(
-          'log',
-          (v) => v == null
-              ? null
-              : ConfigConfigFilesLog.fromJson(v as Map<String, dynamic>),
-        ),
-      );
-      return val;
-    }, fieldKeyMap: const {'gravityTmp': 'gravity_tmp'});
+    $checkedCreate(
+      'ConfigConfigFiles',
+      json,
+      ($checkedConvert) {
+        final val = ConfigConfigFiles(
+          pid: $checkedConvert('pid', (v) => v as String?),
+          database: $checkedConvert('database', (v) => v as String?),
+          tmpDb: $checkedConvert('tmp_db', (v) => v as String?),
+          gravity: $checkedConvert('gravity', (v) => v as String?),
+          gravityTmp: $checkedConvert('gravity_tmp', (v) => v as String?),
+          macvendor: $checkedConvert('macvendor', (v) => v as String?),
+          pcap: $checkedConvert('pcap', (v) => v as String?),
+          log: $checkedConvert(
+            'log',
+            (v) => v == null
+                ? null
+                : ConfigConfigFilesLog.fromJson(v as Map<String, dynamic>),
+          ),
+        );
+        return val;
+      },
+      fieldKeyMap: const {'tmpDb': 'tmp_db', 'gravityTmp': 'gravity_tmp'},
+    );
 
 Map<String, dynamic> _$ConfigConfigFilesToJson(ConfigConfigFiles instance) =>
     <String, dynamic>{
       'pid': ?instance.pid,
       'database': ?instance.database,
+      'tmp_db': ?instance.tmpDb,
       'gravity': ?instance.gravity,
       'gravity_tmp': ?instance.gravityTmp,
       'macvendor': ?instance.macvendor,

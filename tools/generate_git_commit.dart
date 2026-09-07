@@ -20,7 +20,8 @@ void main() async {
   final result = await Process.run('git', ['rev-parse', '--short', 'HEAD']);
   final commit = (result.stdout as String).trim();
 
-  final content = '''
+  final content =
+      '''
 // GENERATED FILE. DO NOT EDIT.
 const String gitCommitHash = '$commit';
 ''';

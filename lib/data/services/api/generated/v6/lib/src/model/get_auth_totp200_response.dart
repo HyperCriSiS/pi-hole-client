@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'get_auth_totp200_response.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,51 +18,27 @@ part 'get_auth_totp200_response.g.dart';
 )
 class GetAuthTotp200Response {
   /// Returns a new [GetAuthTotp200Response] instance.
-  GetAuthTotp200Response({
+  GetAuthTotp200Response({this.totp, this.took});
 
-     this.totp,
-
-     this.took,
-  });
-
-  @JsonKey(
-    
-    name: r'totp',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'totp', required: false, includeIfNull: false)
   final TotpTotp? totp;
 
-
-
-      /// Time in seconds it took to process the request
-  @JsonKey(
-    
-    name: r'took',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Time in seconds it took to process the request
+  @JsonKey(name: r'took', required: false, includeIfNull: false)
   final num? took;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GetAuthTotp200Response &&
+          other.totp == totp &&
+          other.took == took;
 
+  @override
+  int get hashCode => totp.hashCode + took.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is GetAuthTotp200Response &&
-      other.totp == totp &&
-      other.took == took;
-
-    @override
-    int get hashCode =>
-        totp.hashCode +
-        took.hashCode;
-
-  factory GetAuthTotp200Response.fromJson(Map<String, dynamic> json) => _$GetAuthTotp200ResponseFromJson(json);
+  factory GetAuthTotp200Response.fromJson(Map<String, dynamic> json) =>
+      _$GetAuthTotp200ResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$GetAuthTotp200ResponseToJson(this);
 
@@ -71,6 +46,4 @@ class GetAuthTotp200Response {
   String toString() {
     return toJson().toString();
   }
-
 }
-

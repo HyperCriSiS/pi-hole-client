@@ -22,7 +22,8 @@ class _CredentialFailureRepository extends FakeServerRepository {
   final bool failTokenWrite;
 
   @override
-  Future<Result<bool>> doesServerExist(String url) async => const Success(false);
+  Future<Result<bool>> doesServerExist(String url) async =>
+      const Success(false);
 
   @override
   Future<Result<void>> savePassword(String address, String password) async {

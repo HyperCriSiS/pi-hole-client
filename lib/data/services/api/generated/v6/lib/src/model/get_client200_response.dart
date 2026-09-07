@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'get_client200_response.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -20,102 +19,57 @@ part 'get_client200_response.g.dart';
 class GetClient200Response {
   /// Returns a new [GetClient200Response] instance.
   GetClient200Response({
+    this.remoteAddr,
 
-     this.remoteAddr,
+    this.httpVersion,
 
-     this.httpVersion,
+    this.method,
 
-     this.method,
+    this.headers,
 
-     this.headers,
-
-     this.took,
+    this.took,
   });
 
-      /// Address of requesting client
-  @JsonKey(
-    
-    name: r'remote_addr',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Address of requesting client
+  @JsonKey(name: r'remote_addr', required: false, includeIfNull: false)
   final String? remoteAddr;
 
-
-
-      /// HTTP version of request
-  @JsonKey(
-    
-    name: r'http_version',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// HTTP version of request
+  @JsonKey(name: r'http_version', required: false, includeIfNull: false)
   final String? httpVersion;
 
-
-
-      /// Request method
-  @JsonKey(
-    
-    name: r'method',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Request method
+  @JsonKey(name: r'method', required: false, includeIfNull: false)
   final String? method;
 
-
-
-      /// Request headers
-  @JsonKey(
-    
-    name: r'headers',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Request headers
+  @JsonKey(name: r'headers', required: false, includeIfNull: false)
   final List<HeadersHeadersInner>? headers;
 
-
-
-      /// Time in seconds it took to process the request
-  @JsonKey(
-    
-    name: r'took',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Time in seconds it took to process the request
+  @JsonKey(name: r'took', required: false, includeIfNull: false)
   final num? took;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GetClient200Response &&
+          other.remoteAddr == remoteAddr &&
+          other.httpVersion == httpVersion &&
+          other.method == method &&
+          other.headers == headers &&
+          other.took == took;
 
+  @override
+  int get hashCode =>
+      remoteAddr.hashCode +
+      httpVersion.hashCode +
+      method.hashCode +
+      headers.hashCode +
+      took.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is GetClient200Response &&
-      other.remoteAddr == remoteAddr &&
-      other.httpVersion == httpVersion &&
-      other.method == method &&
-      other.headers == headers &&
-      other.took == took;
-
-    @override
-    int get hashCode =>
-        remoteAddr.hashCode +
-        httpVersion.hashCode +
-        method.hashCode +
-        headers.hashCode +
-        took.hashCode;
-
-  factory GetClient200Response.fromJson(Map<String, dynamic> json) => _$GetClient200ResponseFromJson(json);
+  factory GetClient200Response.fromJson(Map<String, dynamic> json) =>
+      _$GetClient200ResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$GetClient200ResponseToJson(this);
 
@@ -123,6 +77,4 @@ class GetClient200Response {
   String toString() {
     return toJson().toString();
   }
-
 }
-

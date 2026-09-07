@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'ftl_ftl_clients.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,52 +17,26 @@ part 'ftl_ftl_clients.g.dart';
 )
 class FtlFtlClients {
   /// Returns a new [FtlFtlClients] instance.
-  FtlFtlClients({
+  FtlFtlClients({this.total, this.active});
 
-     this.total,
-
-     this.active,
-  });
-
-      /// Number of clients FTL has seen in its lfetime
-  @JsonKey(
-    
-    name: r'total',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Number of clients FTL has seen in its lfetime
+  @JsonKey(name: r'total', required: false, includeIfNull: false)
   final int? total;
 
-
-
-      /// Number of clients actively using FTL
-  @JsonKey(
-    
-    name: r'active',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Number of clients actively using FTL
+  @JsonKey(name: r'active', required: false, includeIfNull: false)
   final int? active;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is FtlFtlClients && other.total == total && other.active == active;
 
+  @override
+  int get hashCode => total.hashCode + active.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is FtlFtlClients &&
-      other.total == total &&
-      other.active == active;
-
-    @override
-    int get hashCode =>
-        total.hashCode +
-        active.hashCode;
-
-  factory FtlFtlClients.fromJson(Map<String, dynamic> json) => _$FtlFtlClientsFromJson(json);
+  factory FtlFtlClients.fromJson(Map<String, dynamic> json) =>
+      _$FtlFtlClientsFromJson(json);
 
   Map<String, dynamic> toJson() => _$FtlFtlClientsToJson(this);
 
@@ -71,6 +44,4 @@ class FtlFtlClients {
   String toString() {
     return toJson().toString();
   }
-
 }
-

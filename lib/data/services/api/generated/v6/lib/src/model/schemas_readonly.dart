@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'schemas_readonly.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,69 +17,33 @@ part 'schemas_readonly.g.dart';
 )
 class SchemasReadonly {
   /// Returns a new [SchemasReadonly] instance.
-  SchemasReadonly({
+  SchemasReadonly({this.id, this.dateAdded, this.dateModified});
 
-     this.id,
-
-     this.dateAdded,
-
-     this.dateModified,
-  });
-
-      /// Database ID
-  @JsonKey(
-    
-    name: r'id',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Database ID
+  @JsonKey(name: r'id', required: false, includeIfNull: false)
   final int? id;
 
-
-
-      /// Unix timestamp of item addition
-  @JsonKey(
-    
-    name: r'date_added',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Unix timestamp of item addition
+  @JsonKey(name: r'date_added', required: false, includeIfNull: false)
   final int? dateAdded;
 
-
-
-      /// Unix timestamp of last item modification
-  @JsonKey(
-    
-    name: r'date_modified',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Unix timestamp of last item modification
+  @JsonKey(name: r'date_modified', required: false, includeIfNull: false)
   final int? dateModified;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SchemasReadonly &&
+          other.id == id &&
+          other.dateAdded == dateAdded &&
+          other.dateModified == dateModified;
 
+  @override
+  int get hashCode => id.hashCode + dateAdded.hashCode + dateModified.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is SchemasReadonly &&
-      other.id == id &&
-      other.dateAdded == dateAdded &&
-      other.dateModified == dateModified;
-
-    @override
-    int get hashCode =>
-        id.hashCode +
-        dateAdded.hashCode +
-        dateModified.hashCode;
-
-  factory SchemasReadonly.fromJson(Map<String, dynamic> json) => _$SchemasReadonlyFromJson(json);
+  factory SchemasReadonly.fromJson(Map<String, dynamic> json) =>
+      _$SchemasReadonlyFromJson(json);
 
   Map<String, dynamic> toJson() => _$SchemasReadonlyToJson(this);
 
@@ -88,6 +51,4 @@ class SchemasReadonly {
   String toString() {
     return toJson().toString();
   }
-
 }
-

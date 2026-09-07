@@ -7,9 +7,9 @@ part of 'replace_group200_response.dart';
 // **************************************************************************
 
 abstract class _$ReplaceGroup200ResponseCWProxy {
-  ReplaceGroup200Response groups(List<GroupsGetGroupsInner>? groups);
+  ReplaceGroup200Response groups(List<Get2GroupsInner>? groups);
 
-  ReplaceGroup200Response processed(SchemasListsProcessedProcessed? processed);
+  ReplaceGroup200Response processed(ListsProcessed2Processed? processed);
 
   ReplaceGroup200Response took(num? took);
 
@@ -20,8 +20,8 @@ abstract class _$ReplaceGroup200ResponseCWProxy {
   /// ReplaceGroup200Response(...).copyWith(id: 12, name: "My name")
   /// ````
   ReplaceGroup200Response call({
-    List<GroupsGetGroupsInner>? groups,
-    SchemasListsProcessedProcessed? processed,
+    List<Get2GroupsInner>? groups,
+    ListsProcessed2Processed? processed,
     num? took,
   });
 }
@@ -34,13 +34,12 @@ class _$ReplaceGroup200ResponseCWProxyImpl
   final ReplaceGroup200Response _value;
 
   @override
-  ReplaceGroup200Response groups(List<GroupsGetGroupsInner>? groups) =>
+  ReplaceGroup200Response groups(List<Get2GroupsInner>? groups) =>
       this(groups: groups);
 
   @override
-  ReplaceGroup200Response processed(
-    SchemasListsProcessedProcessed? processed,
-  ) => this(processed: processed);
+  ReplaceGroup200Response processed(ListsProcessed2Processed? processed) =>
+      this(processed: processed);
 
   @override
   ReplaceGroup200Response took(num? took) => this(took: took);
@@ -61,11 +60,11 @@ class _$ReplaceGroup200ResponseCWProxyImpl
       groups: groups == const $CopyWithPlaceholder()
           ? _value.groups
           // ignore: cast_nullable_to_non_nullable
-          : groups as List<GroupsGetGroupsInner>?,
+          : groups as List<Get2GroupsInner>?,
       processed: processed == const $CopyWithPlaceholder()
           ? _value.processed
           // ignore: cast_nullable_to_non_nullable
-          : processed as SchemasListsProcessedProcessed?,
+          : processed as ListsProcessed2Processed?,
       took: took == const $CopyWithPlaceholder()
           ? _value.took
           // ignore: cast_nullable_to_non_nullable
@@ -92,14 +91,14 @@ ReplaceGroup200Response _$ReplaceGroup200ResponseFromJson(
     groups: $checkedConvert(
       'groups',
       (v) => (v as List<dynamic>?)
-          ?.map((e) => GroupsGetGroupsInner.fromJson(e as Map<String, dynamic>))
+          ?.map((e) => Get2GroupsInner.fromJson(e as Map<String, dynamic>))
           .toList(),
     ),
     processed: $checkedConvert(
       'processed',
       (v) => v == null
           ? null
-          : SchemasListsProcessedProcessed.fromJson(v as Map<String, dynamic>),
+          : ListsProcessed2Processed.fromJson(v as Map<String, dynamic>),
     ),
     took: $checkedConvert('took', (v) => v as num?),
   );

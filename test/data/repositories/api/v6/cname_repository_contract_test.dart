@@ -72,9 +72,7 @@ class _RecordingPiholeV6Service extends PiholeV6Service {
   Future<Result<GetConfig200Response>> getConfig() async {
     return Success(
       GetConfig200Response(
-        config: ConfigConfig(
-          dns: ConfigConfigDns(cnameRecords: cnameRecords),
-        ),
+        config: ConfigConfig(dns: ConfigConfigDns(cnameRecords: cnameRecords)),
       ),
     );
   }
@@ -115,17 +113,14 @@ void main() {
     final result = await repository.fetchCnameRecords();
 
     expect(result.isSuccess(), true);
-    expect(
-      result.getOrNull(),
-      const [
-        CnameRecord(
-          alias: 'printer.example.test',
-          target: 'printer.lan',
-          ttl: 300,
-        ),
-        CnameRecord(alias: 'nas.example.test', target: 'nas.lan'),
-      ],
-    );
+    expect(result.getOrNull(), const [
+      CnameRecord(
+        alias: 'printer.example.test',
+        target: 'printer.lan',
+        ttl: 300,
+      ),
+      CnameRecord(alias: 'nas.example.test', target: 'nas.lan'),
+    ]);
   });
 
   test('updates a CNAME and preserves untouched TTL values', () async {
@@ -151,10 +146,10 @@ void main() {
 
     expect(result.isSuccess(), true);
     expect(service.patchRestart, true);
-    expect(
-      service.patchBody?.config?.dns?.cnameRecords,
-      ['new.example.test,new.lan,450', 'keep.example.test,keep.lan,600'],
-    );
+    expect(service.patchBody?.config?.dns?.cnameRecords, [
+      'new.example.test,new.lan,450',
+      'keep.example.test,keep.lan,600',
+    ]);
   });
 
   test('requests DNS restart for CNAME add and delete', () async {

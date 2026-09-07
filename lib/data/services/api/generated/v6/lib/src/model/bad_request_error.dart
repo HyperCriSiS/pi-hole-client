@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'bad_request_error.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,69 +17,34 @@ part 'bad_request_error.g.dart';
 )
 class BadRequestError {
   /// Returns a new [BadRequestError] instance.
-  BadRequestError({
+  BadRequestError({this.key, this.message, this.hint});
 
-     this.key,
-
-     this.message,
-
-     this.hint,
-  });
-
-      /// Machine-readable error type
-  @JsonKey(
-    
-    name: r'key',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Machine-readable error type
+  @JsonKey(name: r'key', required: false, includeIfNull: false)
   final String? key;
 
-
-
-      /// Human-readable error message
-  @JsonKey(
-    
-    name: r'message',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Human-readable error message
+  @JsonKey(name: r'message', required: false, includeIfNull: false)
   final String? message;
 
-
-
-      /// Additional data (if available)
-  @JsonKey(
-    
-    name: r'hint',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Additional data (if available)
+  @JsonKey(name: r'hint', required: false, includeIfNull: false)
   final String? hint;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is BadRequestError &&
+          other.key == key &&
+          other.message == message &&
+          other.hint == hint;
 
+  @override
+  int get hashCode =>
+      key.hashCode + message.hashCode + (hint == null ? 0 : hint.hashCode);
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is BadRequestError &&
-      other.key == key &&
-      other.message == message &&
-      other.hint == hint;
-
-    @override
-    int get hashCode =>
-        key.hashCode +
-        message.hashCode +
-        (hint == null ? 0 : hint.hashCode);
-
-  factory BadRequestError.fromJson(Map<String, dynamic> json) => _$BadRequestErrorFromJson(json);
+  factory BadRequestError.fromJson(Map<String, dynamic> json) =>
+      _$BadRequestErrorFromJson(json);
 
   Map<String, dynamic> toJson() => _$BadRequestErrorToJson(this);
 
@@ -88,6 +52,4 @@ class BadRequestError {
   String toString() {
     return toJson().toString();
   }
-
 }
-

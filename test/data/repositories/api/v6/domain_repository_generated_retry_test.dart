@@ -37,12 +37,12 @@ class _RetryDomainService extends PiholeV6Service {
   }
 
   @override
-  Future<Result<GetDomains200Response>> getAllDomains() async {
+  Future<Result<GetDomain200Response>> getAllDomains() async {
     fetchCallCount++;
     if (fetchCallCount == 1) {
       return Failure(ApiException(message: 'Unauthorized', statusCode: 401));
     }
-    return Success(GetDomains200Response.fromJson(kSrvGetDomains.toJson()));
+    return Success(GetDomain200Response.fromJson(kSrvGetDomains.toJson()));
   }
 
   @override
@@ -112,7 +112,11 @@ void main() {
     final client = FakePiholeV6ApiClient();
     final creds = FakeSessionCredentialService();
     final service = _RetryDomainService();
-    final repository = _repository(client: client, creds: creds, service: service);
+    final repository = _repository(
+      client: client,
+      creds: creds,
+      service: service,
+    );
 
     final result = await repository.fetchAllDomains();
 
@@ -126,7 +130,11 @@ void main() {
     final client = FakePiholeV6ApiClient();
     final creds = FakeSessionCredentialService();
     final service = _RetryDomainService();
-    final repository = _repository(client: client, creds: creds, service: service);
+    final repository = _repository(
+      client: client,
+      creds: creds,
+      service: service,
+    );
 
     final result = await repository.addDomain(
       DomainType.deny,
@@ -153,7 +161,11 @@ void main() {
     final client = FakePiholeV6ApiClient();
     final creds = FakeSessionCredentialService();
     final service = _RetryDomainService();
-    final repository = _repository(client: client, creds: creds, service: service);
+    final repository = _repository(
+      client: client,
+      creds: creds,
+      service: service,
+    );
 
     final result = await repository.updateDomain(
       DomainType.allow,
@@ -182,7 +194,11 @@ void main() {
     final client = FakePiholeV6ApiClient();
     final creds = FakeSessionCredentialService();
     final service = _RetryDomainService();
-    final repository = _repository(client: client, creds: creds, service: service);
+    final repository = _repository(
+      client: client,
+      creds: creds,
+      service: service,
+    );
 
     final result = await repository.deleteDomain(
       DomainType.deny,

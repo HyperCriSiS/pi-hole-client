@@ -33,9 +33,7 @@ class _RetryConfigService extends PiholeV6Service {
     }
     return Success(
       GetConfig200Response(
-        config: ConfigConfig(
-          dns: ConfigConfigDns(queryLogging: true),
-        ),
+        config: ConfigConfig(dns: ConfigConfigDns(queryLogging: true)),
         took: 0.003,
       ),
     );
@@ -54,9 +52,7 @@ class _RetryConfigService extends PiholeV6Service {
     }
     return Success(
       GetConfig200Response(
-        config: ConfigConfig(
-          dns: ConfigConfigDns(queryLogging: false),
-        ),
+        config: ConfigConfig(dns: ConfigConfigDns(queryLogging: false)),
         took: 0.003,
       ),
     );
@@ -81,26 +77,29 @@ void main() {
     expect(service.lastSid, isNot('sid123'));
   });
 
-  test('renews SID and retries generated query logging update after 401', () async {
-    final client = FakePiholeV6ApiClient();
-    final creds = FakeSessionCredentialService();
-    final service = _RetryConfigService();
-    final repository = ConfigRepositoryV6(
-      service: service,
-      sessionCache: V6SessionCache(creds: creds, client: client),
-    );
+  test(
+    'renews SID and retries generated query logging update after 401',
+    () async {
+      final client = FakePiholeV6ApiClient();
+      final creds = FakeSessionCredentialService();
+      final service = _RetryConfigService();
+      final repository = ConfigRepositoryV6(
+        service: service,
+        sessionCache: V6SessionCache(creds: creds, client: client),
+      );
 
-    final result = await repository.setDnsQueryLogging(false);
+      final result = await repository.setDnsQueryLogging(false);
 
-    expect(result.getOrNull(), kRepoSetDnsQueryLogging);
-    expect(client.postAuthCallCount, 1);
-    expect(service.patchCallCount, 2);
-    expect(service.lastSid, isNot('sid123'));
-    expect(service.lastRestart, true);
-    expect(service.lastPatchBody?.toJson(), {
-      'config': {
-        'dns': {'queryLogging': false},
-      },
-    });
-  });
+      expect(result.getOrNull(), kRepoSetDnsQueryLogging);
+      expect(client.postAuthCallCount, 1);
+      expect(service.patchCallCount, 2);
+      expect(service.lastSid, isNot('sid123'));
+      expect(service.lastRestart, true);
+      expect(service.lastPatchBody?.toJson(), {
+        'config': {
+          'dns': {'queryLogging': false},
+        },
+      });
+    },
+  );
 }

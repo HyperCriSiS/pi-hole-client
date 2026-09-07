@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'post_teleporter200_response.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,51 +17,27 @@ part 'post_teleporter200_response.g.dart';
 )
 class PostTeleporter200Response {
   /// Returns a new [PostTeleporter200Response] instance.
-  PostTeleporter200Response({
+  PostTeleporter200Response({this.processed, this.took});
 
-     this.processed,
-
-     this.took,
-  });
-
-  @JsonKey(
-    
-    name: r'processed',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'processed', required: false, includeIfNull: false)
   final List<String>? processed;
 
-
-
-      /// Time in seconds it took to process the request
-  @JsonKey(
-    
-    name: r'took',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Time in seconds it took to process the request
+  @JsonKey(name: r'took', required: false, includeIfNull: false)
   final num? took;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is PostTeleporter200Response &&
+          other.processed == processed &&
+          other.took == took;
 
+  @override
+  int get hashCode => processed.hashCode + took.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is PostTeleporter200Response &&
-      other.processed == processed &&
-      other.took == took;
-
-    @override
-    int get hashCode =>
-        processed.hashCode +
-        took.hashCode;
-
-  factory PostTeleporter200Response.fromJson(Map<String, dynamic> json) => _$PostTeleporter200ResponseFromJson(json);
+  factory PostTeleporter200Response.fromJson(Map<String, dynamic> json) =>
+      _$PostTeleporter200ResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$PostTeleporter200ResponseToJson(this);
 
@@ -70,6 +45,4 @@ class PostTeleporter200Response {
   String toString() {
     return toJson().toString();
   }
-
 }
-

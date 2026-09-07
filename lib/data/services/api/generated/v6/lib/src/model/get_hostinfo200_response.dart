@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'get_hostinfo200_response.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,51 +18,27 @@ part 'get_hostinfo200_response.g.dart';
 )
 class GetHostinfo200Response {
   /// Returns a new [GetHostinfo200Response] instance.
-  GetHostinfo200Response({
+  GetHostinfo200Response({this.host, this.took});
 
-     this.host,
-
-     this.took,
-  });
-
-  @JsonKey(
-    
-    name: r'host',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'host', required: false, includeIfNull: false)
   final HostHost? host;
 
-
-
-      /// Time in seconds it took to process the request
-  @JsonKey(
-    
-    name: r'took',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Time in seconds it took to process the request
+  @JsonKey(name: r'took', required: false, includeIfNull: false)
   final num? took;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GetHostinfo200Response &&
+          other.host == host &&
+          other.took == took;
 
+  @override
+  int get hashCode => host.hashCode + took.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is GetHostinfo200Response &&
-      other.host == host &&
-      other.took == took;
-
-    @override
-    int get hashCode =>
-        host.hashCode +
-        took.hashCode;
-
-  factory GetHostinfo200Response.fromJson(Map<String, dynamic> json) => _$GetHostinfo200ResponseFromJson(json);
+  factory GetHostinfo200Response.fromJson(Map<String, dynamic> json) =>
+      _$GetHostinfo200ResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$GetHostinfo200ResponseToJson(this);
 
@@ -71,6 +46,4 @@ class GetHostinfo200Response {
   String toString() {
     return toJson().toString();
   }
-
 }
-

@@ -4,7 +4,7 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _i18;
-import 'dart:typed_data' as _i79;
+import 'dart:typed_data' as _i80;
 
 import 'package:dio/dio.dart' as _i2;
 import 'package:mockito/mockito.dart' as _i1;
@@ -46,13 +46,15 @@ import 'package:pihole_v6_api/src/model/get_client200_response.dart' as _i39;
 import 'package:pihole_v6_api/src/model/get_client_metrics200_response.dart'
     as _i64;
 import 'package:pihole_v6_api/src/model/get_client_suggestions200_response.dart'
-    as _i29;
-import 'package:pihole_v6_api/src/model/get_clients200_response.dart' as _i28;
+    as _i28;
+import 'package:pihole_v6_api/src/model/get_clients200_response.dart' as _i29;
 import 'package:pihole_v6_api/src/model/get_config200_response.dart' as _i78;
+import 'package:pihole_v6_api/src/model/get_config_props200_response.dart'
+    as _i79;
 import 'package:pihole_v6_api/src/model/get_dbinfo200_response.dart' as _i40;
 import 'package:pihole_v6_api/src/model/get_dhcp200_response.dart' as _i31;
 import 'package:pihole_v6_api/src/model/get_dns_log200_response.dart' as _i41;
-import 'package:pihole_v6_api/src/model/get_domains200_response.dart' as _i37;
+import 'package:pihole_v6_api/src/model/get_domain200_response.dart' as _i37;
 import 'package:pihole_v6_api/src/model/get_endpoints200_response.dart' as _i42;
 import 'package:pihole_v6_api/src/model/get_ftlinfo200_response.dart' as _i43;
 import 'package:pihole_v6_api/src/model/get_gateway200_response.dart' as _i74;
@@ -91,16 +93,16 @@ import 'package:pihole_v6_api/src/model/get_suggestions200_response.dart'
 import 'package:pihole_v6_api/src/model/get_systeminfo200_response.dart'
     as _i50;
 import 'package:pihole_v6_api/src/model/get_version200_response.dart' as _i51;
-import 'package:pihole_v6_api/src/model/groups_post.dart' as _i53;
-import 'package:pihole_v6_api/src/model/groups_put.dart' as _i56;
-import 'package:pihole_v6_api/src/model/lists_post.dart' as _i58;
-import 'package:pihole_v6_api/src/model/lists_put.dart' as _i62;
 import 'package:pihole_v6_api/src/model/password.dart' as _i21;
 import 'package:pihole_v6_api/src/model/post.dart' as _i35;
+import 'package:pihole_v6_api/src/model/post2.dart' as _i53;
+import 'package:pihole_v6_api/src/model/post4.dart' as _i58;
 import 'package:pihole_v6_api/src/model/post_teleporter200_response.dart'
-    as _i80;
-import 'package:pihole_v6_api/src/model/post_teleporter_request_import.dart'
     as _i81;
+import 'package:pihole_v6_api/src/model/post_teleporter_request_import.dart'
+    as _i82;
+import 'package:pihole_v6_api/src/model/put2.dart' as _i56;
+import 'package:pihole_v6_api/src/model/put4.dart' as _i62;
 import 'package:pihole_v6_api/src/model/replace_client200_response.dart'
     as _i25;
 import 'package:pihole_v6_api/src/model/replace_client_request.dart' as _i30;
@@ -990,42 +992,7 @@ class MockClientManagementApi extends _i1.Mock
           as _i18.Future<_i2.Response<void>>);
 
   @override
-  _i18.Future<_i2.Response<_i28.GetClients200Response>> getAllClients({
-    _i2.CancelToken? cancelToken,
-    Map<String, dynamic>? headers,
-    Map<String, dynamic>? extra,
-    _i2.ValidateStatus? validateStatus,
-    _i2.ProgressCallback? onSendProgress,
-    _i2.ProgressCallback? onReceiveProgress,
-  }) =>
-      (super.noSuchMethod(
-            Invocation.method(#getAllClients, [], {
-              #cancelToken: cancelToken,
-              #headers: headers,
-              #extra: extra,
-              #validateStatus: validateStatus,
-              #onSendProgress: onSendProgress,
-              #onReceiveProgress: onReceiveProgress,
-            }),
-            returnValue:
-                _i18.Future<_i2.Response<_i28.GetClients200Response>>.value(
-                  _FakeResponse_15<_i28.GetClients200Response>(
-                    this,
-                    Invocation.method(#getAllClients, [], {
-                      #cancelToken: cancelToken,
-                      #headers: headers,
-                      #extra: extra,
-                      #validateStatus: validateStatus,
-                      #onSendProgress: onSendProgress,
-                      #onReceiveProgress: onReceiveProgress,
-                    }),
-                  ),
-                ),
-          )
-          as _i18.Future<_i2.Response<_i28.GetClients200Response>>);
-
-  @override
-  _i18.Future<_i2.Response<_i29.GetClientSuggestions200Response>>
+  _i18.Future<_i2.Response<_i28.GetClientSuggestions200Response>>
   getClientSuggestions({
     _i2.CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -1045,9 +1012,9 @@ class MockClientManagementApi extends _i1.Mock
             }),
             returnValue:
                 _i18.Future<
-                  _i2.Response<_i29.GetClientSuggestions200Response>
+                  _i2.Response<_i28.GetClientSuggestions200Response>
                 >.value(
-                  _FakeResponse_15<_i29.GetClientSuggestions200Response>(
+                  _FakeResponse_15<_i28.GetClientSuggestions200Response>(
                     this,
                     Invocation.method(#getClientSuggestions, [], {
                       #cancelToken: cancelToken,
@@ -1060,10 +1027,10 @@ class MockClientManagementApi extends _i1.Mock
                   ),
                 ),
           )
-          as _i18.Future<_i2.Response<_i29.GetClientSuggestions200Response>>);
+          as _i18.Future<_i2.Response<_i28.GetClientSuggestions200Response>>);
 
   @override
-  _i18.Future<_i2.Response<_i28.GetClients200Response>> getClients({
+  _i18.Future<_i2.Response<_i29.GetClients200Response>> getClients({
     required String? client,
     _i2.CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -1083,8 +1050,8 @@ class MockClientManagementApi extends _i1.Mock
               #onReceiveProgress: onReceiveProgress,
             }),
             returnValue:
-                _i18.Future<_i2.Response<_i28.GetClients200Response>>.value(
-                  _FakeResponse_15<_i28.GetClients200Response>(
+                _i18.Future<_i2.Response<_i29.GetClients200Response>>.value(
+                  _FakeResponse_15<_i29.GetClients200Response>(
                     this,
                     Invocation.method(#getClients, [], {
                       #client: client,
@@ -1098,7 +1065,42 @@ class MockClientManagementApi extends _i1.Mock
                   ),
                 ),
           )
-          as _i18.Future<_i2.Response<_i28.GetClients200Response>>);
+          as _i18.Future<_i2.Response<_i29.GetClients200Response>>);
+
+  @override
+  _i18.Future<_i2.Response<_i29.GetClients200Response>> listClients({
+    _i2.CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    _i2.ValidateStatus? validateStatus,
+    _i2.ProgressCallback? onSendProgress,
+    _i2.ProgressCallback? onReceiveProgress,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#listClients, [], {
+              #cancelToken: cancelToken,
+              #headers: headers,
+              #extra: extra,
+              #validateStatus: validateStatus,
+              #onSendProgress: onSendProgress,
+              #onReceiveProgress: onReceiveProgress,
+            }),
+            returnValue:
+                _i18.Future<_i2.Response<_i29.GetClients200Response>>.value(
+                  _FakeResponse_15<_i29.GetClients200Response>(
+                    this,
+                    Invocation.method(#listClients, [], {
+                      #cancelToken: cancelToken,
+                      #headers: headers,
+                      #extra: extra,
+                      #validateStatus: validateStatus,
+                      #onSendProgress: onSendProgress,
+                      #onReceiveProgress: onReceiveProgress,
+                    }),
+                  ),
+                ),
+          )
+          as _i18.Future<_i2.Response<_i29.GetClients200Response>>);
 
   @override
   _i18.Future<_i2.Response<_i25.ReplaceClient200Response>> replaceClient({
@@ -1441,42 +1443,7 @@ class MockDomainManagementApi extends _i1.Mock
           as _i18.Future<_i2.Response<void>>);
 
   @override
-  _i18.Future<_i2.Response<_i37.GetDomains200Response>> getAllDomains({
-    _i2.CancelToken? cancelToken,
-    Map<String, dynamic>? headers,
-    Map<String, dynamic>? extra,
-    _i2.ValidateStatus? validateStatus,
-    _i2.ProgressCallback? onSendProgress,
-    _i2.ProgressCallback? onReceiveProgress,
-  }) =>
-      (super.noSuchMethod(
-            Invocation.method(#getAllDomains, [], {
-              #cancelToken: cancelToken,
-              #headers: headers,
-              #extra: extra,
-              #validateStatus: validateStatus,
-              #onSendProgress: onSendProgress,
-              #onReceiveProgress: onReceiveProgress,
-            }),
-            returnValue:
-                _i18.Future<_i2.Response<_i37.GetDomains200Response>>.value(
-                  _FakeResponse_15<_i37.GetDomains200Response>(
-                    this,
-                    Invocation.method(#getAllDomains, [], {
-                      #cancelToken: cancelToken,
-                      #headers: headers,
-                      #extra: extra,
-                      #validateStatus: validateStatus,
-                      #onSendProgress: onSendProgress,
-                      #onReceiveProgress: onReceiveProgress,
-                    }),
-                  ),
-                ),
-          )
-          as _i18.Future<_i2.Response<_i37.GetDomains200Response>>);
-
-  @override
-  _i18.Future<_i2.Response<_i37.GetDomains200Response>> getDomains({
+  _i18.Future<_i2.Response<_i37.GetDomain200Response>> getDomain({
     required String? type,
     required String? kind,
     required String? domain,
@@ -1488,7 +1455,7 @@ class MockDomainManagementApi extends _i1.Mock
     _i2.ProgressCallback? onReceiveProgress,
   }) =>
       (super.noSuchMethod(
-            Invocation.method(#getDomains, [], {
+            Invocation.method(#getDomain, [], {
               #type: type,
               #kind: kind,
               #domain: domain,
@@ -1500,10 +1467,10 @@ class MockDomainManagementApi extends _i1.Mock
               #onReceiveProgress: onReceiveProgress,
             }),
             returnValue:
-                _i18.Future<_i2.Response<_i37.GetDomains200Response>>.value(
-                  _FakeResponse_15<_i37.GetDomains200Response>(
+                _i18.Future<_i2.Response<_i37.GetDomain200Response>>.value(
+                  _FakeResponse_15<_i37.GetDomain200Response>(
                     this,
-                    Invocation.method(#getDomains, [], {
+                    Invocation.method(#getDomain, [], {
                       #type: type,
                       #kind: kind,
                       #domain: domain,
@@ -1517,10 +1484,83 @@ class MockDomainManagementApi extends _i1.Mock
                   ),
                 ),
           )
-          as _i18.Future<_i2.Response<_i37.GetDomains200Response>>);
+          as _i18.Future<_i2.Response<_i37.GetDomain200Response>>);
 
   @override
-  _i18.Future<_i2.Response<_i37.GetDomains200Response>> getDomainsByTypeKind({
+  _i18.Future<_i2.Response<_i37.GetDomain200Response>> getDomains({
+    _i2.CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    _i2.ValidateStatus? validateStatus,
+    _i2.ProgressCallback? onSendProgress,
+    _i2.ProgressCallback? onReceiveProgress,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#getDomains, [], {
+              #cancelToken: cancelToken,
+              #headers: headers,
+              #extra: extra,
+              #validateStatus: validateStatus,
+              #onSendProgress: onSendProgress,
+              #onReceiveProgress: onReceiveProgress,
+            }),
+            returnValue:
+                _i18.Future<_i2.Response<_i37.GetDomain200Response>>.value(
+                  _FakeResponse_15<_i37.GetDomain200Response>(
+                    this,
+                    Invocation.method(#getDomains, [], {
+                      #cancelToken: cancelToken,
+                      #headers: headers,
+                      #extra: extra,
+                      #validateStatus: validateStatus,
+                      #onSendProgress: onSendProgress,
+                      #onReceiveProgress: onReceiveProgress,
+                    }),
+                  ),
+                ),
+          )
+          as _i18.Future<_i2.Response<_i37.GetDomain200Response>>);
+
+  @override
+  _i18.Future<_i2.Response<_i37.GetDomain200Response>> getTypeDomains({
+    required String? type,
+    _i2.CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    _i2.ValidateStatus? validateStatus,
+    _i2.ProgressCallback? onSendProgress,
+    _i2.ProgressCallback? onReceiveProgress,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#getTypeDomains, [], {
+              #type: type,
+              #cancelToken: cancelToken,
+              #headers: headers,
+              #extra: extra,
+              #validateStatus: validateStatus,
+              #onSendProgress: onSendProgress,
+              #onReceiveProgress: onReceiveProgress,
+            }),
+            returnValue:
+                _i18.Future<_i2.Response<_i37.GetDomain200Response>>.value(
+                  _FakeResponse_15<_i37.GetDomain200Response>(
+                    this,
+                    Invocation.method(#getTypeDomains, [], {
+                      #type: type,
+                      #cancelToken: cancelToken,
+                      #headers: headers,
+                      #extra: extra,
+                      #validateStatus: validateStatus,
+                      #onSendProgress: onSendProgress,
+                      #onReceiveProgress: onReceiveProgress,
+                    }),
+                  ),
+                ),
+          )
+          as _i18.Future<_i2.Response<_i37.GetDomain200Response>>);
+
+  @override
+  _i18.Future<_i2.Response<_i37.GetDomain200Response>> getTypeKindDomains({
     required String? type,
     required String? kind,
     _i2.CancelToken? cancelToken,
@@ -1531,7 +1571,7 @@ class MockDomainManagementApi extends _i1.Mock
     _i2.ProgressCallback? onReceiveProgress,
   }) =>
       (super.noSuchMethod(
-            Invocation.method(#getDomainsByTypeKind, [], {
+            Invocation.method(#getTypeKindDomains, [], {
               #type: type,
               #kind: kind,
               #cancelToken: cancelToken,
@@ -1542,10 +1582,10 @@ class MockDomainManagementApi extends _i1.Mock
               #onReceiveProgress: onReceiveProgress,
             }),
             returnValue:
-                _i18.Future<_i2.Response<_i37.GetDomains200Response>>.value(
-                  _FakeResponse_15<_i37.GetDomains200Response>(
+                _i18.Future<_i2.Response<_i37.GetDomain200Response>>.value(
+                  _FakeResponse_15<_i37.GetDomain200Response>(
                     this,
-                    Invocation.method(#getDomainsByTypeKind, [], {
+                    Invocation.method(#getTypeKindDomains, [], {
                       #type: type,
                       #kind: kind,
                       #cancelToken: cancelToken,
@@ -1558,7 +1598,7 @@ class MockDomainManagementApi extends _i1.Mock
                   ),
                 ),
           )
-          as _i18.Future<_i2.Response<_i37.GetDomains200Response>>);
+          as _i18.Future<_i2.Response<_i37.GetDomain200Response>>);
 
   @override
   _i18.Future<_i2.Response<_i34.ReplaceDomain200Response>> replaceDomain({
@@ -2201,7 +2241,7 @@ class MockGroupManagementApi extends _i1.Mock
 
   @override
   _i18.Future<_i2.Response<_i52.ReplaceGroup200Response>> addGroup({
-    _i53.GroupsPost? groupsPost,
+    _i53.Post2? post2,
     _i2.CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -2211,7 +2251,7 @@ class MockGroupManagementApi extends _i1.Mock
   }) =>
       (super.noSuchMethod(
             Invocation.method(#addGroup, [], {
-              #groupsPost: groupsPost,
+              #post2: post2,
               #cancelToken: cancelToken,
               #headers: headers,
               #extra: extra,
@@ -2224,7 +2264,7 @@ class MockGroupManagementApi extends _i1.Mock
                   _FakeResponse_15<_i52.ReplaceGroup200Response>(
                     this,
                     Invocation.method(#addGroup, [], {
-                      #groupsPost: groupsPost,
+                      #post2: post2,
                       #cancelToken: cancelToken,
                       #headers: headers,
                       #extra: extra,
@@ -2313,41 +2353,6 @@ class MockGroupManagementApi extends _i1.Mock
           as _i18.Future<_i2.Response<void>>);
 
   @override
-  _i18.Future<_i2.Response<_i55.GetGroups200Response>> getAllGroups({
-    _i2.CancelToken? cancelToken,
-    Map<String, dynamic>? headers,
-    Map<String, dynamic>? extra,
-    _i2.ValidateStatus? validateStatus,
-    _i2.ProgressCallback? onSendProgress,
-    _i2.ProgressCallback? onReceiveProgress,
-  }) =>
-      (super.noSuchMethod(
-            Invocation.method(#getAllGroups, [], {
-              #cancelToken: cancelToken,
-              #headers: headers,
-              #extra: extra,
-              #validateStatus: validateStatus,
-              #onSendProgress: onSendProgress,
-              #onReceiveProgress: onReceiveProgress,
-            }),
-            returnValue:
-                _i18.Future<_i2.Response<_i55.GetGroups200Response>>.value(
-                  _FakeResponse_15<_i55.GetGroups200Response>(
-                    this,
-                    Invocation.method(#getAllGroups, [], {
-                      #cancelToken: cancelToken,
-                      #headers: headers,
-                      #extra: extra,
-                      #validateStatus: validateStatus,
-                      #onSendProgress: onSendProgress,
-                      #onReceiveProgress: onReceiveProgress,
-                    }),
-                  ),
-                ),
-          )
-          as _i18.Future<_i2.Response<_i55.GetGroups200Response>>);
-
-  @override
   _i18.Future<_i2.Response<_i55.GetGroups200Response>> getGroups({
     required String? name,
     _i2.CancelToken? cancelToken,
@@ -2386,9 +2391,44 @@ class MockGroupManagementApi extends _i1.Mock
           as _i18.Future<_i2.Response<_i55.GetGroups200Response>>);
 
   @override
+  _i18.Future<_i2.Response<_i55.GetGroups200Response>> listGroups({
+    _i2.CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    _i2.ValidateStatus? validateStatus,
+    _i2.ProgressCallback? onSendProgress,
+    _i2.ProgressCallback? onReceiveProgress,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#listGroups, [], {
+              #cancelToken: cancelToken,
+              #headers: headers,
+              #extra: extra,
+              #validateStatus: validateStatus,
+              #onSendProgress: onSendProgress,
+              #onReceiveProgress: onReceiveProgress,
+            }),
+            returnValue:
+                _i18.Future<_i2.Response<_i55.GetGroups200Response>>.value(
+                  _FakeResponse_15<_i55.GetGroups200Response>(
+                    this,
+                    Invocation.method(#listGroups, [], {
+                      #cancelToken: cancelToken,
+                      #headers: headers,
+                      #extra: extra,
+                      #validateStatus: validateStatus,
+                      #onSendProgress: onSendProgress,
+                      #onReceiveProgress: onReceiveProgress,
+                    }),
+                  ),
+                ),
+          )
+          as _i18.Future<_i2.Response<_i55.GetGroups200Response>>);
+
+  @override
   _i18.Future<_i2.Response<_i52.ReplaceGroup200Response>> replaceGroup({
     required String? name,
-    _i56.GroupsPut? groupsPut,
+    _i56.Put2? put2,
     _i2.CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -2399,7 +2439,7 @@ class MockGroupManagementApi extends _i1.Mock
       (super.noSuchMethod(
             Invocation.method(#replaceGroup, [], {
               #name: name,
-              #groupsPut: groupsPut,
+              #put2: put2,
               #cancelToken: cancelToken,
               #headers: headers,
               #extra: extra,
@@ -2413,7 +2453,7 @@ class MockGroupManagementApi extends _i1.Mock
                     this,
                     Invocation.method(#replaceGroup, [], {
                       #name: name,
-                      #groupsPut: groupsPut,
+                      #put2: put2,
                       #cancelToken: cancelToken,
                       #headers: headers,
                       #extra: extra,
@@ -2438,7 +2478,7 @@ class MockListManagementApi extends _i1.Mock implements _i12.ListManagementApi {
   @override
   _i18.Future<_i2.Response<_i57.ReplaceLists200Response>> addList({
     required String? type,
-    _i58.ListsPost? listsPost,
+    _i58.Post4? post4,
     _i2.CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -2449,7 +2489,7 @@ class MockListManagementApi extends _i1.Mock implements _i12.ListManagementApi {
       (super.noSuchMethod(
             Invocation.method(#addList, [], {
               #type: type,
-              #listsPost: listsPost,
+              #post4: post4,
               #cancelToken: cancelToken,
               #headers: headers,
               #extra: extra,
@@ -2463,7 +2503,7 @@ class MockListManagementApi extends _i1.Mock implements _i12.ListManagementApi {
                     this,
                     Invocation.method(#addList, [], {
                       #type: type,
-                      #listsPost: listsPost,
+                      #post4: post4,
                       #cancelToken: cancelToken,
                       #headers: headers,
                       #extra: extra,
@@ -2555,44 +2595,6 @@ class MockListManagementApi extends _i1.Mock implements _i12.ListManagementApi {
           as _i18.Future<_i2.Response<void>>);
 
   @override
-  _i18.Future<_i2.Response<_i60.GetLists200Response>> getAllLists({
-    String? type,
-    _i2.CancelToken? cancelToken,
-    Map<String, dynamic>? headers,
-    Map<String, dynamic>? extra,
-    _i2.ValidateStatus? validateStatus,
-    _i2.ProgressCallback? onSendProgress,
-    _i2.ProgressCallback? onReceiveProgress,
-  }) =>
-      (super.noSuchMethod(
-            Invocation.method(#getAllLists, [], {
-              #type: type,
-              #cancelToken: cancelToken,
-              #headers: headers,
-              #extra: extra,
-              #validateStatus: validateStatus,
-              #onSendProgress: onSendProgress,
-              #onReceiveProgress: onReceiveProgress,
-            }),
-            returnValue:
-                _i18.Future<_i2.Response<_i60.GetLists200Response>>.value(
-                  _FakeResponse_15<_i60.GetLists200Response>(
-                    this,
-                    Invocation.method(#getAllLists, [], {
-                      #type: type,
-                      #cancelToken: cancelToken,
-                      #headers: headers,
-                      #extra: extra,
-                      #validateStatus: validateStatus,
-                      #onSendProgress: onSendProgress,
-                      #onReceiveProgress: onReceiveProgress,
-                    }),
-                  ),
-                ),
-          )
-          as _i18.Future<_i2.Response<_i60.GetLists200Response>>);
-
-  @override
   _i18.Future<_i2.Response<_i60.GetLists200Response>> getLists({
     required String? list,
     String? type,
@@ -2681,10 +2683,48 @@ class MockListManagementApi extends _i1.Mock implements _i12.ListManagementApi {
           as _i18.Future<_i2.Response<_i61.GetSearch200Response>>);
 
   @override
+  _i18.Future<_i2.Response<_i60.GetLists200Response>> listLists({
+    String? type,
+    _i2.CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    _i2.ValidateStatus? validateStatus,
+    _i2.ProgressCallback? onSendProgress,
+    _i2.ProgressCallback? onReceiveProgress,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#listLists, [], {
+              #type: type,
+              #cancelToken: cancelToken,
+              #headers: headers,
+              #extra: extra,
+              #validateStatus: validateStatus,
+              #onSendProgress: onSendProgress,
+              #onReceiveProgress: onReceiveProgress,
+            }),
+            returnValue:
+                _i18.Future<_i2.Response<_i60.GetLists200Response>>.value(
+                  _FakeResponse_15<_i60.GetLists200Response>(
+                    this,
+                    Invocation.method(#listLists, [], {
+                      #type: type,
+                      #cancelToken: cancelToken,
+                      #headers: headers,
+                      #extra: extra,
+                      #validateStatus: validateStatus,
+                      #onSendProgress: onSendProgress,
+                      #onReceiveProgress: onReceiveProgress,
+                    }),
+                  ),
+                ),
+          )
+          as _i18.Future<_i2.Response<_i60.GetLists200Response>>);
+
+  @override
   _i18.Future<_i2.Response<_i57.ReplaceLists200Response>> replaceLists({
     required String? list,
     required String? type,
-    _i62.ListsPut? listsPut,
+    _i62.Put4? put4,
     _i2.CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -2696,7 +2736,7 @@ class MockListManagementApi extends _i1.Mock implements _i12.ListManagementApi {
             Invocation.method(#replaceLists, [], {
               #list: list,
               #type: type,
-              #listsPut: listsPut,
+              #put4: put4,
               #cancelToken: cancelToken,
               #headers: headers,
               #extra: extra,
@@ -2711,7 +2751,7 @@ class MockListManagementApi extends _i1.Mock implements _i12.ListManagementApi {
                     Invocation.method(#replaceLists, [], {
                       #list: list,
                       #type: type,
-                      #listsPut: listsPut,
+                      #put4: put4,
                       #cancelToken: cancelToken,
                       #headers: headers,
                       #extra: extra,
@@ -3827,7 +3867,7 @@ class MockPiHoleConfigurationApi extends _i1.Mock
           as _i18.Future<_i2.Response<_i78.GetConfig200Response>>);
 
   @override
-  _i18.Future<_i2.Response<void>> getConfigElem({
+  _i18.Future<_i2.Response<_i78.GetConfig200Response>> getConfigElem({
     required String? element,
     bool? detailed = false,
     _i2.CancelToken? cancelToken,
@@ -3848,26 +3888,62 @@ class MockPiHoleConfigurationApi extends _i1.Mock
               #onSendProgress: onSendProgress,
               #onReceiveProgress: onReceiveProgress,
             }),
-            returnValue: _i18.Future<_i2.Response<void>>.value(
-              _FakeResponse_15<void>(
-                this,
-                Invocation.method(#getConfigElem, [], {
-                  #element: element,
-                  #detailed: detailed,
-                  #cancelToken: cancelToken,
-                  #headers: headers,
-                  #extra: extra,
-                  #validateStatus: validateStatus,
-                  #onSendProgress: onSendProgress,
-                  #onReceiveProgress: onReceiveProgress,
-                }),
-              ),
-            ),
+            returnValue:
+                _i18.Future<_i2.Response<_i78.GetConfig200Response>>.value(
+                  _FakeResponse_15<_i78.GetConfig200Response>(
+                    this,
+                    Invocation.method(#getConfigElem, [], {
+                      #element: element,
+                      #detailed: detailed,
+                      #cancelToken: cancelToken,
+                      #headers: headers,
+                      #extra: extra,
+                      #validateStatus: validateStatus,
+                      #onSendProgress: onSendProgress,
+                      #onReceiveProgress: onReceiveProgress,
+                    }),
+                  ),
+                ),
           )
-          as _i18.Future<_i2.Response<void>>);
+          as _i18.Future<_i2.Response<_i78.GetConfig200Response>>);
 
   @override
-  _i18.Future<_i2.Response<_i79.Uint8List>> getTeleporter({
+  _i18.Future<_i2.Response<_i79.GetConfigProps200Response>> getConfigProps({
+    _i2.CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    _i2.ValidateStatus? validateStatus,
+    _i2.ProgressCallback? onSendProgress,
+    _i2.ProgressCallback? onReceiveProgress,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#getConfigProps, [], {
+              #cancelToken: cancelToken,
+              #headers: headers,
+              #extra: extra,
+              #validateStatus: validateStatus,
+              #onSendProgress: onSendProgress,
+              #onReceiveProgress: onReceiveProgress,
+            }),
+            returnValue:
+                _i18.Future<_i2.Response<_i79.GetConfigProps200Response>>.value(
+                  _FakeResponse_15<_i79.GetConfigProps200Response>(
+                    this,
+                    Invocation.method(#getConfigProps, [], {
+                      #cancelToken: cancelToken,
+                      #headers: headers,
+                      #extra: extra,
+                      #validateStatus: validateStatus,
+                      #onSendProgress: onSendProgress,
+                      #onReceiveProgress: onReceiveProgress,
+                    }),
+                  ),
+                ),
+          )
+          as _i18.Future<_i2.Response<_i79.GetConfigProps200Response>>);
+
+  @override
+  _i18.Future<_i2.Response<_i80.Uint8List>> getTeleporter({
     _i2.CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -3884,8 +3960,8 @@ class MockPiHoleConfigurationApi extends _i1.Mock
               #onSendProgress: onSendProgress,
               #onReceiveProgress: onReceiveProgress,
             }),
-            returnValue: _i18.Future<_i2.Response<_i79.Uint8List>>.value(
-              _FakeResponse_15<_i79.Uint8List>(
+            returnValue: _i18.Future<_i2.Response<_i80.Uint8List>>.value(
+              _FakeResponse_15<_i80.Uint8List>(
                 this,
                 Invocation.method(#getTeleporter, [], {
                   #cancelToken: cancelToken,
@@ -3898,7 +3974,7 @@ class MockPiHoleConfigurationApi extends _i1.Mock
               ),
             ),
           )
-          as _i18.Future<_i2.Response<_i79.Uint8List>>);
+          as _i18.Future<_i2.Response<_i80.Uint8List>>);
 
   @override
   _i18.Future<_i2.Response<_i78.GetConfig200Response>> patchConfig({
@@ -3942,9 +4018,9 @@ class MockPiHoleConfigurationApi extends _i1.Mock
           as _i18.Future<_i2.Response<_i78.GetConfig200Response>>);
 
   @override
-  _i18.Future<_i2.Response<_i80.PostTeleporter200Response>> postTeleporter({
+  _i18.Future<_i2.Response<_i81.PostTeleporter200Response>> postTeleporter({
     _i2.MultipartFile? file,
-    _i81.PostTeleporterRequestImport? import_,
+    _i82.PostTeleporterRequestImport? import_,
     _i2.CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -3964,8 +4040,8 @@ class MockPiHoleConfigurationApi extends _i1.Mock
               #onReceiveProgress: onReceiveProgress,
             }),
             returnValue:
-                _i18.Future<_i2.Response<_i80.PostTeleporter200Response>>.value(
-                  _FakeResponse_15<_i80.PostTeleporter200Response>(
+                _i18.Future<_i2.Response<_i81.PostTeleporter200Response>>.value(
+                  _FakeResponse_15<_i81.PostTeleporter200Response>(
                     this,
                     Invocation.method(#postTeleporter, [], {
                       #file: file,
@@ -3980,5 +4056,5 @@ class MockPiHoleConfigurationApi extends _i1.Mock
                   ),
                 ),
           )
-          as _i18.Future<_i2.Response<_i80.PostTeleporter200Response>>);
+          as _i18.Future<_i2.Response<_i81.PostTeleporter200Response>>);
 }

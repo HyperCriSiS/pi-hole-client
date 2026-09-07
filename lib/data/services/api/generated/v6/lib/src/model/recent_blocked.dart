@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'recent_blocked.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,35 +17,22 @@ part 'recent_blocked.g.dart';
 )
 class RecentBlocked {
   /// Returns a new [RecentBlocked] instance.
-  RecentBlocked({
+  RecentBlocked({this.blocked});
 
-     this.blocked,
-  });
-
-      /// List of blocked domains
-  @JsonKey(
-    
-    name: r'blocked',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// List of blocked domains
+  @JsonKey(name: r'blocked', required: false, includeIfNull: false)
   final List<String>? blocked;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is RecentBlocked && other.blocked == blocked;
 
+  @override
+  int get hashCode => blocked.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is RecentBlocked &&
-      other.blocked == blocked;
-
-    @override
-    int get hashCode =>
-        blocked.hashCode;
-
-  factory RecentBlocked.fromJson(Map<String, dynamic> json) => _$RecentBlockedFromJson(json);
+  factory RecentBlocked.fromJson(Map<String, dynamic> json) =>
+      _$RecentBlockedFromJson(json);
 
   Map<String, dynamic> toJson() => _$RecentBlockedToJson(this);
 
@@ -54,6 +40,4 @@ class RecentBlocked {
   String toString() {
     return toJson().toString();
   }
-
 }
-

@@ -2,9 +2,8 @@ targets:
   $default:
     sources:
       exclude:
-        # Exclude the OpenAPI-generated path dependency from the build graph.
-        # This prevents build_runner from scanning these files and deleting
-        # their pre-generated .g.dart files with --delete-conflicting-outputs.
+        # Exclude the OpenAPI-generated path dependency from the root build graph.
+        # Its own generated part files are produced by tools/openapi/generate.sh.
         - lib/data/services/api/generated/**
     builders:
       freezed:
@@ -22,10 +21,10 @@ targets:
           exclude:
             - lib/data/services/api/generated/**
       mockito|mockBuilder:
+        # The wrapper mocks depend on the generated v6 API surface. Keep this
+        # input in root codegen so OpenAPI operation/model changes cannot leave
+        # a stale mocks.mocks.dart behind. Full root codegen with the generated
+        # package excluded above is validated against the pinned FTL v6.7 client.
         generate_for:
-          exclude:
-            # mocks.dart generates mocks for pihole_v6_api types whose .g.dart
-            # part files are excluded from the build graph above. Excluding this
-            # file prevents build_runner from deleting mocks.mocks.dart and then
-            # failing to regenerate it due to unresolvable assets.
+          include:
             - test/data/services/api/wrappers/mocks.dart

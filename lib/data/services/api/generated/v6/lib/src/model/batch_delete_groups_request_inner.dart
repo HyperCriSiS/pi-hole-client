@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'batch_delete_groups_request_inner.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,35 +17,22 @@ part 'batch_delete_groups_request_inner.g.dart';
 )
 class BatchDeleteGroupsRequestInner {
   /// Returns a new [BatchDeleteGroupsRequestInner] instance.
-  BatchDeleteGroupsRequestInner({
+  BatchDeleteGroupsRequestInner({required this.item});
 
-    required  this.item,
-  });
-
-      /// group name
-  @JsonKey(
-    
-    name: r'item',
-    required: true,
-    includeIfNull: false,
-  )
-
-
+  /// group name
+  @JsonKey(name: r'item', required: true, includeIfNull: false)
   final String item;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is BatchDeleteGroupsRequestInner && other.item == item;
 
+  @override
+  int get hashCode => item.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is BatchDeleteGroupsRequestInner &&
-      other.item == item;
-
-    @override
-    int get hashCode =>
-        item.hashCode;
-
-  factory BatchDeleteGroupsRequestInner.fromJson(Map<String, dynamic> json) => _$BatchDeleteGroupsRequestInnerFromJson(json);
+  factory BatchDeleteGroupsRequestInner.fromJson(Map<String, dynamic> json) =>
+      _$BatchDeleteGroupsRequestInnerFromJson(json);
 
   Map<String, dynamic> toJson() => _$BatchDeleteGroupsRequestInnerToJson(this);
 
@@ -54,6 +40,4 @@ class BatchDeleteGroupsRequestInner {
   String toString() {
     return toJson().toString();
   }
-
 }
-

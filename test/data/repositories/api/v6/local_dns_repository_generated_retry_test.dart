@@ -39,9 +39,7 @@ class _RetryLocalDnsService extends PiholeV6Service {
     }
     return Success(
       GetConfig200Response(
-        config: ConfigConfig(
-          dns: ConfigConfigDns(hosts: hosts),
-        ),
+        config: ConfigConfig(dns: ConfigConfigDns(hosts: hosts)),
       ),
     );
   }
@@ -75,10 +73,9 @@ void main() {
 
     final result = await repository.fetchRecords();
 
-    expect(
-      result.getOrNull(),
-      const [LocalDns(ip: '192.168.1.10', name: 'printer')],
-    );
+    expect(result.getOrNull(), const [
+      LocalDns(ip: '192.168.1.10', name: 'printer'),
+    ]);
     expect(client.postAuthCallCount, 1);
     expect(service.getCallCount, 2);
     expect(service.lastSid, isNot('sid123'));
@@ -106,9 +103,6 @@ void main() {
     expect(service.patchCallCount, 2);
     expect(service.lastSid, isNot('sid123'));
     expect(service.lastRestart, true);
-    expect(
-      service.lastPatchBody?.config?.dns?.hosts,
-      ['192.168.1.20 newname'],
-    );
+    expect(service.lastPatchBody?.config?.dns?.hosts, ['192.168.1.20 newname']);
   });
 }

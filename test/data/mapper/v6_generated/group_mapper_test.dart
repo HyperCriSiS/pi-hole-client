@@ -3,9 +3,9 @@ import 'package:pi_hole_client/data/mapper/v6_generated/group_mapper.dart';
 import 'package:pihole_v6_api/pihole_v6_api.dart';
 
 void main() {
-  group('GroupsGetGroupsInnerMapper', () {
+  group('Get2GroupsInnerMapper', () {
     test('maps all fields correctly', () {
-      final inner = GroupsGetGroupsInner(
+      final inner = Get2GroupsInner(
         id: 5,
         name: 'Test Group',
         enabled: true,
@@ -31,11 +31,7 @@ void main() {
     });
 
     test('maps disabled group', () {
-      final inner = GroupsGetGroupsInner(
-        id: 2,
-        name: 'Disabled',
-        enabled: false,
-      );
+      final inner = Get2GroupsInner(id: 2, name: 'Disabled', enabled: false);
 
       final group = inner.toDomain();
 
@@ -43,7 +39,7 @@ void main() {
     });
 
     test('uses defaults for null fields', () {
-      final inner = GroupsGetGroupsInner();
+      final inner = Get2GroupsInner();
 
       final group = inner.toDomain();
 
@@ -60,8 +56,8 @@ void main() {
     test('toDomainList maps all entries', () {
       final response = GetGroups200Response(
         groups: [
-          GroupsGetGroupsInner(id: 0, name: 'Default'),
-          GroupsGetGroupsInner(id: 1, name: 'Custom'),
+          Get2GroupsInner(id: 0, name: 'Default'),
+          Get2GroupsInner(id: 1, name: 'Custom'),
         ],
       );
 

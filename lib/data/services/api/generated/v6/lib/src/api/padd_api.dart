@@ -13,13 +13,12 @@ import 'package:pihole_v6_api/src/model/add_auth401_response.dart';
 import 'package:pihole_v6_api/src/model/get_padd200_response.dart';
 
 class PADDApi {
-
   final Dio _dio;
 
   const PADDApi(this._dio);
 
   /// Get summarized data for PADD
-  /// 
+  ///
   ///
   /// Parameters:
   /// * [full] - (Optional) Return full data
@@ -32,7 +31,7 @@ class PADDApi {
   ///
   /// Returns a [Future] containing a [Response] with a [GetPadd200Response] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<GetPadd200Response>> getPadd({ 
+  Future<Response<GetPadd200Response>> getPadd({
     bool? full,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -44,9 +43,7 @@ class PADDApi {
     final _path = r'/padd';
     final _options = Options(
       method: r'GET',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
+      headers: <String, dynamic>{...?headers},
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
@@ -54,17 +51,20 @@ class PADDApi {
             'name': 'x_header_sid',
             'keyName': 'X-FTL-SID',
             'where': 'header',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'query_sid',
             'keyName': 'sid',
             'where': 'query',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'cookie_sid',
             'keyName': 'sid',
             'where': '',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'header_sid',
             'keyName': 'sid',
@@ -76,9 +76,7 @@ class PADDApi {
       validateStatus: validateStatus,
     );
 
-    final _queryParameters = <String, dynamic>{
-      if (full != null) r'full': full,
-    };
+    final _queryParameters = <String, dynamic>{if (full != null) r'full': full};
 
     final _response = await _dio.request<Object>(
       _path,
@@ -92,9 +90,14 @@ class PADDApi {
     GetPadd200Response? _responseData;
 
     try {
-final rawData = _response.data;
-_responseData = rawData == null ? null : deserialize<GetPadd200Response, GetPadd200Response>(rawData, 'GetPadd200Response', growable: true);
-
+      final rawData = _response.data;
+      _responseData = rawData == null
+          ? null
+          : deserialize<GetPadd200Response, GetPadd200Response>(
+              rawData,
+              'GetPadd200Response',
+              growable: true,
+            );
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -116,5 +119,4 @@ _responseData = rawData == null ? null : deserialize<GetPadd200Response, GetPadd
       extra: _response.extra,
     );
   }
-
 }

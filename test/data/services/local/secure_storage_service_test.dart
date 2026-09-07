@@ -61,10 +61,7 @@ void main() {
           appLogs.logs.single.message,
           isNot(contains('value-that-must-not-be-logged')),
         );
-        expect(
-          appLogs.logs.single.message,
-          isNot(contains('https://pi.hole')),
-        );
+        expect(appLogs.logs.single.message, isNot(contains('https://pi.hole')));
       },
     );
 

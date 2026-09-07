@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'success.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,35 +17,21 @@ part 'success.g.dart';
 )
 class Success {
   /// Returns a new [Success] instance.
-  Success({
+  Success({this.status});
 
-     this.status,
-  });
-
-      /// Key indicating the status of the request
-  @JsonKey(
-    
-    name: r'status',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Key indicating the status of the request
+  @JsonKey(name: r'status', required: false, includeIfNull: false)
   final String? status;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is Success && other.status == status;
 
+  @override
+  int get hashCode => status.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is Success &&
-      other.status == status;
-
-    @override
-    int get hashCode =>
-        status.hashCode;
-
-  factory Success.fromJson(Map<String, dynamic> json) => _$SuccessFromJson(json);
+  factory Success.fromJson(Map<String, dynamic> json) =>
+      _$SuccessFromJson(json);
 
   Map<String, dynamic> toJson() => _$SuccessToJson(this);
 
@@ -54,6 +39,4 @@ class Success {
   String toString() {
     return toJson().toString();
   }
-
 }
-

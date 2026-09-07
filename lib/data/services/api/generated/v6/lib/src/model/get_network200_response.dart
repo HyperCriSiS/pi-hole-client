@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'get_network200_response.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,52 +18,28 @@ part 'get_network200_response.g.dart';
 )
 class GetNetwork200Response {
   /// Returns a new [GetNetwork200Response] instance.
-  GetNetwork200Response({
+  GetNetwork200Response({this.devices, this.took});
 
-     this.devices,
-
-     this.took,
-  });
-
-      /// Array of devices
-  @JsonKey(
-    
-    name: r'devices',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Array of devices
+  @JsonKey(name: r'devices', required: false, includeIfNull: false)
   final List<DevicesDevicesInner>? devices;
 
-
-
-      /// Time in seconds it took to process the request
-  @JsonKey(
-    
-    name: r'took',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Time in seconds it took to process the request
+  @JsonKey(name: r'took', required: false, includeIfNull: false)
   final num? took;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GetNetwork200Response &&
+          other.devices == devices &&
+          other.took == took;
 
+  @override
+  int get hashCode => devices.hashCode + took.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is GetNetwork200Response &&
-      other.devices == devices &&
-      other.took == took;
-
-    @override
-    int get hashCode =>
-        devices.hashCode +
-        took.hashCode;
-
-  factory GetNetwork200Response.fromJson(Map<String, dynamic> json) => _$GetNetwork200ResponseFromJson(json);
+  factory GetNetwork200Response.fromJson(Map<String, dynamic> json) =>
+      _$GetNetwork200ResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$GetNetwork200ResponseToJson(this);
 
@@ -72,6 +47,4 @@ class GetNetwork200Response {
   String toString() {
     return toJson().toString();
   }
-
 }
-

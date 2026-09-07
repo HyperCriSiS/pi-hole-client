@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'clients_post.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,68 +18,40 @@ part 'clients_post.g.dart';
 )
 class ClientsPost {
   /// Returns a new [ClientsPost] instance.
-  ClientsPost({
+  ClientsPost({this.client, this.comment, this.groups = const [0]});
 
-     this.client,
-
-     this.comment,
-
-     this.groups = const [0],
-  });
-
-  @JsonKey(
-    
-    name: r'client',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'client', required: false, includeIfNull: false)
   final StringOrList? client;
 
-
-
-      /// User-provided free-text comment for this client
-  @JsonKey(
-    
-    name: r'comment',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// User-provided free-text comment for this client
+  @JsonKey(name: r'comment', required: false, includeIfNull: false)
   final String? comment;
 
-
-
-      /// Array of group IDs
+  /// Array of group IDs
   @JsonKey(
     defaultValue: [0],
     name: r'groups',
     required: false,
     includeIfNull: false,
   )
-
-
   final List<int>? groups;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ClientsPost &&
+          other.client == client &&
+          other.comment == comment &&
+          other.groups == groups;
 
+  @override
+  int get hashCode =>
+      client.hashCode +
+      (comment == null ? 0 : comment.hashCode) +
+      groups.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is ClientsPost &&
-      other.client == client &&
-      other.comment == comment &&
-      other.groups == groups;
-
-    @override
-    int get hashCode =>
-        client.hashCode +
-        (comment == null ? 0 : comment.hashCode) +
-        groups.hashCode;
-
-  factory ClientsPost.fromJson(Map<String, dynamic> json) => _$ClientsPostFromJson(json);
+  factory ClientsPost.fromJson(Map<String, dynamic> json) =>
+      _$ClientsPostFromJson(json);
 
   Map<String, dynamic> toJson() => _$ClientsPostToJson(this);
 
@@ -88,6 +59,4 @@ class ClientsPost {
   String toString() {
     return toJson().toString();
   }
-
 }
-

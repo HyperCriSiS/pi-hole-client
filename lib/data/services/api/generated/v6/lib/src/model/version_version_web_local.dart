@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'version_version_web_local.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,69 +17,36 @@ part 'version_version_web_local.g.dart';
 )
 class VersionVersionWebLocal {
   /// Returns a new [VersionVersionWebLocal] instance.
-  VersionVersionWebLocal({
+  VersionVersionWebLocal({this.branch, this.version, this.hash});
 
-     this.branch,
-
-     this.version,
-
-     this.hash,
-  });
-
-      /// Local Pi-hole Web branch
-  @JsonKey(
-    
-    name: r'branch',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Local Pi-hole Web branch
+  @JsonKey(name: r'branch', required: false, includeIfNull: false)
   final String? branch;
 
-
-
-      /// Local Pi-hole Web version
-  @JsonKey(
-    
-    name: r'version',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Local Pi-hole Web version
+  @JsonKey(name: r'version', required: false, includeIfNull: false)
   final String? version;
 
-
-
-      /// Local Pi-hole Web hash
-  @JsonKey(
-    
-    name: r'hash',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Local Pi-hole Web hash
+  @JsonKey(name: r'hash', required: false, includeIfNull: false)
   final String? hash;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is VersionVersionWebLocal &&
+          other.branch == branch &&
+          other.version == version &&
+          other.hash == hash;
 
+  @override
+  int get hashCode =>
+      (branch == null ? 0 : branch.hashCode) +
+      (version == null ? 0 : version.hashCode) +
+      (hash == null ? 0 : hash.hashCode);
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is VersionVersionWebLocal &&
-      other.branch == branch &&
-      other.version == version &&
-      other.hash == hash;
-
-    @override
-    int get hashCode =>
-        (branch == null ? 0 : branch.hashCode) +
-        (version == null ? 0 : version.hashCode) +
-        (hash == null ? 0 : hash.hashCode);
-
-  factory VersionVersionWebLocal.fromJson(Map<String, dynamic> json) => _$VersionVersionWebLocalFromJson(json);
+  factory VersionVersionWebLocal.fromJson(Map<String, dynamic> json) =>
+      _$VersionVersionWebLocalFromJson(json);
 
   Map<String, dynamic> toJson() => _$VersionVersionWebLocalToJson(this);
 
@@ -88,6 +54,4 @@ class VersionVersionWebLocal {
   String toString() {
     return toJson().toString();
   }
-
 }
-

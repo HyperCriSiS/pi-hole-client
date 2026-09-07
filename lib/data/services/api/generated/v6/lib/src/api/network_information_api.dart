@@ -18,13 +18,12 @@ import 'package:pihole_v6_api/src/model/replace_domain400_response.dart';
 import 'package:pihole_v6_api/src/model/took.dart';
 
 class NetworkInformationApi {
-
   final Dio _dio;
 
   const NetworkInformationApi(this._dio);
 
   /// Delete a device from the network table
-  /// This API hook deletes a device from the network table. This will also remove all associated IP addresses and hostnames. 
+  /// This API hook deletes a device from the network table. This will also remove all associated IP addresses and hostnames.
   ///
   /// Parameters:
   /// * [deviceId] - Device ID
@@ -37,7 +36,7 @@ class NetworkInformationApi {
   ///
   /// Returns a [Future]
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<void>> deleteDevice({ 
+  Future<Response<void>> deleteDevice({
     required int deviceId,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -46,12 +45,15 @@ class NetworkInformationApi {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/network/devices/{device_id}'.replaceAll('{' r'device_id' '}', deviceId.toString());
+    final _path = r'/network/devices/{device_id}'.replaceAll(
+      '{'
+      r'device_id'
+      '}',
+      deviceId.toString(),
+    );
     final _options = Options(
       method: r'DELETE',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
+      headers: <String, dynamic>{...?headers},
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
@@ -59,17 +61,20 @@ class NetworkInformationApi {
             'name': 'x_header_sid',
             'keyName': 'X-FTL-SID',
             'where': 'header',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'query_sid',
             'keyName': 'sid',
             'where': 'query',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'cookie_sid',
             'keyName': 'sid',
             'where': '',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'header_sid',
             'keyName': 'sid',
@@ -93,7 +98,7 @@ class NetworkInformationApi {
   }
 
   /// Get info about the gateway of your Pi-hole
-  /// This API hook returns infos about the gateway of your Pi-hole.  If the optional parameter &#x60;detailed&#x60; is set to &#x60;true&#x60;, the response will include detailed information about the individual interfaces and routes. Note that the available information is dependent on the interface type and state. 
+  /// This API hook returns infos about the gateway of your Pi-hole.  If the optional parameter &#x60;detailed&#x60; is set to &#x60;true&#x60;, the response will include detailed information about the individual interfaces and routes. Note that the available information is dependent on the interface type and state.
   ///
   /// Parameters:
   /// * [detailed] - (Optional) Detailed interface/routing information
@@ -106,7 +111,7 @@ class NetworkInformationApi {
   ///
   /// Returns a [Future] containing a [Response] with a [GetGateway200Response] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<GetGateway200Response>> getGateway({ 
+  Future<Response<GetGateway200Response>> getGateway({
     bool? detailed,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -118,9 +123,7 @@ class NetworkInformationApi {
     final _path = r'/network/gateway';
     final _options = Options(
       method: r'GET',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
+      headers: <String, dynamic>{...?headers},
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
@@ -128,17 +131,20 @@ class NetworkInformationApi {
             'name': 'x_header_sid',
             'keyName': 'X-FTL-SID',
             'where': 'header',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'query_sid',
             'keyName': 'sid',
             'where': 'query',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'cookie_sid',
             'keyName': 'sid',
             'where': '',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'header_sid',
             'keyName': 'sid',
@@ -166,9 +172,14 @@ class NetworkInformationApi {
     GetGateway200Response? _responseData;
 
     try {
-final rawData = _response.data;
-_responseData = rawData == null ? null : deserialize<GetGateway200Response, GetGateway200Response>(rawData, 'GetGateway200Response', growable: true);
-
+      final rawData = _response.data;
+      _responseData = rawData == null
+          ? null
+          : deserialize<GetGateway200Response, GetGateway200Response>(
+              rawData,
+              'GetGateway200Response',
+              growable: true,
+            );
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -192,7 +203,7 @@ _responseData = rawData == null ? null : deserialize<GetGateway200Response, GetG
   }
 
   /// Get info about the interfaces of your Pi-hole
-  /// This API hook returns infos about the networking interfaces of your Pi-hole. Note that not all described fields are applicable to any routing type. Users must not rely on the presence of any field without checking the route type first.  If the optional parameter &#x60;detailed&#x60; is set to &#x60;true&#x60;, the response will include more detailed information about the individual interfaces where the available information is dependent on the interface type and state. 
+  /// This API hook returns infos about the networking interfaces of your Pi-hole. Note that not all described fields are applicable to any routing type. Users must not rely on the presence of any field without checking the route type first.  If the optional parameter &#x60;detailed&#x60; is set to &#x60;true&#x60;, the response will include more detailed information about the individual interfaces where the available information is dependent on the interface type and state.
   ///
   /// Parameters:
   /// * [detailed] - (Optional) Detailed interface/routing information
@@ -205,7 +216,7 @@ _responseData = rawData == null ? null : deserialize<GetGateway200Response, GetG
   ///
   /// Returns a [Future] containing a [Response] with a [GetInterfaces200Response] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<GetInterfaces200Response>> getInterfaces({ 
+  Future<Response<GetInterfaces200Response>> getInterfaces({
     bool? detailed,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -217,9 +228,7 @@ _responseData = rawData == null ? null : deserialize<GetGateway200Response, GetG
     final _path = r'/network/interfaces';
     final _options = Options(
       method: r'GET',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
+      headers: <String, dynamic>{...?headers},
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
@@ -227,17 +236,20 @@ _responseData = rawData == null ? null : deserialize<GetGateway200Response, GetG
             'name': 'x_header_sid',
             'keyName': 'X-FTL-SID',
             'where': 'header',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'query_sid',
             'keyName': 'sid',
             'where': 'query',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'cookie_sid',
             'keyName': 'sid',
             'where': '',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'header_sid',
             'keyName': 'sid',
@@ -265,9 +277,14 @@ _responseData = rawData == null ? null : deserialize<GetGateway200Response, GetG
     GetInterfaces200Response? _responseData;
 
     try {
-final rawData = _response.data;
-_responseData = rawData == null ? null : deserialize<GetInterfaces200Response, GetInterfaces200Response>(rawData, 'GetInterfaces200Response', growable: true);
-
+      final rawData = _response.data;
+      _responseData = rawData == null
+          ? null
+          : deserialize<GetInterfaces200Response, GetInterfaces200Response>(
+              rawData,
+              'GetInterfaces200Response',
+              growable: true,
+            );
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -291,7 +308,7 @@ _responseData = rawData == null ? null : deserialize<GetInterfaces200Response, G
   }
 
   /// Get info about the devices in your local network as seen by your Pi-hole
-  /// This API hook returns infos about the devices in your local network as seen by your Pi-hole. By default, this number of shown devices is limited to 10. Devices are ordered by when your Pi-hole has received the last query from this device (most recent first) 
+  /// This API hook returns infos about the devices in your local network as seen by your Pi-hole. By default, this number of shown devices is limited to 10. Devices are ordered by when your Pi-hole has received the last query from this device (most recent first)
   ///
   /// Parameters:
   /// * [maxDevices] - (Optional) Maximum number of devices to show
@@ -305,7 +322,7 @@ _responseData = rawData == null ? null : deserialize<GetInterfaces200Response, G
   ///
   /// Returns a [Future] containing a [Response] with a [GetNetwork200Response] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<GetNetwork200Response>> getNetwork({ 
+  Future<Response<GetNetwork200Response>> getNetwork({
     int? maxDevices,
     int? maxAddresses,
     CancelToken? cancelToken,
@@ -318,9 +335,7 @@ _responseData = rawData == null ? null : deserialize<GetInterfaces200Response, G
     final _path = r'/network/devices';
     final _options = Options(
       method: r'GET',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
+      headers: <String, dynamic>{...?headers},
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
@@ -328,17 +343,20 @@ _responseData = rawData == null ? null : deserialize<GetInterfaces200Response, G
             'name': 'x_header_sid',
             'keyName': 'X-FTL-SID',
             'where': 'header',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'query_sid',
             'keyName': 'sid',
             'where': 'query',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'cookie_sid',
             'keyName': 'sid',
             'where': '',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'header_sid',
             'keyName': 'sid',
@@ -367,9 +385,14 @@ _responseData = rawData == null ? null : deserialize<GetInterfaces200Response, G
     GetNetwork200Response? _responseData;
 
     try {
-final rawData = _response.data;
-_responseData = rawData == null ? null : deserialize<GetNetwork200Response, GetNetwork200Response>(rawData, 'GetNetwork200Response', growable: true);
-
+      final rawData = _response.data;
+      _responseData = rawData == null
+          ? null
+          : deserialize<GetNetwork200Response, GetNetwork200Response>(
+              rawData,
+              'GetNetwork200Response',
+              growable: true,
+            );
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -393,7 +416,7 @@ _responseData = rawData == null ? null : deserialize<GetNetwork200Response, GetN
   }
 
   /// Get info about the routes of your Pi-hole
-  /// This API hook returns infos about the networking routes of your Pi-hole. Note that not all described fields are applicable to any routing type. Users must not rely on the presence of any field without checking the route type first.  If the optional parameter &#x60;detailed&#x60; is set to &#x60;true&#x60;, the response will include more detailed information about the individual routes where the available information is dependent on the route type and state. 
+  /// This API hook returns infos about the networking routes of your Pi-hole. Note that not all described fields are applicable to any routing type. Users must not rely on the presence of any field without checking the route type first.  If the optional parameter &#x60;detailed&#x60; is set to &#x60;true&#x60;, the response will include more detailed information about the individual routes where the available information is dependent on the route type and state.
   ///
   /// Parameters:
   /// * [detailed] - (Optional) Detailed interface/routing information
@@ -406,7 +429,7 @@ _responseData = rawData == null ? null : deserialize<GetNetwork200Response, GetN
   ///
   /// Returns a [Future] containing a [Response] with a [GetRoutes200Response] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<GetRoutes200Response>> getRoutes({ 
+  Future<Response<GetRoutes200Response>> getRoutes({
     bool? detailed,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -418,9 +441,7 @@ _responseData = rawData == null ? null : deserialize<GetNetwork200Response, GetN
     final _path = r'/network/routes';
     final _options = Options(
       method: r'GET',
-      headers: <String, dynamic>{
-        ...?headers,
-      },
+      headers: <String, dynamic>{...?headers},
       extra: <String, dynamic>{
         'secure': <Map<String, String>>[
           {
@@ -428,17 +449,20 @@ _responseData = rawData == null ? null : deserialize<GetNetwork200Response, GetN
             'name': 'x_header_sid',
             'keyName': 'X-FTL-SID',
             'where': 'header',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'query_sid',
             'keyName': 'sid',
             'where': 'query',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'cookie_sid',
             'keyName': 'sid',
             'where': '',
-          },{
+          },
+          {
             'type': 'apiKey',
             'name': 'header_sid',
             'keyName': 'sid',
@@ -466,9 +490,14 @@ _responseData = rawData == null ? null : deserialize<GetNetwork200Response, GetN
     GetRoutes200Response? _responseData;
 
     try {
-final rawData = _response.data;
-_responseData = rawData == null ? null : deserialize<GetRoutes200Response, GetRoutes200Response>(rawData, 'GetRoutes200Response', growable: true);
-
+      final rawData = _response.data;
+      _responseData = rawData == null
+          ? null
+          : deserialize<GetRoutes200Response, GetRoutes200Response>(
+              rawData,
+              'GetRoutes200Response',
+              growable: true,
+            );
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -490,5 +519,4 @@ _responseData = rawData == null ? null : deserialize<GetRoutes200Response, GetRo
       extra: _response.extra,
     );
   }
-
 }

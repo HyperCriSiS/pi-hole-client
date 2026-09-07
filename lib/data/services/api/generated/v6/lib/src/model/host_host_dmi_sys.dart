@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'host_host_dmi_sys.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,35 +17,22 @@ part 'host_host_dmi_sys.g.dart';
 )
 class HostHostDmiSys {
   /// Returns a new [HostHostDmiSys] instance.
-  HostHostDmiSys({
+  HostHostDmiSys({this.vendor});
 
-     this.vendor,
-  });
-
-      /// System vendor (if available, `null` otherwise)
-  @JsonKey(
-    
-    name: r'vendor',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// System vendor (if available, `null` otherwise)
+  @JsonKey(name: r'vendor', required: false, includeIfNull: false)
   final String? vendor;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is HostHostDmiSys && other.vendor == vendor;
 
+  @override
+  int get hashCode => (vendor == null ? 0 : vendor.hashCode);
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is HostHostDmiSys &&
-      other.vendor == vendor;
-
-    @override
-    int get hashCode =>
-        (vendor == null ? 0 : vendor.hashCode);
-
-  factory HostHostDmiSys.fromJson(Map<String, dynamic> json) => _$HostHostDmiSysFromJson(json);
+  factory HostHostDmiSys.fromJson(Map<String, dynamic> json) =>
+      _$HostHostDmiSysFromJson(json);
 
   Map<String, dynamic> toJson() => _$HostHostDmiSysToJson(this);
 
@@ -54,6 +40,4 @@ class HostHostDmiSys {
   String toString() {
     return toJson().toString();
   }
-
 }
-

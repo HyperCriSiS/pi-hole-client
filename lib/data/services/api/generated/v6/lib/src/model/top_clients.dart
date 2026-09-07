@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'top_clients.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,69 +18,34 @@ part 'top_clients.g.dart';
 )
 class TopClients {
   /// Returns a new [TopClients] instance.
-  TopClients({
+  TopClients({this.clients, this.totalQueries, this.blockedQueries});
 
-     this.clients,
-
-     this.totalQueries,
-
-     this.blockedQueries,
-  });
-
-      /// Array of clients
-  @JsonKey(
-    
-    name: r'clients',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Array of clients
+  @JsonKey(name: r'clients', required: false, includeIfNull: false)
   final List<TopClientsClientsInner>? clients;
 
-
-
-      /// Total number of queries
-  @JsonKey(
-    
-    name: r'total_queries',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Total number of queries
+  @JsonKey(name: r'total_queries', required: false, includeIfNull: false)
   final int? totalQueries;
 
-
-
-      /// Number of blocked queries
-  @JsonKey(
-    
-    name: r'blocked_queries',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Number of blocked queries
+  @JsonKey(name: r'blocked_queries', required: false, includeIfNull: false)
   final int? blockedQueries;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is TopClients &&
+          other.clients == clients &&
+          other.totalQueries == totalQueries &&
+          other.blockedQueries == blockedQueries;
 
+  @override
+  int get hashCode =>
+      clients.hashCode + totalQueries.hashCode + blockedQueries.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is TopClients &&
-      other.clients == clients &&
-      other.totalQueries == totalQueries &&
-      other.blockedQueries == blockedQueries;
-
-    @override
-    int get hashCode =>
-        clients.hashCode +
-        totalQueries.hashCode +
-        blockedQueries.hashCode;
-
-  factory TopClients.fromJson(Map<String, dynamic> json) => _$TopClientsFromJson(json);
+  factory TopClients.fromJson(Map<String, dynamic> json) =>
+      _$TopClientsFromJson(json);
 
   Map<String, dynamic> toJson() => _$TopClientsToJson(this);
 
@@ -89,6 +53,4 @@ class TopClients {
   String toString() {
     return toJson().toString();
   }
-
 }
-

@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'config_config_ntp_sync.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -20,97 +19,52 @@ part 'config_config_ntp_sync.g.dart';
 class ConfigConfigNtpSync {
   /// Returns a new [ConfigConfigNtpSync] instance.
   ConfigConfigNtpSync({
+    this.active,
 
-     this.active,
+    this.server,
 
-     this.server,
+    this.interval,
 
-     this.interval,
+    this.count,
 
-     this.count,
-
-     this.rtc,
+    this.rtc,
   });
 
-  @JsonKey(
-    
-    name: r'active',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'active', required: false, includeIfNull: false)
   final bool? active;
 
-
-
-  @JsonKey(
-    
-    name: r'server',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'server', required: false, includeIfNull: false)
   final String? server;
 
-
-
-  @JsonKey(
-    
-    name: r'interval',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'interval', required: false, includeIfNull: false)
   final int? interval;
 
-
-
-  @JsonKey(
-    
-    name: r'count',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'count', required: false, includeIfNull: false)
   final int? count;
 
-
-
-  @JsonKey(
-    
-    name: r'rtc',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'rtc', required: false, includeIfNull: false)
   final ConfigConfigNtpSyncRtc? rtc;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ConfigConfigNtpSync &&
+          other.active == active &&
+          other.server == server &&
+          other.interval == interval &&
+          other.count == count &&
+          other.rtc == rtc;
 
+  @override
+  int get hashCode =>
+      active.hashCode +
+      server.hashCode +
+      interval.hashCode +
+      count.hashCode +
+      rtc.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is ConfigConfigNtpSync &&
-      other.active == active &&
-      other.server == server &&
-      other.interval == interval &&
-      other.count == count &&
-      other.rtc == rtc;
-
-    @override
-    int get hashCode =>
-        active.hashCode +
-        server.hashCode +
-        interval.hashCode +
-        count.hashCode +
-        rtc.hashCode;
-
-  factory ConfigConfigNtpSync.fromJson(Map<String, dynamic> json) => _$ConfigConfigNtpSyncFromJson(json);
+  factory ConfigConfigNtpSync.fromJson(Map<String, dynamic> json) =>
+      _$ConfigConfigNtpSyncFromJson(json);
 
   Map<String, dynamic> toJson() => _$ConfigConfigNtpSyncToJson(this);
 
@@ -118,6 +72,4 @@ class ConfigConfigNtpSync {
   String toString() {
     return toJson().toString();
   }
-
 }
-

@@ -12,7 +12,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'host_host_dmi.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -22,82 +21,35 @@ part 'host_host_dmi.g.dart';
 )
 class HostHostDmi {
   /// Returns a new [HostHostDmi] instance.
-  HostHostDmi({
+  HostHostDmi({this.bios, this.board, this.product, this.sys});
 
-     this.bios,
-
-     this.board,
-
-     this.product,
-
-     this.sys,
-  });
-
-  @JsonKey(
-    
-    name: r'bios',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'bios', required: false, includeIfNull: false)
   final HostHostDmiBios? bios;
 
-
-
-  @JsonKey(
-    
-    name: r'board',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'board', required: false, includeIfNull: false)
   final HostHostDmiBoard? board;
 
-
-
-  @JsonKey(
-    
-    name: r'product',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'product', required: false, includeIfNull: false)
   final HostHostDmiProduct? product;
 
-
-
-  @JsonKey(
-    
-    name: r'sys',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'sys', required: false, includeIfNull: false)
   final HostHostDmiSys? sys;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is HostHostDmi &&
+          other.bios == bios &&
+          other.board == board &&
+          other.product == product &&
+          other.sys == sys;
 
+  @override
+  int get hashCode =>
+      bios.hashCode + board.hashCode + product.hashCode + sys.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is HostHostDmi &&
-      other.bios == bios &&
-      other.board == board &&
-      other.product == product &&
-      other.sys == sys;
-
-    @override
-    int get hashCode =>
-        bios.hashCode +
-        board.hashCode +
-        product.hashCode +
-        sys.hashCode;
-
-  factory HostHostDmi.fromJson(Map<String, dynamic> json) => _$HostHostDmiFromJson(json);
+  factory HostHostDmi.fromJson(Map<String, dynamic> json) =>
+      _$HostHostDmiFromJson(json);
 
   Map<String, dynamic> toJson() => _$HostHostDmiToJson(this);
 
@@ -105,6 +57,4 @@ class HostHostDmi {
   String toString() {
     return toJson().toString();
   }
-
 }
-

@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'schemas_type.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,35 +17,21 @@ part 'schemas_type.g.dart';
 )
 class SchemasType {
   /// Returns a new [SchemasType] instance.
-  SchemasType({
+  SchemasType({this.type});
 
-     this.type,
-  });
-
-      /// Type of list
-  @JsonKey(
-    
-    name: r'type',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Type of list
+  @JsonKey(name: r'type', required: false, includeIfNull: false)
   final SchemasTypeTypeEnum? type;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is SchemasType && other.type == type;
 
+  @override
+  int get hashCode => type.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is SchemasType &&
-      other.type == type;
-
-    @override
-    int get hashCode =>
-        type.hashCode;
-
-  factory SchemasType.fromJson(Map<String, dynamic> json) => _$SchemasTypeFromJson(json);
+  factory SchemasType.fromJson(Map<String, dynamic> json) =>
+      _$SchemasTypeFromJson(json);
 
   Map<String, dynamic> toJson() => _$SchemasTypeToJson(this);
 
@@ -54,24 +39,22 @@ class SchemasType {
   String toString() {
     return toJson().toString();
   }
-
 }
 
 /// Type of list
 enum SchemasTypeTypeEnum {
-    /// Type of list
-@JsonValue(r'allow')
-allow(r'allow'),
-    /// Type of list
-@JsonValue(r'block')
-block(r'block');
+  /// Type of list
+  @JsonValue(r'allow')
+  allow(r'allow'),
 
-const SchemasTypeTypeEnum(this.value);
+  /// Type of list
+  @JsonValue(r'block')
+  block(r'block');
 
-final String value;
+  const SchemasTypeTypeEnum(this.value);
 
-@override
-String toString() => value;
+  final String value;
+
+  @override
+  String toString() => value;
 }
-
-

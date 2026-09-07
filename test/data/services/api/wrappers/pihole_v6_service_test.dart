@@ -404,18 +404,18 @@ void main() {
       test('returns Success with all groups', () async {
         final mockResponse = GetGroups200Response();
         when(
-          mockGroupApi.getAllGroups(),
+          mockGroupApi.listGroups(),
         ).thenAnswer((_) async => dioResponse(mockResponse));
 
         final result = await service.getAllGroups();
 
         expect(result.isSuccess(), true);
         expect(result.getOrNull(), mockResponse);
-        verify(mockGroupApi.getAllGroups()).called(1);
+        verify(mockGroupApi.listGroups()).called(1);
       });
 
       test('returns Failure on DioException', () async {
-        when(mockGroupApi.getAllGroups()).thenThrow(dioError());
+        when(mockGroupApi.listGroups()).thenThrow(dioError());
 
         final result = await service.getAllGroups();
 
@@ -444,7 +444,7 @@ void main() {
       test('returns Success with created group', () async {
         final mockResponse = ReplaceGroup200Response();
         when(
-          mockGroupApi.addGroup(groupsPost: anyNamed('groupsPost')),
+          mockGroupApi.addGroup(post2: anyNamed('post2')),
         ).thenAnswer((_) async => dioResponse(mockResponse));
 
         final result = await service.addGroup();
@@ -459,7 +459,7 @@ void main() {
         when(
           mockGroupApi.replaceGroup(
             name: anyNamed('name'),
-            groupsPut: anyNamed('groupsPut'),
+            put2: anyNamed('put2'),
           ),
         ).thenAnswer((_) async => dioResponse(mockResponse));
 
@@ -467,7 +467,7 @@ void main() {
 
         expect(result.isSuccess(), true);
         verify(
-          mockGroupApi.replaceGroup(name: 'mygroup', groupsPut: null),
+          mockGroupApi.replaceGroup(name: 'mygroup', put2: null),
         ).called(1);
       });
     });
@@ -493,20 +493,20 @@ void main() {
   group('Domains', () {
     group('getAllDomains', () {
       test('returns Success with all domains', () async {
-        final mockResponse = GetDomains200Response();
+        final mockResponse = GetDomain200Response();
         when(
-          mockDomainApi.getAllDomains(),
+          mockDomainApi.getDomains(),
         ).thenAnswer((_) async => dioResponse(mockResponse));
 
         final result = await service.getAllDomains();
 
         expect(result.isSuccess(), true);
         expect(result.getOrNull(), mockResponse);
-        verify(mockDomainApi.getAllDomains()).called(1);
+        verify(mockDomainApi.getDomains()).called(1);
       });
 
       test('returns Failure on DioException', () async {
-        when(mockDomainApi.getAllDomains()).thenThrow(dioError());
+        when(mockDomainApi.getDomains()).thenThrow(dioError());
 
         final result = await service.getAllDomains();
 
@@ -516,9 +516,9 @@ void main() {
 
     group('getDomainsByTypeKind', () {
       test('returns Success with filtered domains', () async {
-        final mockResponse = GetDomains200Response();
+        final mockResponse = GetDomain200Response();
         when(
-          mockDomainApi.getDomainsByTypeKind(
+          mockDomainApi.getTypeKindDomains(
             type: anyNamed('type'),
             kind: anyNamed('kind'),
           ),
@@ -531,16 +531,16 @@ void main() {
 
         expect(result.isSuccess(), true);
         verify(
-          mockDomainApi.getDomainsByTypeKind(type: 'allow', kind: 'exact'),
+          mockDomainApi.getTypeKindDomains(type: 'allow', kind: 'exact'),
         ).called(1);
       });
     });
 
     group('getDomains', () {
       test('returns Success with specific domain', () async {
-        final mockResponse = GetDomains200Response();
+        final mockResponse = GetDomain200Response();
         when(
-          mockDomainApi.getDomains(
+          mockDomainApi.getDomain(
             type: anyNamed('type'),
             kind: anyNamed('kind'),
             domain: anyNamed('domain'),
@@ -555,7 +555,7 @@ void main() {
 
         expect(result.isSuccess(), true);
         verify(
-          mockDomainApi.getDomains(
+          mockDomainApi.getDomain(
             type: 'deny',
             kind: 'regex',
             domain: '.*ads.*',
@@ -633,31 +633,31 @@ void main() {
       test('returns Success with all lists', () async {
         final mockResponse = GetLists200Response();
         when(
-          mockListApi.getAllLists(type: anyNamed('type')),
+          mockListApi.listLists(type: anyNamed('type')),
         ).thenAnswer((_) async => dioResponse(mockResponse));
 
         final result = await service.getAllLists();
 
         expect(result.isSuccess(), true);
         expect(result.getOrNull(), mockResponse);
-        verify(mockListApi.getAllLists(type: null)).called(1);
+        verify(mockListApi.listLists(type: null)).called(1);
       });
 
       test('passes optional type parameter', () async {
         final mockResponse = GetLists200Response();
         when(
-          mockListApi.getAllLists(type: anyNamed('type')),
+          mockListApi.listLists(type: anyNamed('type')),
         ).thenAnswer((_) async => dioResponse(mockResponse));
 
         final result = await service.getAllLists(type: 'block');
 
         expect(result.isSuccess(), true);
-        verify(mockListApi.getAllLists(type: 'block')).called(1);
+        verify(mockListApi.listLists(type: 'block')).called(1);
       });
 
       test('returns Failure on DioException', () async {
         when(
-          mockListApi.getAllLists(type: anyNamed('type')),
+          mockListApi.listLists(type: anyNamed('type')),
         ).thenThrow(dioError());
 
         final result = await service.getAllLists();
@@ -686,10 +686,7 @@ void main() {
       test('returns Success with created list', () async {
         final mockResponse = ReplaceLists200Response();
         when(
-          mockListApi.addList(
-            type: anyNamed('type'),
-            listsPost: anyNamed('listsPost'),
-          ),
+          mockListApi.addList(type: anyNamed('type'), post4: anyNamed('post4')),
         ).thenAnswer((_) async => dioResponse(mockResponse));
 
         final result = await service.addList(type: 'block');
@@ -705,7 +702,7 @@ void main() {
           mockListApi.replaceLists(
             list: anyNamed('list'),
             type: anyNamed('type'),
-            listsPut: anyNamed('listsPut'),
+            put4: anyNamed('put4'),
           ),
         ).thenAnswer((_) async => dioResponse(mockResponse));
 
@@ -774,18 +771,18 @@ void main() {
       test('returns Success with all clients', () async {
         final mockResponse = GetClients200Response();
         when(
-          mockClientApi.getAllClients(),
+          mockClientApi.listClients(),
         ).thenAnswer((_) async => dioResponse(mockResponse));
 
         final result = await service.getAllClients();
 
         expect(result.isSuccess(), true);
         expect(result.getOrNull(), mockResponse);
-        verify(mockClientApi.getAllClients()).called(1);
+        verify(mockClientApi.listClients()).called(1);
       });
 
       test('returns Failure on DioException', () async {
-        when(mockClientApi.getAllClients()).thenThrow(dioError());
+        when(mockClientApi.listClients()).thenThrow(dioError());
 
         final result = await service.getAllClients();
 

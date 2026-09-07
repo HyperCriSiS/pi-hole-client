@@ -10,7 +10,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'database_owner.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -20,50 +19,24 @@ part 'database_owner.g.dart';
 )
 class DatabaseOwner {
   /// Returns a new [DatabaseOwner] instance.
-  DatabaseOwner({
+  DatabaseOwner({this.user, this.group});
 
-     this.user,
-
-     this.group,
-  });
-
-  @JsonKey(
-    
-    name: r'user',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'user', required: false, includeIfNull: false)
   final DatabaseOwnerUser? user;
 
-
-
-  @JsonKey(
-    
-    name: r'group',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'group', required: false, includeIfNull: false)
   final DatabaseOwnerGroup? group;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is DatabaseOwner && other.user == user && other.group == group;
 
+  @override
+  int get hashCode => user.hashCode + group.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is DatabaseOwner &&
-      other.user == user &&
-      other.group == group;
-
-    @override
-    int get hashCode =>
-        user.hashCode +
-        group.hashCode;
-
-  factory DatabaseOwner.fromJson(Map<String, dynamic> json) => _$DatabaseOwnerFromJson(json);
+  factory DatabaseOwner.fromJson(Map<String, dynamic> json) =>
+      _$DatabaseOwnerFromJson(json);
 
   Map<String, dynamic> toJson() => _$DatabaseOwnerToJson(this);
 
@@ -71,6 +44,4 @@ class DatabaseOwner {
   String toString() {
     return toJson().toString();
   }
-
 }
-

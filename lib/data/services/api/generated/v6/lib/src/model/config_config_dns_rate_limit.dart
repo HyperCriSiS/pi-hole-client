@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'config_config_dns_rate_limit.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,50 +17,26 @@ part 'config_config_dns_rate_limit.g.dart';
 )
 class ConfigConfigDnsRateLimit {
   /// Returns a new [ConfigConfigDnsRateLimit] instance.
-  ConfigConfigDnsRateLimit({
+  ConfigConfigDnsRateLimit({this.count, this.interval});
 
-     this.count,
-
-     this.interval,
-  });
-
-  @JsonKey(
-    
-    name: r'count',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'count', required: false, includeIfNull: false)
   final int? count;
 
-
-
-  @JsonKey(
-    
-    name: r'interval',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'interval', required: false, includeIfNull: false)
   final int? interval;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ConfigConfigDnsRateLimit &&
+          other.count == count &&
+          other.interval == interval;
 
+  @override
+  int get hashCode => count.hashCode + interval.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is ConfigConfigDnsRateLimit &&
-      other.count == count &&
-      other.interval == interval;
-
-    @override
-    int get hashCode =>
-        count.hashCode +
-        interval.hashCode;
-
-  factory ConfigConfigDnsRateLimit.fromJson(Map<String, dynamic> json) => _$ConfigConfigDnsRateLimitFromJson(json);
+  factory ConfigConfigDnsRateLimit.fromJson(Map<String, dynamic> json) =>
+      _$ConfigConfigDnsRateLimitFromJson(json);
 
   Map<String, dynamic> toJson() => _$ConfigConfigDnsRateLimitToJson(this);
 
@@ -69,6 +44,4 @@ class ConfigConfigDnsRateLimit {
   String toString() {
     return toJson().toString();
   }
-
 }
-

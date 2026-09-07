@@ -9,7 +9,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'get_config200_response.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,51 +18,27 @@ part 'get_config200_response.g.dart';
 )
 class GetConfig200Response {
   /// Returns a new [GetConfig200Response] instance.
-  GetConfig200Response({
+  GetConfig200Response({this.config, this.took});
 
-     this.config,
-
-     this.took,
-  });
-
-  @JsonKey(
-    
-    name: r'config',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  @JsonKey(name: r'config', required: false, includeIfNull: false)
   final ConfigConfig? config;
 
-
-
-      /// Time in seconds it took to process the request
-  @JsonKey(
-    
-    name: r'took',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Time in seconds it took to process the request
+  @JsonKey(name: r'took', required: false, includeIfNull: false)
   final num? took;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is GetConfig200Response &&
+          other.config == config &&
+          other.took == took;
 
+  @override
+  int get hashCode => config.hashCode + took.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is GetConfig200Response &&
-      other.config == config &&
-      other.took == took;
-
-    @override
-    int get hashCode =>
-        config.hashCode +
-        took.hashCode;
-
-  factory GetConfig200Response.fromJson(Map<String, dynamic> json) => _$GetConfig200ResponseFromJson(json);
+  factory GetConfig200Response.fromJson(Map<String, dynamic> json) =>
+      _$GetConfig200ResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$GetConfig200ResponseToJson(this);
 
@@ -71,6 +46,4 @@ class GetConfig200Response {
   String toString() {
     return toJson().toString();
   }
-
 }
-

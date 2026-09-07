@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'leases_leases_inner.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -19,102 +18,57 @@ part 'leases_leases_inner.g.dart';
 class LeasesLeasesInner {
   /// Returns a new [LeasesLeasesInner] instance.
   LeasesLeasesInner({
+    this.expires,
 
-     this.expires,
+    this.name,
 
-     this.name,
+    this.hwaddr,
 
-     this.hwaddr,
+    this.ip,
 
-     this.ip,
-
-     this.clientid,
+    this.clientid,
   });
 
-      /// Expiration time (0 = infinite lease, never expires)
-  @JsonKey(
-    
-    name: r'expires',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Expiration time (0 = infinite lease, never expires)
+  @JsonKey(name: r'expires', required: false, includeIfNull: false)
   final int? expires;
 
-
-
-      /// Hostname
-  @JsonKey(
-    
-    name: r'name',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Hostname
+  @JsonKey(name: r'name', required: false, includeIfNull: false)
   final String? name;
 
-
-
-      /// Hardware (MAC) address
-  @JsonKey(
-    
-    name: r'hwaddr',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Hardware (MAC) address
+  @JsonKey(name: r'hwaddr', required: false, includeIfNull: false)
   final String? hwaddr;
 
-
-
-      /// IP address
-  @JsonKey(
-    
-    name: r'ip',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// IP address
+  @JsonKey(name: r'ip', required: false, includeIfNull: false)
   final String? ip;
 
-
-
-      /// Client ID
-  @JsonKey(
-    
-    name: r'clientid',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Client ID
+  @JsonKey(name: r'clientid', required: false, includeIfNull: false)
   final String? clientid;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is LeasesLeasesInner &&
+          other.expires == expires &&
+          other.name == name &&
+          other.hwaddr == hwaddr &&
+          other.ip == ip &&
+          other.clientid == clientid;
 
+  @override
+  int get hashCode =>
+      expires.hashCode +
+      name.hashCode +
+      hwaddr.hashCode +
+      ip.hashCode +
+      clientid.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is LeasesLeasesInner &&
-      other.expires == expires &&
-      other.name == name &&
-      other.hwaddr == hwaddr &&
-      other.ip == ip &&
-      other.clientid == clientid;
-
-    @override
-    int get hashCode =>
-        expires.hashCode +
-        name.hashCode +
-        hwaddr.hashCode +
-        ip.hashCode +
-        clientid.hashCode;
-
-  factory LeasesLeasesInner.fromJson(Map<String, dynamic> json) => _$LeasesLeasesInnerFromJson(json);
+  factory LeasesLeasesInner.fromJson(Map<String, dynamic> json) =>
+      _$LeasesLeasesInnerFromJson(json);
 
   Map<String, dynamic> toJson() => _$LeasesLeasesInnerToJson(this);
 
@@ -122,6 +76,4 @@ class LeasesLeasesInner {
   String toString() {
     return toJson().toString();
   }
-
 }
-

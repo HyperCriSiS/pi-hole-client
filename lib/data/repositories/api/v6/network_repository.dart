@@ -1,5 +1,6 @@
 import 'package:pi_hole_client/data/mapper/v6/network_mapper.dart';
-import 'package:pi_hole_client/data/model/v6/network/devices.dart' as legacy_devices;
+import 'package:pi_hole_client/data/model/v6/network/devices.dart'
+    as legacy_devices;
 import 'package:pi_hole_client/data/repositories/api/interfaces/network_repository.dart';
 import 'package:pi_hole_client/data/repositories/api/v6/base_v6_sid_repository.dart';
 import 'package:pi_hole_client/data/repositories/utils/call_with_retry.dart';

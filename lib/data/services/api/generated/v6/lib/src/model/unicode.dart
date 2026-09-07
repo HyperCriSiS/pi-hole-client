@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'unicode.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,35 +17,21 @@ part 'unicode.g.dart';
 )
 class Unicode {
   /// Returns a new [Unicode] instance.
-  Unicode({
+  Unicode({this.unicode});
 
-     this.unicode,
-  });
-
-      /// Unicode domain (may be different from `domain` if punycode-encoding is used)
-  @JsonKey(
-    
-    name: r'unicode',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// Unicode domain (may be different from `domain` if punycode-encoding is used)
+  @JsonKey(name: r'unicode', required: false, includeIfNull: false)
   final String? unicode;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is Unicode && other.unicode == unicode;
 
+  @override
+  int get hashCode => unicode.hashCode;
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is Unicode &&
-      other.unicode == unicode;
-
-    @override
-    int get hashCode =>
-        unicode.hashCode;
-
-  factory Unicode.fromJson(Map<String, dynamic> json) => _$UnicodeFromJson(json);
+  factory Unicode.fromJson(Map<String, dynamic> json) =>
+      _$UnicodeFromJson(json);
 
   Map<String, dynamic> toJson() => _$UnicodeToJson(this);
 
@@ -54,6 +39,4 @@ class Unicode {
   String toString() {
     return toJson().toString();
   }
-
 }
-

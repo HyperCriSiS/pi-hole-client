@@ -8,7 +8,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'schemas_comment.g.dart';
 
-
 @CopyWith()
 @JsonSerializable(
   checked: true,
@@ -18,35 +17,22 @@ part 'schemas_comment.g.dart';
 )
 class SchemasComment {
   /// Returns a new [SchemasComment] instance.
-  SchemasComment({
+  SchemasComment({this.comment});
 
-     this.comment,
-  });
-
-      /// User-provided free-text comment for this group
-  @JsonKey(
-    
-    name: r'comment',
-    required: false,
-    includeIfNull: false,
-  )
-
-
+  /// User-provided free-text comment for this group
+  @JsonKey(name: r'comment', required: false, includeIfNull: false)
   final String? comment;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SchemasComment && other.comment == comment;
 
+  @override
+  int get hashCode => (comment == null ? 0 : comment.hashCode);
 
-
-
-    @override
-    bool operator ==(Object other) => identical(this, other) || other is SchemasComment &&
-      other.comment == comment;
-
-    @override
-    int get hashCode =>
-        (comment == null ? 0 : comment.hashCode);
-
-  factory SchemasComment.fromJson(Map<String, dynamic> json) => _$SchemasCommentFromJson(json);
+  factory SchemasComment.fromJson(Map<String, dynamic> json) =>
+      _$SchemasCommentFromJson(json);
 
   Map<String, dynamic> toJson() => _$SchemasCommentToJson(this);
 
@@ -54,6 +40,4 @@ class SchemasComment {
   String toString() {
     return toJson().toString();
   }
-
 }
-
