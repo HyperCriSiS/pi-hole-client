@@ -7,6 +7,7 @@ class V6QueryFilter {
   const V6QueryFilter({
     this.domain,
     this.clientIp,
+    this.clientName,
     this.status,
     this.type,
     this.reply,
@@ -17,6 +18,9 @@ class V6QueryFilter {
 
   /// Exact client IP filter accepted by Pi-hole FTL as `client_ip`.
   final String? clientIp;
+
+  /// Exact client hostname filter accepted by Pi-hole FTL as `client_name`.
+  final String? clientName;
 
   /// Pi-hole v6 query status name, for example `GRAVITY` or `FORWARDED`.
   final String? status;
@@ -43,6 +47,7 @@ class V6QueryFilter {
 
     add('domain', domain);
     add('client_ip', clientIp);
+    add('client_name', clientName);
     add('status', status);
     add('type', type);
     add('reply', reply);
