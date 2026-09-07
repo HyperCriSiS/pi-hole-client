@@ -1,0 +1,59 @@
+name: Repair identity audit docs
+
+on:
+  push:
+    branches:
+      - roadmap/fdroid-identity-audit
+    paths:
+      - '.github/workflows/tmp-repair-identity-docs.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Restore docs from main and apply minimal identity-audit updates
+        run: |
+          git fetch origin main
+          git checkout origin/main -- ROADMAP.md UPSTREAM_TRIAGE.md
+          python - <<'PY'
+          from pathlib import Path
+
+          roadmap = Path('ROADMAP.md')
+          text = roadmap.read_text()
+          old = "  - [ ] Resolve package identity before an independent fork submission: this maintenance fork currently retains `io.github.tsutsu3.pi_hole_client`; F-Droid policy requires a fork to use a fresh Android Application ID plus corresponding name, icon and translated string changes. The rename affects Gradle namespace/applicationId, the Kotlin package tree (main/debug/release/tests/widgets) and release metadata, so it must be handled as a dedicated migration.\n"
+          new = "  - [x] Inventory and guard the Android package-identity migration surface without choosing branding prematurely: add a parameterized audit covering Gradle namespace/applicationId, Kotlin package/path parity across main/debug/release/tests, manifest widget-action prefixes, Android display strings, launcher assets, and the Google Play packageName. Wire the current-identity audit into the existing unsigned Android PR build so future rename work fails fast on mixed/stale identity state.\n  - [ ] Resolve package identity before an independent fork submission: this maintenance fork currently retains `io.github.tsutsu3.pi_hole_client`; F-Droid policy requires a fork to use a fresh Android Application ID plus corresponding name, icon and translated string changes. Use the committed identity audit during the dedicated rename, record the legacy ID as forbidden afterward, then perform the lightweight namespace collision scan before downstream metadata changes.\n"
+          assert old in text
+          text = text.replace(old, new, 1)
+          old = "- #134 scanner compliance is resolved: Android no longer uses `mobile_scanner`/Google ML Kit. The source-build path is also isolated from private signing material and from `sqlite3` precompiled-binary downloads and is CI-validated, including an `apksigner` check that the produced release APK is unsigned. A separate F-Droid publication of this maintenance fork still requires a fresh application ID plus corresponding name/icon/string changes before downstream metadata submission."
+          new = "- #134 scanner compliance is resolved: Android no longer uses `mobile_scanner`/Google ML Kit. The source-build path is also isolated from private signing material and from `sqlite3` precompiled-binary downloads and is CI-validated, including an `apksigner` check that the produced release APK is unsigned. The package-identity migration surface is now inventoried and guarded in the unsigned Android PR build; a separate F-Droid publication still requires choosing and applying a fresh application ID plus corresponding name/icon/string changes before downstream metadata submission."
+          assert old in text
+          text = text.replace(old, new, 1)
+          old = "**Not fully completed.** #442 remains blocked on a fresh Android 16 reproduction/current stack. #570 is implemented and CI-validated through the v6 repository and Local DNS UI layers. #134 remains the active distribution gate: secret-free unsigned packaging, Android scanner compliance and the download-free native-asset path are implemented and CI-validated; the required independent-fork package identity remains before downstream F-Droid metadata can be submitted. Deterministic #639 generated-client migration now runs on a reproducibly pinned FTL v6.7 OpenAPI baseline; the remaining handwritten migration work is limited to the documented compatibility/schema/behavior/encoding blockers re-audited against v6.7."
+          new = "**Not fully completed.** #442 remains blocked on a fresh Android 16 reproduction/current stack. #570 is implemented and CI-validated through the v6 repository and Local DNS UI layers. #134 remains the active distribution gate: secret-free unsigned packaging, Android scanner compliance and the download-free native-asset path are implemented and CI-validated, and the package-identity rename surface is now mechanically audited; the actual independent-fork application ID/name/icon decision and migration remain before downstream F-Droid metadata can be submitted. Deterministic #639 generated-client migration now runs on a reproducibly pinned FTL v6.7 OpenAPI baseline; the remaining handwritten migration work is limited to the documented compatibility/schema/behavior/encoding blockers re-audited against v6.7."
+          assert old in text
+          roadmap.write_text(text.replace(old, new, 1))
+
+          triage = Path('UPSTREAM_TRIAGE.md')
+          text = triage.read_text()
+          old = "| #134 | F-Droid | **In progress in `main`.** Secret-free unsigned Android packaging is isolated from private release signing. `mobile_scanner`/Google ML Kit has been removed and replaced by `camera` + pure-Dart `zxing2`; the F-Droid source-build checkout also switches `sqlite3` to Android system SQLite so it does not fetch a precompiled native library during the build. The download-free unsigned build and `apksigner` unsigned-artifact verification are CI-validated on `3d3e3d74`. F-Droid policy requires this fork to use a fresh Android ID plus corresponding name/icon/string changes for an independent submission, so package identity remains the final product-level gate before downstream `fdroiddata` metadata. |"
+          new = "| #134 | F-Droid | **In progress in `main`.** Secret-free unsigned Android packaging is isolated from private release signing. `mobile_scanner`/Google ML Kit has been removed and replaced by `camera` + pure-Dart `zxing2`; the F-Droid source-build checkout also switches `sqlite3` to Android system SQLite so it does not fetch a precompiled native library during the build. The download-free unsigned build and `apksigner` unsigned-artifact verification are CI-validated on `3d3e3d74`. The Android identity migration surface is now inventoried and guarded in the existing unsigned PR build (Gradle ID/namespace, Kotlin package paths, widget actions, display strings/assets, and release metadata). F-Droid policy still requires choosing and applying a fresh Android ID plus corresponding name/icon/string changes for an independent submission, so the actual package identity remains the final product-level gate before downstream `fdroiddata` metadata. |"
+          assert old in text
+          triage.write_text(text.replace(old, new, 1))
+          PY
+
+      - name: Verify minimal diff and commit
+        run: |
+          git diff --stat origin/main -- ROADMAP.md UPSTREAM_TRIAGE.md
+          git diff --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add ROADMAP.md UPSTREAM_TRIAGE.md
+          git commit -m 'docs: record Android identity audit preparation'
+          git push origin HEAD:roadmap/fdroid-identity-audit
