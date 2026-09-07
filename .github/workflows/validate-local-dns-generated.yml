@@ -34,7 +34,7 @@ jobs:
           cp .env.sample .env
           dart run tools/generate_git_commit.dart
 
-      - name: Repair duplicate test argument and format targets
+      - name: Repair duplicate test argument if needed and format targets
         run: |
           python3 - <<'PY'
           from pathlib import Path
@@ -42,9 +42,11 @@ jobs:
           text = path.read_text()
           needle = """      final result = await repository.addRecord(\n        ip: '192.168.1.100',\n        ip: '192.168.1.100',\n"""
           replacement = """      final result = await repository.addRecord(\n        ip: '192.168.1.100',\n"""
-          if text.count(needle) != 1:
-              raise SystemExit(f'Expected duplicate-ip anchor once, found {text.count(needle)}')
-          path.write_text(text.replace(needle, replacement))
+          count = text.count(needle)
+          if count == 1:
+              path.write_text(text.replace(needle, replacement))
+          elif count != 0:
+              raise SystemExit(f'Ambiguous duplicate-ip anchor count: {count}')
           PY
           dart format \
             test/data/repositories/api/v6/local_dns_repository_test.dart \
