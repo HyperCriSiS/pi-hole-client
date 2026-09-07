@@ -1,0 +1,71 @@
+name: Patch v6 client-name roadmap
+
+on:
+  push:
+    branches:
+      - roadmap/v6-client-name-filter
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: roadmap/v6-client-name-filter
+          fetch-depth: 0
+
+      - name: Apply bounded roadmap sync
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path('ROADMAP.md')
+          s = p.read_text()
+          replacements = [
+              (
+                  "  - [x] Model the FTL-supported server-side query filters (`domain`, `client_ip`, `status`, `type`, `reply`) as `V6QueryFilter`, including normalization and empty-value handling.\n",
+                  "  - [x] Model the FTL-supported server-side query filters (`domain`, `client_ip`, `client_name`, `status`, `type`, `reply`) as `V6QueryFilter`, including normalization and empty-value handling.\n",
+              ),
+              (
+                  "  - [x] Push `client_ip` only for exactly one actively selected client whose value is a valid IPv4/IPv6 literal; hostnames, the all-selected state, and multi-client selections remain client-side; focused regression coverage added.\n",
+                  "  - [x] Push exactly one active client selection server-side: valid IPv4/IPv6 literals use `client_ip`, while a hostname uses FTL's exact `client_name` parameter. The all-selected state and multi-client selections remain client-side; focused model/repository/ViewModel regression coverage preserves that boundary.\n",
+              ),
+              (
+                  "- [x] Migrate Local DNS host/CNAME reads and update operations to generated `GET /config` / `PATCH /config`; preserve replacement semantics, untouched entries and CNAME TTLs. Keep add/delete on the handwritten client: the pinned FTL v6.7 schema still does not define slash-containing config element/value path encoding precisely enough to prove generated-path equivalence.\n",
+                  "- [x] Migrate Local DNS host/CNAME reads and update operations to generated `GET /config` / `PATCH /config`; preserve replacement semantics, untouched entries and CNAME TTLs. Keep add/delete on the handwritten client: the pinned FTL v6.7 generator substitutes `{element}`/`{value}` path placeholders as raw strings, while the proven handwritten path uses `Uri.encodeComponent` (for example `dns/hosts` -> `dns%2Fhosts`), so generated add/delete is demonstrably not path-equivalent.\n",
+              ),
+              (
+                  "- [ ] Keep authentication on the handwritten path: pinned FTL v6.7 documents TOTP for two-factor authentication, but generated `POST /auth` still lacks a TOTP request field.\n",
+                  "- [ ] Keep only authentication session creation/renewal `POST /auth` and the unauthenticated capability probe on the handwritten path. Authenticated `GET /auth`, `GET /auth/sessions`, `DELETE /auth` and `DELETE /auth/session/{id}` are generated-client based. Pinned FTL v6.7 still omits TOTP from the generated `POST /auth` request model, and the generated API-key interceptor cannot clear a previously configured SID for the deliberately unauthenticated probe.\n",
+              ),
+              (
+                  "**Not fully completed.** #442 remains blocked on a fresh Android 16 reproduction/current stack. #570 is implemented and CI-validated through the v6 repository and Local DNS UI layers. #134 remains the active distribution gate: secret-free unsigned packaging, Android scanner compliance and the download-free native-asset path are implemented and CI-validated, and the package-identity rename surface is now mechanically audited; the actual independent-fork application ID/name/icon decision and migration remain before downstream F-Droid metadata can be submitted. Deterministic #639 generated-client migration now runs on a reproducibly pinned FTL v6.7 OpenAPI baseline; the remaining handwritten migration work is limited to the documented compatibility/schema/behavior/encoding blockers re-audited against v6.7.\n",
+                  "**Not fully completed.** #442 remains blocked on a fresh Android 16 reproduction/current stack. #570 is implemented and CI-validated through the v6 repository and Local DNS UI layers. #134 remains the active distribution gate: secret-free unsigned packaging, Android scanner compliance and the download-free native-asset path are implemented and CI-validated, and the package-identity rename surface is now mechanically audited; the actual independent-fork application ID/name/icon decision and migration remain before downstream F-Droid metadata can be submitted. Deterministic #639 generated-client migration now runs on a reproducibly pinned FTL v6.7 OpenAPI baseline; authenticated auth/session reads/deletes are generated and the remaining handwritten migration work is limited to documented compatibility/schema/behavior/encoding blockers. #352 now pushes exact domain, single concrete status, one literal client IP, or one hostname (`client_name`) server-side while multi-value/grouped filters remain local.\n",
+              ),
+          ]
+          for old, new in replacements:
+              count = s.count(old)
+              if count != 1:
+                  raise SystemExit(f'roadmap replacement anchor count={count}: {old[:80]!r}')
+              s = s.replace(old, new, 1)
+          p.write_text(s)
+          PY
+
+          git rm .github/workflows/patch-roadmap-v6-client-name.yml
+          git diff --check
+
+      - name: Commit roadmap sync
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'docs: sync v6 client-name roadmap state'
+          git push origin HEAD:roadmap/v6-client-name-filter
