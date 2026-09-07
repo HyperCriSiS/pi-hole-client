@@ -62,6 +62,11 @@ rm -rf .dart_tool build
 dart pub get
 dart run build_runner build --delete-conflicting-outputs
 
+# Keep the committed generated tree deterministic. OpenAPI Generator emits
+# trailing whitespace and extra EOF blank lines that `dart format` removes.
+echo "🧹 Formatting generated Dart sources..."
+dart format lib
+
 echo "🏗️ Running build_runner in project root..."
 cd "$PROJECT_ROOT"
 dart run build_runner build --delete-conflicting-outputs
