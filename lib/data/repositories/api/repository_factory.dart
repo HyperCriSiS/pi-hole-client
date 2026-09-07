@@ -78,7 +78,11 @@ class RepositoryBundleFactory {
             service: generatedService,
             sessionCache: sessionCache,
           ),
-          auth: AuthRepositoryV6(client: client, sessionCache: sessionCache),
+          auth: AuthRepositoryV6(
+            client: client,
+            service: generatedService,
+            sessionCache: sessionCache,
+          ),
           client: ClientRepositoryV6(
             service: generatedService,
             sessionCache: sessionCache,
