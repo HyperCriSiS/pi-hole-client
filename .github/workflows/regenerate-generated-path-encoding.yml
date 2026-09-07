@@ -54,8 +54,13 @@ jobs:
 
       - name: Verify generated path encoding
         run: |
-          python3 tools/openapi/encode_path_parameters.py \
-            lib/data/services/api/generated/v6/lib/src/api
+          encoder_output="$(python3 tools/openapi/encode_path_parameters.py \
+            lib/data/services/api/generated/v6/lib/src/api)"
+          echo "$encoder_output"
+          if [[ "$encoder_output" != Encoded\ 0\ * ]]; then
+            echo 'Path encoder is not idempotent after tools/openapi/generate.sh.' >&2
+            exit 1
+          fi
 
           echo 'Generated working-tree diff:'
           git status --short
