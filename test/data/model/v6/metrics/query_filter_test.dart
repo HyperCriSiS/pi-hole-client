@@ -7,6 +7,7 @@ void main() {
       const filter = V6QueryFilter(
         domain: 'gravity.ftl',
         clientIp: '127.0.0.1',
+        clientName: 'router.lan',
         status: 'GRAVITY',
         type: 'AAAA',
         reply: 'IP',
@@ -15,6 +16,7 @@ void main() {
       expect(filter.toQueryParameters(), {
         'domain': 'gravity.ftl',
         'client_ip': '127.0.0.1',
+        'client_name': 'router.lan',
         'status': 'GRAVITY',
         'type': 'AAAA',
         'reply': 'IP',
@@ -23,7 +25,12 @@ void main() {
     });
 
     test('omits null, empty, and whitespace-only filters', () {
-      const filter = V6QueryFilter(domain: '  ', status: '', clientIp: null);
+      const filter = V6QueryFilter(
+        domain: '  ',
+        status: '',
+        clientIp: null,
+        clientName: ' ',
+      );
 
       expect(filter.toQueryParameters(), isEmpty);
       expect(filter.isEmpty, isTrue);
@@ -33,11 +40,13 @@ void main() {
       const filter = V6QueryFilter(
         domain: ' example.com ',
         clientIp: ' 192.0.2.1 ',
+        clientName: ' router.lan ',
       );
 
       expect(filter.toQueryParameters(), {
         'domain': 'example.com',
         'client_ip': '192.0.2.1',
+        'client_name': 'router.lan',
       });
     });
   });

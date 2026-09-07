@@ -1047,7 +1047,7 @@ void main() {
       vm.dispose();
     });
 
-    test('v6 hostname client retains client-side semantics', () async {
+    test('v6 single hostname client is pushed server-side', () async {
       final vm = _buildVm(
         apiVersion: 'v6',
         overrideFactory: ({required MetricsRepository repository}) => service,
@@ -1057,6 +1057,7 @@ void main() {
       vm.setSelectedClients(['router.lan']);
       await vm.applyFilterAndLoad();
       expect(service.lastFilter?.clientIp, isNull);
+      expect(service.lastFilter?.clientName, 'router.lan');
       vm.dispose();
     });
 
@@ -1070,6 +1071,7 @@ void main() {
       vm.setSelectedClients(['192.168.1.10', '192.168.1.11']);
       await vm.applyFilterAndLoad();
       expect(service.lastFilter?.clientIp, isNull);
+      expect(service.lastFilter?.clientName, isNull);
       vm.dispose();
     });
 
@@ -1083,6 +1085,7 @@ void main() {
       vm.setSelectedClients(['192.168.1.10']);
       await vm.applyFilterAndLoad();
       expect(service.lastFilter?.clientIp, isNull);
+      expect(service.lastFilter?.clientName, isNull);
       vm.dispose();
     });
 

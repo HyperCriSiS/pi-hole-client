@@ -482,6 +482,7 @@ class LogsViewModel extends ChangeNotifier {
     }
 
     String? clientIp;
+    String? clientName;
     final hasActiveClientFilter =
         selectedClients.isNotEmpty &&
         selectedClients.length < totalClients.length;
@@ -489,12 +490,15 @@ class LogsViewModel extends ChangeNotifier {
       final selectedClient = selectedClients.single;
       if (InternetAddress.tryParse(selectedClient) != null) {
         clientIp = selectedClient;
+      } else {
+        clientName = selectedClient;
       }
     }
 
     final filter = V6QueryFilter(
       domain: selectedDomain,
       clientIp: clientIp,
+      clientName: clientName,
       status: status,
     );
     return filter.isEmpty ? null : filter;

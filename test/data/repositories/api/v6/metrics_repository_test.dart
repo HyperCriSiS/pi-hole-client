@@ -270,6 +270,7 @@ void main() {
         filter: const V6QueryFilter(
           domain: ' example.com ',
           clientIp: ' 192.0.2.10 ',
+          clientName: ' router.lan ',
           status: ' FORWARDED ',
           type: ' AAAA ',
           reply: ' IP ',
@@ -279,10 +280,10 @@ void main() {
       expect(result.getOrNull(), kRepoFetchQueries);
       expect(service.lastQueriesDomain, 'example.com');
       expect(service.lastQueriesClientIp, '192.0.2.10');
+      expect(service.lastQueriesClientName, 'router.lan');
       expect(service.lastQueriesStatus, 'FORWARDED');
       expect(service.lastQueriesType, 'AAAA');
       expect(service.lastQueriesReply, 'IP');
-      expect(service.lastQueriesClientName, isNull);
       expect(service.lastQueriesUpstream, isNull);
       expect(service.lastQueriesDnssec, isNull);
     });
@@ -291,12 +292,17 @@ void main() {
       final result = await repository.fetchQueriesFiltered(
         from: DateTime.fromMillisecondsSinceEpoch(1511819900000),
         until: DateTime.fromMillisecondsSinceEpoch(1511820500000),
-        filter: const V6QueryFilter(domain: ' ', clientIp: ''),
+        filter: const V6QueryFilter(
+          domain: ' ',
+          clientIp: '',
+          clientName: '  ',
+        ),
       );
 
       expect(result.getOrNull(), kRepoFetchQueries);
       expect(service.lastQueriesDomain, isNull);
       expect(service.lastQueriesClientIp, isNull);
+      expect(service.lastQueriesClientName, isNull);
     });
 
     test('fails when generated query request fails', () async {

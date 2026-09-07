@@ -98,6 +98,7 @@ class MetricsRepositoryV6 extends BaseV6SidRepository
           start: start,
           domain: filterParameters['domain'],
           clientIp: filterParameters['client_ip'],
+          clientName: filterParameters['client_name'],
           status: filterParameters['status'],
           type: filterParameters['type'],
           reply: filterParameters['reply'],
