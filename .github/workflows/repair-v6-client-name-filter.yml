@@ -1,7 +1,9 @@
 name: Repair v6 client-name filter branch
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - roadmap/v6-client-name-filter
 
 permissions:
   contents: write
