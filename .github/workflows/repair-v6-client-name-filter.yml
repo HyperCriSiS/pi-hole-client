@@ -98,11 +98,6 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add \
-            lib/ui/logs/view_models/logs_viewmodel.dart \
-            test/ui/logs/view_models/logs_viewmodel_test.dart \
-            test/data/model/v6/metrics/query_filter_test.dart \
-            test/data/repositories/api/v6/metrics_repository_test.dart \
-            .github/workflows/repair-v6-client-name-filter.yml
+          git add -A
           git commit -m 'fix: restore and apply v6 client-name filter patch'
           git push origin HEAD:roadmap/v6-client-name-filter
