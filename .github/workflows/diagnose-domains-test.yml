@@ -1,4 +1,4 @@
-name: Diagnose domains test hang
+name: Diagnose generated path encoding test
 
 on:
   push:
@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 jobs:
-  domains-test:
+  path-encoding-test:
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
@@ -32,5 +32,5 @@ jobs:
         run: dart run tools/generate_git_commit.dart
       - name: Generate files
         run: dart run build_runner build --delete-conflicting-outputs
-      - name: Run domains test
-        run: xvfb-run flutter test test/ui/domains/domains_test.dart --reporter expanded
+      - name: Run generated path encoding test
+        run: xvfb-run flutter test test/data/services/api/generated/v6_path_encoding_test.dart --reporter expanded
