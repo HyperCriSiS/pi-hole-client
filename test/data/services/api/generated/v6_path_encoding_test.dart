@@ -22,6 +22,10 @@ void main() {
       );
     });
 
+    tearDown(() {
+      dio.close(force: true);
+    });
+
     test('keeps a full adlist URL inside one generated path segment', () async {
       const address = 'https://example.com/lists/main.txt?source=a#fragment';
 
