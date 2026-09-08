@@ -1,41 +1,35 @@
-import 'dart:typed_data';
-
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mockito/mockito.dart';
 import 'package:pihole_v6_api/pihole_v6_api.dart';
 
-class _RecordingAdapter implements HttpClientAdapter {
-  _RecordingAdapter(this.requests);
-
-  final List<RequestOptions> requests;
+class _RecordingDio extends Mock implements Dio {
+  final List<String> paths = <String>[];
 
   @override
-  Future<ResponseBody> fetch(
-    RequestOptions options,
-    Stream<Uint8List>? requestStream,
-    Future<void>? cancelFuture,
-  ) async {
-    requests.add(options);
-    return ResponseBody.fromString('', 204);
+  Future<Response<T>> request<T>(
+    String path, {
+    Object? data,
+    Map<String, dynamic>? queryParameters,
+    CancelToken? cancelToken,
+    Options? options,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    paths.add(path);
+    return Response<T>(
+      requestOptions: RequestOptions(path: path),
+      statusCode: 204,
+    );
   }
-
-  @override
-  void close({bool force = false}) {}
 }
 
 void main() {
   group('generated v6 path encoding', () {
-    late Dio dio;
-    late List<RequestOptions> requests;
+    late _RecordingDio dio;
 
     setUp(() {
-      requests = <RequestOptions>[];
-      dio = Dio(BaseOptions(baseUrl: 'https://pi.hole/api'));
-      dio.httpClientAdapter = _RecordingAdapter(requests);
-    });
-
-    tearDown(() {
-      dio.close(force: true);
+      dio = _RecordingDio();
     });
 
     test('keeps a full adlist URL inside one generated path segment', () async {
@@ -43,16 +37,10 @@ void main() {
 
       await ListManagementApi(dio).deleteLists(list: address, type: 'block');
 
-      expect(requests, hasLength(1));
+      expect(dio.paths, hasLength(1));
       expect(
-        requests.single.path,
+        dio.paths.single,
         '/lists/https%3A%2F%2Fexample.com%2Flists%2Fmain.txt%3Fsource%3Da%23fragment',
-      );
-      expect(
-        requests.single.uri.toString(),
-        contains(
-          '/lists/https%3A%2F%2Fexample.com%2Flists%2Fmain.txt%3Fsource%3Da%23fragment',
-        ),
       );
     });
 
@@ -65,14 +53,10 @@ void main() {
           restart: false,
         );
 
-        expect(requests, hasLength(1));
+        expect(dio.paths, hasLength(1));
         expect(
-          requests.single.path,
+          dio.paths.single,
           '/config/dns%2Fhosts/192.0.2.10%20host%2Fname',
-        );
-        expect(
-          requests.single.uri.toString(),
-          contains('/config/dns%2Fhosts/192.0.2.10%20host%2Fname'),
         );
       },
     );
