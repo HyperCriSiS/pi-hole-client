@@ -1,6 +1,27 @@
+import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pihole_v6_api/pihole_v6_api.dart';
+
+class _RecordingAdapter implements HttpClientAdapter {
+  _RecordingAdapter(this.requests);
+
+  final List<RequestOptions> requests;
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    requests.add(options);
+    return ResponseBody.fromString('', 204);
+  }
+
+  @override
+  void close({bool force = false}) {}
+}
 
 void main() {
   group('generated v6 path encoding', () {
@@ -10,16 +31,7 @@ void main() {
     setUp(() {
       requests = <RequestOptions>[];
       dio = Dio(BaseOptions(baseUrl: 'https://pi.hole/api'));
-      dio.interceptors.add(
-        InterceptorsWrapper(
-          onRequest: (options, handler) {
-            requests.add(options);
-            handler.resolve(
-              Response<void>(requestOptions: options, statusCode: 204),
-            );
-          },
-        ),
-      );
+      dio.httpClientAdapter = _RecordingAdapter(requests);
     });
 
     tearDown(() {
