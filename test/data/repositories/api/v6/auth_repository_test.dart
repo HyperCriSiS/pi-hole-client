@@ -17,7 +17,7 @@ class _FakePiholeV6Service extends PiholeV6Service {
 
   bool shouldFailGetAuth = false;
   bool authTotpEnabled = false;
-  int clearSidCallCount = 0;
+  int unauthenticatedGetAuthCallCount = 0;
   bool shouldFailDeleteAuth = false;
   bool shouldFailGetSessions = false;
   bool shouldFailDeleteSession = false;
@@ -30,9 +30,9 @@ class _FakePiholeV6Service extends PiholeV6Service {
   }
 
   @override
-  void clearSid() {
-    clearSidCallCount++;
-    lastSid = null;
+  Future<Result<GetAuth200Response>> getAuthUnauthenticated() async {
+    unauthenticatedGetAuthCallCount++;
+    return getAuth();
   }
 
   @override
@@ -162,7 +162,7 @@ void main() {
         final result = await repository.getAuth(useSid: false);
 
         expect(result.getOrNull()?.totp, isFalse);
-        expect(service.clearSidCallCount, 1);
+        expect(service.unauthenticatedGetAuthCallCount, 1);
         expect(client.getAuthCallCount, 0);
       },
     );
@@ -175,7 +175,7 @@ void main() {
         final result = await repository.getAuth(useSid: false);
 
         expect(result.getOrNull()?.totp, isTrue);
-        expect(service.clearSidCallCount, 1);
+        expect(service.unauthenticatedGetAuthCallCount, 1);
         expect(client.getAuthCallCount, 0);
       },
     );
@@ -186,7 +186,7 @@ void main() {
       final result = await repository.getAuth(useSid: false);
 
       expectError(result, messageContains: 'Forced generated getAuth failure');
-      expect(service.clearSidCallCount, 1);
+      expect(service.unauthenticatedGetAuthCallCount, 1);
       expect(client.getAuthCallCount, 0);
     });
 
