@@ -1,1 +1,802 @@
-__FROM_LOCAL_FILE_NOT_SUPPORTED__
+import 'dart:convert';
+
+import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
+import 'package:pi_hole_client/data/services/api/utils/api_exception.dart';
+import 'package:pi_hole_client/data/services/api/utils/safe_dio_call.dart';
+import 'package:pi_hole_client/utils/exceptions.dart';
+import 'package:pi_hole_client/utils/logger.dart';
+import 'package:pi_hole_client/utils/misc.dart';
+import 'package:pihole_v6_api/pihole_v6_api.dart' hide Success;
+import 'package:result_dart/result_dart.dart';
+
+/// Service wrapper around the OpenAPI-generated v6 API client.
+///
+/// Wraps all generated Dio-based API calls with [safeDioCall] to provide
+/// consistent error handling via [Result<T>].
+///
+/// Authentication is handled via the [PiholeV6Api.setApiKey] method:
+/// ```dart
+/// api.setApiKey('x_header_sid', sid);
+/// ```
+///
+/// Repositories depend on this service to access the Pi-hole v6 API.
+/// Domain model mapping is handled in the repository layer.
+class PiholeV6Service {
+  PiholeV6Service({required PiholeV6Api api}) : _api = api;
+
+  factory PiholeV6Service.fromConnection({
+    required String url,
+    bool allowUntrustedCert = true,
+    bool ignoreCertificateErrors = false,
+    String? pinnedCertificateSha256,
+  }) {
+    final normalizedUrl = url.replaceFirst(RegExp(r'/+$'), '');
+    final dio = Dio(
+      BaseOptions(
+        baseUrl: '$normalizedUrl/api',
+        connectTimeout: const Duration(milliseconds: 5000),
+        receiveTimeout: const Duration(milliseconds: 3000),
+      ),
+    );
+    dio.httpClientAdapter = IOHttpClientAdapter(
+      createHttpClient: () => createHttpClient(
+        allowUntrustedCert: allowUntrustedCert,
+        ignoreCertificateErrors: ignoreCertificateErrors,
+        pinnedCertificateSha256: pinnedCertificateSha256,
+      ),
+    );
+
+    return PiholeV6Service(api: PiholeV6Api(dio: dio));
+  }
+
+  final PiholeV6Api _api;
+
+  void setSid(String sid) {
+    _api.setApiKey('x_header_sid', sid);
+  }
+
+  // Lazy API instances
+  late final _authApi = _api.getAuthenticationApi();
+  late final _actionsApi = _api.getActionsApi();
+  late final _clientApi = _api.getClientManagementApi();
+  late final _dhcpApi = _api.getDHCPApi();
+  late final _dnsApi = _api.getDNSControlApi();
+  late final _domainApi = _api.getDomainManagementApi();
+  late final _ftlApi = _api.getFTLInformationApi();
+  late final _groupApi = _api.getGroupManagementApi();
+  late final _listApi = _api.getListManagementApi();
+  late final _metricsApi = _api.getMetricsApi();
+  late final _networkApi = _api.getNetworkInformationApi();
+  late final _configApi = _api.getPiHoleConfigurationApi();
+
+  // ===========================================================================
+  // Authentication
+  // ===========================================================================
+
+  /// Creates a new Pi-hole v6 session through the generated auth API.
+  ///
+  /// FTL v6.7 documents TOTP support for `POST /auth`, but its OpenAPI
+  /// `password` schema omits the `totp` property. To keep generated transport
+  /// without forking the pinned upstream spec, TOTP requests use an isolated
+  /// Dio clone and inject the token after generated serialization. Password-
+  /// only requests use the generated operation directly; it declares
+  /// `secure: []`, so the shared SID interceptor deliberately omits the SID.
+  Future<Result<GetAuth200Response>> postAuth({
+    required String password,
+    int? totp,
+  }) async {
+    try {
+      final Response<GetAuth200Response> response;
+      if (totp == null) {
+        response = await _authApi.addAuth(
+          password: Password(password: password),
+        );
+      } else {
+        final dio = _api.dio.clone();
+        dio.interceptors.removeWhere((i) => i is ApiKeyAuthInterceptor);
+        dio.interceptors.insert(0, _TotpAuthRequestInterceptor(totp));
+        response = await AuthenticationApi(dio).addAuth(
+          password: Password(password: password),
+        );
+      }
+      return Success(response.requireData);
+    } on DioException catch (e) {
+      final totpError = _parseTotpError(e);
+      if (totpError != null) {
+        return Failure(totpError);
+      }
+      final exception = ApiException.fromDioException(e);
+      logger.e('Dio auth error: ${exception.message}');
+      return Failure(exception);
+    } catch (e) {
+      return Failure(e is Exception ? e : Exception(e.toString()));
+    }
+  }
+
+  Future<Result<GetAuth200Response>> getAuth() {
+    return safeDioCall(() async {
+      final response = await _authApi.getAuth();
+      return response.requireData;
+    });
+  }
+
+  /// Reads auth capabilities without attaching the shared SID.
+  ///
+  /// A cloned Dio instance keeps the connection adapter and non-auth
+  /// interceptors while removing the generated API-key interceptor only from
+  /// this request path. The shared generated client remains untouched, so an
+  /// unauthenticated probe cannot race with concurrent authenticated calls.
+  Future<Result<GetAuth200Response>> getAuthUnauthenticated() {
+    return safeDioCall(() async {
+      final dio = _api.dio.clone();
+      dio.interceptors.removeWhere((i) => i is ApiKeyAuthInterceptor);
+      final response = await AuthenticationApi(dio).getAuth();
+      return response.requireData;
+    });
+  }
+
+  Future<Result<Unit>> deleteAuth() {
+    return safeDioCall(() async {
+      await _authApi.deleteGroups();
+      return unit;
+    });
+  }
+
+  Future<Result<GetAuthSessions200Response>> getAuthSessions() {
+    return safeDioCall(() async {
+      final response = await _authApi.getAuthSessions();
+      return response.requireData;
+    });
+  }
+
+  Future<Result<Unit>> deleteAuthSession({required int id}) {
+    return safeDioCall(() async {
+      await _authApi.deleteAuthSession(id: id);
+      return unit;
+    });
+  }
+
+  // ===========================================================================
+  // Metrics
+  // ===========================================================================
+
+  Future<Result<GetActivityMetrics200Response>> getHistory() {
+    return safeDioCall(() async {
+      final response = await _metricsApi.getActivityMetrics();
+      return response.requireData;
+    });
+  }
+
+  Future<Result<GetClientMetrics200Response>> getHistoryClients({
+    int? count = 10,
+  }) {
+    return safeDioCall(() async {
+      final response = await _metricsApi.getClientMetrics(N: count);
+      return response.requireData;
+    });
+  }
+
+  Future<Result<GetQueries200Response>> getQueries({
+    num? from,
+    num? until,
+    int? length,
+    int? start,
+    int? cursor,
+    String? domain,
+    String? clientIp,
+    String? clientName,
+    String? upstream,
+    String? type,
+    String? status,
+    String? reply,
+    String? dnssec,
+  }) {
+    return safeDioCall(() async {
+      final response = await _metricsApi.getQueries(
+        from: from,
+        until: until,
+        length: length,
+        start: start,
+        cursor: cursor,
+        domain: domain,
+        clientIp: clientIp,
+        clientName: clientName,
+        upstream: upstream,
+        type: type,
+        status: status,
+        reply: reply,
+        dnssec: dnssec,
+      );
+      return response.requireData;
+    });
+  }
+
+  Future<Result<GetMetricsSummary200Response>> getStatsSummary() {
+    return safeDioCall(() async {
+      final response = await _metricsApi.getMetricsSummary();
+      return response.requireData;
+    });
+  }
+
+  Future<Result<GetMetricsUpstreams200Response>> getStatsUpstreams() {
+    return safeDioCall(() async {
+      final response = await _metricsApi.getMetricsUpstreams();
+      return response.requireData;
+    });
+  }
+
+  Future<Result<GetMetricsTopDomains200Response>> getStatsTopDomains({
+    bool? blocked,
+    int? count,
+  }) {
+    return safeDioCall(() async {
+      final response = await _metricsApi.getMetricsTopDomains(
+        blocked: blocked,
+        count: count,
+      );
+      return response.requireData;
+    });
+  }
+
+  Future<Result<GetMetricsTopClients200Response>> getStatsTopClients({
+    bool? blocked,
+    int? count,
+  }) {
+    return safeDioCall(() async {
+      final response = await _metricsApi.getMetricsTopClients(
+        blocked: blocked,
+        count: count,
+      );
+      return response.requireData;
+    });
+  }
+
+  Future<Result<GetMetricsQueryTypes200Response>> getQueryTypes() {
+    return safeDioCall(() async {
+      final response = await _metricsApi.getMetricsQueryTypes();
+      return response.requireData;
+    });
+  }
+
+  // ===========================================================================
+  // DNS Control
+  // ===========================================================================
+
+  Future<Result<GetBlocking200Response>> getDnsBlocking() {
+    return safeDioCall(() async {
+      final response = await _dnsApi.getBlocking();
+      return response.requireData;
+    });
+  }
+
+  Future<Result<GetBlocking200Response>> setDnsBlocking({
+    SetBlockingRequest? request,
+  }) {
+    return safeDioCall(() async {
+      final response = await _dnsApi.setBlocking(setBlockingRequest: request);
+      return response.requireData;
+    });
+  }
+
+  // ===========================================================================
+  // Groups
+  // ===========================================================================
+
+  Future<Result<GetGroups200Response>> getAllGroups() {
+    return safeDioCall(() async {
+      final response = await _groupApi.listGroups();
+      return response.requireData;
+    });
+  }
+
+  Future<Result<GetGroups200Response>> getGroups({required String name}) {
+    return safeDioCall(() async {
+      final response = await _groupApi.getGroups(name: name);
+      return response.requireData;
+    });
+  }
+
+  Future<Result<ReplaceGroup200Response>> addGroup({Post2? body}) {
+    return safeDioCall(() async {
+      final response = await _groupApi.addGroup(post2: body);
+      return response.requireData;
+    });
+  }
+
+  Future<Result<ReplaceGroup200Response>> replaceGroup({
+    required String name,
+    Put2? body,
+  }) {
+    return safeDioCall(() async {
+      final response = await _groupApi.replaceGroup(name: name, put2: body);
+      return response.requireData;
+    });
+  }
+
+  Future<Result<Unit>> deleteGroup({required String name}) {
+    return safeDioCall(() async {
+      await _groupApi.deleteGroup(name: name);
+      return unit;
+    });
+  }
+
+  // ===========================================================================
+  // Domains
+  // ===========================================================================
+
+  Future<Result<GetDomain200Response>> getAllDomains() {
+    return safeDioCall(() async {
+      final response = await _domainApi.getDomains();
+      return response.requireData;
+    });
+  }
+
+  Future<Result<GetDomain200Response>> getDomainsByTypeKind({
+    required String type,
+    required String kind,
+  }) {
+    return safeDioCall(() async {
+      final response = await _domainApi.getTypeKindDomains(
+        type: type,
+        kind: kind,
+      );
+      return response.requireData;
+    });
+  }
+
+  Future<Result<GetDomain200Response>> getDomains({
+    required String type,
+    required String kind,
+    required String domain,
+  }) {
+    return safeDioCall(() async {
+      final response = await _domainApi.getDomain(
+        type: type,
+        kind: kind,
+        domain: domain,
+      );
+      return response.requireData;
+    });
+  }
+
+  Future<Result<ReplaceDomain200Response>> addDomain({
+    required String type,
+    required String kind,
+    Post? body,
+  }) {
+    return safeDioCall(() async {
+      final response = await _domainApi.addDomain(
+        type: type,
+        kind: kind,
+        post: body,
+      );
+      return response.requireData;
+    });
+  }
+
+  Future<Result<ReplaceDomain200Response>> replaceDomain({
+    required String type,
+    required String kind,
+    required String domain,
+    ReplaceDomainRequest? body,
+  }) {
+    return safeDioCall(() async {
+      final response = await _domainApi.replaceDomain(
+        type: type,
+        kind: kind,
+        domain: domain,
+        replaceDomainRequest: body,
+      );
+      return response.requireData;
+    });
+  }
+
+  Future<Result<Unit>> deleteDomain({
+    required String type,
+    required String kind,
+    required String domain,
+  }) {
+    return safeDioCall(() async {
+      await _domainApi.deleteDomain(type: type, kind: kind, domain: domain);
+      return unit;
+    });
+  }
+
+  // ===========================================================================
+  // Lists (Adlists/Subscriptions)
+  // ===========================================================================
+
+  Future<Result<GetLists200Response>> getAllLists({String? type}) {
+    return safeDioCall(() async {
+      final response = await _listApi.listLists(type: type);
+      return response.requireData;
+    });
+  }
+
+  Future<Result<GetLists200Response>> getLists({
+    required String list,
+    String? type,
+  }) {
+    return safeDioCall(() async {
+      final response = await _listApi.getLists(list: list, type: type);
+      return response.requireData;
+    });
+  }
+
+  Future<Result<ReplaceLists200Response>> addList({
+    required String type,
+    Post4? body,
+  }) {
+    return safeDioCall(() async {
+      final response = await _listApi.addList(type: type, post4: body);
+      return response.requireData;
+    });
+  }
+
+  Future<Result<ReplaceLists200Response>> replaceList({
+    required String list,
+    required String type,
+    Put4? body,
+  }) {
+    return safeDioCall(() async {
+      final response = await _listApi.replaceLists(
+        list: list,
+        type: type,
+        put4: body,
+      );
+      return response.requireData;
+    });
+  }
+
+  Future<Result<Unit>> deleteList({
+    required String list,
+    required String type,
+  }) {
+    return safeDioCall(() async {
+      await _listApi.deleteLists(list: list, type: type);
+      return unit;
+    });
+  }
+
+  Future<Result<GetSearch200Response>> searchDomainInLists({
+    required String domain,
+    int? n,
+    bool? partial,
+  }) {
+    return safeDioCall(() async {
+      final response = await _listApi.getSearch(
+        domain: domain,
+        N: n,
+        partial: partial,
+      );
+      return response.requireData;
+    });
+  }
+
+  // ===========================================================================
+  // Clients
+  // ===========================================================================
+
+  Future<Result<GetClients200Response>> getAllClients() {
+    return safeDioCall(() async {
+      final response = await _clientApi.listClients();
+      return response.requireData;
+    });
+  }
+
+  Future<Result<GetClients200Response>> getClients({required String client}) {
+    return safeDioCall(() async {
+      final response = await _clientApi.getClients(client: client);
+      return response.requireData;
+    });
+  }
+
+  Future<Result<ReplaceClient200Response>> addClient({AddClientRequest? body}) {
+    return safeDioCall(() async {
+      final response = await _clientApi.addClient(addClientRequest: body);
+      return response.requireData;
+    });
+  }
+
+  Future<Result<ReplaceClient200Response>> replaceClient({
+    required String client,
+    ReplaceClientRequest? body,
+  }) {
+    return safeDioCall(() async {
+      final response = await _clientApi.replaceClient(
+        client: client,
+        replaceClientRequest: body,
+      );
+      return response.requireData;
+    });
+  }
+
+  Future<Result<Unit>> deleteClient({required String client}) {
+    return safeDioCall(() async {
+      await _clientApi.deleteClient(client: client);
+      return unit;
+    });
+  }
+
+  // ===========================================================================
+  // FTL Information
+  // ===========================================================================
+
+  Future<Result<GetClient200Response>> getInfoClient() {
+    return safeDioCall(() async {
+      final response = await _ftlApi.getClient();
+      return response.requireData;
+    });
+  }
+
+  Future<Result<GetFtlinfo200Response>> getInfoFtl() {
+    return safeDioCall(() async {
+      final response = await _ftlApi.getFtlinfo();
+      return response.requireData;
+    });
+  }
+
+  Future<Result<GetHostinfo200Response>> getInfoHost() {
+    return safeDioCall(() async {
+      final response = await _ftlApi.getHostinfo();
+      return response.requireData;
+    });
+  }
+
+  Future<Result<GetMessages200Response>> getInfoMessages() {
+    return safeDioCall(() async {
+      final response = await _ftlApi.getMessages();
+      return response.requireData;
+    });
+  }
+
+  Future<Result<Unit>> deleteInfoMessage({required int messageId}) {
+    return safeDioCall(() async {
+      await _ftlApi.deleteMessage(messageId: messageId);
+      return unit;
+    });
+  }
+
+  Future<Result<GetMetricsinfo200Response>> getInfoMetrics() {
+    return safeDioCall(() async {
+      final response = await _ftlApi.getMetricsinfo();
+      return response.requireData;
+    });
+  }
+
+  Future<Result<GetSensors200Response>> getInfoSensors() {
+    return safeDioCall(() async {
+      final response = await _ftlApi.getSensors();
+      return response.requireData;
+    });
+  }
+
+  Future<Result<GetSysteminfo200Response>> getInfoSystem() {
+    return safeDioCall(() async {
+      final response = await _ftlApi.getSysteminfo();
+      return response.requireData;
+    });
+  }
+
+  Future<Result<GetVersion200Response>> getInfoVersion() {
+    return safeDioCall(() async {
+      final response = await _ftlApi.getVersion();
+      return response.requireData;
+    });
+  }
+
+  // ===========================================================================
+  // Network Information
+  // ===========================================================================
+
+  Future<Result<GetNetwork200Response>> getNetworkDevices({
+    int? maxDevices,
+    int? maxAddresses,
+  }) {
+    return safeDioCall(() async {
+      final response = await _networkApi.getNetwork(
+        maxDevices: maxDevices,
+        maxAddresses: maxAddresses,
+      );
+      return response.requireData;
+    });
+  }
+
+  Future<Result<Unit>> deleteNetworkDevice({required int deviceId}) {
+    return safeDioCall(() async {
+      await _networkApi.deleteDevice(deviceId: deviceId);
+      return unit;
+    });
+  }
+
+  Future<Result<GetGateway200Response>> getNetworkGateway({bool? detailed}) {
+    return safeDioCall(() async {
+      final response = await _networkApi.getGateway(detailed: detailed);
+      return response.requireData;
+    });
+  }
+
+  // ===========================================================================
+  // Actions
+  // ===========================================================================
+
+  Future<Result<ActionRestartdns200Response>> actionFlushArp() {
+    return safeDioCall(() async {
+      // ignore: deprecated_member_use
+      final response = await _actionsApi.actionFlusharp();
+      return response.requireData;
+    });
+  }
+
+  Future<Result<ActionRestartdns200Response>> actionFlushNetwork() {
+    return safeDioCall(() async {
+      final response = await _actionsApi.actionFlushnetwork();
+      return response.requireData;
+    });
+  }
+
+  Future<Result<ActionRestartdns200Response>> actionFlushLogs() {
+    return safeDioCall(() async {
+      final response = await _actionsApi.actionFlushlogs();
+      return response.requireData;
+    });
+  }
+
+  Future<Result<String>> actionGravity() {
+    return safeDioCall(() async {
+      final response = await _actionsApi.actionGravity();
+      return response.requireData;
+    });
+  }
+
+  Future<Result<ActionRestartdns200Response>> actionRestartDns() {
+    return safeDioCall(() async {
+      final response = await _actionsApi.actionRestartdns();
+      return response.requireData;
+    });
+  }
+
+  // ===========================================================================
+  // Pi-hole Configuration
+  // ===========================================================================
+
+  Future<Result<GetConfig200Response>> getConfig() {
+    return safeDioCall(() async {
+      final response = await _configApi.getConfig();
+      return response.requireData;
+    });
+  }
+
+  Future<Result<Unit>> addConfigArrayItem({
+    required String element,
+    required String value,
+    bool? restart = true,
+  }) {
+    return safeDioCall(() async {
+      await _configApi.addArrayItem(
+        element: element,
+        value: value,
+        restart: restart,
+      );
+      return unit;
+    });
+  }
+
+  Future<Result<Unit>> deleteConfigArrayItem({
+    required String element,
+    required String value,
+    bool? restart = true,
+  }) {
+    return safeDioCall(() async {
+      await _configApi.deleteArrayItem(
+        element: element,
+        value: value,
+        restart: restart,
+      );
+      return unit;
+    });
+  }
+
+  Future<Result<GetConfig200Response>> patchConfig({
+    GetConfig200Response? body,
+    bool? restart,
+  }) {
+    return safeDioCall(() async {
+      final response = await _configApi.patchConfig(
+        getConfig200Response: body,
+        restart: restart,
+      );
+      return response.requireData;
+    });
+  }
+
+  // ===========================================================================
+  // DHCP
+  // ===========================================================================
+
+  Future<Result<GetDhcp200Response>> getDhcpLeases() {
+    return safeDioCall(() async {
+      final response = await _dhcpApi.getDhcp();
+      return response.requireData;
+    });
+  }
+
+  Future<Result<Unit>> deleteDhcpLease({required String ip}) {
+    return safeDioCall(() async {
+      await _dhcpApi.deleteDhcp(ip: ip);
+      return unit;
+    });
+  }
+}
+
+class _TotpAuthRequestInterceptor extends Interceptor {
+  _TotpAuthRequestInterceptor(this.totp);
+
+  final int totp;
+
+  @override
+  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
+    if (options.method == 'POST' && options.path == '/auth') {
+      final data = options.data;
+      Map<String, dynamic>? body;
+
+      if (data is String) {
+        final decoded = jsonDecode(data);
+        if (decoded is Map<String, dynamic>) {
+          body = Map<String, dynamic>.from(decoded);
+        }
+      } else if (data is Map<String, dynamic>) {
+        body = Map<String, dynamic>.from(data);
+      }
+
+      if (body != null) {
+        body['totp'] = totp;
+        options.data = jsonEncode(body);
+      }
+    }
+    handler.next(options);
+  }
+}
+
+Exception? _parseTotpError(DioException error) {
+  final statusCode = error.response?.statusCode;
+  if (statusCode != 400 && statusCode != 401 && statusCode != 429) {
+    return null;
+  }
+
+  dynamic data = error.response?.data;
+  if (data is String) {
+    try {
+      data = jsonDecode(data);
+    } catch (_) {
+      return null;
+    }
+  }
+  if (data is! Map) return null;
+
+  final errorBody = data['error'];
+  if (errorBody is! Map) return null;
+
+  final key = errorBody['key']?.toString();
+  final message = errorBody['message']?.toString() ?? '';
+  if (!message.contains('2FA token')) return null;
+
+  if (statusCode == 400 &&
+      key == 'bad_request' &&
+      message.contains('No 2FA token found in JSON payload')) {
+    return TotpRequiredException(message);
+  }
+  if (statusCode == 401 && key == 'unauthorized') {
+    if (message.contains('Reused 2FA token')) {
+      return TotpReusedException(message);
+    }
+    if (message.contains('Invalid 2FA token')) {
+      return TotpInvalidException(message);
+    }
+  }
+  if (statusCode == 429 && key == 'rate_limiting') {
+    return TotpRateLimitException(message);
+  }
+  return null;
+}
