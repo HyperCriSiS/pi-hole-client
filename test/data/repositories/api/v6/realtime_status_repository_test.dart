@@ -17,7 +17,6 @@ void main() {
       client = FakePiholeV6ApiClient();
       creds = FakeSessionCredentialService();
       repository = RealtimeStatusRepositoryV6(
-        client: client,
         sessionCache: V6SessionCache(creds: creds, client: client),
       );
     });

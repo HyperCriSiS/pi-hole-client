@@ -72,7 +72,6 @@ void main() {
     final creds = FakeSessionCredentialService();
     final service = _RetryQueriesService();
     final repository = MetricsRepositoryV6(
-      client: client,
       service: service,
       sessionCache: V6SessionCache(creds: creds, client: client),
     );

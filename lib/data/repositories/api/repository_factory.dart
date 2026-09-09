@@ -116,7 +116,6 @@ class RepositoryBundleFactory {
             sessionCache: sessionCache,
           ),
           metrics: MetricsRepositoryV6(
-            client: client,
             service: generatedService,
             sessionCache: sessionCache,
           ),
@@ -126,7 +125,6 @@ class RepositoryBundleFactory {
             sessionCache: sessionCache,
           ),
           realtimeStatus: v6.RealtimeStatusRepositoryV6(
-            client: client,
             sessionCache: sessionCache,
           ),
           serverAddress: server.address,
