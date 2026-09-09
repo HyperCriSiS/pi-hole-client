@@ -167,7 +167,6 @@ void main() {
       client = FakePiholeV6ApiClient();
       service = _FakePiholeV6Service();
       repository = MetricsRepositoryV6(
-        client: client,
         service: service,
         sessionCache: V6SessionCache(creds: creds, client: client),
       );
@@ -194,7 +193,6 @@ void main() {
       client = FakePiholeV6ApiClient();
       service = _FakePiholeV6Service();
       repository = MetricsRepositoryV6(
-        client: client,
         service: service,
         sessionCache: V6SessionCache(creds: creds, client: client),
       );
@@ -239,7 +237,6 @@ void main() {
       client = FakePiholeV6ApiClient();
       service = _FakePiholeV6Service();
       repository = MetricsRepositoryV6(
-        client: client,
         service: service,
         sessionCache: V6SessionCache(creds: creds, client: client),
       );
@@ -322,7 +319,6 @@ void main() {
       client = FakePiholeV6ApiClient();
       service = _FakePiholeV6Service();
       repository = MetricsRepositoryV6(
-        client: client,
         service: service,
         sessionCache: V6SessionCache(creds: creds, client: client),
       );
@@ -352,7 +348,6 @@ void main() {
       client = FakePiholeV6ApiClient();
       service = _FakePiholeV6Service();
       repository = MetricsRepositoryV6(
-        client: client,
         service: service,
         sessionCache: V6SessionCache(creds: creds, client: client),
       );
@@ -382,7 +377,6 @@ void main() {
       client = FakePiholeV6ApiClient();
       service = _FakePiholeV6Service();
       repository = MetricsRepositoryV6(
-        client: client,
         service: service,
         sessionCache: V6SessionCache(creds: creds, client: client),
       );
@@ -407,7 +401,6 @@ void main() {
       client = FakePiholeV6ApiClient();
       service = _FakePiholeV6Service();
       repository = MetricsRepositoryV6(
-        client: client,
         service: service,
         sessionCache: V6SessionCache(creds: creds, client: client),
       );
@@ -432,7 +425,6 @@ void main() {
       client = FakePiholeV6ApiClient();
       service = _FakePiholeV6Service();
       repository = MetricsRepositoryV6(
-        client: client,
         service: service,
         sessionCache: V6SessionCache(creds: creds, client: client),
       );
@@ -457,7 +449,6 @@ void main() {
       client = FakePiholeV6ApiClient();
       service = _FakePiholeV6Service();
       repository = MetricsRepositoryV6(
-        client: client,
         service: service,
         sessionCache: V6SessionCache(creds: creds, client: client),
       );
@@ -482,7 +473,6 @@ void main() {
       client = FakePiholeV6ApiClient();
       service = _FakePiholeV6Service();
       repository = MetricsRepositoryV6(
-        client: client,
         service: service,
         sessionCache: V6SessionCache(creds: creds, client: client),
       );

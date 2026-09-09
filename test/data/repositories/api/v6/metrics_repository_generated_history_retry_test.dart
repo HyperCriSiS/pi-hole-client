@@ -80,7 +80,6 @@ void main() {
     final creds = FakeSessionCredentialService();
     final service = _RetryPiholeV6Service();
     final repository = MetricsRepositoryV6(
-      client: client,
       service: service,
       sessionCache: V6SessionCache(creds: creds, client: client),
     );
@@ -100,7 +99,6 @@ void main() {
       final creds = FakeSessionCredentialService();
       final service = _RetryPiholeV6Service();
       final repository = MetricsRepositoryV6(
-        client: client,
         service: service,
         sessionCache: V6SessionCache(creds: creds, client: client),
       );
@@ -122,7 +120,6 @@ void main() {
       final creds = FakeSessionCredentialService();
       final service = _RetryPiholeV6Service();
       final repository = MetricsRepositoryV6(
-        client: client,
         service: service,
         sessionCache: V6SessionCache(creds: creds, client: client),
       );
@@ -143,7 +140,6 @@ void main() {
       final creds = FakeSessionCredentialService();
       final service = _RetryPiholeV6Service();
       final repository = MetricsRepositoryV6(
-        client: client,
         service: service,
         sessionCache: V6SessionCache(creds: creds, client: client),
       );

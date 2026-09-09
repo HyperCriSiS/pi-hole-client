@@ -61,7 +61,6 @@ void main() {
     creds = FakeSessionCredentialService();
     service = _TopDomainsPiholeV6Service();
     repository = MetricsRepositoryV6(
-      client: client,
       service: service,
       sessionCache: V6SessionCache(creds: creds, client: client),
     );
