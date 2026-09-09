@@ -49,13 +49,14 @@ class AuthRepositoryV6 extends BaseV6SidRepository implements AuthRepository {
 
   @override
   Future<Result<Auth>> getAuth({bool useSid = true}) async {
-    // [useSid] false reads the server's 2FA status unauthenticated. Keep this
-    // on the handwritten client because the generated client cannot remove a
-    // previously configured SID header from its shared interceptor.
+    // [useSid] false reads the server's 2FA status deliberately
+    // unauthenticated. Clear only the generated SID API key before the probe;
+    // authenticated calls restore the current SID through setSid below.
     if (!useSid) {
       return runWithResultRetry<Auth>(
         action: () async {
-          final result = await _client.getAuth(null);
+          _service.clearSid();
+          final result = await _service.getAuth();
           return result.map((e) => e.toDomain());
         },
       );
