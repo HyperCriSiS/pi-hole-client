@@ -85,6 +85,21 @@ class PiholeV6Service {
     });
   }
 
+  /// Reads auth capabilities without attaching the shared SID.
+  ///
+  /// A cloned Dio instance keeps the connection adapter and non-auth
+  /// interceptors while removing the generated API-key interceptor only from
+  /// this request path. The shared generated client remains untouched, so an
+  /// unauthenticated probe cannot race with concurrent authenticated calls.
+  Future<Result<GetAuth200Response>> getAuthUnauthenticated() {
+    return safeDioCall(() async {
+      final dio = _api.dio.clone();
+      dio.interceptors.removeWhere((i) => i is ApiKeyAuthInterceptor);
+      final response = await AuthenticationApi(dio).getAuth();
+      return response.requireData;
+    });
+  }
+
   Future<Result<Unit>> deleteAuth() {
     return safeDioCall(() async {
       await _authApi.deleteGroups();
