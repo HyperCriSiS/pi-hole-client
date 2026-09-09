@@ -51,6 +51,15 @@ class PiholeV6Service {
     _api.setApiKey('x_header_sid', sid);
   }
 
+  /// Removes the shared SID header for requests that must deliberately run
+  /// without authentication, such as the auth capability probe.
+  void clearSid() {
+    for (final interceptor
+        in _api.dio.interceptors.whereType<ApiKeyAuthInterceptor>()) {
+      interceptor.apiKeys.remove('x_header_sid');
+    }
+  }
+
   // Lazy API instances
   late final _authApi = _api.getAuthenticationApi();
   late final _actionsApi = _api.getActionsApi();
