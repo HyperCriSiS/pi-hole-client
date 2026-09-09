@@ -1,6 +1,9 @@
 import 'package:pi_hole_client/data/mapper/v6/auth_mapper.dart';
+import 'package:pi_hole_client/data/mapper/v6_generated/auth_mapper.dart';
 import 'package:pi_hole_client/data/services/api/pihole_v6_api_client.dart';
+import 'package:pi_hole_client/data/services/api/wrappers/pihole_v6_service.dart';
 import 'package:pi_hole_client/data/services/local/session_credential_service.dart';
+import 'package:pi_hole_client/domain/model/auth/auth.dart';
 import 'package:pi_hole_client/domain/services/app_log_service.dart';
 import 'package:pi_hole_client/utils/exceptions.dart';
 import 'package:pi_hole_client/utils/logger.dart';
@@ -16,15 +19,19 @@ import 'package:pi_hole_client/utils/widget_channel.dart';
 class V6SessionCache {
   V6SessionCache({
     required SessionCredentialService creds,
-    required PiholeV6ApiClient client,
+    PiholeV6ApiClient? client,
+    PiholeV6Service? service,
     AppLogService? appLogService,
     this.renewalCooldown = const Duration(milliseconds: 500),
-  }) : _creds = creds,
+  }) : assert(client != null || service != null),
+       _creds = creds,
        _client = client,
+       _service = service,
        _appLogService = appLogService;
 
   SessionCredentialService _creds;
-  PiholeV6ApiClient _client;
+  PiholeV6ApiClient? _client;
+  PiholeV6Service? _service;
   final Duration renewalCooldown;
   final AppLogService? _appLogService;
 
@@ -41,14 +48,21 @@ class V6SessionCache {
   // ---------------------------------------------------------------------------
   // Public API
   // ---------------------------------------------------------------------------
-  /// Swaps in a freshly built [creds]/[client] while keeping the session state
+  /// Swaps in freshly built dependencies while keeping the session state
   /// (`_sid` and the 2FA gate) intact, so a new bundle reuses this cache.
+  ///
+  /// Production v6 bundles pass [service]. The legacy [client] remains an
+  /// optional compatibility seam for existing tests while the handwritten
+  /// client is retired endpoint-by-endpoint.
   void rebind({
     required SessionCredentialService creds,
-    required PiholeV6ApiClient client,
+    PiholeV6ApiClient? client,
+    PiholeV6Service? service,
   }) {
+    assert(client != null || service != null);
     _creds = creds;
     _client = client;
+    _service = service;
   }
 
   /// Returns the cached SID, loading from storage on a cache miss.
@@ -217,8 +231,14 @@ class V6SessionCache {
             '${deleteResult.exceptionOrNull()}',
       );
     }
-    final result = await _client.postAuth(password: pw);
-    final auth = result.getOrThrow().toDomain();
+    final Auth auth;
+    if (_service != null) {
+      final result = await _service!.postAuth(password: pw);
+      auth = result.getOrThrow().toDomain();
+    } else {
+      final result = await _client!.postAuth(password: pw);
+      auth = result.getOrThrow().toDomain();
+    }
     if (!auth.valid) throw Exception('Session renewal failed');
     await saveSid(auth.sid);
     await WidgetChannel.sendSidUpdated(
