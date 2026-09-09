@@ -16,6 +16,8 @@ class _FakePiholeV6Service extends PiholeV6Service {
     : super(api: PiholeV6Api(basePathOverride: 'http://localhost/api'));
 
   bool shouldFailGetAuth = false;
+  bool authTotpEnabled = false;
+  int clearSidCallCount = 0;
   bool shouldFailDeleteAuth = false;
   bool shouldFailGetSessions = false;
   bool shouldFailDeleteSession = false;
@@ -28,6 +30,12 @@ class _FakePiholeV6Service extends PiholeV6Service {
   }
 
   @override
+  void clearSid() {
+    clearSidCallCount++;
+    lastSid = null;
+  }
+
+  @override
   Future<Result<GetAuth200Response>> getAuth() async {
     if (shouldFailGetAuth) {
       return Failure(Exception('Forced generated getAuth failure'));
@@ -36,7 +44,7 @@ class _FakePiholeV6Service extends PiholeV6Service {
       GetAuth200Response(
         session: SessionSession(
           valid: true,
-          totp: false,
+          totp: authTotpEnabled,
           sid: 'sid123',
           csrf: 'csrf-token',
           validity: 300,
@@ -148,27 +156,38 @@ void main() {
   });
 
   group('getAuth', () {
-    test('reports the server 2FA status (disabled)', () async {
+    test(
+      'reports the server 2FA status unauthenticated via generated service',
+      () async {
+        final result = await repository.getAuth(useSid: false);
+
+        expect(result.getOrNull()?.totp, isFalse);
+        expect(service.clearSidCallCount, 1);
+        expect(client.getAuthCallCount, 0);
+      },
+    );
+
+    test(
+      'reports when the server has 2FA enabled via generated service',
+      () async {
+        service.authTotpEnabled = true;
+
+        final result = await repository.getAuth(useSid: false);
+
+        expect(result.getOrNull()?.totp, isTrue);
+        expect(service.clearSidCallCount, 1);
+        expect(client.getAuthCallCount, 0);
+      },
+    );
+
+    test('returns generated error for unauthenticated auth status', () async {
+      service.shouldFailGetAuth = true;
+
       final result = await repository.getAuth(useSid: false);
 
-      expect(result.getOrNull()?.totp, isFalse);
-      expect(client.getAuthCallCount, 1);
-    });
-
-    test('reports when the server has 2FA enabled', () async {
-      client.serverTotpEnabled = true;
-
-      final result = await repository.getAuth(useSid: false);
-
-      expect(result.getOrNull()?.totp, isTrue);
-    });
-
-    test('returns error when the API fails', () async {
-      client.shouldFail = true;
-
-      final result = await repository.getAuth(useSid: false);
-
-      expectError(result, messageContains: 'Forced getAuth failure');
+      expectError(result, messageContains: 'Forced generated getAuth failure');
+      expect(service.clearSidCallCount, 1);
+      expect(client.getAuthCallCount, 0);
     });
 
     test('uses generated service for authenticated auth status', () async {
