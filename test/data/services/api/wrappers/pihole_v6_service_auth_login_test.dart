@@ -165,7 +165,8 @@ void main() {
 
     final error = result.exceptionOrNull();
     expect(error, isA<ApiException>());
-    expect((error! as ApiException).statusCode, 401);
-    expect(error.errorCode, 'unauthorized');
+    final apiError = error! as ApiException;
+    expect(apiError.statusCode, 401);
+    expect(apiError.errorCode, 'unauthorized');
   });
 }
