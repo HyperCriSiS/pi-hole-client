@@ -54,19 +54,19 @@ class RepositoryBundleFactory {
           ignoreCertificateErrors: server.ignoreCertificateErrors,
           pinnedCertificateSha256: server.pinnedCertificateSha256,
         );
-        final sessionCache =
-            sessionCacheStore?.getOrCreate(
-              address: server.address,
-              creds: creds,
-              client: client,
-            ) ??
-            V6SessionCache(creds: creds, client: client);
         final generatedService = PiholeV6Service.fromConnection(
           url: server.address,
           allowUntrustedCert: server.allowUntrustedCert,
           ignoreCertificateErrors: server.ignoreCertificateErrors,
           pinnedCertificateSha256: server.pinnedCertificateSha256,
         );
+        final sessionCache =
+            sessionCacheStore?.getOrCreate(
+              address: server.address,
+              creds: creds,
+              service: generatedService,
+            ) ??
+            V6SessionCache(creds: creds, service: generatedService);
 
         return RepositoryBundle(
           actions: ActionsRepositoryV6(
@@ -79,7 +79,6 @@ class RepositoryBundleFactory {
             sessionCache: sessionCache,
           ),
           auth: AuthRepositoryV6(
-            client: client,
             service: generatedService,
             sessionCache: sessionCache,
           ),
