@@ -43,27 +43,27 @@ jobs:
       - name: Generate files
         run: dart run build_runner build --delete-conflicting-outputs
 
-      - name: Run changed tests
+      - name: Run changed tests with coverage
         if: matrix.scope == 'changed'
         run: >-
-          xvfb-run flutter test
+          xvfb-run flutter test --coverage
           test/data/services/api/generated/v6_path_encoding_test.dart
           test/data/repositories/api/v6/local_dns_repository_test.dart
           test/data/repositories/api/v6/local_dns_repository_generated_retry_test.dart
           test/data/repositories/api/v6/cname_repository_contract_test.dart
 
-      - name: Run data tests
+      - name: Run data tests with coverage
         if: matrix.scope == 'data'
-        run: xvfb-run flutter test test/data
+        run: xvfb-run flutter test --coverage test/data
 
-      - name: Run UI tests
+      - name: Run UI tests with coverage
         if: matrix.scope == 'ui'
-        run: xvfb-run flutter test test/ui
+        run: xvfb-run flutter test --coverage test/ui
 
-      - name: Run remaining tests
+      - name: Run remaining tests with coverage
         if: matrix.scope == 'other'
         run: >-
-          xvfb-run flutter test
+          xvfb-run flutter test --coverage
           test/domain
           test/routing
           test/utils
