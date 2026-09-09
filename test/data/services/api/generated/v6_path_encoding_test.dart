@@ -1,31 +1,35 @@
+import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pihole_v6_api/pihole_v6_api.dart';
 
-class _RecordingInterceptor extends Interceptor {
+class _RecordingAdapter implements HttpClientAdapter {
   final List<String> paths = <String>[];
 
   @override
-  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
     paths.add(options.path);
-    handler.resolve(
-      Response<void>(
-        requestOptions: options,
-        statusCode: 204,
-      ),
-    );
+    return ResponseBody.fromString('', 204);
   }
+
+  @override
+  void close({bool force = false}) {}
 }
 
 void main() {
   group('generated v6 path encoding', () {
     late Dio dio;
-    late _RecordingInterceptor recorder;
+    late _RecordingAdapter recorder;
 
     setUp(() {
       dio = Dio();
-      recorder = _RecordingInterceptor();
-      dio.interceptors.add(recorder);
+      recorder = _RecordingAdapter();
+      dio.httpClientAdapter = recorder;
     });
 
     tearDown(() {
