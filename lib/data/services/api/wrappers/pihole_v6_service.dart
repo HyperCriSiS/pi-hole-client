@@ -78,24 +78,28 @@ class PiholeV6Service {
   ///
   /// FTL v6.7 documents TOTP support for `POST /auth`, but its OpenAPI
   /// `password` schema omits the `totp` property. To keep generated transport
-  /// without forking the pinned upstream spec, this request uses an isolated
-  /// Dio clone and injects the optional TOTP value after generated
-  /// serialization. The shared SID interceptor is removed from the clone, so
-  /// login stays unauthenticated without mutating concurrent requests.
+  /// without forking the pinned upstream spec, TOTP requests use an isolated
+  /// Dio clone and inject the token after generated serialization. Password-
+  /// only requests use the generated operation directly; it declares
+  /// `secure: []`, so the shared SID interceptor deliberately omits the SID.
   Future<Result<GetAuth200Response>> postAuth({
     required String password,
     int? totp,
   }) async {
     try {
-      final dio = _api.dio.clone();
-      dio.interceptors.removeWhere((i) => i is ApiKeyAuthInterceptor);
-      if (totp != null) {
+      final Response<GetAuth200Response> response;
+      if (totp == null) {
+        response = await _authApi.addAuth(
+          password: Password(password: password),
+        );
+      } else {
+        final dio = _api.dio.clone();
+        dio.interceptors.removeWhere((i) => i is ApiKeyAuthInterceptor);
         dio.interceptors.insert(0, _TotpAuthRequestInterceptor(totp));
+        response = await AuthenticationApi(dio).addAuth(
+          password: Password(password: password),
+        );
       }
-
-      final response = await AuthenticationApi(dio).addAuth(
-        password: Password(password: password),
-      );
       return Success(response.requireData);
     } on DioException catch (e) {
       final totpError = _parseTotpError(e);
