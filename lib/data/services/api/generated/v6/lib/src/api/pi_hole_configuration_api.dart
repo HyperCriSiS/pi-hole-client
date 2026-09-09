@@ -56,13 +56,13 @@ class PiHoleConfigurationApi {
           '{'
           r'element'
           '}',
-          element.toString(),
+          Uri.encodeComponent(element.toString()),
         )
         .replaceAll(
           '{'
           r'value'
           '}',
-          value.toString(),
+          Uri.encodeComponent(value.toString()),
         );
     final _options = Options(
       method: r'PUT',
@@ -147,13 +147,13 @@ class PiHoleConfigurationApi {
           '{'
           r'element'
           '}',
-          element.toString(),
+          Uri.encodeComponent(element.toString()),
         )
         .replaceAll(
           '{'
           r'value'
           '}',
-          value.toString(),
+          Uri.encodeComponent(value.toString()),
         );
     final _options = Options(
       method: r'DELETE',
@@ -340,7 +340,7 @@ class PiHoleConfigurationApi {
       '{'
       r'element'
       '}',
-      element.toString(),
+      Uri.encodeComponent(element.toString()),
     );
     final _options = Options(
       method: r'GET',

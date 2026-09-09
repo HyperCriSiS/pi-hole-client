@@ -250,7 +250,7 @@ class GroupManagementApi {
       '{'
       r'name'
       '}',
-      name.toString(),
+      Uri.encodeComponent(name.toString()),
     );
     final _options = Options(
       method: r'DELETE',
@@ -325,7 +325,7 @@ class GroupManagementApi {
       '{'
       r'name'
       '}',
-      name.toString(),
+      Uri.encodeComponent(name.toString()),
     );
     final _options = Options(
       method: r'GET',
@@ -530,7 +530,7 @@ class GroupManagementApi {
       '{'
       r'name'
       '}',
-      name.toString(),
+      Uri.encodeComponent(name.toString()),
     );
     final _options = Options(
       method: r'PUT',

@@ -617,6 +617,36 @@ class PiholeV6Service {
     });
   }
 
+  Future<Result<Unit>> addConfigArrayItem({
+    required String element,
+    required String value,
+    bool? restart = true,
+  }) {
+    return safeDioCall(() async {
+      await _configApi.addArrayItem(
+        element: element,
+        value: value,
+        restart: restart,
+      );
+      return unit;
+    });
+  }
+
+  Future<Result<Unit>> deleteConfigArrayItem({
+    required String element,
+    required String value,
+    bool? restart = true,
+  }) {
+    return safeDioCall(() async {
+      await _configApi.deleteArrayItem(
+        element: element,
+        value: value,
+        restart: restart,
+      );
+      return unit;
+    });
+  }
+
   Future<Result<GetConfig200Response>> patchConfig({
     GetConfig200Response? body,
     bool? restart,

@@ -2,7 +2,6 @@ import 'package:pi_hole_client/data/repositories/api/interfaces/cname_repository
 import 'package:pi_hole_client/data/repositories/api/interfaces/local_dns_repository.dart';
 import 'package:pi_hole_client/data/repositories/api/v6/base_v6_sid_repository.dart';
 import 'package:pi_hole_client/data/repositories/utils/call_with_retry.dart';
-import 'package:pi_hole_client/data/services/api/pihole_v6_api_client.dart';
 import 'package:pi_hole_client/data/services/api/wrappers/pihole_v6_service.dart';
 import 'package:pi_hole_client/domain/model/local_dns/cname_record.dart';
 import 'package:pi_hole_client/domain/model/local_dns/local_dns.dart';
@@ -12,13 +11,10 @@ import 'package:result_dart/result_dart.dart';
 class LocalDnsRepositoryV6 extends BaseV6SidRepository
     implements LocalDnsRepository, CnameRepository {
   LocalDnsRepositoryV6({
-    required PiholeV6ApiClient client,
     required PiholeV6Service service,
     required super.sessionCache,
-  }) : _client = client,
-       _service = service;
+  }) : _service = service;
 
-  final PiholeV6ApiClient _client;
   final PiholeV6Service _service;
 
   @override
@@ -42,8 +38,8 @@ class LocalDnsRepositoryV6 extends BaseV6SidRepository
     return runWithResultRetry<Unit>(
       action: () async {
         final sid = await getSid();
-        return _client.putConfigElement(
-          sid,
+        _service.setSid(sid);
+        return _service.addConfigArrayItem(
           element: 'dns/hosts',
           value: '$ip $name',
         );
@@ -60,8 +56,8 @@ class LocalDnsRepositoryV6 extends BaseV6SidRepository
     return runWithResultRetry<Unit>(
       action: () async {
         final sid = await getSid();
-        return _client.deleteConfigElement(
-          sid,
+        _service.setSid(sid);
+        return _service.deleteConfigArrayItem(
           element: 'dns/hosts',
           value: '$ip $name',
         );
@@ -126,11 +122,10 @@ class LocalDnsRepositoryV6 extends BaseV6SidRepository
     return runWithResultRetry<Unit>(
       action: () async {
         final sid = await getSid();
-        return _client.putConfigElement(
-          sid,
+        _service.setSid(sid);
+        return _service.addConfigArrayItem(
           element: 'dns/cnameRecords',
           value: _serializeCnameRecord(record),
-          isRestart: true,
         );
       },
       onRetry: (_, e) => renewSidIfExpired(e),
@@ -142,11 +137,10 @@ class LocalDnsRepositoryV6 extends BaseV6SidRepository
     return runWithResultRetry<Unit>(
       action: () async {
         final sid = await getSid();
-        return _client.deleteConfigElement(
-          sid,
+        _service.setSid(sid);
+        return _service.deleteConfigArrayItem(
           element: 'dns/cnameRecords',
           value: _serializeCnameRecord(record),
-          isRestart: true,
         );
       },
       onRetry: (_, e) => renewSidIfExpired(e),

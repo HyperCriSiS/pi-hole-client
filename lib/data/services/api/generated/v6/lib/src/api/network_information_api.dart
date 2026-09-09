@@ -49,7 +49,7 @@ class NetworkInformationApi {
       '{'
       r'device_id'
       '}',
-      deviceId.toString(),
+      Uri.encodeComponent(deviceId.toString()),
     );
     final _options = Options(
       method: r'DELETE',

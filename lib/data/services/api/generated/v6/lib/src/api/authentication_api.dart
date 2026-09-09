@@ -236,7 +236,7 @@ class AuthenticationApi {
       '{'
       r'id'
       '}',
-      id.toString(),
+      Uri.encodeComponent(id.toString()),
     );
     final _options = Options(
       method: r'DELETE',

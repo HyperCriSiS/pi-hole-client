@@ -113,7 +113,6 @@ class RepositoryBundleFactory {
             sessionCache: sessionCache,
           ),
           localDns: LocalDnsRepositoryV6(
-            client: client,
             service: generatedService,
             sessionCache: sessionCache,
           ),

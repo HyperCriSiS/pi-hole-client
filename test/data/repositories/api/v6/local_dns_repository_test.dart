@@ -17,7 +17,12 @@ class _FakePiholeV6Service extends PiholeV6Service {
 
   bool shouldFailGet = false;
   bool shouldFailPatch = false;
+  bool shouldFailAddArrayItem = false;
+  bool shouldFailDeleteArrayItem = false;
   String? lastSid;
+  String? lastArrayElement;
+  String? lastArrayValue;
+  bool? lastArrayRestart;
   List<String> hosts = [];
   List<String> cnameRecords = [];
   GetConfig200Response? lastPatchBody;
@@ -43,6 +48,36 @@ class _FakePiholeV6Service extends PiholeV6Service {
   }
 
   @override
+  Future<Result<Unit>> addConfigArrayItem({
+    required String element,
+    required String value,
+    bool? restart = true,
+  }) async {
+    lastArrayElement = element;
+    lastArrayValue = value;
+    lastArrayRestart = restart;
+    if (shouldFailAddArrayItem) {
+      return Failure(Exception('Forced generated addArrayItem failure'));
+    }
+    return Success(unit);
+  }
+
+  @override
+  Future<Result<Unit>> deleteConfigArrayItem({
+    required String element,
+    required String value,
+    bool? restart = true,
+  }) async {
+    lastArrayElement = element;
+    lastArrayValue = value;
+    lastArrayRestart = restart;
+    if (shouldFailDeleteArrayItem) {
+      return Failure(Exception('Forced generated deleteArrayItem failure'));
+    }
+    return Success(unit);
+  }
+
+  @override
   Future<Result<GetConfig200Response>> patchConfig({
     GetConfig200Response? body,
     bool? restart,
@@ -63,7 +98,6 @@ void main() {
   late _FakePiholeV6Service service;
 
   LocalDnsRepositoryV6 createRepository() => LocalDnsRepositoryV6(
-    client: client,
     service: service,
     sessionCache: V6SessionCache(creds: creds, client: client),
   );
@@ -107,15 +141,22 @@ void main() {
         name: 'mydevice',
       );
       expect(result.isSuccess(), true);
+      expect(service.lastSid, 'sid123');
+      expect(service.lastArrayElement, 'dns/hosts');
+      expect(service.lastArrayValue, '192.168.1.100 mydevice');
+      expect(service.lastArrayRestart, true);
     });
 
     test('should fail when adding record fails', () async {
-      client.shouldFail = true;
+      service.shouldFailAddArrayItem = true;
       final result = await repository.addRecord(
         ip: '192.168.1.100',
         name: 'mydevice',
       );
-      expectError(result, messageContains: 'Forced putConfigElement failure');
+      expectError(
+        result,
+        messageContains: 'Forced generated addArrayItem failure',
+      );
     });
   });
 
@@ -133,17 +174,21 @@ void main() {
         name: 'mydevice',
       );
       expect(result.isSuccess(), true);
+      expect(service.lastSid, 'sid123');
+      expect(service.lastArrayElement, 'dns/hosts');
+      expect(service.lastArrayValue, '192.168.1.100 mydevice');
+      expect(service.lastArrayRestart, true);
     });
 
     test('should fail when deleting record fails', () async {
-      client.shouldFail = true;
+      service.shouldFailDeleteArrayItem = true;
       final result = await repository.deleteRecord(
         ip: '192.168.1.100',
         name: 'mydevice',
       );
       expectError(
         result,
-        messageContains: 'Forced deleteConfigElement failure',
+        messageContains: 'Forced generated deleteArrayItem failure',
       );
     });
   });
@@ -240,17 +285,24 @@ void main() {
         ),
       );
       expect(result.isSuccess(), true);
+      expect(service.lastSid, 'sid123');
+      expect(service.lastArrayElement, 'dns/cnameRecords');
+      expect(service.lastArrayValue, 'printer.example.test,printer.lan,300');
+      expect(service.lastArrayRestart, true);
     });
 
     test('should surface CNAME add errors', () async {
-      client.shouldFail = true;
+      service.shouldFailAddArrayItem = true;
       final result = await repository.addCnameRecord(
         record: const CnameRecord(
           alias: 'printer.example.test',
           target: 'printer.lan',
         ),
       );
-      expectError(result, messageContains: 'Forced putConfigElement failure');
+      expectError(
+        result,
+        messageContains: 'Forced generated addArrayItem failure',
+      );
     });
 
     test('should delete CNAME record successfully', () async {
@@ -262,10 +314,14 @@ void main() {
         ),
       );
       expect(result.isSuccess(), true);
+      expect(service.lastSid, 'sid123');
+      expect(service.lastArrayElement, 'dns/cnameRecords');
+      expect(service.lastArrayValue, 'printer.example.test,printer.lan,300');
+      expect(service.lastArrayRestart, true);
     });
 
     test('should surface CNAME delete errors', () async {
-      client.shouldFail = true;
+      service.shouldFailDeleteArrayItem = true;
       final result = await repository.deleteCnameRecord(
         record: const CnameRecord(
           alias: 'printer.example.test',
@@ -274,7 +330,7 @@ void main() {
       );
       expectError(
         result,
-        messageContains: 'Forced deleteConfigElement failure',
+        messageContains: 'Forced generated deleteArrayItem failure',
       );
     });
 

@@ -55,13 +55,13 @@ class DomainManagementApi {
           '{'
           r'type'
           '}',
-          type.toString(),
+          Uri.encodeComponent(type.toString()),
         )
         .replaceAll(
           '{'
           r'kind'
           '}',
-          kind.toString(),
+          Uri.encodeComponent(kind.toString()),
         );
     final _options = Options(
       method: r'POST',
@@ -272,19 +272,19 @@ class DomainManagementApi {
           '{'
           r'type'
           '}',
-          type.toString(),
+          Uri.encodeComponent(type.toString()),
         )
         .replaceAll(
           '{'
           r'kind'
           '}',
-          kind.toString(),
+          Uri.encodeComponent(kind.toString()),
         )
         .replaceAll(
           '{'
           r'domain'
           '}',
-          domain.toString(),
+          Uri.encodeComponent(domain.toString()),
         );
     final _options = Options(
       method: r'DELETE',
@@ -364,19 +364,19 @@ class DomainManagementApi {
           '{'
           r'type'
           '}',
-          type.toString(),
+          Uri.encodeComponent(type.toString()),
         )
         .replaceAll(
           '{'
           r'kind'
           '}',
-          kind.toString(),
+          Uri.encodeComponent(kind.toString()),
         )
         .replaceAll(
           '{'
           r'domain'
           '}',
-          domain.toString(),
+          Uri.encodeComponent(domain.toString()),
         );
     final _options = Options(
       method: r'GET',
@@ -579,7 +579,7 @@ class DomainManagementApi {
       '{'
       r'type'
       '}',
-      type.toString(),
+      Uri.encodeComponent(type.toString()),
     );
     final _options = Options(
       method: r'GET',
@@ -687,13 +687,13 @@ class DomainManagementApi {
           '{'
           r'type'
           '}',
-          type.toString(),
+          Uri.encodeComponent(type.toString()),
         )
         .replaceAll(
           '{'
           r'kind'
           '}',
-          kind.toString(),
+          Uri.encodeComponent(kind.toString()),
         );
     final _options = Options(
       method: r'GET',
@@ -805,19 +805,19 @@ class DomainManagementApi {
           '{'
           r'type'
           '}',
-          type.toString(),
+          Uri.encodeComponent(type.toString()),
         )
         .replaceAll(
           '{'
           r'kind'
           '}',
-          kind.toString(),
+          Uri.encodeComponent(kind.toString()),
         )
         .replaceAll(
           '{'
           r'domain'
           '}',
-          domain.toString(),
+          Uri.encodeComponent(domain.toString()),
         );
     final _options = Options(
       method: r'PUT',

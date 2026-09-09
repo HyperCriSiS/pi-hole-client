@@ -14,14 +14,20 @@ class _RetryLocalDnsService extends PiholeV6Service {
   _RetryLocalDnsService({
     this.failFirstGet = false,
     this.failFirstPatch = false,
+    this.failFirstAddArrayItem = false,
   }) : super(api: PiholeV6Api(basePathOverride: 'http://localhost/api'));
 
   final bool failFirstGet;
   final bool failFirstPatch;
+  final bool failFirstAddArrayItem;
 
   int getCallCount = 0;
   int patchCallCount = 0;
+  int addArrayItemCallCount = 0;
   String? lastSid;
+  String? lastArrayElement;
+  String? lastArrayValue;
+  bool? lastArrayRestart;
   List<String> hosts = [];
   GetConfig200Response? lastPatchBody;
   bool? lastRestart;
@@ -42,6 +48,22 @@ class _RetryLocalDnsService extends PiholeV6Service {
         config: ConfigConfig(dns: ConfigConfigDns(hosts: hosts)),
       ),
     );
+  }
+
+  @override
+  Future<Result<Unit>> addConfigArrayItem({
+    required String element,
+    required String value,
+    bool? restart = true,
+  }) async {
+    addArrayItemCallCount++;
+    lastArrayElement = element;
+    lastArrayValue = value;
+    lastArrayRestart = restart;
+    if (failFirstAddArrayItem && addArrayItemCallCount == 1) {
+      return Failure(ApiException(message: 'Unauthorized', statusCode: 401));
+    }
+    return Success(unit);
   }
 
   @override
@@ -66,7 +88,6 @@ void main() {
     final service = _RetryLocalDnsService(failFirstGet: true)
       ..hosts = ['192.168.1.10 printer'];
     final repository = LocalDnsRepositoryV6(
-      client: client,
       service: service,
       sessionCache: V6SessionCache(creds: creds, client: client),
     );
@@ -81,13 +102,35 @@ void main() {
     expect(service.lastSid, isNot('sid123'));
   });
 
+  test('renews SID and retries generated Local DNS add after 401', () async {
+    final client = FakePiholeV6ApiClient();
+    final creds = FakeSessionCredentialService();
+    final service = _RetryLocalDnsService(failFirstAddArrayItem: true);
+    final repository = LocalDnsRepositoryV6(
+      service: service,
+      sessionCache: V6SessionCache(creds: creds, client: client),
+    );
+
+    final result = await repository.addRecord(
+      ip: '192.168.1.20',
+      name: 'printer',
+    );
+
+    expect(result.isSuccess(), true);
+    expect(client.postAuthCallCount, 1);
+    expect(service.addArrayItemCallCount, 2);
+    expect(service.lastSid, isNot('sid123'));
+    expect(service.lastArrayElement, 'dns/hosts');
+    expect(service.lastArrayValue, '192.168.1.20 printer');
+    expect(service.lastArrayRestart, true);
+  });
+
   test('renews SID and retries generated Local DNS patch after 401', () async {
     final client = FakePiholeV6ApiClient();
     final creds = FakeSessionCredentialService();
     final service = _RetryLocalDnsService(failFirstPatch: true)
       ..hosts = ['192.168.1.10 oldname'];
     final repository = LocalDnsRepositoryV6(
-      client: client,
       service: service,
       sessionCache: V6SessionCache(creds: creds, client: client),
     );

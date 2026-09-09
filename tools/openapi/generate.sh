@@ -54,6 +54,20 @@ rm -rf .dart_tool build
 dart pub get
 dart run build_runner build --delete-conflicting-outputs
 
+# Keep the committed generated tree deterministic. OpenAPI Generator emits
+# trailing whitespace and extra EOF blank lines that `dart format` removes.
+echo "🧹 Formatting generated Dart sources..."
+dart format lib
+
+# OpenAPI Generator 7.19.0's dart-dio target inserts path values raw into
+# route templates. Run this after formatting because the formatter normalizes
+# those expressions into a deterministic shape that the guarded post-processor
+# can safely recognize. Each value remains one URI path segment even when it
+# contains reserved characters such as `/`, `:`, `?`, or `#`.
+echo "🔧 Encoding generated path parameters..."
+python3 "$SCRIPT_DIR/encode_path_parameters.py" \
+    "$GENERATED_PKG/lib/src/api"
+
 echo "🏗️ Running build_runner in project root..."
 cd "$PROJECT_ROOT"
 dart run build_runner build --delete-conflicting-outputs

@@ -254,7 +254,7 @@ class ClientManagementApi {
       '{'
       r'client'
       '}',
-      client.toString(),
+      Uri.encodeComponent(client.toString()),
     );
     final _options = Options(
       method: r'DELETE',
@@ -426,7 +426,7 @@ class ClientManagementApi {
       '{'
       r'client'
       '}',
-      client.toString(),
+      Uri.encodeComponent(client.toString()),
     );
     final _options = Options(
       method: r'GET',
@@ -631,7 +631,7 @@ class ClientManagementApi {
       '{'
       r'client'
       '}',
-      client.toString(),
+      Uri.encodeComponent(client.toString()),
     );
     final _options = Options(
       method: r'PUT',
