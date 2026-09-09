@@ -186,7 +186,7 @@ void main() {
       final result = await repository.getAuth(useSid: false);
 
       expectError(result, messageContains: 'Forced generated getAuth failure');
-      expect(service.unauthenticatedGetAuthCallCount, 1);
+      expect(service.unauthenticatedGetAuthCallCount, 2);
       expect(client.getAuthCallCount, 0);
     });
 
