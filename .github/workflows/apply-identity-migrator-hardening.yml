@@ -1,0 +1,81 @@
+name: Harden Android identity migrator
+
+on:
+  push:
+    branches:
+      - roadmap/android-identity-migrator
+    paths:
+      - .github/workflows/apply-identity-migrator-hardening.yml
+
+permissions:
+  contents: write
+
+jobs:
+  harden:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Patch guardrails and CI wiring
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              p = Path(path)
+              text = p.read_text()
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"{path}: expected one match, found {count}")
+              p.write_text(text.replace(old, new, 1))
+
+          old = '    planned_text = "\\n".join(write.content for write in writes)\n    planned_text += "\\n" + "\\n".join(move.content for move in moves)\n    if current.application_id in planned_text:\n'
+          new = '    runtime_writes = [write for write in writes if write.path != config]\n    planned_text = "\\n".join(write.content for write in runtime_writes)\n    planned_text += "\\n" + "\\n".join(move.content for move in moves)\n    if current.application_id in planned_text:\n'
+          replace_once('tools/identity/migrate_android_identity.py', old, new)
+
+          replace_once(
+              'tools/identity/test_migrate_android_identity.py',
+              'import tempfile\nimport unittest\n',
+              'import tempfile\nimport unittest\nimport sys\n',
+          )
+          replace_once(
+              'tools/identity/test_migrate_android_identity.py',
+              'module = importlib.util.module_from_spec(SPEC)\nSPEC.loader.exec_module(module)\n',
+              'module = importlib.util.module_from_spec(SPEC)\nsys.modules[SPEC.name] = module\nSPEC.loader.exec_module(module)\n',
+          )
+
+          docs_anchor = '## Dedicated rename procedure\n\nDo not perform a partial rename.\n'
+          docs_replacement = '''## Migration helper\n\nThe mechanical Android identity portion can be previewed without changing files:\n\n```bash\npython3 tools/identity/migrate_android_identity.py \\\n  --application-id io.github.example.pi_hole_client \\\n  --app-label "Example Pi-hole client" \\\n  --resource-app-name "Example Pi-hole"\n```\n\nThe command defaults to a dry run and lists every file update and Kotlin move. After the product identity is approved, add `--apply`; the helper updates the canonical identity config, records the previous application ID as forbidden, moves Kotlin sources/tests to the new package path, updates Gradle/manifest/widget/release wiring, and runs `audit_android_identity.sh`. It intentionally does not invent or rewrite launcher artwork, splash assets, Flutter-facing product copy, or translations; those remain part of the branding review.\n\n## Dedicated rename procedure\n\nDo not perform a partial rename.\n'''
+          replace_once('docs/maintenance/android-package-identity.md', docs_anchor, docs_replacement)
+
+          ci_anchor = '      - name: Audit Android package identity\n        run: bash tools/identity/audit_android_identity.sh\n'
+          ci_replacement = '      - name: Test Android identity migration helper\n        run: python3 tools/identity/test_migrate_android_identity.py\n\n      - name: Audit Android package identity\n        run: bash tools/identity/audit_android_identity.sh\n'
+          replace_once('.github/workflows/test-release.yaml', ci_anchor, ci_replacement)
+          PY
+
+      - name: Validate migration helper
+        shell: bash
+        run: |
+          python3 tools/identity/test_migrate_android_identity.py
+          python3 tools/identity/migrate_android_identity.py \
+            --application-id io.github.example.pi_hole_client \
+            --app-label "Example Pi-hole client" \
+            --resource-app-name "Example Pi-hole"
+          git diff --check
+
+      - name: Commit hardened helper and remove one-shot workflow
+        shell: bash
+        run: |
+          rm .github/workflows/apply-identity-migrator-hardening.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tools/identity/migrate_android_identity.py \
+                  tools/identity/test_migrate_android_identity.py \
+                  docs/maintenance/android-package-identity.md \
+                  .github/workflows/test-release.yaml \
+                  .github/workflows/apply-identity-migrator-hardening.yml
+          git commit -m "feat: validate Android identity migration helper"
+          git push
