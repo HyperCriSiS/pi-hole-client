@@ -51,15 +51,6 @@ class PiholeV6Service {
     _api.setApiKey('x_header_sid', sid);
   }
 
-  /// Removes the shared SID header for requests that must deliberately run
-  /// without authentication, such as the auth capability probe.
-  void clearSid() {
-    for (final interceptor
-        in _api.dio.interceptors.whereType<ApiKeyAuthInterceptor>()) {
-      interceptor.apiKeys.remove('x_header_sid');
-    }
-  }
-
   // Lazy API instances
   late final _authApi = _api.getAuthenticationApi();
   late final _actionsApi = _api.getActionsApi();
@@ -90,6 +81,21 @@ class PiholeV6Service {
   Future<Result<GetAuth200Response>> getAuth() {
     return safeDioCall(() async {
       final response = await _authApi.getAuth();
+      return response.requireData;
+    });
+  }
+
+  /// Reads auth capabilities without attaching the shared SID.
+  ///
+  /// A cloned Dio instance keeps the connection adapter and non-auth
+  /// interceptors while removing the generated API-key interceptor only from
+  /// this request path. The shared generated client remains untouched, so an
+  /// unauthenticated probe cannot race with concurrent authenticated calls.
+  Future<Result<GetAuth200Response>> getAuthUnauthenticated() {
+    return safeDioCall(() async {
+      final dio = _api.dio.clone();
+      dio.interceptors.removeWhere((i) => i is ApiKeyAuthInterceptor);
+      final response = await AuthenticationApi(dio).getAuth();
       return response.requireData;
     });
   }
