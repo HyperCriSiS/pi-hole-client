@@ -24,82 +24,35 @@ jobs:
           from pathlib import Path
           import re
 
-          def replace_once(path: str, old: str, new: str) -> None:
-              p = Path(path)
-              text = p.read_text()
-              count = text.count(old)
-              if count != 1:
-                  raise SystemExit(f'{path}: expected exactly one match, got {count}')
-              p.write_text(text.replace(old, new, 1))
-
           metrics = Path('lib/data/repositories/api/v6/metrics_repository.dart')
           text = metrics.read_text()
           old_import = "import 'package:pi_hole_client/data/services/api/pihole_v6_api_client.dart';\n"
           if text.count(old_import) != 1:
               raise SystemExit('metrics_repository.dart: legacy client import mismatch')
           text = text.replace(old_import, '', 1)
-          old_ctor = '''  MetricsRepositoryV6({
-    required PiholeV6ApiClient client,
-    required PiholeV6Service service,
-    required super.sessionCache,
-  }) : _service = service;
-'''
-          new_ctor = '''  MetricsRepositoryV6({
-    required PiholeV6Service service,
-    required super.sessionCache,
-  }) : _service = service;
-'''
-          if text.count(old_ctor) != 1:
+          text, count = re.subn(r'(MetricsRepositoryV6\(\{\n)\s*required PiholeV6ApiClient client,\n', r'\1', text, count=1)
+          if count != 1:
               raise SystemExit('metrics_repository.dart: constructor mismatch')
-          metrics.write_text(text.replace(old_ctor, new_ctor, 1))
+          metrics.write_text(text)
 
           realtime = Path('lib/data/repositories/api/v6/realtime_status_repository.dart')
           text = realtime.read_text()
           if text.count(old_import) != 1:
               raise SystemExit('realtime_status_repository.dart: legacy client import mismatch')
           text = text.replace(old_import, '', 1)
-          old_ctor = '''  RealtimeStatusRepositoryV6({
-    required PiholeV6ApiClient client,
-    required super.sessionCache,
-  }) {
-    // "Use" the parameters to suppress Lint
-    client.hashCode;
-  }
-'''
-          new_ctor = '''  RealtimeStatusRepositoryV6({required super.sessionCache});
-'''
-          if text.count(old_ctor) != 1:
+          pattern = r'  RealtimeStatusRepositoryV6\(\{\n\s*required PiholeV6ApiClient client,\n\s*required super\.sessionCache,\n\s*\}\) \{\n\s*// "Use" the parameters to suppress Lint\n\s*client\.hashCode;\n\s*\}\n'
+          text, count = re.subn(pattern, '  RealtimeStatusRepositoryV6({required super.sessionCache});\n', text, count=1)
+          if count != 1:
               raise SystemExit('realtime_status_repository.dart: constructor mismatch')
-          realtime.write_text(text.replace(old_ctor, new_ctor, 1))
+          realtime.write_text(text)
 
           factory = Path('lib/data/repositories/api/repository_factory.dart')
           text = factory.read_text()
-          old_metrics = '''          metrics: MetricsRepositoryV6(
-            client: client,
-            service: generatedService,
-            sessionCache: sessionCache,
-          ),
-'''
-          new_metrics = '''          metrics: MetricsRepositoryV6(
-            service: generatedService,
-            sessionCache: sessionCache,
-          ),
-'''
-          if text.count(old_metrics) != 1:
-              raise SystemExit('repository_factory.dart: metrics constructor mismatch')
-          text = text.replace(old_metrics, new_metrics, 1)
-          old_realtime = '''          realtimeStatus: v6.RealtimeStatusRepositoryV6(
-            client: client,
-            sessionCache: sessionCache,
-          ),
-'''
-          new_realtime = '''          realtimeStatus: v6.RealtimeStatusRepositoryV6(
-            sessionCache: sessionCache,
-          ),
-'''
-          if text.count(old_realtime) != 1:
-              raise SystemExit('repository_factory.dart: realtime constructor mismatch')
-          factory.write_text(text.replace(old_realtime, new_realtime, 1))
+          text, count_metrics = re.subn(r'(metrics: MetricsRepositoryV6\(\n)\s*client: client,\n', r'\1', text, count=1)
+          text, count_realtime = re.subn(r'(realtimeStatus: v6\.RealtimeStatusRepositoryV6\(\n)\s*client: client,\n', r'\1', text, count=1)
+          if (count_metrics, count_realtime) != (1, 1):
+              raise SystemExit(f'repository_factory.dart: constructor mismatch {count_metrics}/{count_realtime}')
+          factory.write_text(text)
 
           metric_tests = [
               'test/data/repositories/api/v6/metrics_repository_test.dart',
@@ -108,7 +61,7 @@ jobs:
               'test/data/repositories/api/v6/metrics_repository_generated_top_clients_test.dart',
               'test/data/repositories/api/v6/metrics_repository_generated_top_domains_test.dart',
           ]
-          pattern = re.compile(r'(MetricsRepositoryV6\(\n)(\s*)client: client,\n')
+          pattern = re.compile(r'(MetricsRepositoryV6\(\n)\s*client: client,\n')
           for path in metric_tests:
               p = Path(path)
               text = p.read_text()
@@ -119,13 +72,11 @@ jobs:
 
           realtime_test = Path('test/data/repositories/api/v6/realtime_status_repository_test.dart')
           text = realtime_test.read_text()
-          pattern_rt = re.compile(r'(RealtimeStatusRepositoryV6\(\n)(\s*)client: client,\n')
-          new_text, count = pattern_rt.subn(r'\1', text)
+          text, count = re.subn(r'(RealtimeStatusRepositoryV6\(\n)\s*client: client,\n', r'\1', text, count=1)
           if count != 1:
-              raise SystemExit(f'realtime_status_repository_test.dart: expected 1 argument, got {count}')
-          realtime_test.write_text(new_text)
+              raise SystemExit('realtime_status_repository_test.dart: constructor mismatch')
+          realtime_test.write_text(text)
 
-          # Guardrails: no dead constructor dependency remains, while hold users still do.
           if 'required PiholeV6ApiClient client' in metrics.read_text():
               raise SystemExit('metrics legacy constructor dependency remains')
           if 'PiholeV6ApiClient' in realtime.read_text():
@@ -133,8 +84,7 @@ jobs:
           factory_text = factory.read_text()
           for hold in ('ActionsRepositoryV6(', 'FtlRepositoryV6(', 'NetworkRepositoryV6('):
               start = factory_text.index(hold)
-              chunk = factory_text[start:start + 220]
-              if 'client: client' not in chunk:
+              if 'client: client' not in factory_text[start:start + 240]:
                   raise SystemExit(f'{hold}: documented legacy hold lost client injection')
           PY
           git diff --check
