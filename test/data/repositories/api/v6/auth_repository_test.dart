@@ -15,6 +15,11 @@ class _FakePiholeV6Service extends PiholeV6Service {
   _FakePiholeV6Service()
     : super(api: PiholeV6Api(basePathOverride: 'http://localhost/api'));
 
+  bool shouldFailPostAuth = false;
+  bool shouldReturnNoPasswordSession = false;
+  bool shouldRequireTotp = false;
+  int? validTotp;
+  int? lastTotp;
   bool shouldFailGetAuth = false;
   bool authTotpEnabled = false;
   int unauthenticatedGetAuthCallCount = 0;
@@ -23,6 +28,27 @@ class _FakePiholeV6Service extends PiholeV6Service {
   bool shouldFailDeleteSession = false;
   String? lastSid;
   int? lastDeletedSessionId;
+
+  @override
+  Future<Result<GetAuth200Response>> postAuth({
+    required String password,
+    int? totp,
+  }) async {
+    lastTotp = totp;
+    if (shouldRequireTotp && totp == null) {
+      return Failure(TotpRequiredException());
+    }
+    if (validTotp != null && totp != null && totp != validTotp) {
+      return Failure(TotpInvalidException());
+    }
+    if (shouldFailPostAuth) {
+      return Failure(Exception('Forced generated postAuth failure'));
+    }
+    final source = shouldReturnNoPasswordSession
+        ? kSrvPostAuthNoPassword
+        : kSrvPostAuth;
+    return Success(GetAuth200Response.fromJson(source.toJson()));
+  }
 
   @override
   void setSid(String sid) {
@@ -93,7 +119,6 @@ void main() {
     creds = FakeSessionCredentialService();
     service = _FakePiholeV6Service();
     repository = AuthRepositoryV6(
-      client: client,
       service: service,
       sessionCache: V6SessionCache(creds: creds, client: client),
     );
@@ -106,16 +131,19 @@ void main() {
     });
 
     test('returns error when API fails', () async {
-      client.shouldFail = true;
+      service.shouldFailPostAuth = true;
 
       final result = await repository.createSession('password123');
-      expectError(result, messageContains: 'Forced postAuth failure');
+      expectError(
+        result,
+        messageContains: 'Forced generated postAuth failure',
+      );
     });
 
     test(
       'succeeds without persisting a sid when no app password is set',
       () async {
-        client.shouldReturnNoPasswordSession = true;
+        service.shouldReturnNoPasswordSession = true;
 
         final result = await repository.createSession('');
 
@@ -126,14 +154,14 @@ void main() {
       },
     );
 
-    test('forwards the totp code to the API client as an int', () async {
+    test('forwards the totp code to the generated service as an int', () async {
       await repository.createSession('password123', totp: '123456');
 
-      expect(client.lastTotp, 123456);
+      expect(service.lastTotp, 123456);
     });
 
     test('propagates TotpRequiredException from a 2FA server', () async {
-      client.shouldRequireTotp = true;
+      service.shouldRequireTotp = true;
 
       final result = await repository.createSession('password123');
 
@@ -142,8 +170,8 @@ void main() {
     });
 
     test('propagates TotpInvalidException from a 2FA server', () async {
-      client.shouldRequireTotp = true;
-      client.validTotp = 123456;
+      service.shouldRequireTotp = true;
+      service.validTotp = 123456;
 
       final result = await repository.createSession(
         'password123',
