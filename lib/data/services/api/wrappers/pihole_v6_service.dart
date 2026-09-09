@@ -1,6 +1,11 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
+import 'package:pi_hole_client/data/services/api/utils/api_exception.dart';
 import 'package:pi_hole_client/data/services/api/utils/safe_dio_call.dart';
+import 'package:pi_hole_client/utils/exceptions.dart';
+import 'package:pi_hole_client/utils/logger.dart';
 import 'package:pi_hole_client/utils/misc.dart';
 import 'package:pihole_v6_api/pihole_v6_api.dart';
 import 'package:result_dart/result_dart.dart';
@@ -69,13 +74,40 @@ class PiholeV6Service {
   // Authentication
   // ===========================================================================
 
-  Future<Result<GetAuth200Response>> postAuth({required String password}) {
-    return safeDioCall(() async {
-      final response = await _authApi.addAuth(
+  /// Creates a new Pi-hole v6 session through the generated auth API.
+  ///
+  /// FTL v6.7 documents TOTP support for `POST /auth`, but its OpenAPI
+  /// `password` schema omits the `totp` property. To keep generated transport
+  /// without forking the pinned upstream spec, this request uses an isolated
+  /// Dio clone and injects the optional TOTP value after generated
+  /// serialization. The shared SID interceptor is removed from the clone, so
+  /// login stays unauthenticated without mutating concurrent requests.
+  Future<Result<GetAuth200Response>> postAuth({
+    required String password,
+    int? totp,
+  }) async {
+    try {
+      final dio = _api.dio.clone();
+      dio.interceptors.removeWhere((i) => i is ApiKeyAuthInterceptor);
+      if (totp != null) {
+        dio.interceptors.insert(0, _TotpAuthRequestInterceptor(totp));
+      }
+
+      final response = await AuthenticationApi(dio).addAuth(
         password: Password(password: password),
       );
-      return response.requireData;
-    });
+      return Success(response.requireData);
+    } on DioException catch (e) {
+      final totpError = _parseTotpError(e);
+      if (totpError != null) {
+        return Failure(totpError);
+      }
+      final exception = ApiException.fromDioException(e);
+      logger.e('Dio auth error: ${exception.message}');
+      return Failure(exception);
+    } catch (e) {
+      return Failure(e is Exception ? e : Exception(e.toString()));
+    }
   }
 
   Future<Result<GetAuth200Response>> getAuth() {
@@ -154,7 +186,8 @@ class PiholeV6Service {
     String? type,
     String? status,
     String? reply,
-    String? dnssec,
+    bool? dnssec,
+    bool? disk,
   }) {
     return safeDioCall(() async {
       final response = await _metricsApi.getQueries(
@@ -171,6 +204,7 @@ class PiholeV6Service {
         status: status,
         reply: reply,
         dnssec: dnssec,
+        disk: disk,
       );
       return response.requireData;
     });
@@ -216,71 +250,47 @@ class PiholeV6Service {
     });
   }
 
-  Future<Result<GetMetricsQueryTypes200Response>> getQueryTypes() {
-    return safeDioCall(() async {
-      final response = await _metricsApi.getMetricsQueryTypes();
-      return response.requireData;
-    });
-  }
-
-  // ===========================================================================
-  // DNS Control
-  // ===========================================================================
-
-  Future<Result<GetBlocking200Response>> getDnsBlocking() {
-    return safeDioCall(() async {
-      final response = await _dnsApi.getBlocking();
-      return response.requireData;
-    });
-  }
-
-  Future<Result<GetBlocking200Response>> setDnsBlocking({
-    SetBlockingRequest? request,
-  }) {
-    return safeDioCall(() async {
-      final response = await _dnsApi.setBlocking(setBlockingRequest: request);
-      return response.requireData;
-    });
-  }
-
   // ===========================================================================
   // Groups
   // ===========================================================================
 
-  Future<Result<GetGroups200Response>> getAllGroups() {
+  Future<Result<GetGroups200Response>> getGroups() {
     return safeDioCall(() async {
-      final response = await _groupApi.listGroups();
+      final response = await _groupApi.getGroups();
       return response.requireData;
     });
   }
 
-  Future<Result<GetGroups200Response>> getGroups({required String name}) {
-    return safeDioCall(() async {
-      final response = await _groupApi.getGroups(name: name);
-      return response.requireData;
-    });
-  }
-
-  Future<Result<ReplaceGroup200Response>> addGroup({Post2? body}) {
-    return safeDioCall(() async {
-      final response = await _groupApi.addGroup(post2: body);
-      return response.requireData;
-    });
-  }
-
-  Future<Result<ReplaceGroup200Response>> replaceGroup({
+  Future<Result<GetGroups200Response>> addGroup({
     required String name,
-    Put2? body,
+    String? comment,
+    bool? enabled,
   }) {
     return safeDioCall(() async {
-      final response = await _groupApi.replaceGroup(name: name, put2: body);
+      final response = await _groupApi.addGroup(
+        body: GroupsPost(name: name, comment: comment, enabled: enabled),
+      );
+      return response.requireData;
+    });
+  }
+
+  Future<Result<GetGroups200Response>> updateGroup({
+    required String name,
+    String? comment,
+    bool? enabled,
+  }) {
+    return safeDioCall(() async {
+      final response = await _groupApi.replaceGroup(
+        name: name,
+        body: GroupsPut(name: name, comment: comment, enabled: enabled),
+      );
       return response.requireData;
     });
   }
 
   Future<Result<Unit>> deleteGroup({required String name}) {
     return safeDioCall(() async {
-      await _groupApi.deleteGroup(name: name);
+      await _groupApi.deleteGroups(name: name);
       return unit;
     });
   }
@@ -289,188 +299,189 @@ class PiholeV6Service {
   // Domains
   // ===========================================================================
 
-  Future<Result<GetDomain200Response>> getAllDomains() {
+  Future<Result<GetDomains200Response>> getDomains() {
     return safeDioCall(() async {
       final response = await _domainApi.getDomains();
       return response.requireData;
     });
   }
 
-  Future<Result<GetDomain200Response>> getDomainsByTypeKind({
-    required String type,
-    required String kind,
-  }) {
-    return safeDioCall(() async {
-      final response = await _domainApi.getTypeKindDomains(
-        type: type,
-        kind: kind,
-      );
-      return response.requireData;
-    });
-  }
-
-  Future<Result<GetDomain200Response>> getDomains({
-    required String type,
-    required String kind,
+  Future<Result<GetDomains200Response>> addDomain({
     required String domain,
-  }) {
-    return safeDioCall(() async {
-      final response = await _domainApi.getDomain(
-        type: type,
-        kind: kind,
-        domain: domain,
-      );
-      return response.requireData;
-    });
-  }
-
-  Future<Result<ReplaceDomain200Response>> addDomain({
     required String type,
-    required String kind,
-    Post? body,
+    String? comment,
+    List<int>? groups,
+    bool? enabled,
   }) {
     return safeDioCall(() async {
       final response = await _domainApi.addDomain(
         type: type,
-        kind: kind,
-        post: body,
+        kind: 'exact',
+        domain: domain,
+        body: Post(
+          domain: domain,
+          type: type,
+          kind: 'exact',
+          comment: comment,
+          groups: groups,
+          enabled: enabled,
+        ),
       );
       return response.requireData;
     });
   }
 
-  Future<Result<ReplaceDomain200Response>> replaceDomain({
-    required String type,
-    required String kind,
+  Future<Result<GetDomains200Response>> updateDomain({
     required String domain,
-    ReplaceDomainRequest? body,
+    required String type,
+    String? comment,
+    List<int>? groups,
+    bool? enabled,
   }) {
     return safeDioCall(() async {
       final response = await _domainApi.replaceDomain(
         type: type,
-        kind: kind,
+        kind: 'exact',
         domain: domain,
-        replaceDomainRequest: body,
+        body: ReplaceDomainRequest(
+          domain: domain,
+          type: type,
+          kind: 'exact',
+          comment: comment,
+          groups: groups,
+          enabled: enabled,
+        ),
       );
       return response.requireData;
     });
   }
 
   Future<Result<Unit>> deleteDomain({
-    required String type,
-    required String kind,
     required String domain,
+    required String type,
   }) {
     return safeDioCall(() async {
-      await _domainApi.deleteDomain(type: type, kind: kind, domain: domain);
+      await _domainApi.deleteDomain(type: type, kind: 'exact', domain: domain);
       return unit;
     });
   }
 
   // ===========================================================================
-  // Lists (Adlists/Subscriptions)
+  // Lists
   // ===========================================================================
 
-  Future<Result<GetLists200Response>> getAllLists({String? type}) {
+  Future<Result<GetLists200Response>> getLists() {
     return safeDioCall(() async {
-      final response = await _listApi.listLists(type: type);
+      final response = await _listApi.getLists();
       return response.requireData;
     });
   }
 
-  Future<Result<GetLists200Response>> getLists({
-    required String list,
-    String? type,
+  Future<Result<GetLists200Response>> addList({
+    required String address,
+    required String type,
+    String? comment,
+    List<int>? groups,
+    bool? enabled,
   }) {
     return safeDioCall(() async {
-      final response = await _listApi.getLists(list: list, type: type);
+      final response = await _listApi.addList(
+        body: ListsPost(
+          address: address,
+          type: type,
+          comment: comment,
+          groups: groups,
+          enabled: enabled,
+        ),
+      );
       return response.requireData;
     });
   }
 
-  Future<Result<ReplaceLists200Response>> addList({
+  Future<Result<GetLists200Response>> updateList({
+    required String address,
     required String type,
-    Post4? body,
-  }) {
-    return safeDioCall(() async {
-      final response = await _listApi.addList(type: type, post4: body);
-      return response.requireData;
-    });
-  }
-
-  Future<Result<ReplaceLists200Response>> replaceList({
-    required String list,
-    required String type,
-    Put4? body,
+    String? comment,
+    List<int>? groups,
+    bool? enabled,
   }) {
     return safeDioCall(() async {
       final response = await _listApi.replaceLists(
-        list: list,
+        list: address,
         type: type,
-        put4: body,
+        body: ListsPut(
+          address: address,
+          type: type,
+          comment: comment,
+          groups: groups,
+          enabled: enabled,
+        ),
       );
       return response.requireData;
     });
   }
 
   Future<Result<Unit>> deleteList({
-    required String list,
+    required String address,
     required String type,
   }) {
     return safeDioCall(() async {
-      await _listApi.deleteLists(list: list, type: type);
+      await _listApi.deleteLists(list: address, type: type);
       return unit;
     });
   }
 
-  Future<Result<GetSearch200Response>> searchDomainInLists({
+  Future<Result<GetSearch200Response>> searchList({
     required String domain,
-    int? n,
     bool? partial,
   }) {
     return safeDioCall(() async {
-      final response = await _listApi.getSearch(
-        domain: domain,
-        N: n,
-        partial: partial,
+      final response = await _listApi.getSearch(domain: domain, partial: partial);
+      return response.requireData;
+    });
+  }
+
+  // ===========================================================================
+  // Client management
+  // ===========================================================================
+
+  Future<Result<GetClients200Response>> getClients() {
+    return safeDioCall(() async {
+      final response = await _clientApi.getClients();
+      return response.requireData;
+    });
+  }
+
+  Future<Result<GetClients200Response>> addClient({
+    required String client,
+    String? comment,
+    List<int>? groups,
+  }) {
+    return safeDioCall(() async {
+      final response = await _clientApi.addClient(
+        body: AddClientRequest(
+          client: client,
+          comment: comment,
+          groups: groups,
+        ),
       );
       return response.requireData;
     });
   }
 
-  // ===========================================================================
-  // Clients
-  // ===========================================================================
-
-  Future<Result<GetClients200Response>> getAllClients() {
-    return safeDioCall(() async {
-      final response = await _clientApi.listClients();
-      return response.requireData;
-    });
-  }
-
-  Future<Result<GetClients200Response>> getClients({required String client}) {
-    return safeDioCall(() async {
-      final response = await _clientApi.getClients(client: client);
-      return response.requireData;
-    });
-  }
-
-  Future<Result<ReplaceClient200Response>> addClient({AddClientRequest? body}) {
-    return safeDioCall(() async {
-      final response = await _clientApi.addClient(addClientRequest: body);
-      return response.requireData;
-    });
-  }
-
-  Future<Result<ReplaceClient200Response>> replaceClient({
+  Future<Result<ReplaceClient200Response>> updateClient({
     required String client,
-    ReplaceClientRequest? body,
+    String? comment,
+    List<int>? groups,
   }) {
     return safeDioCall(() async {
       final response = await _clientApi.replaceClient(
         client: client,
-        replaceClientRequest: body,
+        body: ReplaceClientRequest(
+          client: client,
+          comment: comment,
+          groups: groups,
+        ),
       );
       return response.requireData;
     });
@@ -484,74 +495,74 @@ class PiholeV6Service {
   }
 
   // ===========================================================================
-  // FTL Information
+  // DNS control
   // ===========================================================================
 
-  Future<Result<GetClient200Response>> getInfoClient() {
+  Future<Result<GetBlocking200Response>> getBlocking() {
     return safeDioCall(() async {
-      final response = await _ftlApi.getClient();
+      final response = await _dnsApi.getBlocking();
       return response.requireData;
     });
   }
 
-  Future<Result<GetFtlinfo200Response>> getInfoFtl() {
+  Future<Result<GetBlocking200Response>> setBlocking({
+    required bool blocking,
+    int? timer,
+  }) {
     return safeDioCall(() async {
-      final response = await _ftlApi.getFtlinfo();
+      final response = await _dnsApi.setBlocking(
+        blocking: blocking,
+        timer: timer,
+      );
       return response.requireData;
     });
   }
 
-  Future<Result<GetHostinfo200Response>> getInfoHost() {
-    return safeDioCall(() async {
-      final response = await _ftlApi.getHostinfo();
-      return response.requireData;
-    });
-  }
+  // ===========================================================================
+  // Actions
+  // ===========================================================================
 
-  Future<Result<GetMessages200Response>> getInfoMessages() {
+  Future<Result<Unit>> actionFlushNetwork() {
     return safeDioCall(() async {
-      final response = await _ftlApi.getMessages();
-      return response.requireData;
-    });
-  }
-
-  Future<Result<Unit>> deleteInfoMessage({required int messageId}) {
-    return safeDioCall(() async {
-      await _ftlApi.deleteMessage(messageId: messageId);
+      await _actionsApi.actionFlushNetwork();
       return unit;
     });
   }
 
-  Future<Result<GetMetricsinfo200Response>> getInfoMetrics() {
+  Future<Result<Unit>> actionFlushArp() {
     return safeDioCall(() async {
-      final response = await _ftlApi.getMetricsinfo();
-      return response.requireData;
+      await _actionsApi.actionFlushArp();
+      return unit;
     });
   }
 
-  Future<Result<GetSensors200Response>> getInfoSensors() {
+  Future<Result<Unit>> actionFlushLogs() {
     return safeDioCall(() async {
-      final response = await _ftlApi.getSensors();
-      return response.requireData;
+      await _actionsApi.actionFlushLogs();
+      return unit;
     });
   }
 
-  Future<Result<GetSysteminfo200Response>> getInfoSystem() {
+  Future<Result<Unit>> actionRestartDns() {
     return safeDioCall(() async {
-      final response = await _ftlApi.getSysteminfo();
-      return response.requireData;
+      await _actionsApi.actionRestartDns();
+      return unit;
     });
   }
 
-  Future<Result<GetVersion200Response>> getInfoVersion() {
+  // ===========================================================================
+  // FTL information
+  // ===========================================================================
+
+  Future<Result<GetFtlinfo200Response>> getFtlInfo() {
     return safeDioCall(() async {
-      final response = await _ftlApi.getVersion();
+      final response = await _ftlApi.getFtlInfo();
       return response.requireData;
     });
   }
 
   // ===========================================================================
-  // Network Information
+  // Network information
   // ===========================================================================
 
   Future<Result<GetNetwork200Response>> getNetworkDevices({
@@ -567,62 +578,15 @@ class PiholeV6Service {
     });
   }
 
-  Future<Result<Unit>> deleteNetworkDevice({required int deviceId}) {
+  Future<Result<Unit>> deleteNetworkDevice({required int id}) {
     return safeDioCall(() async {
-      await _networkApi.deleteDevice(deviceId: deviceId);
+      await _networkApi.deleteNetworkDevice(id: id);
       return unit;
     });
   }
 
-  Future<Result<GetGateway200Response>> getNetworkGateway({bool? detailed}) {
-    return safeDioCall(() async {
-      final response = await _networkApi.getGateway(detailed: detailed);
-      return response.requireData;
-    });
-  }
-
   // ===========================================================================
-  // Actions
-  // ===========================================================================
-
-  Future<Result<ActionRestartdns200Response>> actionFlushArp() {
-    return safeDioCall(() async {
-      // ignore: deprecated_member_use
-      final response = await _actionsApi.actionFlusharp();
-      return response.requireData;
-    });
-  }
-
-  Future<Result<ActionRestartdns200Response>> actionFlushNetwork() {
-    return safeDioCall(() async {
-      final response = await _actionsApi.actionFlushnetwork();
-      return response.requireData;
-    });
-  }
-
-  Future<Result<ActionRestartdns200Response>> actionFlushLogs() {
-    return safeDioCall(() async {
-      final response = await _actionsApi.actionFlushlogs();
-      return response.requireData;
-    });
-  }
-
-  Future<Result<String>> actionGravity() {
-    return safeDioCall(() async {
-      final response = await _actionsApi.actionGravity();
-      return response.requireData;
-    });
-  }
-
-  Future<Result<ActionRestartdns200Response>> actionRestartDns() {
-    return safeDioCall(() async {
-      final response = await _actionsApi.actionRestartdns();
-      return response.requireData;
-    });
-  }
-
-  // ===========================================================================
-  // Pi-hole Configuration
+  // Pi-hole configuration
   // ===========================================================================
 
   Future<Result<GetConfig200Response>> getConfig() {
@@ -632,10 +596,19 @@ class PiholeV6Service {
     });
   }
 
+  Future<Result<GetConfig200Response>> patchConfig({
+    required ConfigConfig config,
+  }) {
+    return safeDioCall(() async {
+      final response = await _configApi.patchConfig(config: config);
+      return response.requireData;
+    });
+  }
+
   Future<Result<Unit>> addConfigArrayItem({
     required String element,
     required String value,
-    bool? restart = true,
+    bool? restart,
   }) {
     return safeDioCall(() async {
       await _configApi.addArrayItem(
@@ -650,7 +623,7 @@ class PiholeV6Service {
   Future<Result<Unit>> deleteConfigArrayItem({
     required String element,
     required String value,
-    bool? restart = true,
+    bool? restart,
   }) {
     return safeDioCall(() async {
       await _configApi.deleteArrayItem(
@@ -659,19 +632,6 @@ class PiholeV6Service {
         restart: restart,
       );
       return unit;
-    });
-  }
-
-  Future<Result<GetConfig200Response>> patchConfig({
-    GetConfig200Response? body,
-    bool? restart,
-  }) {
-    return safeDioCall(() async {
-      final response = await _configApi.patchConfig(
-        getConfig200Response: body,
-        restart: restart,
-      );
-      return response.requireData;
     });
   }
 
@@ -692,4 +652,75 @@ class PiholeV6Service {
       return unit;
     });
   }
+}
+
+class _TotpAuthRequestInterceptor extends Interceptor {
+  _TotpAuthRequestInterceptor(this.totp);
+
+  final int totp;
+
+  @override
+  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
+    if (options.method == 'POST' && options.path == '/auth') {
+      final data = options.data;
+      Map<String, dynamic>? body;
+
+      if (data is String) {
+        final decoded = jsonDecode(data);
+        if (decoded is Map<String, dynamic>) {
+          body = Map<String, dynamic>.from(decoded);
+        }
+      } else if (data is Map<String, dynamic>) {
+        body = Map<String, dynamic>.from(data);
+      }
+
+      if (body != null) {
+        body['totp'] = totp;
+        options.data = jsonEncode(body);
+      }
+    }
+    handler.next(options);
+  }
+}
+
+Exception? _parseTotpError(DioException error) {
+  final statusCode = error.response?.statusCode;
+  if (statusCode != 400 && statusCode != 401 && statusCode != 429) {
+    return null;
+  }
+
+  dynamic data = error.response?.data;
+  if (data is String) {
+    try {
+      data = jsonDecode(data);
+    } catch (_) {
+      return null;
+    }
+  }
+  if (data is! Map) return null;
+
+  final errorBody = data['error'];
+  if (errorBody is! Map) return null;
+
+  final key = errorBody['key']?.toString();
+  final message = errorBody['message']?.toString() ?? '';
+  if (!message.contains('2FA token')) return null;
+
+  if (statusCode == 400 &&
+      key == 'bad_request' &&
+      message.contains('No 2FA token found in JSON payload')) {
+    return TotpRequiredException(message);
+  }
+  if (statusCode == 401 && key == 'unauthorized') {
+    if (message.contains('Reused 2FA token')) {
+      return TotpReusedException(message);
+    }
+    if (message.contains('Invalid 2FA token')) {
+      return TotpInvalidException(message);
+    }
+  }
+  if (statusCode == 429 && key == 'rate_limiting') {
+    return TotpRateLimitException(message);
+  }
+  return null;
 }
