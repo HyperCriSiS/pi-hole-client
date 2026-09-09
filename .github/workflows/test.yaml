@@ -97,14 +97,17 @@ jobs:
         # Flutter processes and merge their coverage afterward.
         run_coverage_shard data test/data
         run_coverage_shard ui test/ui
-        run_coverage_shard other test/domain test/routing test/utils test/widgets
-        run_coverage_shard full-coverage test/full_coverage_test.dart
+        run_coverage_shard other \
+          test/full_coverage_test.dart \
+          test/domain \
+          test/routing \
+          test/utils \
+          test/widgets
 
         lcov \
           --add-tracefile .coverage-shards/data.info \
           --add-tracefile .coverage-shards/ui.info \
           --add-tracefile .coverage-shards/other.info \
-          --add-tracefile .coverage-shards/full-coverage.info \
           --output-file coverage/lcov.info
 
     - name: Upload coverage artifact
