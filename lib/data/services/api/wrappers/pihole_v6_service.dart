@@ -1,8 +1,13 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
+import 'package:pi_hole_client/data/services/api/utils/api_exception.dart';
 import 'package:pi_hole_client/data/services/api/utils/safe_dio_call.dart';
+import 'package:pi_hole_client/utils/exceptions.dart';
+import 'package:pi_hole_client/utils/logger.dart';
 import 'package:pi_hole_client/utils/misc.dart';
-import 'package:pihole_v6_api/pihole_v6_api.dart';
+import 'package:pihole_v6_api/pihole_v6_api.dart' hide Success;
 import 'package:result_dart/result_dart.dart';
 
 /// Service wrapper around the OpenAPI-generated v6 API client.
@@ -69,13 +74,44 @@ class PiholeV6Service {
   // Authentication
   // ===========================================================================
 
-  Future<Result<GetAuth200Response>> postAuth({required String password}) {
-    return safeDioCall(() async {
-      final response = await _authApi.addAuth(
-        password: Password(password: password),
-      );
-      return response.requireData;
-    });
+  /// Creates a new Pi-hole v6 session through the generated auth API.
+  ///
+  /// FTL v6.7 documents TOTP support for `POST /auth`, but its OpenAPI
+  /// `password` schema omits the `totp` property. To keep generated transport
+  /// without forking the pinned upstream spec, TOTP requests use an isolated
+  /// Dio clone and inject the token after generated serialization. Password-
+  /// only requests use the generated operation directly; it declares
+  /// `secure: []`, so the shared SID interceptor deliberately omits the SID.
+  Future<Result<GetAuth200Response>> postAuth({
+    required String password,
+    int? totp,
+  }) async {
+    try {
+      final Response<GetAuth200Response> response;
+      if (totp == null) {
+        response = await _authApi.addAuth(
+          password: Password(password: password),
+        );
+      } else {
+        final dio = _api.dio.clone();
+        dio.interceptors.removeWhere((i) => i is ApiKeyAuthInterceptor);
+        dio.interceptors.insert(0, _TotpAuthRequestInterceptor(totp));
+        response = await AuthenticationApi(dio).addAuth(
+          password: Password(password: password),
+        );
+      }
+      return Success(response.requireData);
+    } on DioException catch (e) {
+      final totpError = _parseTotpError(e);
+      if (totpError != null) {
+        return Failure(totpError);
+      }
+      final exception = ApiException.fromDioException(e);
+      logger.e('Dio auth error: ${exception.message}');
+      return Failure(exception);
+    } catch (e) {
+      return Failure(e is Exception ? e : Exception(e.toString()));
+    }
   }
 
   Future<Result<GetAuth200Response>> getAuth() {
@@ -692,4 +728,75 @@ class PiholeV6Service {
       return unit;
     });
   }
+}
+
+class _TotpAuthRequestInterceptor extends Interceptor {
+  _TotpAuthRequestInterceptor(this.totp);
+
+  final int totp;
+
+  @override
+  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
+    if (options.method == 'POST' && options.path == '/auth') {
+      final data = options.data;
+      Map<String, dynamic>? body;
+
+      if (data is String) {
+        final decoded = jsonDecode(data);
+        if (decoded is Map<String, dynamic>) {
+          body = Map<String, dynamic>.from(decoded);
+        }
+      } else if (data is Map<String, dynamic>) {
+        body = Map<String, dynamic>.from(data);
+      }
+
+      if (body != null) {
+        body['totp'] = totp;
+        options.data = jsonEncode(body);
+      }
+    }
+    handler.next(options);
+  }
+}
+
+Exception? _parseTotpError(DioException error) {
+  final statusCode = error.response?.statusCode;
+  if (statusCode != 400 && statusCode != 401 && statusCode != 429) {
+    return null;
+  }
+
+  dynamic data = error.response?.data;
+  if (data is String) {
+    try {
+      data = jsonDecode(data);
+    } catch (_) {
+      return null;
+    }
+  }
+  if (data is! Map) return null;
+
+  final errorBody = data['error'];
+  if (errorBody is! Map) return null;
+
+  final key = errorBody['key']?.toString();
+  final message = errorBody['message']?.toString() ?? '';
+  if (!message.contains('2FA token')) return null;
+
+  if (statusCode == 400 &&
+      key == 'bad_request' &&
+      message.contains('No 2FA token found in JSON payload')) {
+    return TotpRequiredException(message);
+  }
+  if (statusCode == 401 && key == 'unauthorized') {
+    if (message.contains('Reused 2FA token')) {
+      return TotpReusedException(message);
+    }
+    if (message.contains('Invalid 2FA token')) {
+      return TotpInvalidException(message);
+    }
+  }
+  if (statusCode == 429 && key == 'rate_limiting') {
+    return TotpRateLimitException(message);
+  }
+  return null;
 }
