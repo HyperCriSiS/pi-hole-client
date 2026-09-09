@@ -76,7 +76,36 @@ jobs:
       run: dart run full_coverage
 
     - name: Run tests
-      run: xvfb-run flutter test --coverage
+      shell: bash
+      run: |
+        set -euo pipefail
+        rm -rf .coverage-shards
+        mkdir -p .coverage-shards
+
+        run_coverage_shard() {
+          local name="$1"
+          shift
+          rm -f coverage/lcov.info
+          xvfb-run -a flutter test --coverage "$@"
+          test -s coverage/lcov.info
+          cp coverage/lcov.info ".coverage-shards/${name}.info"
+        }
+
+        # Running the entire suite in one Flutter test process can leave a
+        # worker isolate stuck after the UI/domain boundary. Keep one job and
+        # one required check, but isolate the major test areas into separate
+        # Flutter processes and merge their coverage afterward.
+        run_coverage_shard data test/data
+        run_coverage_shard ui test/ui
+        run_coverage_shard other test/domain test/routing test/utils test/widgets
+        run_coverage_shard full-coverage test/full_coverage_test.dart
+
+        lcov \
+          --add-tracefile .coverage-shards/data.info \
+          --add-tracefile .coverage-shards/ui.info \
+          --add-tracefile .coverage-shards/other.info \
+          --add-tracefile .coverage-shards/full-coverage.info \
+          --output-file coverage/lcov.info
 
     - name: Upload coverage artifact
       uses: actions/upload-artifact@v7
