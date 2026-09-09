@@ -1,0 +1,158 @@
+name: Apply dead v6 client cleanup
+
+on:
+  push:
+    branches:
+      - roadmap/remove-dead-v6-client-injections
+    paths:
+      - .github/workflows/apply-dead-v6-client-cleanup.yml
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Remove dead legacy client injections
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          def replace_once(path: str, old: str, new: str) -> None:
+              p = Path(path)
+              text = p.read_text()
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{path}: expected exactly one match, got {count}')
+              p.write_text(text.replace(old, new, 1))
+
+          metrics = Path('lib/data/repositories/api/v6/metrics_repository.dart')
+          text = metrics.read_text()
+          old_import = "import 'package:pi_hole_client/data/services/api/pihole_v6_api_client.dart';\n"
+          if text.count(old_import) != 1:
+              raise SystemExit('metrics_repository.dart: legacy client import mismatch')
+          text = text.replace(old_import, '', 1)
+          old_ctor = '''  MetricsRepositoryV6({
+    required PiholeV6ApiClient client,
+    required PiholeV6Service service,
+    required super.sessionCache,
+  }) : _service = service;
+'''
+          new_ctor = '''  MetricsRepositoryV6({
+    required PiholeV6Service service,
+    required super.sessionCache,
+  }) : _service = service;
+'''
+          if text.count(old_ctor) != 1:
+              raise SystemExit('metrics_repository.dart: constructor mismatch')
+          metrics.write_text(text.replace(old_ctor, new_ctor, 1))
+
+          realtime = Path('lib/data/repositories/api/v6/realtime_status_repository.dart')
+          text = realtime.read_text()
+          if text.count(old_import) != 1:
+              raise SystemExit('realtime_status_repository.dart: legacy client import mismatch')
+          text = text.replace(old_import, '', 1)
+          old_ctor = '''  RealtimeStatusRepositoryV6({
+    required PiholeV6ApiClient client,
+    required super.sessionCache,
+  }) {
+    // "Use" the parameters to suppress Lint
+    client.hashCode;
+  }
+'''
+          new_ctor = '''  RealtimeStatusRepositoryV6({required super.sessionCache});
+'''
+          if text.count(old_ctor) != 1:
+              raise SystemExit('realtime_status_repository.dart: constructor mismatch')
+          realtime.write_text(text.replace(old_ctor, new_ctor, 1))
+
+          factory = Path('lib/data/repositories/api/repository_factory.dart')
+          text = factory.read_text()
+          old_metrics = '''          metrics: MetricsRepositoryV6(
+            client: client,
+            service: generatedService,
+            sessionCache: sessionCache,
+          ),
+'''
+          new_metrics = '''          metrics: MetricsRepositoryV6(
+            service: generatedService,
+            sessionCache: sessionCache,
+          ),
+'''
+          if text.count(old_metrics) != 1:
+              raise SystemExit('repository_factory.dart: metrics constructor mismatch')
+          text = text.replace(old_metrics, new_metrics, 1)
+          old_realtime = '''          realtimeStatus: v6.RealtimeStatusRepositoryV6(
+            client: client,
+            sessionCache: sessionCache,
+          ),
+'''
+          new_realtime = '''          realtimeStatus: v6.RealtimeStatusRepositoryV6(
+            sessionCache: sessionCache,
+          ),
+'''
+          if text.count(old_realtime) != 1:
+              raise SystemExit('repository_factory.dart: realtime constructor mismatch')
+          factory.write_text(text.replace(old_realtime, new_realtime, 1))
+
+          metric_tests = [
+              'test/data/repositories/api/v6/metrics_repository_test.dart',
+              'test/data/repositories/api/v6/metrics_repository_generated_history_retry_test.dart',
+              'test/data/repositories/api/v6/metrics_repository_generated_queries_retry_test.dart',
+              'test/data/repositories/api/v6/metrics_repository_generated_top_clients_test.dart',
+              'test/data/repositories/api/v6/metrics_repository_generated_top_domains_test.dart',
+          ]
+          pattern = re.compile(r'(MetricsRepositoryV6\(\n)(\s*)client: client,\n')
+          for path in metric_tests:
+              p = Path(path)
+              text = p.read_text()
+              new_text, count = pattern.subn(r'\1', text)
+              if count < 1:
+                  raise SystemExit(f'{path}: no MetricsRepositoryV6 client argument found')
+              p.write_text(new_text)
+
+          realtime_test = Path('test/data/repositories/api/v6/realtime_status_repository_test.dart')
+          text = realtime_test.read_text()
+          pattern_rt = re.compile(r'(RealtimeStatusRepositoryV6\(\n)(\s*)client: client,\n')
+          new_text, count = pattern_rt.subn(r'\1', text)
+          if count != 1:
+              raise SystemExit(f'realtime_status_repository_test.dart: expected 1 argument, got {count}')
+          realtime_test.write_text(new_text)
+
+          # Guardrails: no dead constructor dependency remains, while hold users still do.
+          if 'required PiholeV6ApiClient client' in metrics.read_text():
+              raise SystemExit('metrics legacy constructor dependency remains')
+          if 'PiholeV6ApiClient' in realtime.read_text():
+              raise SystemExit('realtime legacy client dependency remains')
+          factory_text = factory.read_text()
+          for hold in ('ActionsRepositoryV6(', 'FtlRepositoryV6(', 'NetworkRepositoryV6('):
+              start = factory_text.index(hold)
+              chunk = factory_text[start:start + 220]
+              if 'client: client' not in chunk:
+                  raise SystemExit(f'{hold}: documented legacy hold lost client injection')
+          PY
+          git diff --check
+      - name: Commit cleanup and remove one-shot workflow
+        shell: bash
+        run: |
+          rm .github/workflows/apply-dead-v6-client-cleanup.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib/data/repositories/api/repository_factory.dart \
+                  lib/data/repositories/api/v6/metrics_repository.dart \
+                  lib/data/repositories/api/v6/realtime_status_repository.dart \
+                  test/data/repositories/api/v6/metrics_repository_test.dart \
+                  test/data/repositories/api/v6/metrics_repository_generated_history_retry_test.dart \
+                  test/data/repositories/api/v6/metrics_repository_generated_queries_retry_test.dart \
+                  test/data/repositories/api/v6/metrics_repository_generated_top_clients_test.dart \
+                  test/data/repositories/api/v6/metrics_repository_generated_top_domains_test.dart \
+                  test/data/repositories/api/v6/realtime_status_repository_test.dart \
+                  .github/workflows/apply-dead-v6-client-cleanup.yml
+          git commit -m "refactor: remove dead v6 legacy client injections"
+          git push
