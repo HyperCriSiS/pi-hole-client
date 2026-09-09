@@ -2,8 +2,8 @@ import 'package:pi_hole_client/data/repositories/api/interfaces/actions_resposit
 import 'package:pi_hole_client/data/repositories/api/v6/base_v6_sid_repository.dart';
 import 'package:pi_hole_client/data/repositories/utils/call_with_retry.dart';
 import 'package:pi_hole_client/data/services/api/pihole_v6_api_client.dart';
+import 'package:pi_hole_client/data/services/api/utils/api_exception.dart';
 import 'package:pi_hole_client/data/services/api/wrappers/pihole_v6_service.dart';
-import 'package:pi_hole_client/utils/exceptions.dart';
 import 'package:pi_hole_client/utils/logger.dart';
 import 'package:result_dart/result_dart.dart';
 
@@ -25,18 +25,19 @@ class ActionsRepositoryV6 extends BaseV6SidRepository
       action: () async {
         final sid = await getSid();
 
+        _service.setSid(sid);
+
         // Try flush/network first (v6.3+)
-        final networkResult = await _client.postActionFlushNetwork(sid);
+        final networkResult = await _service.actionFlushNetwork();
         if (networkResult.isSuccess()) {
           return networkResult.map((_) => unit);
         }
 
         // Fall back to flush/arp for Pi-hole < v6.3
         final error = networkResult.exceptionOrNull();
-        if (error is HttpStatusCodeException && error.statusCode == 404) {
+        if (error is ApiException && error.statusCode == 404) {
           logger.w('flush/network not found, falling back to flush/arp');
-          // ignore: deprecated_member_use_from_same_package
-          final arpResult = await _client.postActionFlushArp(sid);
+          final arpResult = await _service.actionFlushArp();
           return arpResult.map((_) => unit);
         }
 
