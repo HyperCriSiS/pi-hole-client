@@ -49,6 +49,19 @@ A dedicated identity migration must update these areas together:
 7. shared Flutter/package metadata such as `pubspec.yaml` and user-facing translated strings must be reviewed for the selected product name.
 8. downstream `fdroiddata` metadata is drafted only after the repository identity is final.
 
+## Migration helper
+
+The mechanical Android identity portion can be previewed without changing files:
+
+```bash
+python3 tools/identity/migrate_android_identity.py \
+  --application-id io.github.example.pi_hole_client \
+  --app-label "Example Pi-hole client" \
+  --resource-app-name "Example Pi-hole"
+```
+
+The command defaults to a dry run and lists every file update and Kotlin move. After the product identity is approved, add `--apply`; the helper updates the canonical identity config, records the previous application ID as forbidden, moves Kotlin sources/tests to the new package path, updates Gradle/manifest/widget/release wiring, and runs `audit_android_identity.sh`. It intentionally does not invent or rewrite launcher artwork, splash assets, Flutter-facing product copy, or translations; those remain part of the branding review.
+
 ## Dedicated rename procedure
 
 Do not perform a partial rename.
