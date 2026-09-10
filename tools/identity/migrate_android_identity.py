@@ -263,7 +263,8 @@ def plan_migration(repo_root: Path, new_identity: Identity) -> MigrationPlan:
         )
     )
 
-    planned_text = "\n".join(write.content for write in writes)
+    runtime_writes = [write for write in writes if write.path != config]
+    planned_text = "\n".join(write.content for write in runtime_writes)
     planned_text += "\n" + "\n".join(move.content for move in moves)
     if current.application_id in planned_text:
         raise ValueError(

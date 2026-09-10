@@ -4,12 +4,14 @@ from __future__ import annotations
 import importlib.util
 import tempfile
 import unittest
+import sys
 from pathlib import Path
 
 SCRIPT = Path(__file__).with_name("migrate_android_identity.py")
 SPEC = importlib.util.spec_from_file_location("migrate_android_identity", SCRIPT)
 assert SPEC and SPEC.loader
 module = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = module
 SPEC.loader.exec_module(module)
 
 OLD_ID = "io.github.tsutsu3.pi_hole_client"
