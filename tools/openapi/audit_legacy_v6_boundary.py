@@ -35,6 +35,39 @@ def fail(message: str) -> None:
     raise SystemExit(f"legacy-v6-boundary: {message}")
 
 
+def extract_call(text: str, needle: str) -> str:
+    """Return one balanced function/constructor call beginning at *needle*."""
+    start = text.find(needle)
+    if start < 0:
+        fail(f"missing production call: {needle}")
+
+    open_paren = text.find("(", start)
+    depth = 0
+    quote: str | None = None
+    escaped = False
+    for index in range(open_paren, len(text)):
+        char = text[index]
+        if quote is not None:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == quote:
+                quote = None
+            continue
+        if char in {"'", '"'}:
+            quote = char
+        elif char == "(":
+            depth += 1
+        elif char == ")":
+            depth -= 1
+            if depth == 0:
+                return text[start : index + 1]
+
+    fail(f"unterminated production call: {needle}")
+    raise AssertionError("unreachable")
+
+
 def main() -> None:
     importers = {
         path.name
@@ -76,13 +109,10 @@ def main() -> None:
     # Production session management must remain generated-service-only even
     # while its nullable handwritten-client seam exists for compatibility tests.
     for constructor in ("sessionCacheStore?.getOrCreate(", "V6SessionCache("):
-        start = v6_section.find(constructor)
-        if start < 0:
-            fail(f"missing production session-cache construction: {constructor}")
-        block = v6_section[start : start + 320]
-        if "service: generatedService" not in block:
+        call = extract_call(v6_section, constructor)
+        if "service: generatedService" not in call:
             fail(f"{constructor} must bind generatedService in production")
-        if "client: client" in block:
+        if "client: client" in call:
             fail(f"{constructor} must not bind the handwritten client in production")
 
     cache = (V6_REPOSITORIES / "v6_session_cache.dart").read_text()
