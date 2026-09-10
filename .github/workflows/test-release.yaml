@@ -135,6 +135,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
 
+      - name: Test Android identity migration helper
+        run: python3 tools/identity/test_migrate_android_identity.py
+
       - name: Audit Android package identity
         run: bash tools/identity/audit_android_identity.sh
 
