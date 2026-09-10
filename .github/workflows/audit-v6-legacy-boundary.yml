@@ -1,0 +1,25 @@
+name: Audit remaining handwritten v6 boundary
+
+on:
+  push:
+    branches:
+      - maintenance/v6-legacy-boundary-audit
+    paths:
+      - .github/workflows/audit-v6-legacy-boundary.yml
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Inventory legacy v6 client references
+        run: |
+          echo '=== PiholeV6ApiClient references under lib ==='
+          grep -RFn --include='*.dart' 'PiholeV6ApiClient' lib || true
+          echo '=== handwritten client imports under lib ==='
+          grep -RFn --include='*.dart' "pihole_v6_api_client.dart" lib || true
+          echo '=== factory client injections ==='
+          grep -n -B3 -A5 'client: client' lib/data/repositories/api/repository_factory.dart || true
