@@ -34,8 +34,8 @@
     "@docusaurus/module-type-aliases": "^3.10.2",
     "@docusaurus/tsconfig": "^3.10.2",
     "@docusaurus/types": "^3.10.2",
-    "@typescript-eslint/parser": "^8.70.0",
-    "eslint": "^9.39.5",
+    "@typescript-eslint/parser": "^8",
+    "eslint": "^10.10.0",
     "prettier": "^3.9.6",
     "typescript": "~6.0.3"
   },
