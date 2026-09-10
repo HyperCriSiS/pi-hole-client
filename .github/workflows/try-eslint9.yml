@@ -26,17 +26,25 @@ jobs:
         run: |
           corepack enable
           corepack install
-      - name: Update ESLint within major 9
+      - name: Update ESLint and parser
         working-directory: website
-        run: pnpm add --save-dev 'eslint@^9'
+        run: pnpm add --save-dev 'eslint@^9' '@typescript-eslint/parser@^8'
       - name: Migrate Docusaurus preset to native flat config
         run: |
           cat > website/eslint.config.mjs <<'EOF'
           import docusaurusPlugin from "@docusaurus/eslint-plugin";
+          import tsParser from "@typescript-eslint/parser";
 
           export default [
             {
               files: ["**/*.js", "**/*.jsx", "**/*.ts", "**/*.tsx"],
+              languageOptions: {
+                parser: tsParser,
+                parserOptions: {
+                  ecmaFeatures: {jsx: true},
+                  sourceType: "module",
+                },
+              },
               plugins: {
                 "@docusaurus": docusaurusPlugin,
               },
