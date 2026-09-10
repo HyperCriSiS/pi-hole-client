@@ -1,4 +1,4 @@
-name: Test current ESLint 9 website stack
+name: Test current ESLint website stack
 
 on:
   push:
@@ -26,32 +26,9 @@ jobs:
         run: |
           corepack enable
           corepack install
-      - name: Update ESLint and parser
+      - name: Update ESLint to current major
         working-directory: website
-        run: pnpm add --save-dev 'eslint@^9' '@typescript-eslint/parser@^8'
-      - name: Migrate Docusaurus preset to native flat config
-        run: |
-          cat > website/eslint.config.mjs <<'EOF'
-          import docusaurusPlugin from "@docusaurus/eslint-plugin";
-          import tsParser from "@typescript-eslint/parser";
-
-          export default [
-            {
-              files: ["**/*.js", "**/*.jsx", "**/*.ts", "**/*.tsx"],
-              languageOptions: {
-                parser: tsParser,
-                parserOptions: {
-                  ecmaFeatures: {jsx: true},
-                  sourceType: "module",
-                },
-              },
-              plugins: {
-                "@docusaurus": docusaurusPlugin,
-              },
-              rules: docusaurusPlugin.configs.recommended.rules,
-            },
-          ];
-          EOF
+        run: pnpm add --save-dev 'eslint@^10' '@typescript-eslint/parser@^8'
       - name: Validate website
         working-directory: website
         run: |
@@ -62,7 +39,7 @@ jobs:
         run: |
           git diff --check
           changed="$(git status --porcelain | awk '{print $2}' | sort)"
-          expected="$(printf '%s\n' website/eslint.config.mjs website/package.json website/pnpm-lock.yaml | sort)"
+          expected="$(printf '%s\n' website/package.json website/pnpm-lock.yaml | sort)"
           if [ "$changed" != "$expected" ]; then
             echo "::error::Unexpected ESLint update changes:"
             git status --short
@@ -72,6 +49,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add website/eslint.config.mjs website/package.json website/pnpm-lock.yaml
-          git commit -m "chore(deps-dev): upgrade website to ESLint 9"
+          git add website/package.json website/pnpm-lock.yaml
+          git commit -m "chore(deps-dev): upgrade website to ESLint 10"
           git push
