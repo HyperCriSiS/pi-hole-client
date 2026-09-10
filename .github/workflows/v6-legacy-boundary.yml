@@ -1,0 +1,29 @@
+name: V6 legacy boundary
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'lib/data/repositories/api/repository_factory.dart'
+      - 'lib/data/repositories/api/v6/**'
+      - 'tools/openapi/audit_legacy_v6_boundary.py'
+      - '.github/workflows/v6-legacy-boundary.yml'
+  pull_request:
+    paths:
+      - 'lib/data/repositories/api/repository_factory.dart'
+      - 'lib/data/repositories/api/v6/**'
+      - 'tools/openapi/audit_legacy_v6_boundary.py'
+      - '.github/workflows/v6-legacy-boundary.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v7
+      - name: Verify handwritten v6 boundary
+        run: python3 tools/openapi/audit_legacy_v6_boundary.py
