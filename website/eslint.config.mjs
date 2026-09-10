@@ -1,11 +1,19 @@
 import docusaurusPlugin from "@docusaurus/eslint-plugin";
+import tsParser from "@typescript-eslint/parser";
 
 export default [
   {
     files: ["**/*.js", "**/*.jsx", "**/*.ts", "**/*.tsx"],
-    plugins: {
-      docusaurus: docusaurusPlugin,
+    languageOptions: {
+      parser: tsParser,
+      parserOptions: {
+        ecmaFeatures: {jsx: true},
+        sourceType: "module",
+      },
     },
-    extends: ["plugin:docusaurus/recommended"],
+    plugins: {
+      "@docusaurus": docusaurusPlugin,
+    },
+    rules: docusaurusPlugin.configs.recommended.rules,
   },
 ];
