@@ -17,25 +17,22 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-
-      - name: Patch validated helper guardrails
+      - name: Patch helper and tests
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
-
           def replace_once(path, old, new):
               p = Path(path)
               text = p.read_text()
-              count = text.count(old)
-              if count != 1:
-                  raise SystemExit(f"{path}: expected one match, found {count}")
+              if text.count(old) != 1:
+                  raise SystemExit(f"{path}: expected one match")
               p.write_text(text.replace(old, new, 1))
-
-          old = '    planned_text = "\\n".join(write.content for write in writes)\n    planned_text += "\\n" + "\\n".join(move.content for move in moves)\n    if current.application_id in planned_text:\n'
-          new = '    runtime_writes = [write for write in writes if write.path != config]\n    planned_text = "\\n".join(write.content for write in runtime_writes)\n    planned_text += "\\n" + "\\n".join(move.content for move in moves)\n    if current.application_id in planned_text:\n'
-          replace_once('tools/identity/migrate_android_identity.py', old, new)
-
+          replace_once(
+              'tools/identity/migrate_android_identity.py',
+              '    planned_text = "\\n".join(write.content for write in writes)\n    planned_text += "\\n" + "\\n".join(move.content for move in moves)\n    if current.application_id in planned_text:\n',
+              '    runtime_writes = [write for write in writes if write.path != config]\n    planned_text = "\\n".join(write.content for write in runtime_writes)\n    planned_text += "\\n" + "\\n".join(move.content for move in moves)\n    if current.application_id in planned_text:\n',
+          )
           replace_once(
               'tools/identity/test_migrate_android_identity.py',
               'import tempfile\nimport unittest\n',
@@ -46,45 +43,18 @@ jobs:
               'module = importlib.util.module_from_spec(SPEC)\nSPEC.loader.exec_module(module)\n',
               'module = importlib.util.module_from_spec(SPEC)\nsys.modules[SPEC.name] = module\nSPEC.loader.exec_module(module)\n',
           )
-
-          docs_anchor = '## Dedicated rename procedure\n\nDo not perform a partial rename.\n'
-          docs_replacement = '''## Migration helper
-
-The mechanical Android identity portion can be previewed without changing files:
-
-```bash
-python3 tools/identity/migrate_android_identity.py \\
-  --application-id io.github.example.pi_hole_client \\
-  --app-label "Example Pi-hole client" \\
-  --resource-app-name "Example Pi-hole"
-```
-
-The command defaults to a dry run and lists every file update and Kotlin move. After the product identity is approved, add `--apply`; the helper updates the canonical identity config, records the previous application ID as forbidden, moves Kotlin sources/tests to the new package path, updates Gradle/manifest/widget/release wiring, and runs `audit_android_identity.sh`. It intentionally does not invent or rewrite launcher artwork, splash assets, Flutter-facing product copy, or translations; those remain part of the branding review.
-
-## Dedicated rename procedure
-
-Do not perform a partial rename.
-'''
-          replace_once('docs/maintenance/android-package-identity.md', docs_anchor, docs_replacement)
           PY
-
-      - name: Validate migration helper
+      - name: Validate helper
         shell: bash
         run: |
           python3 tools/identity/test_migrate_android_identity.py
-          python3 tools/identity/migrate_android_identity.py \
-            --application-id io.github.example.pi_hole_client \
-            --app-label "Example Pi-hole client" \
-            --resource-app-name "Example Pi-hole"
+          python3 tools/identity/migrate_android_identity.py --application-id io.github.example.pi_hole_client --app-label "Example Pi-hole client" --resource-app-name "Example Pi-hole"
           git diff --check
-
-      - name: Commit validated helper changes
+      - name: Commit helper changes
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add tools/identity/migrate_android_identity.py \
-                  tools/identity/test_migrate_android_identity.py \
-                  docs/maintenance/android-package-identity.md
+          git add tools/identity/migrate_android_identity.py tools/identity/test_migrate_android_identity.py
           git commit -m "feat: validate Android identity migration helper"
           git push
