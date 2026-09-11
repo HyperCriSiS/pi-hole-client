@@ -146,6 +146,10 @@ jobs:
               "import 'package:pi_hole_client/utils/logger.dart';\n",
               '',
           )
+          client = client.replace(
+              "import 'package:pi_hole_client/data/model/v6/metrics/query_filter.dart';\nimport 'package:pi_hole_client/data/model/v6/metrics/query.dart' show Queries;\n",
+              "import 'package:pi_hole_client/data/model/v6/metrics/query.dart' show Queries;\nimport 'package:pi_hole_client/data/model/v6/metrics/query_filter.dart';\n",
+          )
           client_path.write_text(client)
 
           test_path = Path('test/data/services/api/pihole_v6_api_client_test.dart')
@@ -180,6 +184,7 @@ jobs:
         shell: bash
         run: |
           flutter pub get
+          cp .env.sample .env
           dart format lib/data/services/api/pihole_v6_api_client.dart test/data/services/api/pihole_v6_api_client_test.dart
           dart analyze lib/data/services/api/pihole_v6_api_client.dart test/data/services/api/pihole_v6_api_client_test.dart
           flutter test test/data/services/api/pihole_v6_api_client_test.dart
