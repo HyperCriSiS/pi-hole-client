@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:pi_hole_client/data/model/v6/action/action.dart' show Action;
 import 'package:pi_hole_client/data/model/v6/auth/auth.dart' show Session;
 import 'package:pi_hole_client/data/model/v6/auth/sessions.dart'
     show AuthSessions;
@@ -34,11 +33,11 @@ import 'package:pi_hole_client/data/model/v6/lists/search.dart'
 import 'package:pi_hole_client/data/model/v6/metrics/history.dart'
     show History, HistoryClients;
 import 'package:pi_hole_client/data/model/v6/metrics/query.dart' show Queries;
+import 'package:pi_hole_client/data/model/v6/metrics/query_filter.dart';
 import 'package:pi_hole_client/data/model/v6/metrics/stats.dart'
     show StatsSummary, StatsTopClients, StatsTopDomains, StatsUpstreams;
 import 'package:pi_hole_client/data/model/v6/network/devices.dart' show Devices;
 import 'package:pi_hole_client/data/model/v6/network/gateway.dart' show Gateway;
-import 'package:pi_hole_client/data/model/v6/metrics/query_filter.dart';
 import 'package:pi_hole_client/data/services/api/pihole_v6_api_client.dart';
 import 'package:pi_hole_client/domain/model/enums.dart';
 import 'package:pi_hole_client/utils/exceptions.dart';
@@ -273,32 +272,6 @@ class FakePiholeV6ApiClient implements PiholeV6ApiClient {
   }
 
   @override
-  Future<Result<Groups>> postGroups(
-    String sid, {
-    required String name,
-    String? comment,
-    bool? enabled = true,
-  }) async {
-    if (shouldFail) {
-      return Failure(Exception('Forced postGroups failure'));
-    }
-    return const Success(kSrvPostGroups);
-  }
-
-  @override
-  Future<Result<Groups>> putGroups(
-    String sid, {
-    required String name,
-    String? comment,
-    bool? enabled = true,
-  }) async {
-    if (shouldFail) {
-      return Failure(Exception('Forced putGroups failure'));
-    }
-    return const Success(kSrvPutGroups);
-  }
-
-  @override
   Future<Result<Unit>> deleteGroups(String sid, {required String name}) async {
     if (shouldFail) {
       return Failure(Exception('Forced deleteGroups failure'));
@@ -317,43 +290,6 @@ class FakePiholeV6ApiClient implements PiholeV6ApiClient {
     return const Success(kSrvGetClients);
   }
 
-  @override
-  Future<Result<Clients>> postClients(
-    String sid, {
-    required String client,
-    String? comment,
-    List<int>? groups = const [0],
-  }) async {
-    if (shouldFail) {
-      return Failure(Exception('Forced postClients failure'));
-    }
-    return const Success(kSrvPostClients);
-  }
-
-  @override
-  Future<Result<Clients>> putClients(
-    String sid, {
-    required String client,
-    String? comment,
-    List<int>? groups = const [0],
-  }) async {
-    if (shouldFail) {
-      return Failure(Exception('Forced putClients failure'));
-    }
-    return const Success(kSrvPutClients);
-  }
-
-  @override
-  Future<Result<Unit>> deleteClients(
-    String sid, {
-    required String client,
-  }) async {
-    if (shouldFail) {
-      return Failure(Exception('Forced deleteClients failure'));
-    }
-    return const Success(unit);
-  }
-
   // ==========================================================================
   // Domain management
   // ==========================================================================
@@ -370,51 +306,6 @@ class FakePiholeV6ApiClient implements PiholeV6ApiClient {
     return const Success(kSrvGetDomains);
   }
 
-  @override
-  Future<Result<Domains>> postDomains(
-    String sid, {
-    required DomainType type,
-    required DomainKind kind,
-    required String domain,
-    String? comment,
-    List<int>? groups = const [0],
-    bool? enabled = true,
-  }) async {
-    if (shouldFail) {
-      return Failure(Exception('Forced postDomains failure'));
-    }
-    return const Success(kSrvPostDomains);
-  }
-
-  @override
-  Future<Result<Domains>> putDomains(
-    String sid, {
-    required DomainType type,
-    required DomainKind kind,
-    required String domain,
-    String? comment,
-    List<int>? groups = const [0],
-    bool? enabled = true,
-  }) async {
-    if (shouldFail) {
-      return Failure(Exception('Forced putDomains failure'));
-    }
-    return const Success(kSrvPutDomains);
-  }
-
-  @override
-  Future<Result<Unit>> deleteDomains(
-    String sid, {
-    required DomainType type,
-    required DomainKind kind,
-    required String domain,
-  }) async {
-    if (shouldFail) {
-      return Failure(Exception('Forced deleteDomains failure'));
-    }
-    return const Success(unit);
-  }
-
   // ==========================================================================
   // List management
   // ==========================================================================
@@ -428,36 +319,6 @@ class FakePiholeV6ApiClient implements PiholeV6ApiClient {
       return Failure(Exception('Forced getLists failure'));
     }
     return const Success(kSrvGetLists);
-  }
-
-  @override
-  Future<Result<Lists>> postLists(
-    String sid, {
-    required String address,
-    required ListType type,
-    List<int>? groups = const [0],
-    String? comment = '',
-    bool? enabled = true,
-  }) async {
-    if (shouldFail) {
-      return Failure(Exception('Forced postLists failure'));
-    }
-    return Success(kSrvPostLists);
-  }
-
-  @override
-  Future<Result<Lists>> putLists(
-    String sid, {
-    required String adlist,
-    required ListType type,
-    List<int>? groups = const [0],
-    String? comment = '',
-    bool? enabled = true,
-  }) async {
-    if (shouldFail) {
-      return Failure(Exception('Forced putLists failure'));
-    }
-    return Success(kSrvPutLists);
   }
 
   @override
@@ -559,17 +420,6 @@ class FakePiholeV6ApiClient implements PiholeV6ApiClient {
   }
 
   @override
-  Future<Result<Unit>> deleteInfoMessages(
-    String sid, {
-    required int messageId,
-  }) async {
-    if (shouldFail) {
-      return Failure(Exception('Forced deleteInfoMessages failure'));
-    }
-    return const Success(unit);
-  }
-
-  @override
   Future<Result<InfoMetrics>> getInfoMetrics(String sid) async {
     if (shouldFail) {
       return Failure(Exception('Forced getInfoMetrics failure'));
@@ -623,17 +473,6 @@ class FakePiholeV6ApiClient implements PiholeV6ApiClient {
   }
 
   @override
-  Future<Result<Unit>> deleteNetworkDevices(
-    String sid, {
-    required int deviceId,
-  }) async {
-    if (shouldFail) {
-      return Failure(Exception('Forced deleteNetworkDevices failure'));
-    }
-    return const Success(unit);
-  }
-
-  @override
   Future<Result<Gateway>> getNetworkGateway(
     String sid, {
     bool? isDetailed,
@@ -652,33 +491,6 @@ class FakePiholeV6ApiClient implements PiholeV6ApiClient {
   // Actions
   // ==========================================================================
   @override
-  Future<Result<Action>> postActionFlushArp(String sid) async {
-    if (shouldFail) {
-      return Failure(Exception('Forced postActionFlushArp failure'));
-    }
-    return const Success(kSrvPostActionFlushArp);
-  }
-
-  @override
-  Future<Result<Action>> postActionFlushNetwork(String sid) async {
-    if (shouldFlushNetworkReturn404) {
-      return Failure(HttpStatusCodeException(404, 'Not Found'));
-    }
-    if (shouldFail) {
-      return Failure(Exception('Forced postActionFlushNetwork failure'));
-    }
-    return const Success(kSrvPostActionFlushArp);
-  }
-
-  @override
-  Future<Result<Action>> postActionFlushLogs(String sid) async {
-    if (shouldFail) {
-      return Failure(Exception('Forced postActionFlushLogs failure'));
-    }
-    return const Success(kSrvPostActionFlushLogs);
-  }
-
-  @override
   Stream<Result<List<String>>> postActionGravity(String sid) async* {
     if (shouldFail) {
       yield Failure(Exception('Forced postActionGravity failure'));
@@ -691,29 +503,9 @@ class FakePiholeV6ApiClient implements PiholeV6ApiClient {
     );
   }
 
-  @override
-  Future<Result<Action>> postActionRestartDns(String sid) async {
-    if (shouldFail) {
-      return Failure(Exception('Forced postActionRestartDns failure'));
-    }
-    return const Success(kSrvPostActionRestartDns);
-  }
-
   // ==========================================================================
   // Pi-hole Configuration
   // ==========================================================================
-  @override
-  Future<Result<Config>> getConfigElement(
-    String sid, {
-    String? element,
-    bool? isDetailed,
-  }) async {
-    if (shouldFail) {
-      return Failure(Exception('Forced getConfigElement failure'));
-    }
-    return const Success(kSrvGetConfigElement);
-  }
-
   @override
   Future<Result<Config>> patchConfig(
     String sid, {
@@ -726,32 +518,6 @@ class FakePiholeV6ApiClient implements PiholeV6ApiClient {
     return Success(kSrvPatchConfig);
   }
 
-  @override
-  Future<Result<Unit>> putConfigElement(
-    String sid, {
-    required String element,
-    required String value,
-    bool isRestart = true,
-  }) async {
-    if (shouldFail) {
-      return Failure(Exception('Forced putConfigElement failure'));
-    }
-    return const Success(unit);
-  }
-
-  @override
-  Future<Result<Unit>> deleteConfigElement(
-    String sid, {
-    required String element,
-    required String value,
-    bool isRestart = true,
-  }) async {
-    if (shouldFail) {
-      return Failure(Exception('Forced deleteConfigElement failure'));
-    }
-    return const Success(unit);
-  }
-
   // ==========================================================================
   // DHCP
   // ==========================================================================
@@ -761,16 +527,5 @@ class FakePiholeV6ApiClient implements PiholeV6ApiClient {
       return Failure(Exception('Forced getDhcpLeases failure'));
     }
     return const Success(kSrvGetDhcpLeases);
-  }
-
-  @override
-  Future<Result<Unit>> deleteDhcpLeases(
-    String sid, {
-    required String ip,
-  }) async {
-    if (shouldFail) {
-      return Failure(Exception('Forced deleteDhcpLeases failure'));
-    }
-    return const Success(unit);
   }
 }
