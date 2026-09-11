@@ -3,7 +3,6 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
-import 'package:pi_hole_client/data/model/v6/action/action.dart' show Action;
 import 'package:pi_hole_client/data/model/v6/auth/auth.dart' show Session;
 import 'package:pi_hole_client/data/model/v6/auth/sessions.dart'
     show AuthSessions;
@@ -27,8 +26,8 @@ import 'package:pi_hole_client/data/model/v6/lists/lists.dart' show Lists;
 import 'package:pi_hole_client/data/model/v6/lists/search.dart' show Search;
 import 'package:pi_hole_client/data/model/v6/metrics/history.dart'
     show History, HistoryClients;
-import 'package:pi_hole_client/data/model/v6/metrics/query_filter.dart';
 import 'package:pi_hole_client/data/model/v6/metrics/query.dart' show Queries;
+import 'package:pi_hole_client/data/model/v6/metrics/query_filter.dart';
 import 'package:pi_hole_client/data/model/v6/metrics/stats.dart'
     show StatsSummary, StatsTopClients, StatsTopDomains, StatsUpstreams;
 import 'package:pi_hole_client/data/model/v6/network/devices.dart' show Devices;
@@ -36,7 +35,6 @@ import 'package:pi_hole_client/data/model/v6/network/gateway.dart' show Gateway;
 import 'package:pi_hole_client/data/services/utils/safe_api_call.dart';
 import 'package:pi_hole_client/domain/model/enums.dart';
 import 'package:pi_hole_client/utils/exceptions.dart';
-import 'package:pi_hole_client/utils/logger.dart';
 import 'package:pi_hole_client/utils/misc.dart';
 import 'package:result_dart/result_dart.dart';
 
@@ -414,50 +412,6 @@ class PiholeV6ApiClient {
     });
   }
 
-  Future<Result<Groups>> postGroups(
-    String sid, {
-    required String name,
-    String? comment,
-    bool? enabled = true,
-  }) async {
-    return safeApiCall<Groups>(() async {
-      final resp = await _sendRequest(
-        method: HttpMethod.post,
-        path: '/api/groups',
-        sid: sid,
-        body: {'name': name, 'comment': comment, 'enabled': enabled},
-      );
-
-      if (resp.statusCode == 201) {
-        return Groups.fromJson(jsonDecode(resp.body));
-      }
-
-      throw HttpStatusCodeException(resp.statusCode, resp.body);
-    });
-  }
-
-  Future<Result<Groups>> putGroups(
-    String sid, {
-    required String name,
-    String? comment,
-    bool? enabled = true,
-  }) async {
-    return safeApiCall<Groups>(() async {
-      final resp = await _sendRequest(
-        method: HttpMethod.put,
-        path: '/api/groups/${Uri.encodeComponent(name)}',
-        sid: sid,
-        body: {'comment': comment, 'enabled': enabled},
-      );
-
-      if (resp.statusCode == 200) {
-        return Groups.fromJson(jsonDecode(resp.body));
-      }
-
-      throw HttpStatusCodeException(resp.statusCode, resp.body);
-    });
-  }
-
   Future<Result<Unit>> deleteGroups(String sid, {required String name}) async {
     return safeApiCall<Unit>(() async {
       final resp = await _sendRequest(
@@ -487,69 +441,6 @@ class PiholeV6ApiClient {
 
       if (resp.statusCode == 200) {
         return Clients.fromJson(jsonDecode(resp.body));
-      }
-
-      throw HttpStatusCodeException(resp.statusCode, resp.body);
-    });
-  }
-
-  Future<Result<Clients>> postClients(
-    String sid, {
-    required String client,
-    String? comment,
-    List<int>? groups = const [0],
-  }) async {
-    return safeApiCall<Clients>(() async {
-      final resp = await _sendRequest(
-        method: HttpMethod.post,
-        path: '/api/clients',
-        sid: sid,
-        body: {'client': client, 'comment': comment, 'groups': groups},
-      );
-
-      if (resp.statusCode == 201) {
-        return Clients.fromJson(jsonDecode(resp.body));
-      }
-
-      throw HttpStatusCodeException(resp.statusCode, resp.body);
-    });
-  }
-
-  Future<Result<Clients>> putClients(
-    String sid, {
-    required String client,
-    String? comment,
-    List<int>? groups = const [0],
-  }) async {
-    return safeApiCall<Clients>(() async {
-      final resp = await _sendRequest(
-        method: HttpMethod.put,
-        path: '/api/clients/${Uri.encodeComponent(client)}',
-        sid: sid,
-        body: {'comment': comment, 'groups': groups},
-      );
-
-      if (resp.statusCode == 200) {
-        return Clients.fromJson(jsonDecode(resp.body));
-      }
-
-      throw HttpStatusCodeException(resp.statusCode, resp.body);
-    });
-  }
-
-  Future<Result<Unit>> deleteClients(
-    String sid, {
-    required String client,
-  }) async {
-    return safeApiCall<Unit>(() async {
-      final resp = await _sendRequest(
-        method: HttpMethod.delete,
-        path: '/api/clients/${Uri.encodeComponent(client)}',
-        sid: sid,
-      );
-
-      if (resp.statusCode == 204) {
-        return unit;
       }
 
       throw HttpStatusCodeException(resp.statusCode, resp.body);
@@ -590,90 +481,6 @@ class PiholeV6ApiClient {
     });
   }
 
-  Future<Result<Domains>> postDomains(
-    String sid, {
-    required DomainType type,
-    required DomainKind kind,
-    required String domain,
-    String? comment,
-    List<int>? groups = const [0],
-    bool? enabled = true,
-  }) async {
-    return safeApiCall<Domains>(() async {
-      final resp = await _sendRequest(
-        method: HttpMethod.post,
-        path: '/api/domains/${type.name}/${kind.name}',
-        sid: sid,
-        body: {
-          'domain': domain,
-          'comment': comment,
-          'groups': groups,
-          'enabled': enabled,
-        },
-      );
-
-      if (resp.statusCode == 201) {
-        return Domains.fromJson(jsonDecode(resp.body));
-      }
-
-      throw HttpStatusCodeException(resp.statusCode, resp.body);
-    });
-  }
-
-  Future<Result<Domains>> putDomains(
-    String sid, {
-    required DomainType type,
-    required DomainKind kind,
-    required String domain,
-    String? comment,
-    List<int>? groups = const [0],
-    bool? enabled = true,
-  }) async {
-    return safeApiCall<Domains>(() async {
-      final resp = await _sendRequest(
-        method: HttpMethod.put,
-        path:
-            '/api/domains/${type.name}/${kind.name}/${Uri.encodeComponent(domain)}',
-        sid: sid,
-        body: {
-          'comment': comment,
-          'groups': groups,
-          'enabled': enabled,
-          'type': type.name,
-          'kind': kind.name,
-        },
-      );
-
-      if (resp.statusCode == 200) {
-        return Domains.fromJson(jsonDecode(resp.body));
-      }
-
-      throw HttpStatusCodeException(resp.statusCode, resp.body);
-    });
-  }
-
-  Future<Result<Unit>> deleteDomains(
-    String sid, {
-    required DomainType type,
-    required DomainKind kind,
-    required String domain,
-  }) async {
-    return safeApiCall<Unit>(() async {
-      final resp = await _sendRequest(
-        method: HttpMethod.delete,
-        path:
-            '/api/domains/${type.name}/${kind.name}/${Uri.encodeComponent(domain)}',
-        sid: sid,
-      );
-
-      if (resp.statusCode == 204) {
-        return unit;
-      }
-
-      throw HttpStatusCodeException(resp.statusCode, resp.body);
-    });
-  }
-
   // ==========================================================================
   // List management
   // ==========================================================================
@@ -701,74 +508,6 @@ class PiholeV6ApiClient {
         method: HttpMethod.get,
         path: path,
         sid: sid,
-      );
-
-      if (resp.statusCode == 200) {
-        return Lists.fromJson(jsonDecode(resp.body));
-      }
-
-      throw HttpStatusCodeException(resp.statusCode, resp.body);
-    });
-  }
-
-  Future<Result<Lists>> postLists(
-    String sid, {
-    required String address,
-    required ListType type,
-    List<int>? groups = const [0],
-    String? comment = '',
-    bool? enabled = true,
-  }) async {
-    final queryString = _buildQueryString({'type': type.name});
-    final path = queryString.isEmpty ? '/api/lists' : '/api/lists?$queryString';
-
-    return safeApiCall<Lists>(() async {
-      final resp = await _sendRequest(
-        method: HttpMethod.post,
-        path: path,
-        sid: sid,
-        body: {
-          'address': address,
-          'type': type.name, // Not necessary, but just in case.
-          'groups': groups,
-          'comment': comment,
-          'enabled': enabled,
-        },
-      );
-
-      if (resp.statusCode == 201) {
-        return Lists.fromJson(jsonDecode(resp.body));
-      }
-
-      throw HttpStatusCodeException(resp.statusCode, resp.body);
-    });
-  }
-
-  Future<Result<Lists>> putLists(
-    String sid, {
-    required String adlist,
-    required ListType type,
-    List<int>? groups = const [0],
-    String? comment = '',
-    bool? enabled = true,
-  }) async {
-    final queryString = _buildQueryString({'type': type.name});
-
-    final tmpPath = '/api/lists/${Uri.encodeComponent(adlist)}';
-
-    final path = queryString.isEmpty ? tmpPath : '$tmpPath?$queryString';
-
-    return safeApiCall<Lists>(() async {
-      final resp = await _sendRequest(
-        method: HttpMethod.put,
-        path: path,
-        sid: sid,
-        body: {
-          'type': type.name,
-          'groups': groups,
-          'comment': comment,
-          'enabled': enabled,
-        },
       );
 
       if (resp.statusCode == 200) {
@@ -900,31 +639,6 @@ class PiholeV6ApiClient {
     });
   }
 
-  Future<Result<Unit>> deleteInfoMessages(
-    String sid, {
-    required int messageId,
-  }) async {
-    return safeApiCall<Unit>(() async {
-      final resp = await _sendRequest(
-        method: HttpMethod.delete,
-        path: '/api/info/messages/$messageId',
-        sid: sid,
-      );
-
-      if (resp.statusCode == 204) {
-        return unit;
-      }
-
-      // 404: message already gone on the server - treat as success.
-      if (resp.statusCode == 404) {
-        logger.d('Message $messageId already deleted (404)');
-        return unit;
-      }
-
-      throw HttpStatusCodeException(resp.statusCode, resp.body);
-    });
-  }
-
   Future<Result<InfoMetrics>> getInfoMetrics(String sid) async {
     return safeApiCall<InfoMetrics>(() async {
       final resp = await _sendRequest(
@@ -1024,25 +738,6 @@ class PiholeV6ApiClient {
     });
   }
 
-  Future<Result<Unit>> deleteNetworkDevices(
-    String sid, {
-    required int deviceId,
-  }) async {
-    return safeApiCall<Unit>(() async {
-      final resp = await _sendRequest(
-        method: HttpMethod.delete,
-        path: '/api/network/devices/$deviceId',
-        sid: sid,
-      );
-
-      if (resp.statusCode == 204) {
-        return unit;
-      }
-
-      throw HttpStatusCodeException(resp.statusCode, resp.body);
-    });
-  }
-
   Future<Result<Gateway>> getNetworkGateway(
     String sid, {
     bool? isDetailed,
@@ -1073,56 +768,6 @@ class PiholeV6ApiClient {
   // ==========================================================================
   // Actions
   // ==========================================================================
-  @Deprecated(
-    'Deprecated in Pi-hole FTL v6.3+. Use [postActionFlushNetwork] instead.',
-  )
-  Future<Result<Action>> postActionFlushArp(String sid) async {
-    return safeApiCall<Action>(() async {
-      final resp = await _sendRequest(
-        method: HttpMethod.post,
-        path: '/api/action/flush/arp',
-        sid: sid,
-      );
-
-      if (resp.statusCode == 200) {
-        return Action.fromJson(jsonDecode(resp.body));
-      }
-
-      throw HttpStatusCodeException(resp.statusCode, resp.body);
-    });
-  }
-
-  Future<Result<Action>> postActionFlushNetwork(String sid) async {
-    return safeApiCall<Action>(() async {
-      final resp = await _sendRequest(
-        method: HttpMethod.post,
-        path: '/api/action/flush/network',
-        sid: sid,
-      );
-
-      if (resp.statusCode == 200) {
-        return Action.fromJson(jsonDecode(resp.body));
-      }
-
-      throw HttpStatusCodeException(resp.statusCode, resp.body);
-    });
-  }
-
-  Future<Result<Action>> postActionFlushLogs(String sid) async {
-    return safeApiCall<Action>(() async {
-      final resp = await _sendRequest(
-        method: HttpMethod.post,
-        path: '/api/action/flush/logs',
-        sid: sid,
-      );
-
-      if (resp.statusCode == 200) {
-        return Action.fromJson(jsonDecode(resp.body));
-      }
-
-      throw HttpStatusCodeException(resp.statusCode, resp.body);
-    });
-  }
 
   Stream<Result<List<String>>> postActionGravity(String sid) async* {
     yield* safeApiCallStream<List<String>>(() async* {
@@ -1169,55 +814,9 @@ class PiholeV6ApiClient {
     });
   }
 
-  Future<Result<Action>> postActionRestartDns(String sid) async {
-    return safeApiCall<Action>(() async {
-      final resp = await _sendRequest(
-        method: HttpMethod.post,
-        path: '/api/action/restartdns',
-        sid: sid,
-      );
-
-      if (resp.statusCode == 200) {
-        return Action.fromJson(jsonDecode(resp.body));
-      }
-
-      throw HttpStatusCodeException(resp.statusCode, resp.body);
-    });
-  }
-
   // ==========================================================================
   // Pi-hole Configuration
   // ==========================================================================
-  Future<Result<Config>> getConfigElement(
-    String sid, {
-    String? element,
-    bool? isDetailed,
-  }) async {
-    return safeApiCall<Config>(() async {
-      final pathString = _buildPathString([?element]);
-      final queryString = _buildQueryString({
-        if (isDetailed != null) 'detailed': isDetailed.toString(),
-      });
-
-      final tmp = pathString.isEmpty
-          ? '/api/config'
-          : '/api/config/$pathString';
-
-      final path = queryString.isEmpty ? tmp : '$tmp?$queryString';
-
-      final resp = await _sendRequest(
-        method: HttpMethod.get,
-        path: path,
-        sid: sid,
-      );
-
-      if (resp.statusCode == 200) {
-        return Config.fromJson(jsonDecode(resp.body));
-      }
-
-      throw HttpStatusCodeException(resp.statusCode, resp.body);
-    });
-  }
 
   Future<Result<Config>> patchConfig(
     String sid, {
@@ -1240,46 +839,6 @@ class PiholeV6ApiClient {
     });
   }
 
-  Future<Result<Unit>> putConfigElement(
-    String sid, {
-    required String element,
-    required String value,
-    bool isRestart = true,
-  }) async {
-    return safeApiCall<Unit>(() async {
-      final encodedElement = Uri.encodeComponent(element);
-      final encodedValue = Uri.encodeComponent(value);
-      final resp = await _sendRequest(
-        method: HttpMethod.put,
-        path: '/api/config/$encodedElement/$encodedValue?restart=$isRestart',
-        sid: sid,
-      );
-
-      if (resp.statusCode == 201) return unit;
-      throw HttpStatusCodeException(resp.statusCode, resp.body);
-    });
-  }
-
-  Future<Result<Unit>> deleteConfigElement(
-    String sid, {
-    required String element,
-    required String value,
-    bool isRestart = true,
-  }) async {
-    return safeApiCall<Unit>(() async {
-      final encodedElement = Uri.encodeComponent(element);
-      final encodedValue = Uri.encodeComponent(value);
-      final resp = await _sendRequest(
-        method: HttpMethod.delete,
-        path: '/api/config/$encodedElement/$encodedValue?restart=$isRestart',
-        sid: sid,
-      );
-
-      if (resp.statusCode == 204) return unit;
-      throw HttpStatusCodeException(resp.statusCode, resp.body);
-    });
-  }
-
   // ==========================================================================
   // DHCP
   // ==========================================================================
@@ -1293,25 +852,6 @@ class PiholeV6ApiClient {
 
       if (resp.statusCode == 200) {
         return Dhcp.fromJson(jsonDecode(resp.body));
-      }
-
-      throw HttpStatusCodeException(resp.statusCode, resp.body);
-    });
-  }
-
-  Future<Result<Unit>> deleteDhcpLeases(
-    String sid, {
-    required String ip,
-  }) async {
-    return safeApiCall<Unit>(() async {
-      final resp = await _sendRequest(
-        method: HttpMethod.delete,
-        path: '/api/dhcp/leases/${Uri.encodeComponent(ip)}',
-        sid: sid,
-      );
-
-      if (resp.statusCode == 204) {
-        return unit;
       }
 
       throw HttpStatusCodeException(resp.statusCode, resp.body);
