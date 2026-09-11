@@ -1,59 +1,15 @@
 import 'dart:async';
 
 import 'package:pi_hole_client/data/model/v6/auth/auth.dart' show Session;
-import 'package:pi_hole_client/data/model/v6/auth/sessions.dart'
-    show AuthSessions;
-import 'package:pi_hole_client/data/model/v6/clients/clients.dart' show Clients;
-import 'package:pi_hole_client/data/model/v6/config/config.dart'
-    show Config, ConfigData;
-import 'package:pi_hole_client/data/model/v6/dhcp/dhcp.dart' show Dhcp;
-import 'package:pi_hole_client/data/model/v6/dns/dns.dart' show Blocking;
-import 'package:pi_hole_client/data/model/v6/domains/domains.dart' show Domains;
-import 'package:pi_hole_client/data/model/v6/ftl/client.dart' show InfoClient;
 import 'package:pi_hole_client/data/model/v6/ftl/ftl.dart' show InfoFtl;
-import 'package:pi_hole_client/data/model/v6/ftl/host.dart' show InfoHost;
-import 'package:pi_hole_client/data/model/v6/ftl/messages.dart'
-    show InfoMessages;
-import 'package:pi_hole_client/data/model/v6/ftl/metrics.dart' show InfoMetrics;
-import 'package:pi_hole_client/data/model/v6/ftl/sensors.dart' show InfoSensors;
-import 'package:pi_hole_client/data/model/v6/ftl/system.dart' show InfoSystem;
-import 'package:pi_hole_client/data/model/v6/ftl/version.dart' show InfoVersion;
-import 'package:pi_hole_client/data/model/v6/groups/groups.dart' show Groups;
-import 'package:pi_hole_client/data/model/v6/lists/lists.dart' show Lists;
-import 'package:pi_hole_client/data/model/v6/lists/search.dart'
-    show
-        DomainMatchCount,
-        GravityEntry,
-        GravityMatchCount,
-        GravityType,
-        Search,
-        SearchData,
-        SearchParameters,
-        SearchResults;
-import 'package:pi_hole_client/data/model/v6/metrics/history.dart'
-    show History, HistoryClients;
-import 'package:pi_hole_client/data/model/v6/metrics/query.dart' show Queries;
-import 'package:pi_hole_client/data/model/v6/metrics/query_filter.dart';
-import 'package:pi_hole_client/data/model/v6/metrics/stats.dart'
-    show StatsSummary, StatsTopClients, StatsTopDomains, StatsUpstreams;
-import 'package:pi_hole_client/data/model/v6/network/devices.dart' show Devices;
 import 'package:pi_hole_client/data/model/v6/network/gateway.dart' show Gateway;
 import 'package:pi_hole_client/data/services/api/pihole_v6_api_client.dart';
-import 'package:pi_hole_client/domain/model/enums.dart';
 import 'package:pi_hole_client/utils/exceptions.dart';
 import 'package:result_dart/result_dart.dart';
 
 import '../../models/v6/actions.dart';
-import '../../models/v6/adlist.dart';
 import '../../models/v6/auth.dart';
-import '../../models/v6/client.dart';
-import '../../models/v6/config.dart';
-import '../../models/v6/dhcp.dart';
-import '../../models/v6/dns.dart';
-import '../../models/v6/domain.dart';
 import '../../models/v6/ftl.dart';
-import '../../models/v6/group.dart';
-import '../../models/v6/metrics.dart';
 import '../../models/v6/network.dart';
 
 class FakePiholeV6ApiClient implements PiholeV6ApiClient {
@@ -109,289 +65,30 @@ class FakePiholeV6ApiClient implements PiholeV6ApiClient {
 
   int getAuthCallCount = 0;
 
-  /// Server-reported 2FA status returned by [getAuth] (`session.totp`).
+  /// Legacy auth-capability fixture state retained for compatibility tests.
   bool serverTotpEnabled = false;
-
-  @override
-  Future<Result<Session>> getAuth(String? sid) async {
-    getAuthCallCount++;
-    if (shouldFail) {
-      return Failure(Exception('Forced getAuth failure'));
-    }
-    return Success(
-      kSrvPostAuth.copyWith(
-        session: kSrvPostAuth.session.copyWith(totp: serverTotpEnabled),
-      ),
-    );
-  }
-
-  @override
-  Future<Result<Unit>> deleteAuth(String sid) async {
-    if (shouldFail) {
-      return Failure(Exception('Forced deleteAuth failure'));
-    }
-    return const Success(unit);
-  }
-
-  @override
-  Future<Result<AuthSessions>> getAuthSessions(String sid) async {
-    if (shouldFail) {
-      return Failure(Exception('Forced getAuthSessions failure'));
-    }
-    return const Success(kSrvGetAuthSessions);
-  }
-
-  @override
-  Future<Result<Unit>> deleteAuthSession(String sid, {required int id}) async {
-    if (shouldFail) {
-      return Failure(Exception('Forced deleteAuthSession failure'));
-    }
-    return const Success(unit);
-  }
 
   // ==========================================================================
   // Metrics
   // ==========================================================================
-  @override
-  Future<Result<History>> getHistory(String sid) async {
-    if (shouldFail) {
-      return Failure(Exception('Forced getHistory failure'));
-    }
-    return const Success(kSrvGetHistory);
-  }
-
-  @override
-  Future<Result<HistoryClients>> getHistoryClient(
-    String sid, {
-    int? count = 10,
-  }) async {
-    if (shouldFail) {
-      return Failure(Exception('Forced getHistoryClient failure'));
-    }
-    return const Success(kSrvGetHistoryClient);
-  }
-
-  @override
-  Future<Result<Queries>> getQueries(
-    String sid, {
-    required DateTime from,
-    required DateTime until,
-    int? length = 100,
-    int? cursor,
-    int? start,
-    V6QueryFilter? filter,
-  }) async {
-    if (shouldFail) {
-      return Failure(Exception('Forced getQueries failure'));
-    }
-    return const Success(kSrvGetQueries);
-  }
-
-  @override
-  Future<Result<StatsSummary>> getStatsSummary(String sid) async {
-    if (shouldFail) {
-      return Failure(Exception('Forced getStatsSummary failure'));
-    }
-    return const Success(kSrvGetStatsSummary);
-  }
-
-  @override
-  Future<Result<StatsUpstreams>> getStatsUpstreams(String sid) async {
-    if (shouldFail) {
-      return Failure(Exception('Forced getStatsUpstreams failure'));
-    }
-    return const Success(kSrvGetStatsUpstreams);
-  }
-
-  @override
-  Future<Result<StatsTopDomains>> getStatsTopDomains(
-    String sid, {
-    bool? blocked = false,
-    int? count = 10,
-  }) async {
-    if (shouldFail) {
-      return Failure(Exception('Forced getStatsTopDomains failure'));
-    }
-    if (blocked == true) {
-      return const Success(kSrvGetStatsTopDomainsBlocked);
-    }
-    return const Success(kSrvGetStatsTopDomains);
-  }
-
-  @override
-  Future<Result<StatsTopClients>> getStatsTopClients(
-    String sid, {
-    bool? blocked = false,
-    int? count = 10,
-  }) async {
-    if (shouldFail) {
-      return Failure(Exception('Forced getStatsTopClients failure'));
-    }
-    if (blocked == true) {
-      return const Success(kSrvGetStatsTopClientsBlocked);
-    }
-    return const Success(kSrvGetStatsTopClients);
-  }
-
   // ==========================================================================
   // DNS control
   // ==========================================================================
-  @override
-  Future<Result<Blocking>> getDnsBlocking(String sid) async {
-    if (shouldFail) {
-      return Failure(Exception('Forced getDnsBlocking failure'));
-    }
-    return Success(kSrvGetDnsBlocking);
-  }
-
-  @override
-  Future<Result<Blocking>> postDnsBlocking(
-    String sid, {
-    bool? enabled = true,
-    int? timer,
-  }) async {
-    if (shouldFail) {
-      return Failure(Exception('Forced postDnsBlocking failure'));
-    }
-
-    if (shouldPostDnsBlockingReturnEnabled) {
-      return Success(kSrvPostDnsBlockingEnabled);
-    }
-    return Success(kSrvPostDnsBlockingDisabled);
-  }
-
   // ==========================================================================
   // Group management
   // ==========================================================================
-  @override
-  Future<Result<Groups>> getGroups(String sid) async {
-    if (shouldFail) {
-      return Failure(Exception('Forced getGroups failure'));
-    }
-    return const Success(kSrvGetGroups);
-  }
-
-  @override
-  Future<Result<Unit>> deleteGroups(String sid, {required String name}) async {
-    if (shouldFail) {
-      return Failure(Exception('Forced deleteGroups failure'));
-    }
-    return const Success(unit);
-  }
-
   // ==========================================================================
   // Client management
   // ==========================================================================
-  @override
-  Future<Result<Clients>> getClients(String sid) async {
-    if (shouldFail) {
-      return Failure(Exception('Forced getClients failure'));
-    }
-    return const Success(kSrvGetClients);
-  }
-
   // ==========================================================================
   // Domain management
   // ==========================================================================
-  @override
-  Future<Result<Domains>> getDomains(
-    String sid, {
-    DomainType? type,
-    DomainKind? kind,
-    String? domain,
-  }) async {
-    if (shouldFail) {
-      return Failure(Exception('Forced getDomains failure'));
-    }
-    return const Success(kSrvGetDomains);
-  }
-
   // ==========================================================================
   // List management
   // ==========================================================================
-  @override
-  Future<Result<Lists>> getLists(
-    String sid, {
-    String? adlist,
-    ListType? type,
-  }) async {
-    if (shouldFail) {
-      return Failure(Exception('Forced getLists failure'));
-    }
-    return const Success(kSrvGetLists);
-  }
-
-  @override
-  Future<Result<Unit>> deleteLists(
-    String sid, {
-    required String adlist,
-    ListType? type,
-  }) async {
-    if (shouldFail) {
-      return Failure(Exception('Forced deleteLists failure'));
-    }
-    return const Success(unit);
-  }
-
-  @override
-  Future<Result<Search>> getSearch(
-    String sid, {
-    required String domain,
-    bool? partial,
-    int? limit,
-  }) async {
-    if (shouldFail) {
-      return Failure(Exception('Forced getSearch failure'));
-    }
-    return Success(
-      Search(
-        search: SearchData(
-          domains: const [],
-          gravity: [
-            GravityEntry(
-              domain: domain,
-              address: 'https://blocklist.example.com/hosts',
-              enabled: true,
-              id: 1,
-              type: GravityType.block,
-              dateAdded: 1704067200,
-              dateModified: 1704067200,
-              dateUpdated: 1704067200,
-              number: 1000,
-              invalidDomains: 0,
-              abpEntries: 0,
-              status: 2,
-              groups: const [0],
-            ),
-          ],
-          parameters: SearchParameters(
-            partial: partial ?? false,
-            N: limit ?? 20,
-            domain: domain,
-            debug: false,
-          ),
-          results: const SearchResults(
-            domains: DomainMatchCount(exact: 0, regex: 0),
-            gravity: GravityMatchCount(allow: 0, block: 1),
-            total: 1,
-          ),
-        ),
-        took: 0.01,
-      ),
-    );
-  }
-
   // ==========================================================================
   // FTL information
   // ==========================================================================
-  @override
-  Future<Result<InfoClient>> getInfoClient(String sid) async {
-    if (shouldFail) {
-      return Failure(Exception('Forced getInfoClient failure'));
-    }
-    return const Success(kSrvGetInfoClient);
-  }
-
   @override
   Future<Result<InfoFtl>> getInfoFtl(String sid) async {
     if (shouldFail) {
@@ -403,75 +100,9 @@ class FakePiholeV6ApiClient implements PiholeV6ApiClient {
     return const Success(kSrvGetInfoFtl);
   }
 
-  @override
-  Future<Result<InfoHost>> getInfoHost(String sid) async {
-    if (shouldFail) {
-      return Failure(Exception('Forced getInfoHost failure'));
-    }
-    return const Success(kSrvGetInfoHost);
-  }
-
-  @override
-  Future<Result<InfoMessages>> getInfoMessages(String sid) async {
-    if (shouldFail) {
-      return Failure(Exception('Forced getInfoMessages failure'));
-    }
-    return const Success(kSrvGetInfoMessages);
-  }
-
-  @override
-  Future<Result<InfoMetrics>> getInfoMetrics(String sid) async {
-    if (shouldFail) {
-      return Failure(Exception('Forced getInfoMetrics failure'));
-    }
-    return const Success(kSrvGetInfoMetrics);
-  }
-
-  @override
-  Future<Result<InfoSensors>> getInfoSensors(String sid) async {
-    if (shouldFail) {
-      return Failure(Exception('Forced getInfoSensors failure'));
-    }
-    return const Success(kSrvGetInfoSensors);
-  }
-
-  @override
-  Future<Result<InfoSystem>> getInfoSystem(String sid) async {
-    if (shouldFail) {
-      return Failure(Exception('Forced getInfoSystem failure'));
-    }
-    if (shouldGetInfoSystemOld) {
-      return const Success(kSrvGetInfoSystemOld);
-    }
-    return const Success(kSrvGetInfoSystem);
-  }
-
-  @override
-  Future<Result<InfoVersion>> getInfoVersion(String sid) async {
-    if (shouldFail) {
-      return Failure(Exception('Forced getInfoVersion failure'));
-    }
-    if (shouldGetInfoVersionWithDocker) {
-      return const Success(kSrvGetInfoVersionWithDocker);
-    }
-    return const Success(kSrvGetInfoVersion);
-  }
-
   // ==========================================================================
   // Network information
   // ==========================================================================
-  @override
-  Future<Result<Devices>> getNetworkDevices(
-    String sid, {
-    int? maxDevices = 999,
-    int? maxAddresses = 25,
-  }) async {
-    if (shouldFail) {
-      return Failure(Exception('Forced getNetworkDevices failure'));
-    }
-    return const Success(kSrvGetNetworkDevices);
-  }
-
   @override
   Future<Result<Gateway>> getNetworkGateway(
     String sid, {
@@ -506,26 +137,7 @@ class FakePiholeV6ApiClient implements PiholeV6ApiClient {
   // ==========================================================================
   // Pi-hole Configuration
   // ==========================================================================
-  @override
-  Future<Result<Config>> patchConfig(
-    String sid, {
-    required ConfigData body,
-    bool isRestart = true,
-  }) async {
-    if (shouldFail) {
-      return Failure(Exception('Forced patchConfig failure'));
-    }
-    return Success(kSrvPatchConfig);
-  }
-
   // ==========================================================================
   // DHCP
   // ==========================================================================
-  @override
-  Future<Result<Dhcp>> getDhcpLeases(String sid) async {
-    if (shouldFail) {
-      return Failure(Exception('Forced getDhcpLeases failure'));
-    }
-    return const Success(kSrvGetDhcpLeases);
-  }
 }
