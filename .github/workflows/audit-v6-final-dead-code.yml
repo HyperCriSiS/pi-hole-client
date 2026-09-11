@@ -16,23 +16,46 @@ jobs:
     timeout-minutes: 3
     steps:
       - uses: actions/checkout@v7
-      - name: Inventory remaining legacy methods
+      - name: Inventory FakePiholeV6ApiClient consumers
         shell: bash
         run: |
           set -euo pipefail
-          methods=(
-            getAuth deleteAuth getAuthSessions deleteAuthSession
-            getHistory getHistoryClient getQueries getStatsSummary getStatsUpstreams
-            getStatsTopDomains getStatsTopClients getDnsBlocking postDnsBlocking
-            getGroups deleteGroups getClients getDomains getLists deleteLists getSearch
-            getInfoClient getInfoHost getInfoMessages getInfoMetrics getInfoSensors
-            getInfoSystem getInfoVersion getNetworkDevices patchConfig getDhcpLeases
-          )
-          for symbol in "${methods[@]}"; do
-            echo "=== ${symbol} ==="
-            grep -RFn --include='*.dart' "${symbol}" test testing lib \
-              | grep -v '^lib/data/services/api/pihole_v6_api_client.dart:' \
-              | grep -v '^testing/fakes/services/fake_pihole_v6_api_client.dart:' \
-              | grep -v '^test/data/services/api/pihole_v6_api_client_test.dart:' \
-              || true
-          done
+          echo '=== FakePiholeV6ApiClient references ==='
+          grep -RFn --include='*.dart' 'FakePiholeV6ApiClient' test testing \
+            | grep -v '^testing/fakes/services/fake_pihole_v6_api_client.dart:' || true
+
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          methods = [
+              'getAuth', 'deleteAuth', 'getAuthSessions', 'deleteAuthSession',
+              'getHistory', 'getHistoryClient', 'getQueries', 'getStatsSummary',
+              'getStatsUpstreams', 'getStatsTopDomains', 'getStatsTopClients',
+              'getDnsBlocking', 'postDnsBlocking', 'getGroups', 'deleteGroups',
+              'getClients', 'getDomains', 'getLists', 'deleteLists', 'getSearch',
+              'getInfoClient', 'getInfoHost', 'getInfoMessages', 'getInfoMetrics',
+              'getInfoSensors', 'getInfoSystem', 'getInfoVersion',
+              'getNetworkDevices', 'patchConfig', 'getDhcpLeases',
+          ]
+          roots = [Path('test'), Path('testing')]
+          consumers = []
+          for root in roots:
+              for path in root.rglob('*.dart'):
+                  if path.as_posix() == 'testing/fakes/services/fake_pihole_v6_api_client.dart':
+                      continue
+                  text = path.read_text()
+                  if 'FakePiholeV6ApiClient' in text:
+                      consumers.append((path, text))
+
+          print(f'consumer files: {len(consumers)}')
+          found = False
+          member_pattern = re.compile(r'\.(' + '|'.join(map(re.escape, methods)) + r')\s*\(')
+          for path, text in consumers:
+              hits = sorted(set(m.group(1) for m in member_pattern.finditer(text)))
+              if hits:
+                  found = True
+                  print(f'CALLS {path}: {", ".join(hits)}')
+          if not found:
+              print('No candidate member calls from FakePiholeV6ApiClient consumer files.')
+          PY
