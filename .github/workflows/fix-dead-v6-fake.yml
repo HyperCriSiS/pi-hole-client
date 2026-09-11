@@ -47,9 +47,10 @@ jobs:
               if prefix and prefix[-1].strip() == '@override':
                   start -= len(prefix[-1])
 
-              brace = source.find('{', match.start())
-              if brace < 0:
-                  raise SystemExit(f'opening brace not found: {name}')
+              body_match = re.search(r'\)\s+async\*?\s*\{', source[match.start():])
+              if body_match is None:
+                  raise SystemExit(f'method body not found: {name}')
+              brace = match.start() + body_match.end() - 1
               depth = 0
               in_single = False
               in_double = False
