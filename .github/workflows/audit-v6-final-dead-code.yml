@@ -1,0 +1,38 @@
+name: Audit remaining v6 legacy method references
+
+on:
+  push:
+    branches:
+      - diagnostics/v6-final-client-dead-code
+    paths:
+      - .github/workflows/audit-v6-final-dead-code.yml
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v7
+      - name: Inventory remaining legacy methods
+        shell: bash
+        run: |
+          set -euo pipefail
+          methods=(
+            getAuth deleteAuth getAuthSessions deleteAuthSession
+            getHistory getHistoryClient getQueries getStatsSummary getStatsUpstreams
+            getStatsTopDomains getStatsTopClients getDnsBlocking postDnsBlocking
+            getGroups deleteGroups getClients getDomains getLists deleteLists getSearch
+            getInfoClient getInfoHost getInfoMessages getInfoMetrics getInfoSensors
+            getInfoSystem getInfoVersion getNetworkDevices patchConfig getDhcpLeases
+          )
+          for symbol in "${methods[@]}"; do
+            echo "=== ${symbol} ==="
+            grep -RFn --include='*.dart' "${symbol}" test testing lib \
+              | grep -v '^lib/data/services/api/pihole_v6_api_client.dart:' \
+              | grep -v '^testing/fakes/services/fake_pihole_v6_api_client.dart:' \
+              | grep -v '^test/data/services/api/pihole_v6_api_client_test.dart:' \
+              || true
+          done
