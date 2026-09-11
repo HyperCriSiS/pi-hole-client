@@ -14,19 +14,44 @@ jobs:
     timeout-minutes: 2
     steps:
       - uses: actions/checkout@v7
-      - name: Inventory candidate references
+      - name: Inventory all public handwritten-client methods
         shell: bash
         run: |
           set -euo pipefail
-          for symbol in \
-            postActionFlushArp \
-            postActionFlushNetwork \
-            putConfigElement \
-            deleteConfigElement
-          do
-            echo "=== ${symbol}: production references outside declaration ==="
-            grep -RFn --include='*.dart' "${symbol}" lib \
-              | grep -v '^lib/data/services/api/pihole_v6_api_client.dart:' || true
-            echo "=== ${symbol}: test references ==="
-            grep -RFn --include='*.dart' "${symbol}" test || true
-          done
+          python3 - <<'PY'
+          import re
+          import subprocess
+          from pathlib import Path
+
+          client = Path('lib/data/services/api/pihole_v6_api_client.dart')
+          text = client.read_text()
+          methods = []
+          for line in text.splitlines():
+              match = re.match(r'^  (?:Future|Stream)<.*>\s+([A-Za-z_]\w*)\s*\(', line)
+              if match and not match.group(1).startswith('_'):
+                  methods.append(match.group(1))
+
+          print(f'public methods: {len(methods)}')
+          for method in methods:
+              prod = subprocess.run(
+                  ['grep', '-RFn', '--include=*.dart', method, 'lib'],
+                  text=True,
+                  capture_output=True,
+              ).stdout.splitlines()
+              prod = [
+                  line for line in prod
+                  if not line.startswith('lib/data/services/api/pihole_v6_api_client.dart:')
+              ]
+              tests = subprocess.run(
+                  ['grep', '-RFn', '--include=*.dart', method, 'test'],
+                  text=True,
+                  capture_output=True,
+              ).stdout.splitlines()
+
+              print(f'=== {method} | prod={len(prod)} test={len(tests)} ===')
+              for line in prod:
+                  print(f'PROD {line}')
+              if not prod:
+                  for line in tests[:12]:
+                      print(f'TEST {line}')
+          PY
