@@ -1,0 +1,32 @@
+name: Audit superseded handwritten v6 methods
+
+on:
+  push:
+    branches:
+      - diagnostics/v6-legacy-dead-code
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v7
+      - name: Inventory candidate references
+        shell: bash
+        run: |
+          set -euo pipefail
+          for symbol in \
+            postActionFlushArp \
+            postActionFlushNetwork \
+            putConfigElement \
+            deleteConfigElement
+          do
+            echo "=== ${symbol}: production references outside declaration ==="
+            grep -RFn --include='*.dart' "${symbol}" lib \
+              | grep -v '^lib/data/services/api/pihole_v6_api_client.dart:' || true
+            echo "=== ${symbol}: test references ==="
+            grep -RFn --include='*.dart' "${symbol}" test || true
+          done
