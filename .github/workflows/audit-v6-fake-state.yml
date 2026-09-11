@@ -1,0 +1,34 @@
+name: Audit stale v6 fake state
+
+on:
+  push:
+    branches:
+      - diagnostics/v6-final-client-minimize
+    paths:
+      - .github/workflows/audit-v6-fake-state.yml
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v7
+      - name: Find consumers outside fake
+        shell: bash
+        run: |
+          set -euo pipefail
+          for symbol in \
+            shouldFlushNetworkReturn404 \
+            shouldPostDnsBlockingReturnEnabled \
+            shouldGetInfoVersionWithDocker \
+            shouldGetInfoSystemOld \
+            getAuthCallCount \
+            serverTotpEnabled
+          do
+            echo "=== ${symbol} ==="
+            grep -RFn --include='*.dart' "${symbol}" lib test testing \
+              | grep -v '^testing/fakes/services/fake_pihole_v6_api_client.dart:' || true
+          done
