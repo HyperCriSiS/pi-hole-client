@@ -1,0 +1,37 @@
+name: Preserve gateway query helper in staged v6 cleanup
+
+on:
+  push:
+    branches:
+      - diagnostics/v6-final-client-minimize
+    paths:
+      - .github/workflows/fix-stage-v6-minimize.yml
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v7
+      - name: Keep query helper required by detailed gateway
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('.github/workflows/stage-final-v6-client-minimize.yml')
+          text = path.read_text()
+          needle = "          client = remove_simple_helper(client, '_buildQueryString')\n"
+          if needle not in text:
+              raise SystemExit('expected query-helper removal line not found')
+          path.write_text(text.replace(needle, '', 1))
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .github/workflows/stage-final-v6-client-minimize.yml
+          git diff --cached --check
+          git commit -m 'ci: preserve gateway query helper in v6 cleanup'
+          git push
