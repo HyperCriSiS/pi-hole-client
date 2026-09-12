@@ -138,6 +138,9 @@ jobs:
       - name: Test Android identity migration helper
         run: python3 tools/identity/test_migrate_android_identity.py
 
+      - name: Test F-Droid application ID collision helper
+        run: python3 tools/identity/test_check_fdroid_appid_collision.py
+
       - name: Audit Android package identity
         run: bash tools/identity/audit_android_identity.sh
 
@@ -168,6 +171,9 @@ jobs:
 
       - name: Generate files
         run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Prepare F-Droid-compatible native assets
+        run: dart run tools/prepare_fdroid_source_build.dart
 
       - name: Remove release signing overrides
         run: |
