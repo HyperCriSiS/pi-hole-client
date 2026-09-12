@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
-import 'package:pi_hole_client/data/services/api/pihole_v6_api_client.dart';
+import 'package:pi_hole_client/data/services/api/wrappers/pihole_v6_service.dart';
 
 import '../support/app_harness.dart';
 import '../support/real_pihole_env.dart';
@@ -326,18 +326,16 @@ void main() {
         // limitation" note on deleteCurrentSession in
         // lib/data/repositories/api/v6/auth_repository.dart (a failed delete
         // renews instead of retrying; low impact, left as-is).
-        final directClient = PiholeV6ApiClient(url: RealPiholeEnv.v6Base);
-        try {
-          final result = await directClient.getAuth(oldSid);
-          expect(
-            result.getOrThrow().session.valid,
-            isTrue,
-            reason:
-                'a faulted logout leaves the old session valid until timeout',
-          );
-        } finally {
-          directClient.close();
-        }
+        final authService = PiholeV6Service.fromConnection(
+          url: RealPiholeEnv.v6Base,
+        );
+        authService.setSid(oldSid!);
+        final result = await authService.getAuth();
+        expect(
+          result.getOrThrow().session.valid,
+          isTrue,
+          reason: 'a faulted logout leaves the old session valid until timeout',
+        );
       },
     );
   });
