@@ -1,0 +1,191 @@
+name: Stage local image-size DoS hardening
+
+on:
+  push:
+    branches:
+      - maintenance/harden-image-size-dos
+    paths:
+      - .github/workflows/stage-image-size-hardening.yml
+
+permissions:
+  contents: write
+
+jobs:
+  harden:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: website
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: maintenance/harden-image-size-dos
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - name: Enable pinned pnpm
+        run: corepack enable && corepack prepare pnpm@10.30.1 --activate
+      - name: Install current frozen graph
+        run: pnpm install --frozen-lockfile
+      - name: Create local patch against published image-size 2.0.2
+        run: |
+          rm -rf .pnpm-patch
+          pnpm patch image-size@2.0.2 --edit-dir .pnpm-patch/image-size
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          root = Path('.pnpm-patch/image-size/dist')
+          files = sorted([*root.rglob('*.cjs'), *root.rglob('*.mjs')])
+          counts = {'boxes': 0, 'icns': 0, 'jxlc': 0, 'jxlp': 0}
+
+          box_pattern = re.compile(r'''function readBox\(input, offset\) \{\n  if \(input\.length - offset < 4\) return;\n  const boxSize = readUInt32BE\(input, offset\);\n  if \(input\.length - offset < boxSize\) return;\n  return \{\n    name: toUTF8String\(input, 4 \+ offset, 8 \+ offset\),\n    offset,\n    size: boxSize\n  \};\n\}\nfunction findBox\(input, boxName, currentOffset\) \{\n  while \(currentOffset < input\.length\) \{\n    const box = readBox\(input, currentOffset\);\n    if \(!box\) break;\n    if \(box\.name === boxName\) return box;\n    currentOffset \+= box\.size > 0 \? box\.size : 8;\n  \}\n\}''')
+          box_replacement = '''const MIN_BOX_HEADER = 8;\nfunction readBox(input, offset) {\n  if (input.length - offset < MIN_BOX_HEADER) return;\n  const boxSize = readUInt32BE(input, offset);\n  if (boxSize === 0) {\n    return {\n      name: toUTF8String(input, offset + 4, offset + 8),\n      offset,\n      size: input.length - offset\n    };\n  }\n  if (boxSize === 1 || boxSize < MIN_BOX_HEADER) return;\n  if (input.length - offset < boxSize) return;\n  return {\n    name: toUTF8String(input, offset + 4, offset + 8),\n    offset,\n    size: boxSize\n  };\n}\nfunction findBox(input, boxName, startOffset) {\n  let offset = startOffset;\n  while (offset < input.length) {\n    const box = readBox(input, offset);\n    if (!box) break;\n    if (box.name === boxName) return box;\n    if (box.size < MIN_BOX_HEADER) break;\n    const nextOffset = offset + box.size;\n    if (nextOffset <= offset) break;\n    offset = nextOffset;\n  }\n}'''
+
+          icns_pattern = re.compile(r'''    while \(imageOffset < fileLength && imageOffset < inputLength\) \{\n      const imageHeader = readImageHeader\(input, imageOffset\);\n      const imageSize = getImageSize\(imageHeader\[0\]\);\n      images\.push\(imageSize\);\n      imageOffset \+= imageHeader\[1\];\n    \}''')
+          icns_replacement = '''    while (imageOffset < fileLength && imageOffset < inputLength) {\n      if (inputLength - imageOffset < 8) break;\n      const imageHeader = readImageHeader(input, imageOffset);\n      const entryLength = imageHeader[1];\n      if (entryLength < 8) break;\n      const imageSize = getImageSize(imageHeader[0]);\n      if (imageSize.width && imageSize.height) images.push(imageSize);\n      const nextOffset = imageOffset + entryLength;\n      if (nextOffset <= imageOffset) break;\n      imageOffset = nextOffset;\n    }'''
+
+          jxlc_pattern = re.compile(r'''  if \(jxlcBox\) \{\n    return input\.slice\(jxlcBox\.offset \+ 8, jxlcBox\.offset \+ jxlcBox\.size\);\n  \}''')
+          jxlc_replacement = '''  if (jxlcBox && jxlcBox.size >= 8) {\n    return input.slice(jxlcBox.offset + 8, jxlcBox.offset + jxlcBox.size);\n  }'''
+
+          jxlp_pattern = re.compile(r'''    const jxlpBox = findBox\(input, "jxlp", offset\);\n    if \(!jxlpBox\) break;\n    partialStreams\.push\(\n      input\.slice\(jxlpBox\.offset \+ 12, jxlpBox\.offset \+ jxlpBox\.size\)\n    \);\n    offset = jxlpBox\.offset \+ jxlpBox\.size;''')
+          jxlp_replacement = '''    const jxlpBox = findBox(input, "jxlp", offset);\n    if (!jxlpBox || jxlpBox.size < 12) break;\n    partialStreams.push(\n      input.slice(jxlpBox.offset + 12, jxlpBox.offset + jxlpBox.size)\n    );\n    const nextOffset = jxlpBox.offset + jxlpBox.size;\n    if (nextOffset <= offset) break;\n    offset = nextOffset;'''
+
+          for path in files:
+            text = path.read_text()
+            text, n = box_pattern.subn(box_replacement, text)
+            counts['boxes'] += n
+            text, n = icns_pattern.subn(icns_replacement, text)
+            counts['icns'] += n
+            text, n = jxlc_pattern.subn(jxlc_replacement, text)
+            counts['jxlc'] += n
+            text, n = jxlp_pattern.subn(jxlp_replacement, text)
+            counts['jxlp'] += n
+            path.write_text(text)
+
+          print(counts)
+          assert counts['boxes'] >= 8, counts
+          assert counts['icns'] >= 8, counts
+          assert counts['jxlc'] >= 8, counts
+          assert counts['jxlp'] >= 8, counts
+          PY
+          pnpm patch-commit .pnpm-patch/image-size
+          pnpm install --lockfile-only
+      - name: Add permanent security regression probe
+        run: |
+          mkdir -p scripts
+          cat > scripts/test-image-size-dos.mjs <<'EOF'
+          import {spawn} from 'node:child_process';
+          import {createRequire} from 'node:module';
+          import {mkdtemp, readdir, rm, writeFile} from 'node:fs/promises';
+          import {tmpdir} from 'node:os';
+          import path from 'node:path';
+          import process from 'node:process';
+
+          const probes = {
+            jxl: [0x00,0x00,0x00,0x00,0x4a,0x58,0x4c,0x20],
+            jp2: [0x00,0x00,0x00,0x00,0x6a,0x50,0x20,0x20],
+            icns: [0x69,0x63,0x6e,0x73,0x00,0x00,0x00,0x10,0x69,0x73,0x33,0x32,0x00,0x00,0x00,0x00],
+            heif: [
+              0x00,0x00,0x00,0x10,0x66,0x74,0x79,0x70,0x61,0x76,0x69,0x66,
+              0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x24,0x6d,0x65,0x74,0x61,
+              0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x08,0x69,0x70,0x72,0x70,
+              0x00,0x00,0x00,0x14,0x69,0x70,0x63,0x6f,0x00,0x00,0x00,0x00,
+              0x69,0x73,0x70,0x65,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+              0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+            ],
+          };
+
+          async function resolveImageSize() {
+            const store = path.resolve('node_modules/.pnpm');
+            const entries = await readdir(store);
+            const mdxEntry = entries.find((entry) => entry.startsWith('@docusaurus+mdx-loader@'));
+            if (!mdxEntry) throw new Error('Unable to locate @docusaurus/mdx-loader in pnpm store');
+            const mdxPackage = path.join(store, mdxEntry, 'node_modules/@docusaurus/mdx-loader/package.json');
+            return createRequire(mdxPackage);
+          }
+
+          async function runProbe(name) {
+            const bytes = probes[name];
+            if (!bytes) throw new Error(`Unknown probe ${name}`);
+            const requireFromMdx = await resolveImageSize();
+            const {imageSize} = requireFromMdx('image-size');
+            const {imageSizeFromFile} = requireFromMdx('image-size/fromFile');
+            const payload = Uint8Array.from(bytes);
+            try { imageSize(payload); } catch {}
+            const dir = await mkdtemp(path.join(tmpdir(), 'image-size-dos-'));
+            try {
+              const file = path.join(dir, `${name}.bin`);
+              await writeFile(file, payload);
+              try { await imageSizeFromFile(file); } catch {}
+            } finally {
+              await rm(dir, {recursive: true, force: true});
+            }
+          }
+
+          async function runIsolated(name) {
+            await new Promise((resolve, reject) => {
+              const child = spawn(process.execPath, [process.argv[1], '--probe', name], {stdio: 'inherit'});
+              const timer = setTimeout(() => {
+                child.kill('SIGKILL');
+                reject(new Error(`${name} parser probe exceeded 2 seconds`));
+              }, 2000);
+              child.on('error', (error) => {
+                clearTimeout(timer);
+                reject(error);
+              });
+              child.on('exit', (code, signal) => {
+                clearTimeout(timer);
+                if (code === 0) resolve();
+                else reject(new Error(`${name} parser probe failed: code=${code} signal=${signal}`));
+              });
+            });
+          }
+
+          if (process.argv[2] === '--probe') {
+            await runProbe(process.argv[3]);
+          } else {
+            for (const name of Object.keys(probes)) await runIsolated(name);
+            console.log('image-size DoS regression probes completed without hangs');
+          }
+          EOF
+          node - <<'JS'
+          const fs = require('fs');
+          const p = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          p.scripts['test:image-size-security'] = 'node scripts/test-image-size-dos.mjs';
+          fs.writeFileSync('package.json', JSON.stringify(p, null, 2) + '\n');
+          JS
+      - name: Add regression probe to docs PR gate
+        working-directory: .
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('.github/workflows/test-deploy-docs.yaml')
+          text = path.read_text()
+          anchor = "      - name: Install dependencies\n        run: pnpm install --frozen-lockfile\n\n"
+          insert = anchor + "      - name: Test patched image-size parsers\n        run: pnpm test:image-size-security\n\n"
+          assert anchor in text
+          path.write_text(text.replace(anchor, insert, 1))
+          PY
+      - name: Reinstall from committed-style graph
+        run: |
+          rm -rf node_modules
+          pnpm install --lockfile-only
+          pnpm install --frozen-lockfile
+      - name: Run image-size DoS regression probes
+        run: pnpm test:image-size-security
+      - name: Validate docs
+        run: |
+          pnpm lint
+          pnpm typecheck
+          pnpm build
+      - name: Commit validated hardening files
+        working-directory: .
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add website/package.json website/pnpm-lock.yaml website/patches website/scripts/test-image-size-dos.mjs .github/workflows/test-deploy-docs.yaml
+          git diff --cached --check
+          git commit -m 'fix: harden image-size parser loops'
+          git push
