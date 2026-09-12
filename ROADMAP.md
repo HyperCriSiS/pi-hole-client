@@ -115,7 +115,7 @@ Maintain and improve the unofficial Pi-hole client while upstream activity is li
 - [ ] Validate device-dependent fixes on affected devices before marking them complete.
 - [ ] Keep `UPSTREAM_TRIAGE.md` synchronized when an upstream-tracked item changes state.
 - [x] Integrate the validated maintenance snapshot into `main` through a stable short-lived PR candidate.
-- [x] Remediate all currently patchable Docusaurus/pnpm security advisories through reproducible lockfile refreshes, including the September `js-yaml`, `svgo`, `joi`, `colord`, `@swc/html`, `qs`, `postcss`, `body-parser` and `webpack-dev-server` fixes; the remaining two `image-size` high-severity advisories have no patched release and are bounded by the existing 15-minute docs-build timeout. Keep the transitive `uuid` major-version path separate rather than forcing a potentially incompatible global override.
+- [x] Remediate all currently patchable Docusaurus/pnpm security advisories through reproducible lockfile refreshes, including the September `js-yaml`, `svgo`, `joi`, `colord`, `@swc/html`, `qs`, `postcss`, `body-parser` and `webpack-dev-server` fixes. The transitive `webpack-dev-server -> sockjs -> uuid` alert is also fixed with a parent-scoped `sockjs>uuid=11.1.1` override after validating SockJS CommonJS loading, `uuid.v4()`, frozen install, lint/typecheck, production build and a live Docusaurus dev-server smoke test; no global UUID override is used. The only remaining open Dependabot alerts are the two `image-size` high-severity advisories, which have no patched release and are bounded by the existing 15-minute docs-build timeout.
 
 ## Blockers / dependencies
 
