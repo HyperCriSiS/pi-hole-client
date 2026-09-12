@@ -54,7 +54,8 @@
       "qs": "6.16.0",
       "serialize-javascript": "7.0.7",
       "svgo": "3.3.5",
-      "webpack-dev-server": "5.2.6"
+      "webpack-dev-server": "5.2.6",
+      "sockjs>uuid": "11.1.1"
     }
   },
   "browserslist": {
