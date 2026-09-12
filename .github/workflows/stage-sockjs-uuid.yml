@@ -1,0 +1,102 @@
+name: Stage scoped SockJS uuid security test
+
+on:
+  push:
+    branches:
+      - maintenance/patch-sockjs-uuid
+    paths:
+      - .github/workflows/stage-sockjs-uuid.yml
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: website
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: maintenance/patch-sockjs-uuid
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - name: Enable pinned pnpm
+        run: corepack enable && corepack prepare pnpm@10.30.1 --activate
+      - name: Add scoped SockJS uuid override and regenerate lockfile
+        run: |
+          node - <<'JS'
+          const fs = require('fs');
+          const p = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          p.pnpm ??= {};
+          p.pnpm.overrides ??= {};
+          p.pnpm.overrides['sockjs>uuid'] = '11.1.1';
+          fs.writeFileSync('package.json', JSON.stringify(p, null, 2) + '\n');
+          JS
+          pnpm install --lockfile-only
+      - name: Verify scoped resolution
+        run: |
+          grep -q "uuid@11.1.1" pnpm-lock.yaml
+          if grep -q "uuid@8.3.2" pnpm-lock.yaml; then
+            echo 'uuid 8.3.2 is still present in the lockfile' >&2
+            exit 1
+          fi
+          pnpm why uuid --depth Infinity
+      - name: Install frozen dependency graph
+        run: pnpm install --frozen-lockfile
+      - name: Verify SockJS CommonJS runtime with uuid 11
+        run: |
+          SOCKJS_PKG="$(find node_modules/.pnpm -path '*/node_modules/sockjs/package.json' | head -n 1)"
+          test -n "$SOCKJS_PKG"
+          SOCKJS_PKG="$SOCKJS_PKG" node - <<'JS'
+          const path = require('path');
+          const { createRequire } = require('module');
+          const pkg = path.resolve(process.env.SOCKJS_PKG);
+          const req = createRequire(pkg);
+          const uuid = req('uuid');
+          const uuidVersion = req('uuid/package.json').version;
+          const sockjs = req('./');
+          if (uuidVersion !== '11.1.1') throw new Error(`Unexpected uuid ${uuidVersion}`);
+          const id = uuid.v4();
+          if (!/^[0-9a-f-]{36}$/.test(id)) throw new Error(`Invalid uuid v4 result ${id}`);
+          if (typeof sockjs.createServer !== 'function') throw new Error('SockJS createServer unavailable');
+          console.log(`SockJS loaded with uuid ${uuidVersion}; v4=${id}`);
+          JS
+      - name: Lint and typecheck docs
+        run: |
+          pnpm lint
+          pnpm typecheck
+      - name: Build docs
+        run: pnpm build
+      - name: Smoke-test Docusaurus dev server
+        run: |
+          pnpm start --host 127.0.0.1 --port 3000 --no-open > /tmp/docusaurus-start.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          ok=0
+          for i in $(seq 1 30); do
+            if curl --fail --silent --show-error http://127.0.0.1:3000/ >/tmp/docusaurus-home.html; then
+              ok=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$ok" -ne 1 ]; then
+            cat /tmp/docusaurus-start.log
+            exit 1
+          fi
+          grep -qi '<html' /tmp/docusaurus-home.html
+          kill "$pid" 2>/dev/null || true
+          wait "$pid" 2>/dev/null || true
+      - name: Commit validated dependency files
+        working-directory: .
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add website/package.json website/pnpm-lock.yaml
+          git diff --cached --check
+          git commit -m 'fix: patch uuid under SockJS'
+          git push
