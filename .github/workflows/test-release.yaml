@@ -172,6 +172,9 @@ jobs:
       - name: Generate files
         run: dart run build_runner build --delete-conflicting-outputs
 
+      - name: Prepare F-Droid-compatible native assets
+        run: dart run tools/prepare_fdroid_source_build.dart
+
       - name: Remove release signing overrides
         run: |
           rm -f android/key.properties android/app/keystore.jks
