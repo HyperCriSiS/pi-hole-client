@@ -9,6 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 V6_REPOSITORIES = ROOT / "lib/data/repositories/api/v6"
 FACTORY = ROOT / "lib/data/repositories/api/repository_factory.dart"
+LEGACY_CLIENT = ROOT / "lib/data/services/api/pihole_v6_api_client.dart"
 LEGACY_IMPORT = (
     "import 'package:pi_hole_client/data/services/api/"
     "pihole_v6_api_client.dart';"
@@ -29,6 +30,21 @@ PRODUCTION_HOLDS = {
     "FtlRepositoryV6",
     "NetworkRepositoryV6",
 }
+# The handwritten client may expose only the endpoint methods justified by the
+# documented compatibility/schema/behavior holds, plus its lifecycle close().
+ALLOWED_PUBLIC_CLIENT_METHODS = {
+    "close",
+    "postAuth",
+    "getInfoFtl",
+    "getNetworkGateway",
+    "postActionGravity",
+}
+PUBLIC_CLIENT_METHOD_RE = re.compile(
+    r"^  (?!PiholeV6ApiClient\()"
+    r"(?:[A-Za-z_][A-Za-z0-9_?<>,. ]*\s+)"
+    r"([A-Za-z_][A-Za-z0-9_]*)\s*\(",
+    re.MULTILINE,
+)
 
 
 def fail(message: str) -> None:
@@ -69,6 +85,20 @@ def extract_call(text: str, needle: str) -> str:
 
 
 def main() -> None:
+    client_text = LEGACY_CLIENT.read_text()
+    public_client_methods = {
+        name
+        for name in PUBLIC_CLIENT_METHOD_RE.findall(client_text)
+        if not name.startswith("_")
+    }
+    if public_client_methods != ALLOWED_PUBLIC_CLIENT_METHODS:
+        added = sorted(public_client_methods - ALLOWED_PUBLIC_CLIENT_METHODS)
+        missing = sorted(ALLOWED_PUBLIC_CLIENT_METHODS - public_client_methods)
+        fail(
+            "unexpected handwritten client public method surface; "
+            f"added={added}, missing={missing}"
+        )
+
     importers = {
         path.name
         for path in V6_REPOSITORIES.glob("*.dart")
@@ -123,6 +153,10 @@ def main() -> None:
         fail("session cache store compatibility seam changed; re-audit its boundary")
 
     print("Legacy v6 boundary audit passed.")
+    print(
+        "Allowed handwritten endpoint methods: postAuth, getInfoFtl, "
+        "getNetworkGateway, postActionGravity (plus lifecycle close)."
+    )
     print("Production handwritten holds: ActionsRepositoryV6, FtlRepositoryV6, NetworkRepositoryV6.")
     print("V6SessionCache/V6SessionCacheStore legacy client remains test-only in production wiring.")
 
