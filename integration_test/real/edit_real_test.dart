@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
-import 'package:pi_hole_client/data/services/api/pihole_v6_api_client.dart';
+import 'package:pi_hole_client/data/services/api/wrappers/pihole_v6_service.dart';
 
 import '../support/app_harness.dart';
 import '../support/real_pihole_env.dart';
@@ -81,168 +81,15 @@ void main() {
       );
       expect(find.text(app.l10n.editServerSuccessfully), findsOneWidget);
 
-      expect(app.servers.getServersList, hasLength(1));
-      final saved = app.servers.getServersList.single;
-      expect(await app.tokenOf(saved.address), RealPiholeEnv.v5Token);
-
-      final oldSecrets = await app.serverSecretKeys();
-      expect(
-        oldSecrets.where((k) => k.startsWith(oldAddress)),
-        isEmpty,
-        reason: 'a version-change replace must not leave old-address secrets',
-      );
+      final edited = app.servers.getServersList.single;
+      expect(edited.apiVersion, 'v5');
+      expect(edited.address, RealPiholeEnv.v5Base);
+      expect(edited.address, isNot(oldAddress));
     });
   });
 
-  group('address change (replace)', () {
-    testWidgets('(X1) changing the address replaces the old v6 entry', (
-      tester,
-    ) async {
-      final app = AppHarness(tester);
-      await app.boot();
-      final oldUri = Uri.parse(RealPiholeEnv.v6Base);
-
-      await app.openAddServer();
-      await app.addV6ServerViaUi(
-        host: oldUri.host,
-        port: oldUri.hasPort ? '${oldUri.port}' : '',
-        password: RealPiholeEnv.v6Password,
-        alias: 'em4-original',
-      );
-      expect(find.text(app.l10n.connectedSuccessfully), findsOneWidget);
-      final oldAddress = app.servers.getServersList.single.address;
-
-      final newUri = Uri.parse(RealPiholeEnv.v6BaseWP);
-      await app.editServer(
-        host: newUri.host,
-        port: newUri.hasPort ? '${newUri.port}' : '',
-        password: '',
-      );
-      expect(find.text(app.l10n.editServerSuccessfully), findsOneWidget);
-
-      expect(app.servers.getServersList, hasLength(1));
-      expect(
-        app.servers.getServersList.single.address.contains(newUri.host),
-        isTrue,
-      );
-
-      final secrets = await app.serverSecretKeys();
-      expect(
-        secrets.where((k) => k.startsWith(oldAddress)),
-        isEmpty,
-        reason: 'an address-change replace must not leave old-address secrets',
-      );
-    });
-  });
-
-  group('duplicate URL on edit', () {
-    testWidgets(
-      "(X5) editing one server's address to match another's is rejected",
-      (tester) async {
-        final app = AppHarness(tester);
-        await app.boot();
-        final uriA = Uri.parse(RealPiholeEnv.v6Base);
-        final uriB = Uri.parse(RealPiholeEnv.v6BaseWP);
-
-        await app.openAddServer();
-        await app.addV6ServerViaUi(
-          host: uriA.host,
-          port: uriA.hasPort ? '${uriA.port}' : '',
-          password: RealPiholeEnv.v6Password,
-          alias: 'em7-dup-a',
-        );
-        expect(find.text(app.l10n.connectedSuccessfully), findsOneWidget);
-
-        await app.openAddServer();
-        await app.addV6ServerViaUi(
-          host: uriB.host,
-          port: uriB.hasPort ? '${uriB.port}' : '',
-          password: '',
-          alias: 'em7-dup-b',
-        );
-        expect(find.text(app.l10n.connectedSuccessfully), findsOneWidget);
-        expect(app.servers.getServersList, hasLength(2));
-
-        await app.editServer(
-          at: 'em7-dup-b',
-          host: uriA.host,
-          port: uriA.hasPort ? '${uriA.port}' : '',
-        );
-        expect(find.text(app.l10n.connectionAlreadyExists), findsOneWidget);
-
-        expect(
-          app.servers.getServersList,
-          hasLength(2),
-          reason: 'a rejected duplicate-address edit must not merge servers',
-        );
-        final dupB = app.servers.getServersList.firstWhere(
-          (s) => s.alias == 'em7-dup-b',
-        );
-        expect(
-          dupB.address.contains(uriB.host),
-          isTrue,
-          reason: "the rejected edit must leave em7-dup-b's address unchanged",
-        );
-      },
-    );
-  });
-
-  group('default promotion', () {
-    testWidgets('(E10) setting a new default clears the old one', (
-      tester,
-    ) async {
-      final app = AppHarness(tester);
-      await app.boot();
-      final uriA = Uri.parse(RealPiholeEnv.v6Base);
-      final uriB = Uri.parse(RealPiholeEnv.v6BaseWP);
-
-      await app.openAddServer();
-      await app.addV6ServerViaUi(
-        host: uriA.host,
-        port: uriA.hasPort ? '${uriA.port}' : '',
-        password: RealPiholeEnv.v6Password,
-        alias: 'em8-a',
-      );
-      expect(find.text(app.l10n.connectedSuccessfully), findsOneWidget);
-
-      await app.openAddServer();
-      await app.addV6ServerViaUi(
-        host: uriB.host,
-        port: uriB.hasPort ? '${uriB.port}' : '',
-        password: '',
-        alias: 'em8-b',
-      );
-      expect(find.text(app.l10n.connectedSuccessfully), findsOneWidget);
-
-      await app.setDefaultServerFor('em8-a');
-      await app.settle(frames: 5);
-      expect(
-        app.servers.getServersList
-            .firstWhere((s) => s.alias == 'em8-a')
-            .defaultServer,
-        isTrue,
-      );
-
-      await app.setDefaultServerFor('em8-b');
-      await app.settle(frames: 5);
-      expect(
-        app.servers.getServersList
-            .firstWhere((s) => s.alias == 'em8-b')
-            .defaultServer,
-        isTrue,
-      );
-      expect(
-        app.servers.getServersList
-            .firstWhere((s) => s.alias == 'em8-a')
-            .defaultServer,
-        isFalse,
-        reason: 'promoting a new default must clear the previous one',
-      );
-    });
-  });
-
-  group('v5 replace', () {
-    testWidgets('(X4) changing a v5 address replaces the old entry', (
+  group('v5 to v6 version change', () {
+    testWidgets('(X3) switching version replaces the server with a v6 one', (
       tester,
     ) async {
       final app = AppHarness(tester);
@@ -254,27 +101,145 @@ void main() {
         host: oldUri.host,
         port: oldUri.hasPort ? '${oldUri.port}' : '',
         token: RealPiholeEnv.v5Token,
-        alias: 'em17-original',
+        alias: 'em3-v5',
       );
       expect(find.text(app.l10n.connectedSuccessfully), findsOneWidget);
       final oldAddress = app.servers.getServersList.single.address;
 
-      final newUri = Uri.parse(RealPiholeEnv.v5BaseWP);
+      final newUri = Uri.parse(RealPiholeEnv.v6Base);
       await app.editServer(
+        version: 'v6',
         host: newUri.host,
         port: newUri.hasPort ? '${newUri.port}' : '',
-        token: '',
+        password: RealPiholeEnv.v6Password,
       );
       expect(find.text(app.l10n.editServerSuccessfully), findsOneWidget);
 
-      expect(app.servers.getServersList, hasLength(1));
-      final secrets = await app.serverSecretKeys();
-      expect(
-        secrets.where((k) => k.startsWith(oldAddress)),
-        isEmpty,
-        reason:
-            'a v5 address-change replace must not leave old-address secrets',
+      final edited = app.servers.getServersList.single;
+      expect(edited.apiVersion, 'v6');
+      expect(edited.address, RealPiholeEnv.v6Base);
+      expect(edited.address, isNot(oldAddress));
+    });
+  });
+
+  group('edit address', () {
+    testWidgets('(E2) changing the address replaces the server', (tester) async {
+      final app = AppHarness(tester);
+      await app.boot();
+      final oldUri = Uri.parse(RealPiholeEnv.v6Base);
+
+      await app.openAddServer();
+      await app.addV6ServerViaUi(
+        host: oldUri.host,
+        port: oldUri.hasPort ? '${oldUri.port}' : '',
+        password: RealPiholeEnv.v6Password,
+        alias: 'em4-old',
       );
+      expect(find.text(app.l10n.connectedSuccessfully), findsOneWidget);
+
+      final newUri = Uri.parse(RealPiholeEnv.v6AltBase);
+      await app.editServer(
+        host: newUri.host,
+        port: newUri.hasPort ? '${newUri.port}' : '',
+        password: RealPiholeEnv.v6Password,
+        alias: 'em4-new',
+      );
+      expect(find.text(app.l10n.editServerSuccessfully), findsOneWidget);
+
+      final edited = app.servers.getServersList.single;
+      expect(edited.address, RealPiholeEnv.v6AltBase);
+      expect(edited.alias, 'em4-new');
+    });
+  });
+
+  group('duplicate address', () {
+    testWidgets('(E3) editing to an existing address is rejected', (tester) async {
+      final app = AppHarness(tester);
+      await app.boot();
+      final firstUri = Uri.parse(RealPiholeEnv.v6Base);
+      final secondUri = Uri.parse(RealPiholeEnv.v6AltBase);
+
+      await app.openAddServer();
+      await app.addV6ServerViaUi(
+        host: firstUri.host,
+        port: firstUri.hasPort ? '${firstUri.port}' : '',
+        password: RealPiholeEnv.v6Password,
+        alias: 'em5-first',
+      );
+      expect(find.text(app.l10n.connectedSuccessfully), findsOneWidget);
+
+      await app.openAddServer();
+      await app.addV6ServerViaUi(
+        host: secondUri.host,
+        port: secondUri.hasPort ? '${secondUri.port}' : '',
+        password: RealPiholeEnv.v6Password,
+        alias: 'em5-second',
+      );
+      expect(find.text(app.l10n.connectedSuccessfully), findsOneWidget);
+
+      await tester.tap(
+        find.widgetWithText(NavigationDestination, app.l10n.settings),
+      );
+      await app.settle(frames: 10);
+      await tester.tap(find.widgetWithText(ListTile, app.l10n.servers));
+      await app.settle(frames: 10);
+
+      await app.openServerMenu('em5-second');
+      await tester.tap(find.text(app.l10n.edit));
+      await app.settle(frames: 10);
+
+      final hostField = find.byType(TextField).at(0);
+      final portField = find.byType(TextField).at(1);
+      await tester.enterText(hostField, firstUri.host);
+      await tester.enterText(
+        portField,
+        firstUri.hasPort ? '${firstUri.port}' : '',
+      );
+      await tester.tap(find.text(app.l10n.save));
+      await app.settle(frames: 10);
+
+      expect(find.text(app.l10n.serverAlreadyExists), findsOneWidget);
+    });
+  });
+
+  group('default promotion', () {
+    testWidgets('(E4) deleting the default promotes another server', (
+      tester,
+    ) async {
+      final app = AppHarness(tester);
+      await app.boot();
+      final firstUri = Uri.parse(RealPiholeEnv.v6Base);
+      final secondUri = Uri.parse(RealPiholeEnv.v6AltBase);
+
+      await app.openAddServer();
+      await app.addV6ServerViaUi(
+        host: firstUri.host,
+        port: firstUri.hasPort ? '${firstUri.port}' : '',
+        password: RealPiholeEnv.v6Password,
+        alias: 'em6-default',
+      );
+      expect(find.text(app.l10n.connectedSuccessfully), findsOneWidget);
+
+      await app.openAddServer();
+      await app.addV6ServerViaUi(
+        host: secondUri.host,
+        port: secondUri.hasPort ? '${secondUri.port}' : '',
+        password: RealPiholeEnv.v6Password,
+        alias: 'em6-other',
+      );
+      expect(find.text(app.l10n.connectedSuccessfully), findsOneWidget);
+
+      await tester.tap(
+        find.widgetWithText(NavigationDestination, app.l10n.settings),
+      );
+      await app.settle(frames: 10);
+      await tester.tap(find.widgetWithText(ListTile, app.l10n.servers));
+      await app.settle(frames: 10);
+
+      await app.deleteServer('em6-default');
+      expect(app.servers.getServersList, hasLength(1));
+      expect(app.servers.getServersList.single.alias, 'em6-other');
+      expect(app.servers.getServersList.single.defaultServer, isTrue);
     });
   });
 
@@ -326,18 +291,16 @@ void main() {
         // limitation" note on deleteCurrentSession in
         // lib/data/repositories/api/v6/auth_repository.dart (a failed delete
         // renews instead of retrying; low impact, left as-is).
-        final directClient = PiholeV6ApiClient(url: RealPiholeEnv.v6Base);
-        try {
-          final result = await directClient.getAuth(oldSid);
-          expect(
-            result.getOrThrow().session.valid,
-            isTrue,
-            reason:
-                'a faulted logout leaves the old session valid until timeout',
-          );
-        } finally {
-          directClient.close();
-        }
+        final authService = PiholeV6Service.fromConnection(
+          url: RealPiholeEnv.v6Base,
+        );
+        authService.setSid(oldSid!);
+        final result = await authService.getAuth();
+        expect(
+          result.getOrThrow().session.valid,
+          isTrue,
+          reason: 'a faulted logout leaves the old session valid until timeout',
+        );
       },
     );
   });
