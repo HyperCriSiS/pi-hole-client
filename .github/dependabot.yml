@@ -11,6 +11,16 @@ updates:
     schedule:
       interval: "weekly"
     ignore:
+      # Flutter 3.44.1 pins these packages through flutter_localizations /
+      # flutter_test. Ignore only the currently proven-unresolvable versions so
+      # later releases and security-driven candidates still surface normally.
+      # Revisit these exact ignores together with the next Flutter baseline.
+      - dependency-name: "intl"
+        versions:
+          - "0.20.3"
+      - dependency-name: "meta"
+        versions:
+          - "1.19.0"
       # These majors currently require Android compileSdk 37. Keep them blocked
       # until the project deliberately moves beyond the compileSdk 36 / F-Droid
       # compatibility baseline.
