@@ -16,9 +16,18 @@ void main() {
                 PopupMenuButton<String>(
                   itemBuilder: (BuildContext context) {
                     return const <PopupMenuItem<String>>[
-                      PopupMenuItem<String>(value: 'add', child: Text('Add')),
-                      PopupMenuItem<String>(value: 'hide', child: Text('Hide')),
-                      PopupMenuItem<String>(value: 'delete', child: Text('Delete')),
+                      PopupMenuItem<String>(
+                        value: 'add',
+                        child: Text('Add'),
+                      ),
+                      PopupMenuItem<String>(
+                        value: 'hide',
+                        child: Text('Hide'),
+                      ),
+                      PopupMenuItem<String>(
+                        value: 'delete',
+                        child: Text('Delete'),
+                      ),
                     ];
                   },
                   onSelected: (String value) {
