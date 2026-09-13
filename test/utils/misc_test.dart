@@ -39,6 +39,8 @@ String _colonSeparatedUppercase(String digest) {
   ].join(':').toUpperCase();
 }
 
+String get _nonMatchingSha256 => List.filled(64, '0').join();
+
 void main() {
   group('createHttpClient TLS policy', () {
     test('does not install a callback when untrusted certificates are disabled', () {
@@ -77,7 +79,7 @@ void main() {
     test('rejects a certificate that does not match the configured pin', () {
       final client = createHttpClient(
         allowUntrustedCert: true,
-        pinnedCertificateSha256: '00' * 32,
+        pinnedCertificateSha256: _nonMatchingSha256,
       );
       addTearDown(() => client.close(force: true));
       final certificate = _FakeCertificate([9, 10, 11, 12]);
@@ -92,7 +94,7 @@ void main() {
       final client = createHttpClient(
         allowUntrustedCert: true,
         ignoreCertificateErrors: true,
-        pinnedCertificateSha256: '00' * 32,
+        pinnedCertificateSha256: _nonMatchingSha256,
       );
       addTearDown(() => client.close(force: true));
       final certificate = _FakeCertificate([13, 14, 15, 16]);
