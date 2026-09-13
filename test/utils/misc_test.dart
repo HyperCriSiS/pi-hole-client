@@ -44,6 +44,9 @@ class _RecordingHttpClient implements HttpClient {
   }
 
   @override
+  set maxConnectionsPerHost(int? value) {}
+
+  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
