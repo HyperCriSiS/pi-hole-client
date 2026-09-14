@@ -1,10 +1,10 @@
-name: Normalize Dependabot pub lockfile
+name: Normalize pub lockfile
 
 on:
   workflow_dispatch:
     inputs:
       pull_request:
-        description: "Open Dependabot pub PR number"
+        description: "Open internal pub PR number"
         required: true
         type: string
 
@@ -18,7 +18,7 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - name: Resolve and validate Dependabot PR
+      - name: Resolve and validate pub PR
         id: pr
         env:
           GH_TOKEN: ${{ github.token }}
@@ -42,10 +42,6 @@ jobs:
           head_sha="$(jq -r '.head.sha' <<<"$pr_json")"
           head_repo="$(jq -r '.head.repo.full_name' <<<"$pr_json")"
 
-          test "$author" = 'dependabot[bot]' || {
-            echo "PR #${PR_NUMBER} is not authored by dependabot[bot]" >&2
-            exit 1
-          }
           test "$state" = 'open' || {
             echo "PR #${PR_NUMBER} is not open" >&2
             exit 1
@@ -58,10 +54,14 @@ jobs:
             echo "PR #${PR_NUMBER} is not an internal repository branch" >&2
             exit 1
           }
-          case "$head_ref" in
-            dependabot/pub/*) ;;
+
+          case "$author:$head_ref" in
+            'dependabot[bot]':dependabot/pub/*)
+              ;;
+            "$GITHUB_REPOSITORY_OWNER":maintenance/pub/*)
+              ;;
             *)
-              echo "PR #${PR_NUMBER} is not a Dependabot pub branch" >&2
+              echo "PR #${PR_NUMBER} is neither an approved Dependabot pub PR nor an owner-authored maintenance/pub PR" >&2
               exit 1
               ;;
           esac
@@ -83,7 +83,7 @@ jobs:
           echo "head_ref=$head_ref" >> "$GITHUB_OUTPUT"
           echo "head_sha=$head_sha" >> "$GITHUB_OUTPUT"
 
-      - name: Checkout Dependabot head
+      - name: Checkout pub PR head
         uses: actions/checkout@v7
         with:
           ref: ${{ steps.pr.outputs.head_sha }}
