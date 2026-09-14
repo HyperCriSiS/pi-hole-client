@@ -8,8 +8,6 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # The following defines the version and build number for your application.
 # A version number is three numbers separated by dots, like 1.2.43
 # followed by an optional build number separated by a +.
-# Both the version and the builder number may be overridden in flutter
-# build by specifying --build-name and --build-number, respectively.
 # In Android, build-name is used as versionName while build-number used as versionCode.
 # Read more about Android versioning at https://developer.android.com/studio/publish/versioning
 # In iOS, build-name is used as CFBundleShortVersionString while build-number used as CFBundleVersion.
@@ -58,7 +56,7 @@ dependencies:
   flutter_app_lock: ^4.3.0
   sqlite3: ^3.5.2
   sqflite_common_ffi: ^2.4.3
-  sentry_flutter: ^9.26.0
+  sentry_flutter: ^9.30.0
   flutter_dotenv: ^6.0.1
   contextmenu: ^3.0.0
   window_size:
@@ -98,7 +96,7 @@ dev_dependencies:
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
-  # activated in the `analysis_options.yaml` file located at the root of your
+  # activated in the `analysis_options.yaml` file located at the root of the
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
@@ -161,7 +159,7 @@ flutter:
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
 
-  # For details regarding adding assets from package dependencies, see
+  # For details regarding assets from package dependencies, see
   # https://flutter.dev/assets-and-images/#from-packages
 
   # To add custom fonts to your application, add a fonts section here,
