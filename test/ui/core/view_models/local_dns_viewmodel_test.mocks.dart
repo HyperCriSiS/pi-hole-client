@@ -71,20 +71,20 @@ class MockLocalDnsRepository extends _i1.Mock
 
   @override
   _i3.Future<_i4.ResultDart<_i4.Unit, Exception>> updateRecord({
-    required _i5.LocalDns? record,
-    required String? oldIp,
+    required _i5.LocalDns? oldRecord,
+    required _i5.LocalDns? newRecord,
   }) =>
       (super.noSuchMethod(
             Invocation.method(#updateRecord, [], {
-              #record: record,
-              #oldIp: oldIp,
+              #oldRecord: oldRecord,
+              #newRecord: newRecord,
             }),
             returnValue: _i3.Future<_i4.ResultDart<_i4.Unit, Exception>>.value(
               _i6.dummyValue<_i4.ResultDart<_i4.Unit, Exception>>(
                 this,
                 Invocation.method(#updateRecord, [], {
-                  #record: record,
-                  #oldIp: oldIp,
+                  #oldRecord: oldRecord,
+                  #newRecord: newRecord,
                 }),
               ),
             ),
