@@ -1,6 +1,7 @@
 import 'package:pi_hole_client/data/repositories/api/interfaces/cname_repository.dart';
 import 'package:pi_hole_client/data/repositories/api/interfaces/local_dns_repository.dart';
 import 'package:pi_hole_client/data/repositories/api/v6/base_v6_sid_repository.dart';
+import 'package:pi_hole_client/data/repositories/utils/already_exists.dart';
 import 'package:pi_hole_client/data/repositories/utils/call_with_retry.dart';
 import 'package:pi_hole_client/data/services/api/wrappers/pihole_v6_service.dart';
 import 'package:pi_hole_client/domain/model/local_dns/cname_record.dart';
@@ -39,10 +40,11 @@ class LocalDnsRepositoryV6 extends BaseV6SidRepository
       action: () async {
         final sid = await getSid();
         _service.setSid(sid);
-        return _service.addConfigArrayItem(
+        final result = await _service.addConfigArrayItem(
           element: 'dns/hosts',
           value: '$ip $name',
         );
+        return mapDuplicateFailure(result);
       },
       onRetry: (_, e) => renewSidIfExpired(e),
     );
@@ -121,10 +123,11 @@ class LocalDnsRepositoryV6 extends BaseV6SidRepository
       action: () async {
         final sid = await getSid();
         _service.setSid(sid);
-        return _service.addConfigArrayItem(
+        final result = await _service.addConfigArrayItem(
           element: 'dns/cnameRecords',
           value: _serializeCnameRecord(record),
         );
+        return mapDuplicateFailure(result);
       },
       onRetry: (_, e) => renewSidIfExpired(e),
     );
