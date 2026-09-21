@@ -10,6 +10,17 @@ class NotSupportedException implements Exception {
   String toString() => 'NotSupportedException: $message';
 }
 
+/// Exception indicating that the item to add or save already exists on the
+/// server.
+class AlreadyExistsException implements Exception {
+  /// Creates an AlreadyExistsException with an optional [message].
+  AlreadyExistsException([this.message = 'Item already exists.']);
+  final String message;
+
+  @override
+  String toString() => 'AlreadyExistsException: $message';
+}
+
 class TokenNotFoundException implements Exception {
   /// Creates a TokenNotFoundException with an optional [message].
   TokenNotFoundException([this.message = 'Token not found.']);
