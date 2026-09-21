@@ -5,9 +5,11 @@ import 'package:result_dart/result_dart.dart';
 ///
 /// - 400, "The item is already present": FTL v6.7 and later
 /// - 201, "UNIQUE constraint failed": before FTL v6.7
+/// - 400, "Item already present": Local DNS
 bool isDuplicateError(String text) {
   final lower = text.toLowerCase();
   return lower.contains('item is already present') ||
+      lower.contains('item already present') ||
       lower.contains('unique constraint failed');
 }
 
