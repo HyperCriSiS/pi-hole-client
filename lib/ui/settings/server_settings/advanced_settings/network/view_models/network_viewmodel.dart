@@ -26,6 +26,7 @@ class NetworkViewModel extends ChangeNotifier {
 
     loadDevices.addListener(notifyListeners);
     deleteDevice.addListener(notifyListeners);
+    deleteDevice.errors.addListener(notifyListeners);
   }
 
   final NetworkRepository _networkRepository;
@@ -73,6 +74,7 @@ class NetworkViewModel extends ChangeNotifier {
   void dispose() {
     loadDevices.removeListener(notifyListeners);
     deleteDevice.removeListener(notifyListeners);
+    deleteDevice.errors.removeListener(notifyListeners);
     loadDevices.dispose();
     deleteDevice.dispose();
     super.dispose();
