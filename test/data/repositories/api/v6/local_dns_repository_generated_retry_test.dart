@@ -136,8 +136,8 @@ void main() {
     );
 
     final result = await repository.updateRecord(
-      record: const LocalDns(ip: '192.168.1.20', name: 'newname'),
-      oldIp: '192.168.1.10',
+      oldRecord: const LocalDns(ip: '192.168.1.10', name: 'oldname'),
+      newRecord: const LocalDns(ip: '192.168.1.20', name: 'newname'),
     );
 
     expect(result.isSuccess(), true);

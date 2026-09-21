@@ -18,7 +18,7 @@ class LocalDnsViewModel with ChangeNotifier {
     load = Command.createAsyncNoParam<void>(_load, initialValue: null);
     addLocalDns = Command.createAsyncNoResult<LocalDns>(_addLocalDns);
     updateLocalDns =
-        Command.createAsyncNoResult<({String oldIp, LocalDns item})>(
+        Command.createAsyncNoResult<({LocalDns oldRecord, LocalDns item})>(
           _updateLocalDns,
         );
     removeLocalDns = Command.createAsyncNoResult<LocalDns>(_removeLocalDns);
@@ -46,7 +46,7 @@ class LocalDnsViewModel with ChangeNotifier {
   // --- Commands ---
   late final Command<void, void> load;
   late final Command<LocalDns, void> addLocalDns;
-  late final Command<({String oldIp, LocalDns item}), void> updateLocalDns;
+  late final Command<({LocalDns oldRecord, LocalDns item}), void> updateLocalDns;
   late final Command<LocalDns, void> removeLocalDns;
 
   // --- Getters ---
@@ -120,16 +120,18 @@ class LocalDnsViewModel with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> _updateLocalDns(({String oldIp, LocalDns item}) params) async {
-    final idx = _localDns.indexWhere((e) => e.ip == params.oldIp);
+  Future<void> _updateLocalDns(
+    ({LocalDns oldRecord, LocalDns item}) params,
+  ) async {
+    final idx = _localDns.indexWhere((e) => e == params.oldRecord);
     if (idx == -1) return;
 
     final before = _localDns[idx];
     _localDns[idx] = params.item;
 
     final result = await _localDnsRepository.updateRecord(
-      record: params.item,
-      oldIp: params.oldIp,
+      oldRecord: params.oldRecord,
+      newRecord: params.item,
     );
     if (result.isError()) {
       _localDns[idx] = before;
@@ -141,7 +143,7 @@ class LocalDnsViewModel with ChangeNotifier {
   }
 
   Future<void> _removeLocalDns(LocalDns item) async {
-    final idx = _localDns.indexWhere((e) => e.ip == item.ip);
+    final idx = _localDns.indexWhere((e) => e == item);
     if (idx == -1) return;
 
     final removed = _localDns.removeAt(idx);

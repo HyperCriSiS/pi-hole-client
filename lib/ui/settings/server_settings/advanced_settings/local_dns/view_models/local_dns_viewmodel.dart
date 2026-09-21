@@ -36,7 +36,7 @@ class LocalDnsViewModel extends ChangeNotifier {
     );
     addRecord = Command.createAsyncNoResult<LocalDns>(_addRecord);
     updateRecord =
-        Command.createAsyncNoResult<({LocalDns record, String oldIp})>(
+        Command.createAsyncNoResult<({LocalDns oldRecord, LocalDns newRecord})>(
           _updateRecord,
         );
     deleteRecord = Command.createAsyncNoResult<LocalDns>(_deleteRecord);
@@ -64,7 +64,8 @@ class LocalDnsViewModel extends ChangeNotifier {
 
   late final Command<void, void> loadRecords;
   late final Command<LocalDns, void> addRecord;
-  late final Command<({LocalDns record, String oldIp}), void> updateRecord;
+  late final Command<({LocalDns oldRecord, LocalDns newRecord}), void>
+  updateRecord;
   late final Command<LocalDns, void> deleteRecord;
   late final Command<CnameRecord, void> addCnameRecord;
   late final Command<({CnameRecord oldRecord, CnameRecord record}), void>
@@ -115,17 +116,19 @@ class LocalDnsViewModel extends ChangeNotifier {
     }
   }
 
-  Future<void> _updateRecord(({LocalDns record, String oldIp}) params) async {
+  Future<void> _updateRecord(
+    ({LocalDns oldRecord, LocalDns newRecord}) params,
+  ) async {
     final result = await _localDnsRepository.updateRecord(
-      record: params.record,
-      oldIp: params.oldIp,
+      oldRecord: params.oldRecord,
+      newRecord: params.newRecord,
     );
     switch (result) {
       case Success():
         _data = LocalDnsData(
           records: [
             for (final r in _data.records)
-              if (r.ip == params.oldIp) params.record else r,
+              if (r == params.oldRecord) params.newRecord else r,
           ],
           deviceOptions: _data.deviceOptions,
           cnameRecords: _data.cnameRecords,
@@ -144,7 +147,7 @@ class LocalDnsViewModel extends ChangeNotifier {
     switch (result) {
       case Success():
         _data = LocalDnsData(
-          records: _data.records.where((r) => r.ip != record.ip).toList(),
+          records: _data.records.where((r) => r != record).toList(),
           deviceOptions: _data.deviceOptions,
           cnameRecords: _data.cnameRecords,
         );
