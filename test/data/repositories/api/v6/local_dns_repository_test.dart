@@ -204,8 +204,8 @@ void main() {
     test('should fail when generated current config fetch fails', () async {
       service.shouldFailGet = true;
       final result = await repository.updateRecord(
-        record: const LocalDns(ip: '192.168.1.100', name: 'mydevice'),
-        oldIp: '192.168.1.1',
+        oldRecord: const LocalDns(ip: '192.168.1.1', name: 'mydevice'),
+        newRecord: const LocalDns(ip: '192.168.1.100', name: 'mydevice'),
       );
       expectError(
         result,
@@ -217,8 +217,8 @@ void main() {
       service.hosts = ['192.168.1.1 oldname', '192.168.1.2 keep'];
 
       final result = await repository.updateRecord(
-        record: const LocalDns(ip: '192.168.1.100', name: 'newname'),
-        oldIp: '192.168.1.1',
+        oldRecord: const LocalDns(ip: '192.168.1.1', name: 'oldname'),
+        newRecord: const LocalDns(ip: '192.168.1.100', name: 'newname'),
       );
 
       expect(result.isSuccess(), true);
@@ -229,13 +229,28 @@ void main() {
       ]);
     });
 
+    test('should replace only the entry with the same IP and name', () async {
+      service.hosts = ['192.168.1.10 nas', '192.168.1.10 printer'];
+
+      final result = await repository.updateRecord(
+        oldRecord: const LocalDns(ip: '192.168.1.10', name: 'printer'),
+        newRecord: const LocalDns(ip: '192.168.1.10', name: 'printer2'),
+      );
+
+      expect(result.isSuccess(), true);
+      expect(service.lastPatchBody?.config?.dns?.hosts, [
+        '192.168.1.10 nas',
+        '192.168.1.10 printer2',
+      ]);
+    });
+
     test('should surface generated record patch errors', () async {
       service.hosts = ['192.168.1.1 oldname'];
       service.shouldFailPatch = true;
 
       final result = await repository.updateRecord(
-        record: const LocalDns(ip: '192.168.1.100', name: 'newname'),
-        oldIp: '192.168.1.1',
+        oldRecord: const LocalDns(ip: '192.168.1.1', name: 'oldname'),
+        newRecord: const LocalDns(ip: '192.168.1.100', name: 'newname'),
       );
 
       expectError(
@@ -244,12 +259,16 @@ void main() {
       );
     });
 
-    test('should fail when entry with oldIp is not found in hosts', () async {
+    test('should fail when no entry has the same IP and name', () async {
+      service.hosts = ['192.168.1.10 nas'];
+
       final result = await repository.updateRecord(
-        record: const LocalDns(ip: '192.168.1.100', name: 'newname'),
-        oldIp: '10.0.0.1',
+        oldRecord: const LocalDns(ip: '192.168.1.10', name: 'printer'),
+        newRecord: const LocalDns(ip: '192.168.1.10', name: 'printer2'),
       );
-      expectError(result, messageContains: 'Entry with IP');
+
+      expectError(result, messageContains: 'not found');
+      expect(service.lastPatchBody, isNull);
     });
   });
 
