@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pi_hole_client/data/repositories/utils/call_with_retry.dart';
+import 'package:pi_hole_client/utils/exceptions.dart';
 import 'package:result_dart/result_dart.dart';
 
 class DummyException implements Exception {}
@@ -81,6 +82,24 @@ void main() {
       );
       expect(result.isError(), isTrue);
       expect(attempts, 4); // 3 retries + initial attempt
+    });
+
+    test('does not retry an AlreadyExistsException', () async {
+      var attempts = 0;
+      var retryCalls = 0;
+
+      final result = await runWithResultRetry<String>(
+        action: () async {
+          attempts++;
+          return Failure(AlreadyExistsException());
+        },
+        maxRetries: 3,
+        onRetry: (_, _) async => retryCalls++,
+      );
+
+      expect(result.exceptionOrNull(), isA<AlreadyExistsException>());
+      expect(attempts, 1);
+      expect(retryCalls, 0);
     });
 
     test('passes failure exception to onRetry', () async {
