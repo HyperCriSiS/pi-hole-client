@@ -18,7 +18,7 @@ class LocalDnsViewModel with ChangeNotifier {
     load = Command.createAsyncNoParam<void>(_load, initialValue: null);
     addLocalDns = Command.createAsyncNoResult<LocalDns>(_addLocalDns);
     updateLocalDns =
-        Command.createAsyncNoResult<({String oldIp, LocalDns item})>(
+        Command.createAsyncNoResult<({LocalDns oldRecord, LocalDns item})>(
           _updateLocalDns,
         );
     removeLocalDns = Command.createAsyncNoResult<LocalDns>(_removeLocalDns);
@@ -43,13 +43,11 @@ class LocalDnsViewModel with ChangeNotifier {
   Map<String, String> _macToIp = {};
   LoadStatus _loadingStatus = LoadStatus.loading;
 
-  // --- Commands ---
   late final Command<void, void> load;
   late final Command<LocalDns, void> addLocalDns;
-  late final Command<({String oldIp, LocalDns item}), void> updateLocalDns;
+  late final Command<({LocalDns oldRecord, LocalDns item}), void> updateLocalDns;
   late final Command<LocalDns, void> removeLocalDns;
 
-  // --- Getters ---
   List<LocalDns> get localDns => List.unmodifiable(_localDns);
   List<DeviceOption> get deviceOptions => List.unmodifiable(_deviceOptions);
   Map<String, String> get ipToHostname => Map.unmodifiable(_ipToHostname);
@@ -62,8 +60,6 @@ class LocalDnsViewModel with ChangeNotifier {
     _loadingStatus = status;
     notifyListeners();
   }
-
-  // --- Command implementations ---
 
   Future<void> _load() async {
     _loadingStatus = LoadStatus.loading;
@@ -120,16 +116,18 @@ class LocalDnsViewModel with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> _updateLocalDns(({String oldIp, LocalDns item}) params) async {
-    final idx = _localDns.indexWhere((e) => e.ip == params.oldIp);
+  Future<void> _updateLocalDns(
+    ({LocalDns oldRecord, LocalDns item}) params,
+  ) async {
+    final idx = _localDns.indexWhere((e) => e == params.oldRecord);
     if (idx == -1) return;
 
     final before = _localDns[idx];
     _localDns[idx] = params.item;
 
     final result = await _localDnsRepository.updateRecord(
-      record: params.item,
-      oldIp: params.oldIp,
+      oldRecord: params.oldRecord,
+      newRecord: params.item,
     );
     if (result.isError()) {
       _localDns[idx] = before;
@@ -141,7 +139,7 @@ class LocalDnsViewModel with ChangeNotifier {
   }
 
   Future<void> _removeLocalDns(LocalDns item) async {
-    final idx = _localDns.indexWhere((e) => e.ip == item.ip);
+    final idx = _localDns.indexWhere((e) => e == item);
     if (idx == -1) return;
 
     final removed = _localDns.removeAt(idx);
@@ -162,13 +160,11 @@ class LocalDnsViewModel with ChangeNotifier {
   List<DeviceOption> devicesToOptions(List<Device> devices) {
     final list = devices
         .where((device) {
-          // Exclude devices with lastQuery as 0 (unused)
           return device.lastQuery.millisecondsSinceEpoch != 0;
         })
         .expand((device) {
           return device.ips
               .where((addr) {
-                // Exclude loopback addresses
                 if (addr.ip == '127.0.0.1' ||
                     addr.ip == '::' ||
                     addr.ip == '::1') {
