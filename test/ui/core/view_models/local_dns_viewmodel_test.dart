@@ -225,13 +225,13 @@ void main() async {
 
         when(
           mockLocalDnsRepository.updateRecord(
-            record: const LocalDns(ip: '192.168.1.3', name: 'test'),
-            oldIp: '192.168.1.2',
+            oldRecord: const LocalDns(ip: '192.168.1.2', name: 'device'),
+            newRecord: const LocalDns(ip: '192.168.1.3', name: 'test'),
           ),
         ).thenAnswer((_) async => const Success(unit));
 
         await localDnsProvider.updateLocalDns.runAsync((
-          oldIp: '192.168.1.2',
+          oldRecord: const LocalDns(ip: '192.168.1.2', name: 'device'),
           item: const LocalDns(ip: '192.168.1.3', name: 'test'),
         ));
 
@@ -259,14 +259,14 @@ void main() async {
 
         when(
           mockLocalDnsRepository.updateRecord(
-            record: const LocalDns(ip: '192.168.1.3', name: 'test'),
-            oldIp: '192.168.1.2',
+            oldRecord: const LocalDns(ip: '192.168.1.2', name: 'device'),
+            newRecord: const LocalDns(ip: '192.168.1.3', name: 'test'),
           ),
         ).thenAnswer((_) async => Failure(Exception('Failed to update')));
 
         try {
           await localDnsProvider.updateLocalDns.runAsync((
-            oldIp: '192.168.1.2',
+            oldRecord: const LocalDns(ip: '192.168.1.2', name: 'device'),
             item: const LocalDns(ip: '192.168.1.3', name: 'test'),
           ));
         } catch (_) {}
