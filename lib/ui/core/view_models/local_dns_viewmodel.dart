@@ -43,11 +43,13 @@ class LocalDnsViewModel with ChangeNotifier {
   Map<String, String> _macToIp = {};
   LoadStatus _loadingStatus = LoadStatus.loading;
 
+  // --- Commands ---
   late final Command<void, void> load;
   late final Command<LocalDns, void> addLocalDns;
   late final Command<({LocalDns oldRecord, LocalDns item}), void> updateLocalDns;
   late final Command<LocalDns, void> removeLocalDns;
 
+  // --- Getters ---
   List<LocalDns> get localDns => List.unmodifiable(_localDns);
   List<DeviceOption> get deviceOptions => List.unmodifiable(_deviceOptions);
   Map<String, String> get ipToHostname => Map.unmodifiable(_ipToHostname);
@@ -60,6 +62,8 @@ class LocalDnsViewModel with ChangeNotifier {
     _loadingStatus = status;
     notifyListeners();
   }
+
+  // --- Command implementations ---
 
   Future<void> _load() async {
     _loadingStatus = LoadStatus.loading;
@@ -160,11 +164,13 @@ class LocalDnsViewModel with ChangeNotifier {
   List<DeviceOption> devicesToOptions(List<Device> devices) {
     final list = devices
         .where((device) {
+          // Exclude devices with lastQuery as 0 (unused)
           return device.lastQuery.millisecondsSinceEpoch != 0;
         })
         .expand((device) {
           return device.ips
               .where((addr) {
+                // Exclude loopback addresses
                 if (addr.ip == '127.0.0.1' ||
                     addr.ip == '::' ||
                     addr.ip == '::1') {
