@@ -51,11 +51,17 @@ class LocalDnsViewModel extends ChangeNotifier {
 
     loadRecords.addListener(notifyListeners);
     addRecord.addListener(notifyListeners);
+    addRecord.errors.addListener(notifyListeners);
     updateRecord.addListener(notifyListeners);
+    updateRecord.errors.addListener(notifyListeners);
     deleteRecord.addListener(notifyListeners);
+    deleteRecord.errors.addListener(notifyListeners);
     addCnameRecord.addListener(notifyListeners);
+    addCnameRecord.errors.addListener(notifyListeners);
     updateCnameRecord.addListener(notifyListeners);
+    updateCnameRecord.errors.addListener(notifyListeners);
     deleteCnameRecord.addListener(notifyListeners);
+    deleteCnameRecord.errors.addListener(notifyListeners);
   }
 
   final LocalDnsRepository _localDnsRepository;
@@ -267,11 +273,17 @@ class LocalDnsViewModel extends ChangeNotifier {
   void dispose() {
     loadRecords.removeListener(notifyListeners);
     addRecord.removeListener(notifyListeners);
+    addRecord.errors.removeListener(notifyListeners);
     updateRecord.removeListener(notifyListeners);
+    updateRecord.errors.removeListener(notifyListeners);
     deleteRecord.removeListener(notifyListeners);
+    deleteRecord.errors.removeListener(notifyListeners);
     addCnameRecord.removeListener(notifyListeners);
+    addCnameRecord.errors.removeListener(notifyListeners);
     updateCnameRecord.removeListener(notifyListeners);
+    updateCnameRecord.errors.removeListener(notifyListeners);
     deleteCnameRecord.removeListener(notifyListeners);
+    deleteCnameRecord.errors.removeListener(notifyListeners);
     loadRecords.dispose();
     addRecord.dispose();
     updateRecord.dispose();

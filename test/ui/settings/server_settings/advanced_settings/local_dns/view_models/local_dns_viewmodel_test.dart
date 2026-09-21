@@ -2,8 +2,11 @@ import 'dart:async';
 
 import 'package:command_it/command_it.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pi_hole_client/data/repositories/api/interfaces/cname_repository.dart';
+import 'package:pi_hole_client/domain/model/local_dns/cname_record.dart';
 import 'package:pi_hole_client/domain/model/local_dns/local_dns.dart';
 import 'package:pi_hole_client/ui/settings/server_settings/advanced_settings/local_dns/view_models/local_dns_viewmodel.dart';
+import 'package:result_dart/result_dart.dart';
 
 import '../../../../../../../testing/fakes/repositories/api/fake_local_dns_repository.dart';
 import '../../../../../../../testing/fakes/repositories/api/fake_network_repository.dart';
@@ -14,19 +17,53 @@ const sameIpRecords = [
   LocalDns(ip: '192.168.1.10', name: 'printer'),
 ];
 
+class _FakeCnameRepository implements CnameRepository {
+  bool shouldFail = false;
+
+  @override
+  Future<Result<List<CnameRecord>>> fetchCnameRecords() async {
+    if (shouldFail) return Failure(Exception('Force CNAME fetch failure'));
+    return const Success([]);
+  }
+
+  @override
+  Future<Result<Unit>> addCnameRecord({required CnameRecord record}) async {
+    if (shouldFail) return Failure(Exception('Force CNAME add failure'));
+    return const Success(unit);
+  }
+
+  @override
+  Future<Result<Unit>> updateCnameRecord({
+    required CnameRecord oldRecord,
+    required CnameRecord record,
+  }) async {
+    if (shouldFail) return Failure(Exception('Force CNAME update failure'));
+    return const Success(unit);
+  }
+
+  @override
+  Future<Result<Unit>> deleteCnameRecord({required CnameRecord record}) async {
+    if (shouldFail) return Failure(Exception('Force CNAME delete failure'));
+    return const Success(unit);
+  }
+}
+
 void main() {
   group('LocalDnsViewModel', () {
     late FakeLocalDnsRepository fakeLocalDnsRepository;
     late FakeNetworkRepository fakeNetworkRepository;
+    late _FakeCnameRepository fakeCnameRepository;
     late LocalDnsViewModel viewModel;
 
     setUp(() {
       Command.globalExceptionHandler = (_, _) {};
       fakeLocalDnsRepository = FakeLocalDnsRepository();
       fakeNetworkRepository = FakeNetworkRepository();
+      fakeCnameRepository = _FakeCnameRepository();
       viewModel = LocalDnsViewModel(
         localDnsRepository: fakeLocalDnsRepository,
         networkRepository: fakeNetworkRepository,
+        cnameRepository: fakeCnameRepository,
       );
     });
 
@@ -197,6 +234,63 @@ void main() {
       await completer.future;
 
       expect(viewModel.deleteRecord.errors.value, isNotNull);
+    });
+
+    test('add/update/delete failures do not call global handler', () async {
+      var globalCalled = false;
+      Command.globalExceptionHandler = (_, _) => globalCalled = true;
+      await viewModel.loadRecords.runAsync();
+      fakeLocalDnsRepository.shouldFail = true;
+
+      await expectLater(
+        viewModel.addRecord.runAsync(
+          const LocalDns(ip: '192.168.1.200', name: 'newhost'),
+        ),
+        throwsA(anything),
+      );
+      await expectLater(
+        viewModel.updateRecord.runAsync((
+          oldRecord: const LocalDns(ip: '192.168.1.100', name: 'server1'),
+          newRecord: const LocalDns(ip: '192.168.1.200', name: 'updated'),
+        )),
+        throwsA(anything),
+      );
+      await expectLater(
+        viewModel.deleteRecord.runAsync(
+          const LocalDns(ip: '192.168.1.100', name: 'server1'),
+        ),
+        throwsA(anything),
+      );
+
+      expect(globalCalled, isFalse);
+    });
+
+    test('CNAME failures do not call global handler', () async {
+      var globalCalled = false;
+      Command.globalExceptionHandler = (_, _) => globalCalled = true;
+      await viewModel.loadRecords.runAsync();
+      fakeCnameRepository.shouldFail = true;
+
+      const oldRecord = CnameRecord(alias: 'old.test', target: 'target.test');
+      const newRecord = CnameRecord(alias: 'new.test', target: 'target.test');
+
+      await expectLater(
+        viewModel.addCnameRecord.runAsync(newRecord),
+        throwsA(anything),
+      );
+      await expectLater(
+        viewModel.updateCnameRecord.runAsync((
+          oldRecord: oldRecord,
+          record: newRecord,
+        )),
+        throwsA(anything),
+      );
+      await expectLater(
+        viewModel.deleteCnameRecord.runAsync(oldRecord),
+        throwsA(anything),
+      );
+
+      expect(globalCalled, isFalse);
     });
 
     test('deviceOptions excludes loopback and sorts IPv4 first', () async {
