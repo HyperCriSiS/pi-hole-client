@@ -1,6 +1,7 @@
 name: Temporary FTL migration retry
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - roadmap/generated-ftl-info-compat
