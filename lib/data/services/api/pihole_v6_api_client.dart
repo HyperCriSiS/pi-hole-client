@@ -4,7 +4,6 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
 import 'package:pi_hole_client/data/model/v6/auth/auth.dart' show Session;
-import 'package:pi_hole_client/data/model/v6/ftl/ftl.dart' show InfoFtl;
 import 'package:pi_hole_client/data/model/v6/network/gateway.dart' show Gateway;
 import 'package:pi_hole_client/data/services/utils/safe_api_call.dart';
 import 'package:pi_hole_client/utils/exceptions.dart';
@@ -132,22 +131,6 @@ class PiholeV6ApiClient {
   // ==========================================================================
   // FTL information
   // ==========================================================================
-  Future<Result<InfoFtl>> getInfoFtl(String sid) async {
-    return safeApiCall<InfoFtl>(() async {
-      final resp = await _sendRequest(
-        method: HttpMethod.get,
-        path: '/api/info/ftl',
-        sid: sid,
-      );
-
-      if (resp.statusCode == 200) {
-        return InfoFtl.fromJson(jsonDecode(resp.body));
-      }
-
-      throw HttpStatusCodeException(resp.statusCode, resp.body);
-    });
-  }
-
   // ==========================================================================
   // Network information
   // ==========================================================================

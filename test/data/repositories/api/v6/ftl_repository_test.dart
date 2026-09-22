@@ -17,6 +17,7 @@ class _FakePiholeV6Service extends PiholeV6Service {
 
   bool shouldFail = false;
   bool shouldFailClient = false;
+  bool shouldFailFtl = false;
   bool shouldFailHost = false;
   bool shouldFailMessages = false;
   bool shouldFailDeleteMessage = false;
@@ -27,6 +28,8 @@ class _FakePiholeV6Service extends PiholeV6Service {
   bool shouldGetInfoVersionWithDocker = false;
   bool shouldReturnUnauthorizedOnce = false;
   bool shouldReturnClientUnauthorizedOnce = false;
+  bool shouldReturnFtlUnauthorizedOnce = false;
+  int getInfoFtlCallCount = 0;
   int getInfoVersionCallCount = 0;
   int getInfoClientCallCount = 0;
   String? lastSid;
@@ -61,6 +64,20 @@ class _FakePiholeV6Service extends PiholeV6Service {
         ? kSrvGetInfoVersionWithDocker
         : kSrvGetInfoVersion;
     return Success(GetVersion200Response.fromJson(fixture.toJson()));
+  }
+
+  @override
+  Future<Result<GetFtlinfo200Response>> getInfoFtl() async {
+    getInfoFtlCallCount++;
+    if (shouldReturnFtlUnauthorizedOnce && getInfoFtlCallCount == 1) {
+      return Failure(ApiException(message: 'Unauthorized', statusCode: 401));
+    }
+    if (shouldFailFtl) {
+      return Failure(Exception('Forced getInfoFtl failure'));
+    }
+    return Success(
+      GetFtlinfo200Response(ftl: FtlFtl(privacyLevel: 0), took: 0.003),
+    );
   }
 
   @override
@@ -131,7 +148,6 @@ void main() {
       creds = FakeSessionCredentialService();
       service = _FakePiholeV6Service();
       repository = FtlRepositoryV6(
-        client: client,
         service: service,
         sessionCache: V6SessionCache(creds: creds, client: client),
       );
@@ -171,25 +187,32 @@ void main() {
       creds = FakeSessionCredentialService();
       service = _FakePiholeV6Service();
       repository = FtlRepositoryV6(
-        client: client,
         service: service,
         sessionCache: V6SessionCache(creds: creds, client: client),
       );
     });
 
-    test('should fetch info ftl successfully', () async {
+    test('should fetch info ftl successfully through generated service', () async {
       final result = await repository.fetchInfoFtl();
+
       expect(result.getOrNull(), kRepoFetchFtlInfo);
+      expect(service.lastSid, 'sid123');
+      expect(service.getInfoFtlCallCount, 1);
     });
 
-    test('should fetch info ftl successfully (FTL >= 6.3)', () async {
-      client.shouldGetInfoFtlV63 = true;
+    test('renews SID and retries generated FTL request after 401', () async {
+      service.shouldReturnFtlUnauthorizedOnce = true;
+
       final result = await repository.fetchInfoFtl();
+
       expect(result.getOrNull(), kRepoFetchFtlInfo);
+      expect(client.postAuthCallCount, 1);
+      expect(service.getInfoFtlCallCount, 2);
+      expect(service.lastSid, 'n9n9f6c3umrumfq2ese1lvu2pg');
     });
 
-    test('should fail when fetching info ftl fails', () async {
-      client.shouldFail = true;
+    test('should fail when generated info ftl request fails', () async {
+      service.shouldFailFtl = true;
 
       final result = await repository.fetchInfoFtl();
       expectError(result, messageContains: 'Forced getInfoFtl failure');
@@ -202,7 +225,6 @@ void main() {
       creds = FakeSessionCredentialService();
       service = _FakePiholeV6Service();
       repository = FtlRepositoryV6(
-        client: client,
         service: service,
         sessionCache: V6SessionCache(creds: creds, client: client),
       );
@@ -231,7 +253,6 @@ void main() {
       creds = FakeSessionCredentialService();
       service = _FakePiholeV6Service();
       repository = FtlRepositoryV6(
-        client: client,
         service: service,
         sessionCache: V6SessionCache(creds: creds, client: client),
       );
@@ -260,7 +281,6 @@ void main() {
       creds = FakeSessionCredentialService();
       service = _FakePiholeV6Service();
       repository = FtlRepositoryV6(
-        client: client,
         service: service,
         sessionCache: V6SessionCache(creds: creds, client: client),
       );
@@ -289,7 +309,6 @@ void main() {
       creds = FakeSessionCredentialService();
       service = _FakePiholeV6Service();
       repository = FtlRepositoryV6(
-        client: client,
         service: service,
         sessionCache: V6SessionCache(creds: creds, client: client),
       );
@@ -318,7 +337,6 @@ void main() {
       creds = FakeSessionCredentialService();
       service = _FakePiholeV6Service();
       repository = FtlRepositoryV6(
-        client: client,
         service: service,
         sessionCache: V6SessionCache(creds: creds, client: client),
       );
@@ -347,7 +365,6 @@ void main() {
       creds = FakeSessionCredentialService();
       service = _FakePiholeV6Service();
       repository = FtlRepositoryV6(
-        client: client,
         service: service,
         sessionCache: V6SessionCache(creds: creds, client: client),
       );
@@ -382,7 +399,6 @@ void main() {
       creds = FakeSessionCredentialService();
       service = _FakePiholeV6Service();
       repository = FtlRepositoryV6(
-        client: client,
         service: service,
         sessionCache: V6SessionCache(creds: creds, client: client),
       );
@@ -428,7 +444,6 @@ void main() {
       creds = FakeSessionCredentialService();
       service = _FakePiholeV6Service();
       repository = FtlRepositoryV6(
-        client: client,
         service: service,
         sessionCache: V6SessionCache(creds: creds, client: client),
       );

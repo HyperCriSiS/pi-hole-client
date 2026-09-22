@@ -15,19 +15,17 @@ LEGACY_IMPORT = (
     "pihole_v6_api_client.dart';"
 )
 
-# Three production repositories remain on the handwritten transport for
+# Two production repositories remain on the handwritten transport for
 # documented behavior/schema holds. Session cache/store keep a nullable client
 # only as a compatibility seam for existing tests; production binds `service`.
 ALLOWED_V6_IMPORTS = {
     "actions_respository.dart",
-    "ftl_repository.dart",
     "network_repository.dart",
     "v6_session_cache.dart",
     "v6_session_cache_store.dart",
 }
 PRODUCTION_HOLDS = {
     "ActionsRepositoryV6",
-    "FtlRepositoryV6",
     "NetworkRepositoryV6",
 }
 # The handwritten client may expose only the endpoint methods justified by the
@@ -35,7 +33,6 @@ PRODUCTION_HOLDS = {
 ALLOWED_PUBLIC_CLIENT_METHODS = {
     "close",
     "postAuth",
-    "getInfoFtl",
     "getNetworkGateway",
     "postActionGravity",
 }
@@ -154,10 +151,10 @@ def main() -> None:
 
     print("Legacy v6 boundary audit passed.")
     print(
-        "Allowed handwritten endpoint methods: postAuth, getInfoFtl, "
-        "getNetworkGateway, postActionGravity (plus lifecycle close)."
+        "Allowed handwritten endpoint methods: postAuth, getNetworkGateway, "
+        "postActionGravity (plus lifecycle close)."
     )
-    print("Production handwritten holds: ActionsRepositoryV6, FtlRepositoryV6, NetworkRepositoryV6.")
+    print("Production handwritten holds: ActionsRepositoryV6, NetworkRepositoryV6.")
     print("V6SessionCache/V6SessionCacheStore legacy client remains test-only in production wiring.")
 
 

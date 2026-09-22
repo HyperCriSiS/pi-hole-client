@@ -103,7 +103,6 @@ class RepositoryBundleFactory {
             sessionCache: sessionCache,
           ),
           ftl: FtlRepositoryV6(
-            client: client,
             service: generatedService,
             sessionCache: sessionCache,
           ),

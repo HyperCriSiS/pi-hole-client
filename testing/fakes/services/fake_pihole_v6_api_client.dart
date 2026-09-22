@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:pi_hole_client/data/model/v6/auth/auth.dart' show Session;
-import 'package:pi_hole_client/data/model/v6/ftl/ftl.dart' show InfoFtl;
 import 'package:pi_hole_client/data/model/v6/network/gateway.dart' show Gateway;
 import 'package:pi_hole_client/data/services/api/pihole_v6_api_client.dart';
 import 'package:pi_hole_client/utils/exceptions.dart';
@@ -9,7 +8,6 @@ import 'package:result_dart/result_dart.dart';
 
 import '../../models/v6/actions.dart';
 import '../../models/v6/auth.dart';
-import '../../models/v6/ftl.dart';
 import '../../models/v6/network.dart';
 
 class FakePiholeV6ApiClient implements PiholeV6ApiClient {
@@ -32,7 +30,6 @@ class FakePiholeV6ApiClient implements PiholeV6ApiClient {
   int? lastTotp;
   bool shouldGetInfoVersionWithDocker = false;
   bool shouldGetInfoSystemOld = false;
-  bool shouldGetInfoFtlV63 = false;
 
   @override
   void close() {}
@@ -89,17 +86,6 @@ class FakePiholeV6ApiClient implements PiholeV6ApiClient {
   // ==========================================================================
   // FTL information
   // ==========================================================================
-  @override
-  Future<Result<InfoFtl>> getInfoFtl(String sid) async {
-    if (shouldFail) {
-      return Failure(Exception('Forced getInfoFtl failure'));
-    }
-    if (shouldGetInfoFtlV63) {
-      return const Success(kSrvGetInfoFtlV63);
-    }
-    return const Success(kSrvGetInfoFtl);
-  }
-
   // ==========================================================================
   // Network information
   // ==========================================================================

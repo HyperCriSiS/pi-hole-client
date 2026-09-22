@@ -530,10 +530,51 @@ class PiholeV6Service {
     });
   }
 
+  /// Reads the FTL info fields used by the app without deserializing the full
+  /// generated model.
+  ///
+  /// Pi-hole before v6.3 returned integer counters for
+  /// `database.domains/regex.allowed/denied`, while the pinned v6.7 OpenAPI
+  /// schema models those values as `{total, enabled}` objects. The generated
+  /// model therefore cannot deserialize every supported server response even
+  /// though the app only consumes `ftl.privacy_level` from this endpoint.
   Future<Result<GetFtlinfo200Response>> getInfoFtl() {
     return safeDioCall(() async {
-      final response = await _ftlApi.getFtlinfo();
-      return response.requireData;
+      final response = await _api.dio.get<Map<String, dynamic>>(
+        '/info/ftl',
+        options: Options(
+          extra: const <String, dynamic>{
+            'secure': <Map<String, String>>[
+              <String, String>{
+                'type': 'apiKey',
+                'name': 'x_header_sid',
+                'keyName': 'X-FTL-SID',
+                'where': 'header',
+              },
+            ],
+          },
+        ),
+      );
+      final data = response.data;
+      if (data == null) {
+        throw const FormatException('Missing FTL info response body');
+      }
+
+      final rawFtl = data['ftl'];
+      if (rawFtl is! Map<String, dynamic>) {
+        throw const FormatException('Missing FTL info payload');
+      }
+
+      final rawPrivacyLevel = rawFtl['privacy_level'];
+      if (rawPrivacyLevel is! num) {
+        throw const FormatException('Missing FTL privacy level');
+      }
+
+      final rawTook = data['took'];
+      return GetFtlinfo200Response(
+        ftl: FtlFtl(privacyLevel: rawPrivacyLevel.toInt()),
+        took: rawTook is num ? rawTook : null,
+      );
     });
   }
 

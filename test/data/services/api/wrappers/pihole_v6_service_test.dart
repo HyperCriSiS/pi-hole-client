@@ -871,15 +871,64 @@ void main() {
     });
 
     group('getInfoFtl', () {
-      test('returns Success with FTL info', () async {
-        final mockResponse = GetFtlinfo200Response();
-        when(
-          mockFtlApi.getFtlinfo(),
-        ).thenAnswer((_) async => dioResponse(mockResponse));
+      PiholeV6Service buildFtlCompatService(Map<String, dynamic> payload) {
+        final dio = Dio(BaseOptions(baseUrl: 'http://localhost/api'));
+        dio.interceptors.add(
+          InterceptorsWrapper(
+            onRequest: (options, handler) {
+              handler.resolve(
+                Response<Map<String, dynamic>>(
+                  requestOptions: options,
+                  statusCode: 200,
+                  data: payload,
+                ),
+              );
+            },
+          ),
+        );
+        return PiholeV6Service(api: PiholeV6Api(dio: dio));
+      }
 
-        final result = await service.getInfoFtl();
+      test('reads privacy level from pre-v6.3 integer-counter response', () async {
+        final compatService = buildFtlCompatService({
+          'ftl': {
+            'privacy_level': 2,
+            'database': {
+              'domains': {'allowed': 10, 'denied': 3},
+              'regex': {'allowed': 2, 'denied': 1},
+            },
+          },
+          'took': 0.003,
+        });
+
+        final result = await compatService.getInfoFtl();
 
         expect(result.isSuccess(), true);
+        expect(result.getOrNull()?.ftl?.privacyLevel, 2);
+        expect(result.getOrNull()?.took, 0.003);
+      });
+
+      test('reads privacy level from v6.3+ object-counter response', () async {
+        final compatService = buildFtlCompatService({
+          'ftl': {
+            'privacy_level': 3,
+            'database': {
+              'domains': {
+                'allowed': {'total': 10, 'enabled': 8},
+                'denied': {'total': 3, 'enabled': 2},
+              },
+              'regex': {
+                'allowed': {'total': 2, 'enabled': 1},
+                'denied': {'total': 1, 'enabled': 1},
+              },
+            },
+          },
+        });
+
+        final result = await compatService.getInfoFtl();
+
+        expect(result.isSuccess(), true);
+        expect(result.getOrNull()?.ftl?.privacyLevel, 3);
       });
     });
 
