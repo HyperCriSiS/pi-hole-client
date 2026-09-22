@@ -20,15 +20,374 @@ jobs:
           ref: roadmap/generated-ftl-info-compat
           fetch-depth: 0
 
-      - name: Apply scoped FTL migration patch
+      - name: Apply scoped FTL migration
         run: |
-          PATCH_GZ_B64="$(sed -n 's/^          PATCH_GZ_B64: //p' .github/workflows/tmp-ftl-info-migration.yml)"
-          PATCH_GZ_B64="${PATCH_GZ_B64%;}"
-          printf '%s' "$PATCH_GZ_B64" | base64 -d | gzip -d > /tmp/ftl-migration.patch
-          git apply --check /tmp/ftl-migration.patch
-          git apply /tmp/ftl-migration.patch
-          rm .github/workflows/tmp-ftl-info-migration.yml
-          rm .github/workflows/tmp-ftl-info-migration-fix.yml
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace(path, old, new, count=None):
+              p = Path(path)
+              text = p.read_text()
+              if old not in text:
+                  raise SystemExit(f"missing expected text in {path}: {old[:100]!r}")
+              text = text.replace(old, new) if count is None else text.replace(old, new, count)
+              p.write_text(text)
+
+          # Central service: keep generated Dio/auth infrastructure, but avoid
+          # schema-incompatible full FTL model deserialization.
+          replace(
+              "lib/data/services/api/wrappers/pihole_v6_service.dart",
+              """  Future<Result<GetFtlinfo200Response>> getInfoFtl() {
+              return safeDioCall(() async {
+                final response = await _ftlApi.getFtlinfo();
+                return response.requireData;
+              });
+            }
+          """,
+              """  /// Reads the FTL info fields used by the app without deserializing the full
+            /// generated model.
+            ///
+            /// Pi-hole before v6.3 returned integer counters for
+            /// `database.domains/regex.allowed/denied`, while the pinned v6.7 OpenAPI
+            /// schema models those values as `{total, enabled}` objects. The generated
+            /// model therefore cannot deserialize every supported server response even
+            /// though the app only consumes `ftl.privacy_level` from this endpoint.
+            Future<Result<GetFtlinfo200Response>> getInfoFtl() {
+              return safeDioCall(() async {
+                final response = await _api.dio.get<Map<String, dynamic>>(
+                  '/info/ftl',
+                  options: Options(
+                    extra: const <String, dynamic>{
+                      'secure': <Map<String, String>>[
+                        <String, String>{
+                          'type': 'apiKey',
+                          'name': 'x_header_sid',
+                          'keyName': 'X-FTL-SID',
+                          'where': 'header',
+                        },
+                      ],
+                    },
+                  ),
+                );
+                final data = response.data;
+                if (data == null) {
+                  throw const FormatException('Missing FTL info response body');
+                }
+
+                final rawFtl = data['ftl'];
+                if (rawFtl is! Map<String, dynamic>) {
+                  throw const FormatException('Missing FTL info payload');
+                }
+
+                final rawPrivacyLevel = rawFtl['privacy_level'];
+                if (rawPrivacyLevel is! num) {
+                  throw const FormatException('Missing FTL privacy level');
+                }
+
+                final rawTook = data['took'];
+                return GetFtlinfo200Response(
+                  ftl: FtlFtl(privacyLevel: rawPrivacyLevel.toInt()),
+                  took: rawTook is num ? rawTook : null,
+                );
+              });
+            }
+          """,
+          )
+
+          # Repository no longer receives the handwritten client.
+          replace(
+              "lib/data/repositories/api/v6/ftl_repository.dart",
+              "import 'package:pi_hole_client/data/services/api/pihole_v6_api_client.dart';\n",
+              "",
+          )
+          replace(
+              "lib/data/repositories/api/v6/ftl_repository.dart",
+              """  FtlRepositoryV6({
+              required PiholeV6ApiClient client,
+              required PiholeV6Service service,
+              required super.sessionCache,
+            }) : _client = client,
+                 _service = service;
+
+            final PiholeV6ApiClient _client;
+          """,
+              """  FtlRepositoryV6({
+              required PiholeV6Service service,
+              required super.sessionCache,
+            }) : _service = service;
+
+          """,
+          )
+          replace(
+              "lib/data/repositories/api/v6/ftl_repository.dart",
+              """      action: () async {
+                final sid = await getSid();
+                final result = await _client.getInfoFtl(sid);
+                return result.map((e) => e.toDomain());
+              },
+          """,
+              """      action: () async {
+                final sid = await getSid();
+                _service.setSid(sid);
+                final result = await _service.getInfoFtl();
+                return result.map(
+                  (e) => FtlInfo(privacyLevel: e.ftl?.privacyLevel ?? 0),
+                );
+              },
+          """,
+              1,
+          )
+          replace(
+              "lib/data/repositories/api/repository_factory.dart",
+              """          ftl: FtlRepositoryV6(
+                        client: client,
+                        service: generatedService,
+          """,
+              """          ftl: FtlRepositoryV6(
+                        service: generatedService,
+          """,
+          )
+
+          # Remove the superseded handwritten endpoint and fake surface.
+          replace(
+              "lib/data/services/api/pihole_v6_api_client.dart",
+              "import 'package:pi_hole_client/data/model/v6/ftl/ftl.dart' show InfoFtl;\n",
+              "",
+          )
+          replace(
+              "lib/data/services/api/pihole_v6_api_client.dart",
+              """  Future<Result<InfoFtl>> getInfoFtl(String sid) async {
+              return safeApiCall<InfoFtl>(() async {
+                final resp = await _sendRequest(
+                  method: HttpMethod.get,
+                  path: '/api/info/ftl',
+                  sid: sid,
+                );
+
+                if (resp.statusCode == 200) {
+                  return InfoFtl.fromJson(jsonDecode(resp.body));
+                }
+
+                throw HttpStatusCodeException(resp.statusCode, resp.body);
+              });
+            }
+
+          """,
+              "",
+          )
+          for old in [
+              "import 'package:pi_hole_client/data/model/v6/ftl/ftl.dart' show InfoFtl;\n",
+              "import '../../models/v6/ftl.dart';\n",
+              "  bool shouldGetInfoFtlV63 = false;\n",
+          ]:
+              replace("testing/fakes/services/fake_pihole_v6_api_client.dart", old, "")
+          replace(
+              "testing/fakes/services/fake_pihole_v6_api_client.dart",
+              """  @override
+            Future<Result<InfoFtl>> getInfoFtl(String sid) async {
+              if (shouldFail) {
+                return Failure(Exception('Forced getInfoFtl failure'));
+              }
+              if (shouldGetInfoFtlV63) {
+                return const Success(kSrvGetInfoFtlV63);
+              }
+              return const Success(kSrvGetInfoFtl);
+            }
+
+          """,
+              "",
+          )
+
+          # Tighten the architecture boundary from three production holds to two.
+          audit = "tools/openapi/audit_legacy_v6_boundary.py"
+          replace(audit, "# Three production repositories remain", "# Two production repositories remain")
+          replace(audit, '    "ftl_repository.dart",\n', "")
+          replace(audit, '    "FtlRepositoryV6",\n', "")
+          replace(audit, '    "getInfoFtl",\n', "")
+          replace(audit, '"Allowed handwritten endpoint methods: postAuth, getInfoFtl, "', '"Allowed handwritten endpoint methods: postAuth, getNetworkGateway, "')
+          replace(audit, '"getNetworkGateway, postActionGravity (plus lifecycle close)."', '"postActionGravity (plus lifecycle close)."')
+          replace(audit, 'print("Production handwritten holds: ActionsRepositoryV6, FtlRepositoryV6, NetworkRepositoryV6.")', 'print("Production handwritten holds: ActionsRepositoryV6, NetworkRepositoryV6.")')
+
+          # Repository tests: generated service, 401 renewal, and failure path.
+          test = "test/data/repositories/api/v6/ftl_repository_test.dart"
+          replace(test, "  bool shouldFailClient = false;\n", "  bool shouldFailClient = false;\n  bool shouldFailFtl = false;\n")
+          replace(test, "  bool shouldReturnClientUnauthorizedOnce = false;\n", "  bool shouldReturnClientUnauthorizedOnce = false;\n  bool shouldReturnFtlUnauthorizedOnce = false;\n  int getInfoFtlCallCount = 0;\n")
+          replace(
+              test,
+              """  @override
+            Future<Result<GetHostinfo200Response>> getInfoHost() async {
+          """,
+              """  @override
+            Future<Result<GetFtlinfo200Response>> getInfoFtl() async {
+              getInfoFtlCallCount++;
+              if (shouldReturnFtlUnauthorizedOnce && getInfoFtlCallCount == 1) {
+                return Failure(ApiException(message: 'Unauthorized', statusCode: 401));
+              }
+              if (shouldFailFtl) {
+                return Failure(Exception('Forced getInfoFtl failure'));
+              }
+              return Success(
+                GetFtlinfo200Response(ftl: FtlFtl(privacyLevel: 0), took: 0.003),
+              );
+            }
+
+            @override
+            Future<Result<GetHostinfo200Response>> getInfoHost() async {
+          """,
+          )
+          replace(test, "        client: client,\n", "")
+          replace(
+              test,
+              """    test('should fetch info ftl successfully', () async {
+              final result = await repository.fetchInfoFtl();
+              expect(result.getOrNull(), kRepoFetchFtlInfo);
+            });
+
+            test('should fetch info ftl successfully (FTL >= 6.3)', () async {
+              client.shouldGetInfoFtlV63 = true;
+              final result = await repository.fetchInfoFtl();
+              expect(result.getOrNull(), kRepoFetchFtlInfo);
+            });
+
+            test('should fail when fetching info ftl fails', () async {
+              client.shouldFail = true;
+
+              final result = await repository.fetchInfoFtl();
+              expectError(result, messageContains: 'Forced getInfoFtl failure');
+            });
+          """,
+              """    test('should fetch info ftl successfully through generated service', () async {
+              final result = await repository.fetchInfoFtl();
+
+              expect(result.getOrNull(), kRepoFetchFtlInfo);
+              expect(service.lastSid, 'sid123');
+              expect(service.getInfoFtlCallCount, 1);
+            });
+
+            test('renews SID and retries generated FTL request after 401', () async {
+              service.shouldReturnFtlUnauthorizedOnce = true;
+
+              final result = await repository.fetchInfoFtl();
+
+              expect(result.getOrNull(), kRepoFetchFtlInfo);
+              expect(client.postAuthCallCount, 1);
+              expect(service.getInfoFtlCallCount, 2);
+              expect(service.lastSid, 'n9n9f6c3umrumfq2ese1lvu2pg');
+            });
+
+            test('should fail when generated info ftl request fails', () async {
+              service.shouldFailFtl = true;
+
+              final result = await repository.fetchInfoFtl();
+              expectError(result, messageContains: 'Forced getInfoFtl failure');
+            });
+          """,
+          )
+
+          # Service tests exercise both historical response shapes.
+          replace(
+              "test/data/services/api/wrappers/pihole_v6_service_test.dart",
+              """    group('getInfoFtl', () {
+              test('returns Success with FTL info', () async {
+                final mockResponse = GetFtlinfo200Response();
+                when(
+                  mockFtlApi.getFtlinfo(),
+                ).thenAnswer((_) async => dioResponse(mockResponse));
+
+                final result = await service.getInfoFtl();
+
+                expect(result.isSuccess(), true);
+              });
+            });
+          """,
+              """    group('getInfoFtl', () {
+              PiholeV6Service buildFtlCompatService(Map<String, dynamic> payload) {
+                final dio = Dio(BaseOptions(baseUrl: 'http://localhost/api'));
+                dio.interceptors.add(
+                  InterceptorsWrapper(
+                    onRequest: (options, handler) {
+                      handler.resolve(
+                        Response<Map<String, dynamic>>(
+                          requestOptions: options,
+                          statusCode: 200,
+                          data: payload,
+                        ),
+                      );
+                    },
+                  ),
+                );
+                return PiholeV6Service(api: PiholeV6Api(dio: dio));
+              }
+
+              test('reads privacy level from pre-v6.3 integer-counter response', () async {
+                final compatService = buildFtlCompatService({
+                  'ftl': {
+                    'privacy_level': 2,
+                    'database': {
+                      'domains': {'allowed': 10, 'denied': 3},
+                      'regex': {'allowed': 2, 'denied': 1},
+                    },
+                  },
+                  'took': 0.003,
+                });
+
+                final result = await compatService.getInfoFtl();
+
+                expect(result.isSuccess(), true);
+                expect(result.getOrNull()?.ftl?.privacyLevel, 2);
+                expect(result.getOrNull()?.took, 0.003);
+              });
+
+              test('reads privacy level from v6.3+ object-counter response', () async {
+                final compatService = buildFtlCompatService({
+                  'ftl': {
+                    'privacy_level': 3,
+                    'database': {
+                      'domains': {
+                        'allowed': {'total': 10, 'enabled': 8},
+                        'denied': {'total': 3, 'enabled': 2},
+                      },
+                      'regex': {
+                        'allowed': {'total': 2, 'enabled': 1},
+                        'denied': {'total': 1, 'enabled': 1},
+                      },
+                    },
+                  },
+                });
+
+                final result = await compatService.getInfoFtl();
+
+                expect(result.isSuccess(), true);
+                expect(result.getOrNull()?.ftl?.privacyLevel, 3);
+              });
+            });
+          """,
+          )
+
+          # Roadmap/triage sync.
+          road = "ROADMAP.md"
+          replace(
+              road,
+              "- [ ] Keep `/api/info/ftl` on the handwritten client for now: the generated schema models domain/regex counters only as `{total, enabled}` objects, while the existing transport model intentionally accepts the v6.2 integer representation as well; the pinned upstream FTL v6.7 spec was re-audited and still does not model that compatibility union.",
+              "- [x] Move `/api/info/ftl` off the handwritten client while preserving pre-v6.3 compatibility: the central v6 service now performs the authenticated Dio request and parses only `ftl.privacy_level`, the sole field consumed by the app. This deliberately avoids deserializing the schema-incompatible domain/regex counters, which are integers on older FTL versions but `{total, enabled}` objects in the pinned v6.7 schema.",
+          )
+          replace(road, "The remaining handwritten production paths are the explicit `/api/info/ftl` compatibility hold, detailed `/api/network/gateway` schema hold and gravity streaming behavior hold rather than unreviewed migration work.", "The remaining handwritten production paths are the detailed `/api/network/gateway` schema hold and gravity streaming behavior hold rather than unreviewed migration work. `/api/info/ftl` now uses the central v6 service with a narrow compatibility parser for the privacy level consumed by the app.")
+          replace(road, "Remaining handwritten production transport is limited to `/api/info/ftl`, detailed `/api/network/gateway`, and gravity streaming because of documented compatibility/schema/behavior blockers.", "Remaining handwritten production transport is limited to detailed `/api/network/gateway` and gravity streaming because of documented schema/behavior blockers. `/api/info/ftl` has moved to the central v6 service with a narrow compatibility parser for `privacy_level`, avoiding the pre-v6.3 counter-shape mismatch in the generated model.")
+
+          triage = "UPSTREAM_TRIAGE.md"
+          replace(triage, "only Actions, FTL and detailed Network may receive `PiholeV6ApiClient`", "only Actions and detailed Network may receive `PiholeV6ApiClient`")
+          replace(triage, "lifecycle `close()` plus `postAuth`, `getInfoFtl`, `getNetworkGateway` and `postActionGravity`.", "lifecycle `close()` plus `postAuth`, `getNetworkGateway` and `postActionGravity`. `/api/info/ftl` now uses the central v6 service with an authenticated Dio request and a narrow `privacy_level` compatibility parser, avoiding the pre-v6.3 integer-vs-object counter mismatch that the pinned v6.7 generated model cannot represent.")
+          replace(triage, "Production keeps only `/api/info/ftl`, detailed network gateway and gravity streaming handwritten;", "Production keeps only detailed network gateway and gravity streaming handwritten;")
+          replace(triage, "The three production holds remain justified because the FTL counter union is absent from the schema, generated gateway/interface models lose", "The two production holds remain justified because generated gateway/interface models lose")
+          replace(triage, "Only `/api/info/ftl`, detailed network gateway and gravity streaming remain production compatibility/schema/behavior holds.", "Only detailed network gateway and gravity streaming remain production schema/behavior holds; `/api/info/ftl` now runs through the central v6 service with a narrow compatibility parser for the privacy level actually consumed by the app.")
+
+          for temp in [
+              ".github/workflows/tmp-ftl-info-migration.yml",
+              ".github/workflows/tmp-ftl-info-migration-fix.yml",
+          ]:
+              Path(temp).unlink(missing_ok=True)
+          PY
+
           python3 tools/openapi/audit_legacy_v6_boundary.py
           git diff --check
           git config user.name "github-actions[bot]"
