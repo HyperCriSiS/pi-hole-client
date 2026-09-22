@@ -1,0 +1,37 @@
+name: Temporary FTL migration retry
+
+on:
+  push:
+    branches:
+      - roadmap/generated-ftl-info-compat
+    paths:
+      - .github/workflows/tmp-ftl-info-migration-fix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: roadmap/generated-ftl-info-compat
+          fetch-depth: 0
+
+      - name: Apply scoped FTL migration patch
+        run: |
+          PATCH_GZ_B64="$(sed -n 's/^          PATCH_GZ_B64: //p' .github/workflows/tmp-ftl-info-migration.yml)"
+          PATCH_GZ_B64="${PATCH_GZ_B64%;}"
+          printf '%s' "$PATCH_GZ_B64" | base64 -d | gzip -d > /tmp/ftl-migration.patch
+          git apply --check /tmp/ftl-migration.patch
+          git apply /tmp/ftl-migration.patch
+          rm .github/workflows/tmp-ftl-info-migration.yml
+          rm .github/workflows/tmp-ftl-info-migration-fix.yml
+          python3 tools/openapi/audit_legacy_v6_boundary.py
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Migrate FTL info off handwritten v6 transport"
+          git push
