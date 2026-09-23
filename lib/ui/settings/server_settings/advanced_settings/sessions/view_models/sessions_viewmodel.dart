@@ -15,6 +15,7 @@ class SessionsViewModel extends ChangeNotifier {
 
     loadSessions.addListener(notifyListeners);
     deleteSession.addListener(notifyListeners);
+    deleteSession.errors.addListener(notifyListeners);
   }
 
   final AuthRepository _authRepository;
@@ -54,6 +55,7 @@ class SessionsViewModel extends ChangeNotifier {
   void dispose() {
     loadSessions.removeListener(notifyListeners);
     deleteSession.removeListener(notifyListeners);
+    deleteSession.errors.removeListener(notifyListeners);
     loadSessions.dispose();
     deleteSession.dispose();
     super.dispose();
