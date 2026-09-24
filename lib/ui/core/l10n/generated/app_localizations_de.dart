@@ -1037,7 +1037,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get invalidHostname =>
-      'Ungültiger Hostname: Es sind nur Buchstaben (a–z, A–Z), Zahlen (0–9), Bindestriche (-), Unterstriche (_) und Punkte (.) erlaubt';
+      'Ungültiger Hostname: Es sind nur Buchstaben (a–z, A–Z), Zahlen (0–9), Bindestriche (-), Unterstriche (_) und Punkte (.) erlaubt. Mehrere Hostnamen durch Leerzeichen trennen';
 
   @override
   String get invalidIpAddress => 'Ungültige IP-Adresse';
@@ -1164,6 +1164,10 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get localDnsAddSuccess => 'Lokales DNS wurde erfolgreich hinzugefügt';
+
+  @override
+  String get localDnsAlreadyAdded =>
+      'Lokaler DNS-Eintrag ist bereits vorhanden';
 
   @override
   String get localDnsAdding => 'Lokales DNS wird hinzugefügt...';

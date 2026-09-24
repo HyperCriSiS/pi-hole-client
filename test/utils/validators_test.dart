@@ -46,6 +46,32 @@ void main() {
     });
   });
 
+  group('normalizeLocalDnsNames', () {
+    test('trims and collapses whitespace', () {
+      expect(normalizeLocalDnsNames(' test '), 'test');
+      expect(normalizeLocalDnsNames('test   ok'), 'test ok');
+      expect(normalizeLocalDnsNames('test\tok'), 'test ok');
+    });
+
+    test('returns empty for whitespace only', () {
+      expect(normalizeLocalDnsNames('   '), '');
+    });
+  });
+
+  group('isValidLocalDnsNames', () {
+    test('accepts one or more valid hostnames', () {
+      expect(isValidLocalDnsNames('nas'), isTrue);
+      expect(isValidLocalDnsNames('nas nas.local my_host-1'), isTrue);
+      expect(isValidLocalDnsNames(' nas  ok '), isTrue);
+    });
+
+    test('rejects invalid or empty hostnames', () {
+      expect(isValidLocalDnsNames('test o!k'), isFalse);
+      expect(isValidLocalDnsNames(''), isFalse);
+      expect(isValidLocalDnsNames('   '), isFalse);
+    });
+  });
+
   group('isValidSubroute', () {
     test('accepts a leading-slash path', () {
       expect(isValidSubroute('/admin'), isTrue);
