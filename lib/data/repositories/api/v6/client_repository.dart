@@ -3,6 +3,7 @@ import 'package:pi_hole_client/data/model/v6/clients/clients.dart'
     as legacy_clients;
 import 'package:pi_hole_client/data/repositories/api/interfaces/client_repository.dart';
 import 'package:pi_hole_client/data/repositories/api/v6/base_v6_sid_repository.dart';
+import 'package:pi_hole_client/data/repositories/utils/already_exists.dart';
 import 'package:pi_hole_client/data/repositories/utils/call_with_retry.dart';
 import 'package:pi_hole_client/data/services/api/wrappers/pihole_v6_service.dart';
 import 'package:pi_hole_client/domain/model/client/managed_client.dart';
@@ -50,8 +51,12 @@ class ClientRepositoryV6 extends BaseV6SidRepository
             groups: groups,
           ),
         );
-        return result.map(
-          (e) => legacy_clients.Clients.fromJson(e.toJson()).toSingleDomain(),
+        return mapDuplicateFailure(result).flatMap(
+          (e) => checkProcessedErrors(
+            e.processed?.errors?.map((x) => x.error),
+            () =>
+                legacy_clients.Clients.fromJson(e.toJson()).toSingleDomain(),
+          ),
         );
       },
       onRetry: (_, e) => renewSidIfExpired(e),
@@ -72,8 +77,12 @@ class ClientRepositoryV6 extends BaseV6SidRepository
           client: client,
           body: ReplaceClientRequest(comment: comment, groups: groups),
         );
-        return result.map(
-          (e) => legacy_clients.Clients.fromJson(e.toJson()).toSingleDomain(),
+        return mapDuplicateFailure(result).flatMap(
+          (e) => checkProcessedErrors(
+            e.processed?.errors?.map((x) => x.error),
+            () =>
+                legacy_clients.Clients.fromJson(e.toJson()).toSingleDomain(),
+          ),
         );
       },
       onRetry: (_, e) => renewSidIfExpired(e),
