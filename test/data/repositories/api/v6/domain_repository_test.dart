@@ -3,6 +3,7 @@ import 'package:pi_hole_client/data/repositories/api/v6/domain_repository.dart';
 import 'package:pi_hole_client/data/repositories/api/v6/v6_session_cache.dart';
 import 'package:pi_hole_client/data/services/api/wrappers/pihole_v6_service.dart';
 import 'package:pi_hole_client/domain/model/enums.dart';
+import 'package:pi_hole_client/utils/exceptions.dart';
 import 'package:pihole_v6_api/pihole_v6_api.dart' hide Success;
 import 'package:result_dart/result_dart.dart';
 
@@ -19,6 +20,10 @@ class _FakePiholeV6Service extends PiholeV6Service {
   bool shouldFailAdd = false;
   bool shouldFailReplace = false;
   bool shouldFailDelete = false;
+  Result<ReplaceDomain200Response>? addResult;
+  Result<ReplaceDomain200Response>? replaceResult;
+  int addCallCount = 0;
+  int replaceCallCount = 0;
   String? lastSid;
   String? lastAddType;
   String? lastAddKind;
@@ -50,9 +55,11 @@ class _FakePiholeV6Service extends PiholeV6Service {
     required String kind,
     Post? body,
   }) async {
+    addCallCount++;
     lastAddType = type;
     lastAddKind = kind;
     lastAddBody = body;
+    if (addResult != null) return addResult!;
     if (shouldFailAdd) {
       return Failure(Exception('Forced addDomain failure'));
     }
@@ -66,10 +73,12 @@ class _FakePiholeV6Service extends PiholeV6Service {
     required String domain,
     ReplaceDomainRequest? body,
   }) async {
+    replaceCallCount++;
     lastReplaceType = type;
     lastReplaceKind = kind;
     lastReplaceDomain = domain;
     lastReplaceBody = body;
+    if (replaceResult != null) return replaceResult!;
     if (shouldFailReplace) {
       return Failure(Exception('Forced replaceDomain failure'));
     }
@@ -192,6 +201,48 @@ void main() {
         enabled: false,
       );
       expectError(result, messageContains: 'Forced replaceDomain failure');
+    });
+  });
+
+  group('duplicate handling', () {
+    test('maps a v6.7 add duplicate and does not retry it', () async {
+      service.addResult = Failure(
+        HttpStatusCodeException(400, 'The item is already present'),
+      );
+
+      final result = await repository.addDomain(
+        DomainType.allow,
+        DomainKind.exact,
+        'example.com',
+      );
+
+      expect(result.exceptionOrNull(), isA<AlreadyExistsException>());
+      expect(service.addCallCount, 1);
+    });
+
+    test('maps an older processed-error duplicate on update', () async {
+      service.replaceResult = Success(
+        ReplaceDomain200Response.fromJson({
+          'processed': {
+            'errors': [
+              {
+                'item': 'example.com',
+                'error':
+                    'UNIQUE constraint failed: domainlist.domain, domainlist.type',
+              },
+            ],
+          },
+        }),
+      );
+
+      final result = await repository.updateDomain(
+        DomainType.allow,
+        DomainKind.exact,
+        'example.com',
+      );
+
+      expect(result.exceptionOrNull(), isA<AlreadyExistsException>());
+      expect(service.replaceCallCount, 1);
     });
   });
 

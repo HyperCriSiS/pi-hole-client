@@ -5,12 +5,14 @@ import 'package:result_dart/result_dart.dart';
 ///
 /// - 400, "The item is already present": FTL v6.7 and later
 /// - 201, "UNIQUE constraint failed": before FTL v6.7
-/// - 400, "Item already present": Local DNS
+/// - 400, "Item already present": Local DNS, in all versions
+/// - v5, "... is already on the list": domains
 bool isDuplicateError(String text) {
   final lower = text.toLowerCase();
   return lower.contains('item is already present') ||
       lower.contains('item already present') ||
-      lower.contains('unique constraint failed');
+      lower.contains('unique constraint failed') ||
+      lower.contains('already on the list');
 }
 
 /// Turns a 4xx response whose body says the item already exists into an
@@ -28,10 +30,11 @@ Result<T> mapDuplicateFailure<T extends Object>(Result<T> result) {
 
 /// Checks the `processed.errors` texts of a successful response.
 Result<T> checkProcessedErrors<T extends Object>(
-  Iterable<String>? errors,
+  Iterable<String?>? errors,
   T Function() onSuccess,
 ) {
-  if (errors == null || errors.isEmpty) return Success(onSuccess());
-  if (errors.any(isDuplicateError)) return Failure(AlreadyExistsException());
-  return Failure(Exception(errors.join(', ')));
+  final messages = errors?.whereType<String>().toList() ?? const <String>[];
+  if (messages.isEmpty) return Success(onSuccess());
+  if (messages.any(isDuplicateError)) return Failure(AlreadyExistsException());
+  return Failure(Exception(messages.join(', ')));
 }

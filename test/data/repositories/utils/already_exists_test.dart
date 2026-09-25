@@ -63,6 +63,19 @@ void main() {
     });
   });
 
+  group('isDuplicateError', () {
+    test('matches the v5 domain duplicate message', () {
+      expect(
+        isDuplicateError('Not adding test as it is already on the list'),
+        isTrue,
+      );
+    });
+
+    test('does not match a normal v5 success message', () {
+      expect(isDuplicateError('Added test'), isFalse);
+    });
+  });
+
   group('checkProcessedErrors', () {
     test('builds the value when there are no errors', () {
       expect(checkProcessedErrors(null, () => 1).getOrNull(), 1);
@@ -75,6 +88,10 @@ void main() {
       ], () => 1);
 
       expect(result.exceptionOrNull(), isA<AlreadyExistsException>());
+    });
+
+    test('ignores null processed error texts', () {
+      expect(checkProcessedErrors(const [null], () => 1).getOrNull(), 1);
     });
 
     test('keeps the server text for other errors', () {
