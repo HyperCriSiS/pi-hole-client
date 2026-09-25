@@ -8,7 +8,7 @@ This is the compact operational handoff for autonomous Pi-hole Client work. `ROA
 ## Baseline
 - Repository: `HyperCriSiS/pi-hole-client`
 - Default branch: `main`
-- Integrated product baseline at this checkpoint: `f43dbf5212d9fd77f889a267b31fb388c7b749aa`
+- Integrated product baseline at this checkpoint: `7abaaa35b7fc5c63db25fc267e15356332ba859e`
 - Open pull requests after the block: none.
 
 ## Completed in the latest work blocks
@@ -30,10 +30,15 @@ This is the compact operational handoff for autonomous Pi-hole Client work. `ROA
   - maps current FTL HTTP-4xx duplicate failures and older successful responses carrying duplicate details in `processed.errors` to the existing `AlreadyExistsException`
   - widens shared processed-error handling to tolerate nullable generated error strings
   - teaches the shared duplicate detector the legacy v5 `already on the list` phrase for the later v5 repository slice
-  - adds focused generated-service tests and verifies duplicate failures are not retried
+  - full Dart tests, unsigned Android source build + unsigned-artifact verification, audit, CodeQL, Sonar, Codecov and static analyses passed
+  - squash-merged as `f43dbf5212d9fd77f889a267b31fb388c7b749aa`.
+- PR #117 `fix(v6): map client and adlist duplicates`
+  - second bounded semantic port from upstream #735
+  - maps generated-v6 Client and Adlist add/update duplicates for both current HTTP-4xx responses and older successful `processed.errors` responses
+  - reuses the shared duplicate helper from #116 and verifies duplicate requests are sent only once
   - full Dart tests, unsigned Android source build + unsigned-artifact verification, audit, CodeQL, Sonar, Codecov and static analyses passed
   - the separate GitHub-managed `github-advanced-security` AI-agent job again failed independently of repository-controlled gates
-  - squash-merged as `f43dbf5212d9fd77f889a267b31fb388c7b749aa`.
+  - squash-merged as `7abaaa35b7fc5c63db25fc267e15356332ba859e`.
 
 ## Active roadmap state
 - #639 generated Pi-hole v6 migration remains intentionally bounded. Production handwritten holds remain:
@@ -50,26 +55,30 @@ Already covered:
 - Local DNS duplicate preflight + localized feedback from #113
 - shared duplicate detector supports current 4xx, older UNIQUE-constraint processed errors and legacy v5 duplicate wording
 - generated v6 Domain add/update duplicate mapping from #116
+- generated v6 Client add/update duplicate mapping from #117
+- generated v6 Adlist add/update duplicate mapping from #117
 
 Still missing from #735:
-1. Generated v6 Client duplicate mapping.
-2. Generated v6 Adlist duplicate mapping.
-3. Generated v6 Group duplicate mapping plus old-database group-in-use delete handling and no-retry semantics.
-4. Legacy Pi-hole v5 duplicate-domain result mapping.
-5. Remaining UI duplicate/group-in-use feedback for domain/group/client/adlist/query-log flows, preferably through a shared save-failure helper where it fits the fork without regressing existing Local DNS behavior.
+1. Generated v6 Group duplicate mapping.
+2. Old-database Group delete `FOREIGN KEY constraint failed` mapping to a dedicated group-in-use failure, including no-retry behavior.
+3. Legacy Pi-hole v5 duplicate-domain result mapping.
+4. Remaining UI duplicate/group-in-use feedback for domain/group/client/adlist/query-log flows, preferably through a shared save-failure helper where it fits the fork without regressing existing Local DNS behavior.
 
 ## Next work block
-Port generated v6 Client + Adlist duplicate handling as one small, mechanically identical slice:
-- use the existing shared duplicate helper from #116
-- map both HTTP-4xx duplicates and older `processed.errors` duplicates
-- add focused generated-service tests
-- keep Group handling separate because it introduces `GroupInUseException` and retry-policy changes
-- do not touch UI or v5 behavior in this slice
+Port generated v6 Group duplicate + group-in-use handling as one bounded slice:
+- adapt upstream #735 semantically to the fork's `PiholeV6Service` generated-client architecture
+- map add/update duplicates through the existing shared duplicate helper
+- preserve the fork's current Group update/rename semantics when adapting the upstream behavior
+- map old-database 4xx `FOREIGN KEY constraint failed` delete responses to a dedicated `GroupInUseException`
+- stop retrying both `AlreadyExistsException` and `GroupInUseException`
+- add focused generated-service and retry tests
+- do not touch v5 or UI behavior in this slice
 
 ## Resume protocol
 1. Read this file and `ROADMAP.md` from `main`.
-2. Resolve `main` HEAD live and verify it is at or beyond `f43dbf5`.
-3. Load only current generated v6 Client/Adlist repository files and their focused tests.
-4. Implement the two duplicate mappings on a short-lived branch using the fork's `PiholeV6Service`, not the upstream handwritten-client code.
-5. Validate through a focused PR; merge only after repository-controlled gates pass.
-6. Update this checkpoint before starting Group/v5/UI follow-ups.
+2. Resolve `main` HEAD live and verify it is at or beyond `7abaaa35`.
+3. Load only current generated v6 Group repository, `exceptions.dart`, `call_with_retry.dart` and their focused tests.
+4. Compare the fork's Group update semantics with upstream #735 before editing; do not copy handwritten-client code directly.
+5. Implement on a short-lived branch and validate through a focused PR.
+6. Merge only after repository-controlled gates pass.
+7. Update this checkpoint before starting the v5/UI follow-ups.
