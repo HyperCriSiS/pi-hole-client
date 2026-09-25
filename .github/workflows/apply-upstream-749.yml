@@ -65,8 +65,6 @@ jobs:
           cp .env.sample .env
           dart format lib/ui/core/view_models/servers_viewmodel.dart lib/utils/widget_channel.dart test/ui/core/view_models/servers_viewmodel_test.dart
           flutter test test/ui/core/view_models/servers_viewmodel_test.dart
-          cd android
-          ./gradlew :app:compileDebugKotlin
 
       - name: Commit port and remove helper workflow
         shell: bash
