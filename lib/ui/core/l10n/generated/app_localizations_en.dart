@@ -1012,7 +1012,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get invalidHostname =>
-      'Invalid hostname: only letters (a–z, A–Z), numbers (0–9), hyphen (-), underscore (_), and dot (.) are allowed';
+      'Invalid hostname: only letters (a–z, A–Z), numbers (0–9), hyphen (-), underscore (_), and dot (.) are allowed. Separate multiple hostnames with spaces';
 
   @override
   String get invalidIpAddress => 'Invalid IP Address';
@@ -1140,6 +1140,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get localDnsAddSuccess => 'Local DNS has been added successfully';
+
+  @override
+  String get localDnsAlreadyAdded => 'Local DNS record already added';
 
   @override
   String get localDnsAdding => 'Adding local DNS...';

@@ -8,6 +8,8 @@ import 'package:pi_hole_client/data/repositories/api/interfaces/network_reposito
 import 'package:pi_hole_client/domain/model/local_dns/cname_record.dart';
 import 'package:pi_hole_client/domain/model/local_dns/local_dns.dart';
 import 'package:pi_hole_client/domain/model/network/network.dart';
+import 'package:pi_hole_client/utils/exceptions.dart';
+import 'package:pi_hole_client/utils/validators.dart';
 import 'package:result_dart/result_dart.dart';
 
 class LocalDnsData {
@@ -105,6 +107,10 @@ class LocalDnsViewModel extends ChangeNotifier {
   }
 
   Future<void> _addRecord(LocalDns record) async {
+    if (_data.records.any((r) => _isSameRecord(r, record))) {
+      throw AlreadyExistsException('Local DNS record already exists.');
+    }
+
     final result = await _localDnsRepository.addRecord(
       ip: record.ip,
       name: record.name,
@@ -125,17 +131,23 @@ class LocalDnsViewModel extends ChangeNotifier {
   Future<void> _updateRecord(
     ({LocalDns oldRecord, LocalDns newRecord}) params,
   ) async {
+    final index = _data.records.indexOf(params.oldRecord);
+    final others = [..._data.records];
+    if (index != -1) others.removeAt(index);
+    if (others.any((r) => _isSameRecord(r, params.newRecord))) {
+      throw AlreadyExistsException('Local DNS record already exists.');
+    }
+
     final result = await _localDnsRepository.updateRecord(
       oldRecord: params.oldRecord,
       newRecord: params.newRecord,
     );
     switch (result) {
       case Success():
+        final records = [..._data.records];
+        if (index != -1) records[index] = params.newRecord;
         _data = LocalDnsData(
-          records: [
-            for (final r in _data.records)
-              if (r == params.oldRecord) params.newRecord else r,
-          ],
+          records: records,
           deviceOptions: _data.deviceOptions,
           cnameRecords: _data.cnameRecords,
         );
@@ -152,8 +164,9 @@ class LocalDnsViewModel extends ChangeNotifier {
     );
     switch (result) {
       case Success():
+        final records = [..._data.records]..remove(record);
         _data = LocalDnsData(
-          records: _data.records.where((r) => r != record).toList(),
+          records: records,
           deviceOptions: _data.deviceOptions,
           cnameRecords: _data.cnameRecords,
         );
@@ -161,6 +174,11 @@ class LocalDnsViewModel extends ChangeNotifier {
       case Failure():
         throw result.exceptionOrNull();
     }
+  }
+
+  bool _isSameRecord(LocalDns a, LocalDns b) {
+    return a.ip.trim() == b.ip.trim() &&
+        normalizeLocalDnsNames(a.name) == normalizeLocalDnsNames(b.name);
   }
 
   Future<void> _addCnameRecord(CnameRecord record) async {

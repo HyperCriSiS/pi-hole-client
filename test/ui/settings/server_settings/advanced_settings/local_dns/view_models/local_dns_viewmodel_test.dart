@@ -6,6 +6,7 @@ import 'package:pi_hole_client/data/repositories/api/interfaces/cname_repository
 import 'package:pi_hole_client/domain/model/local_dns/cname_record.dart';
 import 'package:pi_hole_client/domain/model/local_dns/local_dns.dart';
 import 'package:pi_hole_client/ui/settings/server_settings/advanced_settings/local_dns/view_models/local_dns_viewmodel.dart';
+import 'package:pi_hole_client/utils/exceptions.dart';
 import 'package:result_dart/result_dart.dart';
 
 import '../../../../../../../testing/fakes/repositories/api/fake_local_dns_repository.dart';
@@ -234,6 +235,66 @@ void main() {
       await completer.future;
 
       expect(viewModel.deleteRecord.errors.value, isNotNull);
+    });
+
+    group('duplicate records', () {
+      const duplicates = [
+        LocalDns(ip: '192.168.1.10', name: 'nas'),
+        LocalDns(ip: '192.168.1.10', name: 'nas'),
+        LocalDns(ip: '192.168.1.20', name: 'printer'),
+      ];
+
+      test('add rejects a normalized duplicate', () async {
+        fakeLocalDnsRepository.records = const [
+          LocalDns(ip: '192.168.1.10', name: 'test  ok'),
+        ];
+        await viewModel.loadRecords.runAsync();
+        await expectLater(
+          viewModel.addRecord.runAsync(
+            const LocalDns(ip: ' 192.168.1.10 ', name: ' test\tok '),
+          ),
+          throwsA(isA<AlreadyExistsException>()),
+        );
+        expect(fakeLocalDnsRepository.addRecordCallCount, 0);
+      });
+
+      test('update rejects a value used by another record', () async {
+        await viewModel.loadRecords.runAsync();
+        await expectLater(
+          viewModel.updateRecord.runAsync((
+            oldRecord: const LocalDns(ip: '192.168.1.101', name: 'printer1'),
+            newRecord: const LocalDns(ip: '192.168.1.100', name: 'server1'),
+          )),
+          throwsA(isA<AlreadyExistsException>()),
+        );
+        expect(fakeLocalDnsRepository.updateRecordCallCount, 0);
+      });
+
+      test('update changes only first identical record', () async {
+        fakeLocalDnsRepository.records = duplicates;
+        await viewModel.loadRecords.runAsync();
+        await viewModel.updateRecord.runAsync((
+          oldRecord: const LocalDns(ip: '192.168.1.10', name: 'nas'),
+          newRecord: const LocalDns(ip: '192.168.1.10', name: 'nas2'),
+        ));
+        expect(viewModel.data.records, const [
+          LocalDns(ip: '192.168.1.10', name: 'nas2'),
+          LocalDns(ip: '192.168.1.10', name: 'nas'),
+          LocalDns(ip: '192.168.1.20', name: 'printer'),
+        ]);
+      });
+
+      test('delete removes only first identical record', () async {
+        fakeLocalDnsRepository.records = duplicates;
+        await viewModel.loadRecords.runAsync();
+        await viewModel.deleteRecord.runAsync(
+          const LocalDns(ip: '192.168.1.10', name: 'nas'),
+        );
+        expect(viewModel.data.records, const [
+          LocalDns(ip: '192.168.1.10', name: 'nas'),
+          LocalDns(ip: '192.168.1.20', name: 'printer'),
+        ]);
+      });
     });
 
     test('add/update/delete failures do not call global handler', () async {
