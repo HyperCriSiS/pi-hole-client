@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:pi_hole_client/domain/model/server/server.dart';
 import 'package:pi_hole_client/utils/logger.dart';
@@ -7,7 +8,10 @@ import 'package:pi_hole_client/utils/logger.dart';
 class WidgetChannel {
   static const MethodChannel _channel = MethodChannel('pihole/widget');
 
-  static bool _isSupported() => Platform.isAndroid;
+  @visibleForTesting
+  static bool? debugIsSupportedOverride;
+
+  static bool _isSupported() => debugIsSupportedOverride ?? Platform.isAndroid;
 
   static Future<void> sendSidUpdated({
     required String serverAddress,
@@ -66,6 +70,23 @@ class WidgetChannel {
       await _channel.invokeMethod('serverRemoved', {'serverId': serverId});
     } catch (e) {
       logger.w('Widget serverRemoved failed: $e');
+    }
+  }
+
+  /// Moves widgets bound to [oldServerId] over to [newServerId] when a
+  /// server's address is changed.
+  static Future<void> sendServerReplaced({
+    required String oldServerId,
+    required String newServerId,
+  }) async {
+    if (!_isSupported()) return;
+    try {
+      await _channel.invokeMethod('serverReplaced', {
+        'oldServerId': oldServerId,
+        'newServerId': newServerId,
+      });
+    } catch (e) {
+      logger.w('Widget serverReplaced failed: $e');
     }
   }
 
