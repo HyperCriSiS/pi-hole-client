@@ -1,0 +1,438 @@
+name: Apply upstream widget server-sync fix
+
+on:
+  push:
+    branches:
+      - upstream/widget-server-sync-20260925
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: upstream/widget-server-sync-20260925
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.44.1
+          cache: true
+
+      - name: Apply selective upstream #749 port
+        shell: python
+        run: |
+          from pathlib import Path
+
+          def replace_once(path: str, old: str, new: str) -> None:
+              file = Path(path)
+              text = file.read_text()
+              if old not in text:
+                  raise SystemExit(f"expected source block missing in {path}")
+              file.write_text(text.replace(old, new, 1))
+
+          replace_once(
+              "android/app/src/main/kotlin/io/github/tsutsu3/pi_hole_client/MainActivity.kt",
+              '''                "serverRemoved" -> {
+                              val serverId = requireServerId(call, result) ?: return@setMethodCallHandler
+                              prefs.removeServer(serverId)
+                              WidgetUpdateHelper.refreshAllWidgets(this)
+                              result.success(null)
+                          }
+
+          ''',
+              '''                "serverRemoved" -> {
+                              val serverId = requireServerId(call, result) ?: return@setMethodCallHandler
+                              prefs.removeServer(serverId)
+                              WidgetUpdateHelper.refreshAllWidgets(this)
+                              result.success(null)
+                          }
+
+                          "serverReplaced" -> {
+                              val oldServerId = call.argument<String>("oldServerId")
+                              val newServerId = call.argument<String>("newServerId")
+                              if (oldServerId.isNullOrEmpty() || newServerId.isNullOrEmpty()) {
+                                  result.error("invalid_args", "oldServerId and newServerId are required", null)
+                                  return@setMethodCallHandler
+                              }
+                              prefs.remapServer(prefs.getAllWidgetIds(this), oldServerId, newServerId)
+                              prefs.removeServer(oldServerId)
+                              // serversUpdated follows and refreshes all widgets with the new server metadata.
+                              result.success(null)
+                          }
+
+          ''',
+          )
+
+          prefs_path = "android/app/src/main/kotlin/io/github/tsutsu3/pi_hole_client/widget/data/WidgetPrefs.kt"
+          replace_once(
+              prefs_path,
+              '''    fun getBoundServerIds(context: Context): Set<String> {
+                      val manager = AppWidgetManager.getInstance(context)
+                      return listOf(
+                          PiHoleWidgetProvider::class.java,
+                          CompactWidgetProvider::class.java,
+                          ToggleWidgetProvider::class.java,
+                      ).flatMap { type ->
+                          manager.getAppWidgetIds(ComponentName(context, type)).toList()
+                              .mapNotNull { getServerForWidget(it) }
+                      }.toSet()
+                  }
+
+          ''',
+              '''    fun getBoundServerIds(context: Context): Set<String> {
+                      val manager = AppWidgetManager.getInstance(context)
+                      return listOf(
+                          PiHoleWidgetProvider::class.java,
+                          CompactWidgetProvider::class.java,
+                          ToggleWidgetProvider::class.java,
+                      ).flatMap { type ->
+                          manager.getAppWidgetIds(ComponentName(context, type)).toList()
+                              .mapNotNull { getServerForWidget(it) }
+                      }.toSet()
+                  }
+
+                  /** Returns all placed widget ids across stats, compact and toggle widgets. */
+                  fun getAllWidgetIds(context: Context): IntArray {
+                      val manager = AppWidgetManager.getInstance(context)
+                      return listOf(
+                          PiHoleWidgetProvider::class.java,
+                          CompactWidgetProvider::class.java,
+                          ToggleWidgetProvider::class.java,
+                      ).flatMap { type ->
+                          manager.getAppWidgetIds(ComponentName(context, type)).toList()
+                      }.toIntArray()
+                  }
+
+          ''',
+          )
+          replace_once(
+              prefs_path,
+              '''    fun getWidgetIdsForServer(appWidgetIds: IntArray, serverId: String): IntArray {
+                      return appWidgetIds.filter { widgetId ->
+                          getServerForWidget(widgetId) == serverId
+                      }.toIntArray()
+                  }
+
+          ''',
+              '''    fun getWidgetIdsForServer(appWidgetIds: IntArray, serverId: String): IntArray {
+                      return appWidgetIds.filter { widgetId ->
+                          getServerForWidget(widgetId) == serverId
+                      }.toIntArray()
+                  }
+
+                  /** Moves widget bindings from an old server address to its replacement address. */
+                  fun remapServer(appWidgetIds: IntArray, oldServerId: String, newServerId: String) {
+                      getWidgetIdsForServer(appWidgetIds, oldServerId).forEach { widgetId ->
+                          setServerForWidget(widgetId, newServerId)
+                      }
+                  }
+
+          ''',
+          )
+
+          blocking_path = "android/app/src/main/kotlin/io/github/tsutsu3/pi_hole_client/widget/worker/ServerBlockingStatusWorker.kt"
+          replace_once(
+              blocking_path,
+              '''        if (server == null) {
+                          if (WidgetDebugConfig.DEBUG) Log.w(TAG, "No server info for $serverId")
+                          return Result.success()
+                      }
+          ''',
+              '''        if (server == null) {
+                          if (WidgetDebugConfig.DEBUG) Log.w(TAG, "No server info for $serverId")
+                          resetRemovedServerWidgets(serverId, prefs)
+                          return Result.success()
+                      }
+          ''',
+          )
+          replace_once(
+              blocking_path,
+              '''    private suspend fun broadcast(serverId: String, prefs: WidgetPrefs, state: ToggleWidgetState) {
+                      val manager = AppWidgetManager.getInstance(applicationContext)
+                      val glanceManager = GlanceAppWidgetManager(applicationContext)
+                      val toggleIds = prefs.getWidgetIdsForServer(
+                          manager.getAppWidgetIds(ComponentName(applicationContext, ToggleWidgetProvider::class.java)),
+                          serverId,
+                      )
+                      for (widgetId in toggleIds) {
+                          val glanceId = runCatching { glanceManager.getGlanceIdBy(widgetId) }.getOrNull() ?: continue
+                          updateAppWidgetState(applicationContext, glanceId) { it.updateFromToggle(state) }
+                          ToggleGlanceWidget().update(applicationContext, glanceId)
+                      }
+                  }
+
+          ''',
+              '''    private suspend fun broadcast(serverId: String, prefs: WidgetPrefs, state: ToggleWidgetState) {
+                      val glanceManager = GlanceAppWidgetManager(applicationContext)
+                      for (widgetId in boundToggleIds(serverId, prefs)) {
+                          val glanceId = runCatching { glanceManager.getGlanceIdBy(widgetId) }.getOrNull() ?: continue
+                          updateAppWidgetState(applicationContext, glanceId) { it.updateFromToggle(state) }
+                          ToggleGlanceWidget().update(applicationContext, glanceId)
+                      }
+                  }
+
+                  private suspend fun resetRemovedServerWidgets(serverId: String, prefs: WidgetPrefs) {
+                      val glanceManager = GlanceAppWidgetManager(applicationContext)
+                      for (widgetId in boundToggleIds(serverId, prefs)) {
+                          prefs.clearWidget(widgetId)
+                          val glanceId = runCatching { glanceManager.getGlanceIdBy(widgetId) }.getOrNull() ?: continue
+                          updateAppWidgetState(applicationContext, glanceId) { it.clear() }
+                          ToggleGlanceWidget().update(applicationContext, glanceId)
+                      }
+                  }
+
+                  private fun boundToggleIds(serverId: String, prefs: WidgetPrefs): IntArray {
+                      val manager = AppWidgetManager.getInstance(applicationContext)
+                      return prefs.getWidgetIdsForServer(
+                          manager.getAppWidgetIds(ComponentName(applicationContext, ToggleWidgetProvider::class.java)),
+                          serverId,
+                      )
+                  }
+
+          ''',
+          )
+
+          padd_path = "android/app/src/main/kotlin/io/github/tsutsu3/pi_hole_client/widget/worker/ServerPaddWorker.kt"
+          replace_once(
+              padd_path,
+              "import androidx.glance.appwidget.GlanceAppWidgetManager\n",
+              "import androidx.glance.appwidget.GlanceAppWidget\nimport androidx.glance.appwidget.GlanceAppWidgetManager\n",
+          )
+          replace_once(
+              padd_path,
+              '''        if (server == null) {
+                          if (WidgetDebugConfig.DEBUG) Log.w(TAG, "No server info for $serverId")
+                          return Result.success()
+                      }
+          ''',
+              '''        if (server == null) {
+                          if (WidgetDebugConfig.DEBUG) Log.w(TAG, "No server info for $serverId")
+                          resetRemovedServerWidgets(serverId, prefs)
+                          return Result.success()
+                      }
+          ''',
+          )
+          replace_once(
+              padd_path,
+              '''    private suspend fun broadcast(serverId: String, prefs: WidgetPrefs, state: WidgetState) {
+                      val manager = AppWidgetManager.getInstance(applicationContext)
+                      val glanceManager = GlanceAppWidgetManager(applicationContext)
+                      val statsIds = prefs.getWidgetIdsForServer(
+                          manager.getAppWidgetIds(ComponentName(applicationContext, PiHoleWidgetProvider::class.java)),
+                          serverId,
+                      )
+                      val compactIds = prefs.getWidgetIdsForServer(
+                          manager.getAppWidgetIds(ComponentName(applicationContext, CompactWidgetProvider::class.java)),
+                          serverId,
+                      )
+                      for (widgetId in statsIds) {
+                          val glanceId = runCatching { glanceManager.getGlanceIdBy(widgetId) }.getOrNull() ?: continue
+                          updateAppWidgetState(applicationContext, glanceId) { it.updateFrom(state) }
+                          PiHoleGlanceWidget().update(applicationContext, glanceId)
+                      }
+                      for (widgetId in compactIds) {
+                          val glanceId = runCatching { glanceManager.getGlanceIdBy(widgetId) }.getOrNull() ?: continue
+                          updateAppWidgetState(applicationContext, glanceId) { it.updateFrom(state) }
+                          CompactGlanceWidget().update(applicationContext, glanceId)
+                      }
+                  }
+          ''',
+              '''    private suspend fun broadcast(serverId: String, prefs: WidgetPrefs, state: WidgetState) {
+                      val glanceManager = GlanceAppWidgetManager(applicationContext)
+                      for ((widgetId, widget) in boundWidgets(serverId, prefs)) {
+                          val glanceId = runCatching { glanceManager.getGlanceIdBy(widgetId) }.getOrNull() ?: continue
+                          updateAppWidgetState(applicationContext, glanceId) { it.updateFrom(state) }
+                          widget.update(applicationContext, glanceId)
+                      }
+                  }
+
+                  private suspend fun resetRemovedServerWidgets(serverId: String, prefs: WidgetPrefs) {
+                      val glanceManager = GlanceAppWidgetManager(applicationContext)
+                      for ((widgetId, widget) in boundWidgets(serverId, prefs)) {
+                          prefs.clearWidget(widgetId)
+                          val glanceId = runCatching { glanceManager.getGlanceIdBy(widgetId) }.getOrNull() ?: continue
+                          updateAppWidgetState(applicationContext, glanceId) { it.clear() }
+                          widget.update(applicationContext, glanceId)
+                      }
+                  }
+
+                  private fun boundWidgets(serverId: String, prefs: WidgetPrefs): List<Pair<Int, GlanceAppWidget>> {
+                      val manager = AppWidgetManager.getInstance(applicationContext)
+                      val statsIds = prefs.getWidgetIdsForServer(
+                          manager.getAppWidgetIds(ComponentName(applicationContext, PiHoleWidgetProvider::class.java)),
+                          serverId,
+                      )
+                      val compactIds = prefs.getWidgetIdsForServer(
+                          manager.getAppWidgetIds(ComponentName(applicationContext, CompactWidgetProvider::class.java)),
+                          serverId,
+                      )
+                      return statsIds.map { it to PiHoleGlanceWidget() } +
+                          compactIds.map { it to CompactGlanceWidget() }
+                  }
+          ''',
+          )
+
+          replace_once(
+              "android/app/src/main/kotlin/io/github/tsutsu3/pi_hole_client/widget/worker/ServerToggleWorker.kt",
+              '''        if (server == null) {
+                          if (WidgetDebugConfig.DEBUG) Log.w(TAG, "No server info for $serverId")
+                          return Result.success()
+                      }
+          ''',
+              '''        if (server == null) {
+                          if (WidgetDebugConfig.DEBUG) Log.w(TAG, "No server info for $serverId")
+                          // Let the refresh workers clear widgets that still point at the removed server.
+                          WidgetUpdateHelper.refreshWidgetsForServer(applicationContext, serverId)
+                          return Result.success()
+                      }
+          ''',
+          )
+
+          replace_once(
+              "lib/ui/core/view_models/servers_viewmodel.dart",
+              '''    await WidgetChannel.sendServerRemoved(params.oldAddress);
+                  await WidgetChannel.sendServersUpdated(_serversList);
+          ''',
+              '''    await WidgetChannel.sendServerReplaced(
+                    oldServerId: params.oldAddress,
+                    newServerId: params.newServer.address,
+                  );
+                  await WidgetChannel.sendServersUpdated(_serversList);
+          ''',
+          )
+
+          channel_path = "lib/utils/widget_channel.dart"
+          replace_once(
+              channel_path,
+              "import 'dart:io';\n\nimport 'package:flutter/services.dart';\n",
+              "import 'dart:io';\n\nimport 'package:flutter/foundation.dart';\nimport 'package:flutter/services.dart';\n",
+          )
+          replace_once(
+              channel_path,
+              "  static bool _isSupported() => Platform.isAndroid;\n",
+              """  @visibleForTesting
+                  static bool? debugIsSupportedOverride;
+
+                  static bool _isSupported() => debugIsSupportedOverride ?? Platform.isAndroid;
+          """,
+          )
+          replace_once(
+              channel_path,
+              '''  static Future<void> sendServerRemoved(String serverId) async {
+                  if (!_isSupported()) return;
+                  try {
+                    await _channel.invokeMethod('serverRemoved', {'serverId': serverId});
+                  } catch (e) {
+                    logger.w('Widget serverRemoved failed: $e');
+                  }
+                }
+
+          ''',
+              '''  static Future<void> sendServerRemoved(String serverId) async {
+                  if (!_isSupported()) return;
+                  try {
+                    await _channel.invokeMethod('serverRemoved', {'serverId': serverId});
+                  } catch (e) {
+                    logger.w('Widget serverRemoved failed: $e');
+                  }
+                }
+
+                static Future<void> sendServerReplaced({
+                  required String oldServerId,
+                  required String newServerId,
+                }) async {
+                  if (!_isSupported()) return;
+                  try {
+                    await _channel.invokeMethod('serverReplaced', {
+                      'oldServerId': oldServerId,
+                      'newServerId': newServerId,
+                    });
+                  } catch (e) {
+                    logger.w('Widget serverReplaced failed: $e');
+                  }
+                }
+
+          ''',
+          )
+
+          test_path = "test/ui/core/view_models/servers_viewmodel_test.dart"
+          replace_once(
+              test_path,
+              "import 'package:command_it/command_it.dart';\nimport 'package:flutter_dotenv/flutter_dotenv.dart';\n",
+              "import 'package:command_it/command_it.dart';\nimport 'package:flutter/services.dart';\nimport 'package:flutter_dotenv/flutter_dotenv.dart';\n",
+          )
+          replace_once(
+              test_path,
+              "import 'package:pi_hole_client/ui/core/view_models/servers_viewmodel.dart';\n",
+              "import 'package:pi_hole_client/ui/core/view_models/servers_viewmodel.dart';\nimport 'package:pi_hole_client/utils/widget_channel.dart';\n",
+          )
+          replace_once(
+              test_path,
+              "void main() async {\n  await dotenv.load();\n",
+              "void main() async {\n  TestWidgetsFlutterBinding.ensureInitialized();\n  await dotenv.load();\n",
+          )
+          replace_once(
+              test_path,
+              """      test('updates selectedServer when the old address matches', () async {
+          """,
+              """      test('remaps home widgets when the server address changes', () async {
+                    const channel = MethodChannel('pihole/widget');
+                    final methods = <String>[];
+                    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+                        .setMockMethodCallHandler(channel, (call) async {
+                          methods.add(call.method);
+                          if (call.method == 'serverReplaced') {
+                            expect(call.arguments, {
+                              'oldServerId': server.address,
+                              'newServerId': newServer.address,
+                            });
+                          }
+                          return null;
+                        });
+                    WidgetChannel.debugIsSupportedOverride = true;
+                    addTearDown(() {
+                      WidgetChannel.debugIsSupportedOverride = null;
+                      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+                          .setMockMethodCallHandler(channel, null);
+                    });
+
+                    await serversViewModel.addServer.runAsync(server);
+                    methods.clear();
+
+                    await serversViewModel.replaceServer.runAsync((
+                      oldAddress: server.address,
+                      newServer: newServer,
+                    ));
+
+                    expect(methods, ['serverReplaced', 'serversUpdated']);
+                  });
+
+                  test('updates selectedServer when the old address matches', () async {
+          """,
+          )
+
+      - name: Validate selective port
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter pub get
+          cp .env.sample .env
+          dart format lib/ui/core/view_models/servers_viewmodel.dart lib/utils/widget_channel.dart test/ui/core/view_models/servers_viewmodel_test.dart
+          flutter test test/ui/core/view_models/servers_viewmodel_test.dart
+
+      - name: Commit port and remove helper workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm .github/workflows/apply-upstream-749.yml
+          git add             android/app/src/main/kotlin/io/github/tsutsu3/pi_hole_client/MainActivity.kt             android/app/src/main/kotlin/io/github/tsutsu3/pi_hole_client/widget/data/WidgetPrefs.kt             android/app/src/main/kotlin/io/github/tsutsu3/pi_hole_client/widget/worker/ServerBlockingStatusWorker.kt             android/app/src/main/kotlin/io/github/tsutsu3/pi_hole_client/widget/worker/ServerPaddWorker.kt             android/app/src/main/kotlin/io/github/tsutsu3/pi_hole_client/widget/worker/ServerToggleWorker.kt             lib/ui/core/view_models/servers_viewmodel.dart             lib/utils/widget_channel.dart             test/ui/core/view_models/servers_viewmodel_test.dart
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "fix(widget): keep widgets synced with server changes"
+          git push origin HEAD:upstream/widget-server-sync-20260925
