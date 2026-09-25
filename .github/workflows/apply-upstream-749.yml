@@ -34,6 +34,29 @@ jobs:
           git diff "$upstream_commit^" "$upstream_commit" --             android/app/src/main/kotlin/io/github/tsutsu3/pi_hole_client/MainActivity.kt             android/app/src/main/kotlin/io/github/tsutsu3/pi_hole_client/widget/data/WidgetPrefs.kt             android/app/src/main/kotlin/io/github/tsutsu3/pi_hole_client/widget/worker/ServerBlockingStatusWorker.kt             android/app/src/main/kotlin/io/github/tsutsu3/pi_hole_client/widget/worker/ServerPaddWorker.kt             android/app/src/main/kotlin/io/github/tsutsu3/pi_hole_client/widget/worker/ServerToggleWorker.kt             lib/ui/core/view_models/servers_viewmodel.dart             lib/utils/widget_channel.dart             test/ui/core/view_models/servers_viewmodel_test.dart             > /tmp/upstream-749.patch
           git apply --3way /tmp/upstream-749.patch
 
+      - name: Add fork-compatible widget platform test hook
+        shell: python
+        run: |
+          from pathlib import Path
+          path = Path("lib/utils/widget_channel.dart")
+          text = path.read_text()
+          if "debugIsSupportedOverride" not in text:
+              text = text.replace(
+                  "import 'dart:io';\n\nimport 'package:flutter/services.dart';",
+                  "import 'dart:io';\n\nimport 'package:flutter/foundation.dart';\nimport 'package:flutter/services.dart';",
+                  1,
+              )
+              text = text.replace(
+                  "  static bool _isSupported() => Platform.isAndroid;",
+                  "  @visibleForTesting\n"
+                  "  static bool? debugIsSupportedOverride;\n\n"
+                  "  static bool _isSupported() => debugIsSupportedOverride ?? Platform.isAndroid;",
+                  1,
+              )
+          if "debugIsSupportedOverride" not in text:
+              raise SystemExit("could not add WidgetChannel test hook")
+          path.write_text(text)
+
       - name: Validate selective port
         shell: bash
         run: |
