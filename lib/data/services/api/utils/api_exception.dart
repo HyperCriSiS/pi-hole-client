@@ -3,21 +3,33 @@ import 'package:dio/dio.dart';
 /// Exception representing an API error from Dio-based API calls.
 ///
 /// Provides structured error information including HTTP status code,
-/// human-readable message, and optional error code from the Pi-hole API
+/// human-readable message, and optional error code/hint from the Pi-hole API
 /// response body.
 class ApiException implements Exception {
-  ApiException({required this.message, this.statusCode, this.errorCode});
+  ApiException({
+    required this.message,
+    this.statusCode,
+    this.errorCode,
+    this.hint,
+  });
 
   /// Creates an [ApiException] from a [DioException].
   ///
   /// Attempts to extract structured error information from the response body.
   /// Pi-hole v6 API returns errors in the format:
   /// ```json
-  /// { "error": { "key": "unauthorized", "message": "..." } }
+  /// {
+  ///   "error": {
+  ///     "key": "unauthorized",
+  ///     "message": "...",
+  ///     "hint": "..."
+  ///   }
+  /// }
   /// ```
   factory ApiException.fromDioException(DioException e) {
     final response = e.response;
     String? errorCode;
+    String? hint;
     String message;
 
     if (response?.data is Map<String, dynamic>) {
@@ -25,6 +37,7 @@ class ApiException implements Exception {
       final error = data['error'];
       if (error is Map<String, dynamic>) {
         errorCode = error['key'] as String?;
+        hint = error['hint'] as String?;
         message = error['message'] as String? ?? e.message ?? 'Unknown error';
       } else {
         message = e.message ?? 'Unknown error';
@@ -37,6 +50,7 @@ class ApiException implements Exception {
       message: message,
       statusCode: response?.statusCode,
       errorCode: errorCode,
+      hint: hint,
     );
   }
 
@@ -46,6 +60,7 @@ class ApiException implements Exception {
   final String message;
   final int? statusCode;
   final String? errorCode;
+  final String? hint;
 
   @override
   String toString() =>

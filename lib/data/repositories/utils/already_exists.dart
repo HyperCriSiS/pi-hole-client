@@ -1,3 +1,4 @@
+import 'package:pi_hole_client/data/services/api/utils/api_exception.dart';
 import 'package:pi_hole_client/utils/exceptions.dart';
 import 'package:result_dart/result_dart.dart';
 
@@ -17,12 +18,31 @@ bool isDuplicateError(String text) {
 
 /// Turns a 4xx response whose body says the item already exists into an
 /// [AlreadyExistsException]. Other results are returned as they are.
+///
+/// Generated v6 calls expose [ApiException], while legacy/http-package paths
+/// use [HttpStatusCodeException]. Pi-hole may put the useful duplicate detail
+/// in either the error message or its hint, so both are inspected.
 Result<T> mapDuplicateFailure<T extends Object>(Result<T> result) {
   final error = result.exceptionOrNull();
-  if (error is HttpStatusCodeException &&
-      error.statusCode >= 400 &&
-      error.statusCode < 500 &&
-      isDuplicateError(error.message)) {
+
+  int? statusCode;
+  String? errorText;
+  if (error is HttpStatusCodeException) {
+    statusCode = error.statusCode;
+    errorText = error.message;
+  } else if (error is ApiException) {
+    statusCode = error.statusCode;
+    final hint = error.hint;
+    errorText = hint == null || hint.isEmpty
+        ? error.message
+        : '${error.message} $hint';
+  }
+
+  if (statusCode != null &&
+      statusCode >= 400 &&
+      statusCode < 500 &&
+      errorText != null &&
+      isDuplicateError(errorText)) {
     return Failure(AlreadyExistsException());
   }
   return result;

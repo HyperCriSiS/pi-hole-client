@@ -3,9 +3,12 @@ import 'package:pi_hole_client/data/model/v6/groups/groups.dart'
     as legacy_groups;
 import 'package:pi_hole_client/data/repositories/api/interfaces/group_repository.dart';
 import 'package:pi_hole_client/data/repositories/api/v6/base_v6_sid_repository.dart';
+import 'package:pi_hole_client/data/repositories/utils/already_exists.dart';
 import 'package:pi_hole_client/data/repositories/utils/call_with_retry.dart';
+import 'package:pi_hole_client/data/services/api/utils/api_exception.dart';
 import 'package:pi_hole_client/data/services/api/wrappers/pihole_v6_service.dart';
 import 'package:pi_hole_client/domain/model/group/group.dart';
+import 'package:pi_hole_client/utils/exceptions.dart';
 import 'package:pihole_v6_api/pihole_v6_api.dart';
 import 'package:result_dart/result_dart.dart';
 
@@ -49,8 +52,11 @@ class GroupRepositoryV6 extends BaseV6SidRepository implements GroupRepository {
             enabled: enabled,
           ),
         );
-        return result.map(
-          (e) => legacy_groups.Groups.fromJson(e.toJson()).toSingleDomain(),
+        return mapDuplicateFailure(result).flatMap(
+          (e) => checkProcessedErrors(
+            e.processed?.errors?.map((x) => x.error),
+            () => legacy_groups.Groups.fromJson(e.toJson()).toSingleDomain(),
+          ),
         );
       },
       onRetry: (_, e) => renewSidIfExpired(e),
@@ -71,8 +77,11 @@ class GroupRepositoryV6 extends BaseV6SidRepository implements GroupRepository {
           name: name,
           body: Put2(comment: comment, enabled: enabled),
         );
-        return result.map(
-          (e) => legacy_groups.Groups.fromJson(e.toJson()).toSingleDomain(),
+        return mapDuplicateFailure(result).flatMap(
+          (e) => checkProcessedErrors(
+            e.processed?.errors?.map((x) => x.error),
+            () => legacy_groups.Groups.fromJson(e.toJson()).toSingleDomain(),
+          ),
         );
       },
       onRetry: (_, e) => renewSidIfExpired(e),
@@ -85,9 +94,35 @@ class GroupRepositoryV6 extends BaseV6SidRepository implements GroupRepository {
       action: () async {
         final sid = await getSid();
         _service.setSid(sid);
-        return _service.deleteGroup(name: name);
+        final result = await _service.deleteGroup(name: name);
+        if (_isGroupInUseFailure(result.exceptionOrNull())) {
+          return Failure(GroupInUseException());
+        }
+        return result;
       },
       onRetry: (_, e) => renewSidIfExpired(e),
     );
   }
+}
+
+bool _isGroupInUseFailure(Object? error) {
+  int? statusCode;
+  String? errorText;
+
+  if (error is HttpStatusCodeException) {
+    statusCode = error.statusCode;
+    errorText = error.message;
+  } else if (error is ApiException) {
+    statusCode = error.statusCode;
+    final hint = error.hint;
+    errorText = hint == null || hint.isEmpty
+        ? error.message
+        : '${error.message} $hint';
+  }
+
+  return statusCode != null &&
+      statusCode >= 400 &&
+      statusCode < 500 &&
+      errorText != null &&
+      errorText.contains('FOREIGN KEY constraint failed');
 }
