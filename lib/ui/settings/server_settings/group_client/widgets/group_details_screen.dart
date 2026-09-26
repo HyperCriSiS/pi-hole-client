@@ -16,6 +16,7 @@ import 'package:pi_hole_client/ui/settings/server_settings/adlists/widgets/filte
 import 'package:pi_hole_client/ui/settings/server_settings/group_client/view_models/clients_viewmodel.dart';
 import 'package:pi_hole_client/ui/settings/server_settings/group_client/view_models/groups_viewmodel.dart';
 import 'package:pi_hole_client/ui/settings/server_settings/group_client/widgets/edit_group_modal.dart';
+import 'package:pi_hole_client/utils/exceptions.dart';
 import 'package:pi_hole_client/utils/format.dart';
 import 'package:provider/provider.dart';
 
@@ -230,6 +231,15 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
         appConfigViewModel: appConfigViewModel,
         label: AppLocalizations.of(context)!.groupRemoved,
       );
+    } on GroupInUseException {
+      if (!mounted) return;
+      process.close();
+
+      showErrorSnackBar(
+        context: context,
+        appConfigViewModel: appConfigViewModel,
+        label: AppLocalizations.of(context)!.groupInUse,
+      );
     } catch (_) {
       if (!mounted) return;
       process.close();
@@ -272,14 +282,16 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
         appConfigViewModel: appConfigViewModel,
         label: AppLocalizations.of(context)!.groupUpdated,
       );
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
       process.close();
 
-      showErrorSnackBar(
+      showSaveFailedSnackBar(
         context: context,
         appConfigViewModel: appConfigViewModel,
-        label: AppLocalizations.of(context)!.groupUpdateFailed,
+        error: e,
+        alreadyExistsLabel: AppLocalizations.of(context)!.groupAlreadyAdded,
+        failedLabel: AppLocalizations.of(context)!.groupUpdateFailed,
       );
     }
   }
