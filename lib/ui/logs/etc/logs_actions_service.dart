@@ -78,10 +78,14 @@ class LogActionsService {
               : loc.domainBlacklistAdded,
         );
       },
-      (_) => showErrorSnackBar(
+      (e) => showSaveFailedSnackBar(
         context: context,
         appConfigViewModel: appConfigViewModel,
-        label: list == 'white'
+        error: e,
+        alreadyExistsLabel: list == 'white'
+            ? loc.domainWhitelistAlready
+            : loc.domainBlacklistAlready,
+        failedLabel: list == 'white'
             ? loc.domainWhitelistAddFailed
             : loc.domainBlacklistAddFailed,
       ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pi_hole_client/ui/core/themes/theme.dart';
 import 'package:pi_hole_client/ui/core/ui/helpers/globals.dart';
 import 'package:pi_hole_client/ui/core/view_models/app_config_viewmodel.dart';
+import 'package:pi_hole_client/utils/exceptions.dart';
 
 void showSuccessSnackBar({
   required BuildContext context,
@@ -48,6 +49,33 @@ void showErrorSnackBar({
     colorSelector: (theme) => theme.snackBarError!,
     labelColorSelector: (theme) => theme.snackBarErrorText!,
     duration: duration!,
+  );
+}
+
+/// Shows a save failure with duplicate-aware feedback.
+///
+/// [AlreadyExistsException] is presented as a caution using
+/// [alreadyExistsLabel]. All other failures use [failedLabel] as an error.
+void showSaveFailedSnackBar({
+  required BuildContext context,
+  required AppConfigViewModel appConfigViewModel,
+  required Object error,
+  required String alreadyExistsLabel,
+  required String failedLabel,
+}) {
+  if (error is AlreadyExistsException) {
+    showCautionSnackBar(
+      context: context,
+      appConfigViewModel: appConfigViewModel,
+      label: alreadyExistsLabel,
+    );
+    return;
+  }
+
+  showErrorSnackBar(
+    context: context,
+    appConfigViewModel: appConfigViewModel,
+    label: failedLabel,
   );
 }
 
