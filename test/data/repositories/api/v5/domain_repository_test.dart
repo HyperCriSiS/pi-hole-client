@@ -1,12 +1,33 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pi_hole_client/data/model/v5/domains.dart';
 import 'package:pi_hole_client/data/repositories/api/v5/domain_repository.dart';
 import 'package:pi_hole_client/data/repositories/utils/constants.dart';
 import 'package:pi_hole_client/domain/model/enums.dart';
+import 'package:pi_hole_client/utils/exceptions.dart';
+import 'package:result_dart/result_dart.dart';
 
 import '../../../../../testing/fakes/services/fake_pihole_v5_api_client.dart';
 import '../../../../../testing/fakes/services/fake_session_credential_service.dart';
 import '../../../../../testing/helper/test_helper.dart';
 import '../../../../../testing/models/v5/domain.dart';
+
+class _DomainResponseClient extends FakePiholeV5ApiClient {
+  DomainResponse response = const DomainResponse(
+    success: true,
+    message: 'Added example.com',
+  );
+  int postDomainCallCount = 0;
+
+  @override
+  Future<Result<DomainResponse>> postDomain(
+    String token, {
+    required String domain,
+    required V5DomainType domainType,
+  }) async {
+    postDomainCallCount++;
+    return Success(response);
+  }
+}
 
 void main() async {
   group('NotSupportedException', () {
@@ -86,6 +107,65 @@ void main() async {
         'example.com',
       );
       expect(result.isError(), true);
+    });
+
+    test('maps duplicate success message and does not retry it', () async {
+      final duplicateClient = _DomainResponseClient()
+        ..response = const DomainResponse(
+          success: true,
+          message: 'Not adding example.com as it is already on the list',
+        );
+      final duplicateRepository = DomainRepositoryV5(
+        client: duplicateClient,
+        creds: FakeSessionCredentialService(),
+      );
+
+      final result = await duplicateRepository.addDomain(
+        DomainType.allow,
+        DomainKind.exact,
+        'example.com',
+      );
+
+      expect(result.exceptionOrNull(), isA<AlreadyExistsException>());
+      expect(duplicateClient.postDomainCallCount, 1);
+    });
+
+    test('keeps normal success message as success', () async {
+      final responseClient = _DomainResponseClient();
+      final responseRepository = DomainRepositoryV5(
+        client: responseClient,
+        creds: FakeSessionCredentialService(),
+      );
+
+      final result = await responseRepository.addDomain(
+        DomainType.allow,
+        DomainKind.exact,
+        'example.com',
+      );
+
+      expect(result.isSuccess(), true);
+      expect(responseClient.postDomainCallCount, 1);
+    });
+
+    test('maps success false response to failure', () async {
+      final responseClient = _DomainResponseClient()
+        ..response = const DomainResponse(
+          success: false,
+          message: 'Invalid domain',
+        );
+      final responseRepository = DomainRepositoryV5(
+        client: responseClient,
+        creds: FakeSessionCredentialService(),
+      );
+
+      final result = await responseRepository.addDomain(
+        DomainType.allow,
+        DomainKind.exact,
+        'example.com',
+      );
+
+      expect(result.isError(), true);
+      expect(result.exceptionOrNull().toString(), contains('Invalid domain'));
     });
   });
 
