@@ -229,10 +229,10 @@ packages:
     dependency: "direct main"
     description:
       name: command_it
-      sha256: "5f5ba373592f8800a624cea45d78f6f5e73279841cb5bd5d2497a7881f0ed255"
+      sha256: "1d4705cb830a09917da5cb0007d4dacda187bbac9f7153552e56b4357825d1e6"
       url: "https://pub.dev"
     source: hosted
-    version: "9.5.1"
+    version: "9.5.2"
   contextmenu:
     dependency: "direct main"
     description:
@@ -736,10 +736,10 @@ packages:
     dependency: transitive
     description:
       name: listen_it
-      sha256: "4cfc307e943a25c7b500d173523dcebe966b0a323eaa07bd3769f563af19f065"
+      sha256: "137f2576048c1982863141547db0a3c5a200541f47216b507f9fe6545ea696f5"
       url: "https://pub.dev"
     source: hosted
-    version: "5.3.5"
+    version: "6.0.0"
   loading_animation_widget:
     dependency: "direct main"
     description:
