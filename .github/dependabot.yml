@@ -21,6 +21,19 @@ updates:
       - dependency-name: "meta"
         versions:
           - "1.19.0"
+      # These exact candidates have also been reproduced as unresolvable with
+      # the repository-pinned Flutter 3.44.1 toolchain. Keep later versions
+      # visible so Dependabot can surface a compatible release as soon as one
+      # exists.
+      - dependency-name: "freezed"
+        versions:
+          - "4.0.2"
+      - dependency-name: "mockito"
+        versions:
+          - "5.8.1"
+      - dependency-name: "sqlite3"
+        versions:
+          - "3.6.0"
       # These majors currently require Android compileSdk 37. Keep them blocked
       # until the project deliberately moves beyond the compileSdk 36 / F-Droid
       # compatibility baseline.
@@ -61,4 +74,3 @@ updates:
         update-types:
           - "minor"
           - "patch"
-    
