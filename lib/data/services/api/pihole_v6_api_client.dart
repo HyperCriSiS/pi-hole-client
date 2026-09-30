@@ -61,6 +61,7 @@ class PiholeV6ApiClient {
         return Session.fromJson(jsonDecode(resp.body));
       }
 
+      // Check for TOTP-related errors before throwing a generic HTTP exception
       final totpError = _parseTotpError(resp.statusCode, resp.body);
       if (totpError != null) {
         throw totpError;
@@ -102,6 +103,7 @@ class PiholeV6ApiClient {
         }
       }
       if (statusCode == 429 && key == 'rate_limiting') {
+        // Rate-limiting 2FA token requests, try again later
         return TotpRateLimitException(message);
       }
     } catch (_) {

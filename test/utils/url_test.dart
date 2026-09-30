@@ -114,6 +114,7 @@ void main() {
     });
 
     test('does not equate a default port across different schemes', () {
+      // http default (80) and https default (443) must stay distinct.
       expect(
         isSameEndpoint('http://pi.hole:80', 'https://pi.hole:443'),
         isFalse,
@@ -181,4 +182,5 @@ void main() {
       );
     });
   });
+
 }
