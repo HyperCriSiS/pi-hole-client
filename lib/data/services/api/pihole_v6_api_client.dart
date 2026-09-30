@@ -9,6 +9,7 @@ import 'package:pi_hole_client/data/model/v6/network/gateway.dart' show Gateway;
 import 'package:pi_hole_client/data/services/utils/safe_api_call.dart';
 import 'package:pi_hole_client/utils/exceptions.dart';
 import 'package:pi_hole_client/utils/misc.dart';
+import 'package:pi_hole_client/utils/url.dart';
 import 'package:result_dart/result_dart.dart';
 
 enum HttpMethod { get, post, put, patch, delete }
@@ -197,10 +198,12 @@ class PiholeV6ApiClient {
         await for (final chunk in stream) {
           buffer.write(chunk);
 
-          final rawLines = buffer.toString().split('\n');
+          final rawLines = buffer.toString().split('
+');
           buffer.clear();
 
-          if (!chunk.endsWith('\n')) {
+          if (!chunk.endsWith('
+')) {
             buffer.write(rawLines.removeLast());
           } else if (rawLines.isNotEmpty && rawLines.last.isEmpty) {
             rawLines.removeLast();
@@ -246,7 +249,7 @@ class PiholeV6ApiClient {
     String? sid,
     Map<String, dynamic>? body,
   }) async {
-    final uri = Uri.parse(_url).resolve(path);
+    final uri = resolveServerUri(_url, path);
 
     final headers = <String, String>{
       'Content-Type': 'application/json',
@@ -288,7 +291,7 @@ class PiholeV6ApiClient {
     String? sid,
     Map<String, dynamic>? body,
   }) async {
-    final uri = Uri.parse(_url).resolve(path);
+    final uri = resolveServerUri(_url, path);
     final headers = <String, String>{
       'Content-Type': 'application/json',
       'X-FTL-SID': ?sid,
