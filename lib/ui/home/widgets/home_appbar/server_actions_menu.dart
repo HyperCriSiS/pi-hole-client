@@ -7,6 +7,7 @@ import 'package:pi_hole_client/ui/core/view_models/app_config_viewmodel.dart';
 import 'package:pi_hole_client/ui/core/view_models/servers_viewmodel.dart';
 import 'package:pi_hole_client/ui/core/view_models/status_viewmodel.dart';
 import 'package:pi_hole_client/utils/open_url.dart';
+import 'package:pi_hole_client/utils/url.dart';
 import 'package:provider/provider.dart';
 
 /// A popup menu widget for server-related actions in the app bar.
@@ -109,8 +110,9 @@ class ServerActionsMenu extends StatelessWidget {
           ),
         ),
         PopupMenuItem(
-          onTap: () =>
-              openUrl('${serversViewModel.selectedServer!.address}/admin/'),
+          onTap: () => openUrl(
+            buildWebPanelUrl(serversViewModel.selectedServer!.address),
+          ),
           child: _menuItem(
             Icons.web,
             AppLocalizations.of(context)!.openWebPanel,

@@ -133,4 +133,53 @@ void main() {
       expect(isSameEndpoint('::: not a url', 'https://pi.hole'), isFalse);
     });
   });
+
+  group('resolveServerUri', () {
+    test('keeps root-server behavior unchanged', () {
+      expect(
+        resolveServerUri('https://pi.hole', '/api/auth').toString(),
+        'https://pi.hole/api/auth',
+      );
+    });
+
+    test('preserves a configured server subroute', () {
+      expect(
+        resolveServerUri('https://pi.hole/pihole', '/api/auth').toString(),
+        'https://pi.hole/pihole/api/auth',
+      );
+    });
+
+    test('deduplicates overlapping boundary segments', () {
+      expect(
+        resolveServerUri('https://pi.hole/pihole/api', '/api/auth').toString(),
+        'https://pi.hole/pihole/api/auth',
+      );
+    });
+
+    test('preserves endpoint query parameters', () {
+      expect(
+        resolveServerUri(
+          'https://pi.hole/pihole',
+          '/api/queries?limit=10',
+        ).toString(),
+        'https://pi.hole/pihole/api/queries?limit=10',
+      );
+    });
+  });
+
+  group('buildWebPanelUrl', () {
+    test('adds admin below a custom subroute', () {
+      expect(
+        buildWebPanelUrl('https://pi.hole/pihole'),
+        'https://pi.hole/pihole/admin/',
+      );
+    });
+
+    test('does not duplicate an existing admin path', () {
+      expect(
+        buildWebPanelUrl('https://pi.hole/admin'),
+        'https://pi.hole/admin/',
+      );
+    });
+  });
 }

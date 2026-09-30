@@ -9,6 +9,59 @@ String buildServerUrl({
   return '$scheme://$host$portSegment$subroute';
 }
 
+/// Resolves [endpoint] below [serverUrl] without discarding an existing
+/// server subroute.
+///
+/// Unlike [Uri.resolve], a leading slash in [endpoint] does not reset the
+/// configured base path. Matching path segments at the base/endpoint boundary
+/// are de-duplicated, so e.g. `/admin` + `/admin/` stays `/admin/`.
+Uri resolveServerUri(String serverUrl, String endpoint) {
+  final base = Uri.parse(serverUrl);
+  final target = Uri.parse(endpoint);
+
+  final baseSegments = base.pathSegments.where((s) => s.isNotEmpty).toList();
+  final targetSegments = target.pathSegments
+      .where((s) => s.isNotEmpty)
+      .toList();
+
+  var overlap = 0;
+  final maxOverlap = baseSegments.length < targetSegments.length
+      ? baseSegments.length
+      : targetSegments.length;
+  for (var size = maxOverlap; size > 0; size--) {
+    final baseStart = baseSegments.length - size;
+    var matches = true;
+    for (var i = 0; i < size; i++) {
+      if (baseSegments[baseStart + i] != targetSegments[i]) {
+        matches = false;
+        break;
+      }
+    }
+    if (matches) {
+      overlap = size;
+      break;
+    }
+  }
+
+  final combinedSegments = <String>[
+    ...baseSegments,
+    ...targetSegments.skip(overlap),
+  ];
+  if (target.path.endsWith('/') && combinedSegments.isNotEmpty) {
+    combinedSegments.add('');
+  }
+
+  return base.replace(
+    pathSegments: combinedSegments,
+    query: target.hasQuery ? target.query : null,
+    fragment: target.hasFragment ? target.fragment : null,
+  );
+}
+
+/// Builds the Pi-hole web-panel URL while preserving a configured subroute.
+String buildWebPanelUrl(String serverUrl) =>
+    resolveServerUri(serverUrl, '/admin/').toString();
+
 /// Compares two server URLs ignoring scheme/host case, a trailing slash and a
 /// scheme's default port.
 ///

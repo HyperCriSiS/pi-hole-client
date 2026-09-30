@@ -7,6 +7,7 @@ import 'package:pi_hole_client/data/services/api/utils/safe_dio_call.dart';
 import 'package:pi_hole_client/utils/exceptions.dart';
 import 'package:pi_hole_client/utils/logger.dart';
 import 'package:pi_hole_client/utils/misc.dart';
+import 'package:pi_hole_client/utils/url.dart';
 import 'package:pihole_v6_api/pihole_v6_api.dart' hide Success;
 import 'package:result_dart/result_dart.dart';
 
@@ -31,14 +32,15 @@ class PiholeV6Service {
     bool ignoreCertificateErrors = false,
     String? pinnedCertificateSha256,
   }) {
-    final normalizedUrl = url.replaceFirst(RegExp(r'/+$'), '');
+    final apiBaseUrl = resolveServerUri(url, '/api/').toString();
     final dio = Dio(
       BaseOptions(
-        baseUrl: '$normalizedUrl/api',
+        baseUrl: apiBaseUrl,
         connectTimeout: const Duration(milliseconds: 5000),
         receiveTimeout: const Duration(milliseconds: 3000),
       ),
     );
+    dio.interceptors.add(_PreserveGeneratedBasePathInterceptor());
     dio.httpClientAdapter = IOHttpClientAdapter(
       createHttpClient: () => createHttpClient(
         allowUntrustedCert: allowUntrustedCert,
@@ -727,6 +729,19 @@ class PiholeV6Service {
       await _dhcpApi.deleteDhcp(ip: ip);
       return unit;
     });
+  }
+}
+
+class _PreserveGeneratedBasePathInterceptor extends Interceptor {
+  @override
+  void onRequest(
+    RequestOptions options,
+    RequestInterceptorHandler handler,
+  ) {
+    if (!Uri.parse(options.path).hasScheme) {
+      options.path = options.path.replaceFirst(RegExp(r'^/+'), '');
+    }
+    handler.next(options);
   }
 }
 
