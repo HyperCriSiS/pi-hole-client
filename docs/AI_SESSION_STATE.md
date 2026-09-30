@@ -8,7 +8,7 @@ This is the compact operational handoff for autonomous Pi-hole Client work. `ROA
 ## Baseline
 - Repository: `HyperCriSiS/pi-hole-client`
 - Default branch: `main`
-- Integrated product baseline before this checkpoint-doc commit: `8db7499de712facfae790e2dd9df50b05a69c1fc`
+- Integrated product baseline before this checkpoint-doc commit: `39a94cfd9833c1a1ee8afca8a13a2026e5a6d898`
 - Open fork pull requests: none.
 
 ## 2026-09-27 dependency maintenance block
@@ -64,34 +64,41 @@ Two upstream issues changed since the previous checkpoint:
 - This is additional evidence for the existing handwritten gravity-streaming compatibility hold. Do not replace the stream path or attempt an HTTP/2 migration as a quick fix.
 
 ### #757 — configured subroute ignored
-This is the next deterministic code block.
+Implemented in fork PR #128 and squash-merged as `39a94cfd9833c1a1ee8afca8a13a2026e5a6d898`.
 
-Upstream report:
-- server `https://example.com` + subroute `/pihole` should call `https://example.com/pihole/api/...`
-- current behavior calls host-root `/api/...`
-- v5/v6 are affected; the Android widget depends on the app-created session.
-- Web panel uses the stored subroute but a stored `/admin` becomes `/admin/admin/`.
+Root cause:
+- server form/persistence already kept the configured URI path correctly
+- handwritten v5/v6 used leading-slash `Uri.resolve`, which reset that path
+- generated-v6 operations also emitted leading-slash paths against a path-bearing Dio base
+- the web-panel action appended `/admin/` blindly
 
-Fork audit already completed:
-- `AddServerFullScreen` correctly restores `Uri.path` into the subroute field.
-- `buildServerUrl` correctly includes the subroute in the persisted server address.
-- therefore persistence/form parsing is not the cause.
-- handwritten `PiholeV5ApiClient` builds requests with `Uri.parse(_url).resolve('/admin/api.php')`; the leading slash replaces any configured base path.
-- handwritten `PiholeV6ApiClient` similarly resolves leading-slash paths such as `/api/auth`, dropping the configured base path.
-- `PiholeV6Service.fromConnection` builds a path-bearing Dio base URL (`<server>/api`) while generated operations use leading-slash paths such as `/auth`; add an explicit transport regression and make this path-safe as part of the same fix.
-- the Home server actions menu currently does `openUrl('${server.address}/admin/')`, which explains the `/admin/admin/` case.
+Fix:
+- added shared `resolveServerUri` path joining with suffix/prefix overlap de-duplication
+- preserved existing root-server behavior
+- applied the helper to v5 and handwritten-v6 requests
+- generated-v6 now uses a subroute-preserving `/api/` base and a small interceptor that makes generated non-absolute operation paths relative
+- web-panel URL uses the same path-safe join, so an existing `/admin` path is not duplicated
+- helper tests cover root paths, custom subroutes, overlapping API/admin segments and query preservation
+- v5 and handwritten-v6 regressions assert exact request URIs
+- a loopback `HttpServer` regression verifies the real generated-v6 request path is `/pihole/api/auth`
+
+Validation:
+- full Dart test suite passed
+- unsigned Android source APK passed
+- unsigned-artifact verification passed
+- CodeQL, Sonar, Codecov, audit and static analyses passed
+- only the known separate GitHub-managed GHAS AI-agent job failed independently of repository-controlled gates
 
 ## Next autonomous work block
-Implement upstream #757 as one bounded short-lived PR.
+There is no newly identified deterministic production patch after completing #757.
 
-Target shape:
-1. Add/reuse a single path-safe URL helper that joins an endpoint beneath a configured server base path without allowing a leading endpoint slash to reset that path.
-2. Apply it to handwritten v5 and handwritten-v6 requests.
-3. Make generated-v6 Dio base/path composition explicitly preserve the configured subroute and add a real request-URI regression.
-4. Build the web-panel URL without duplicating `/admin` when the configured server path already ends there.
-5. Preserve root-path behavior exactly for existing servers without subroutes.
-6. Add focused coverage in existing URL, v5 client, v6 client/generated-service and web-panel-adjacent tests.
-7. Run normal Dart + unsigned Android gates and merge only after repository-controlled checks pass.
+Next autonomous action:
+1. Refresh only upstream PRs/issues changed since this checkpoint.
+2. If a new deterministic candidate exists, build an already-present / missing / conflicting delta before implementation.
+3. Keep #754 as a gravity/nginx streaming compatibility/configuration hold unless upstream produces a concrete app-side transport design.
+4. Do not change #442/#636/#501/#293 without affected-device evidence.
+5. Do not advance #134 without the independent-fork product identity decision.
+6. Do not invent production changes merely to keep the tool chain active.
 
 ## Existing gates / holds
 - #442: Android 16 PopupMenu device confirmation still required.
@@ -103,8 +110,7 @@ Target shape:
 
 ## Resume protocol
 1. Read this file, `ROADMAP.md`, and `UPSTREAM_TRIAGE.md` from `main`.
-2. Resolve live `main` and verify it is at or beyond `8db7499d`.
+2. Resolve live `main` and verify it is at or beyond `39a94cfd`.
 3. Confirm there are no open fork PRs.
-4. Start a fresh short-lived branch from `main` for #757.
-5. Load only the URL helper, v5/v6 transport, generated-v6 wrapper, web-panel action and matching focused tests.
-6. Implement the path-preserving join with root-path backward compatibility and focused regressions.
+4. Refresh upstream selectively only for changes newer than this checkpoint.
+5. Keep any new implementation in one bounded short-lived PR and validate with repository-controlled gates.
