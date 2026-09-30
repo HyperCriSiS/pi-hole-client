@@ -61,7 +61,6 @@ class PiholeV6ApiClient {
         return Session.fromJson(jsonDecode(resp.body));
       }
 
-      // Check for TOTP-related errors before throwing a generic HTTP exception
       final totpError = _parseTotpError(resp.statusCode, resp.body);
       if (totpError != null) {
         throw totpError;
@@ -103,7 +102,6 @@ class PiholeV6ApiClient {
         }
       }
       if (statusCode == 429 && key == 'rate_limiting') {
-        // Rate-limiting 2FA token requests, try again later
         return TotpRateLimitException(message);
       }
     } catch (_) {
@@ -198,12 +196,10 @@ class PiholeV6ApiClient {
         await for (final chunk in stream) {
           buffer.write(chunk);
 
-          final rawLines = buffer.toString().split('
-');
+          final rawLines = buffer.toString().split('\n');
           buffer.clear();
 
-          if (!chunk.endsWith('
-')) {
+          if (!chunk.endsWith('\n')) {
             buffer.write(rawLines.removeLast());
           } else if (rawLines.isNotEmpty && rawLines.last.isEmpty) {
             rawLines.removeLast();
