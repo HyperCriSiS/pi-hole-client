@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pi_hole_client/data/repositories/api/interfaces/repository_bundle.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pi_hole_client/routing/routes.dart';
 import 'package:pi_hole_client/ui/core/l10n/generated/app_localizations.dart';
@@ -110,9 +111,7 @@ class ServerActionsMenu extends StatelessWidget {
           ),
         ),
         PopupMenuItem(
-          onTap: () => openUrl(
-            buildWebPanelUrl(serversViewModel.selectedServer!.address),
-          ),
+          onTap: () => _openWebPanel(context, serversViewModel),
           child: _menuItem(
             Icons.web,
             AppLocalizations.of(context)!.openWebPanel,
@@ -167,6 +166,29 @@ class ServerActionsMenu extends StatelessWidget {
         label: AppLocalizations.of(context)!.couldNotConnectServer,
       );
     }
+  }
+
+  Future<void> _openWebPanel(
+    BuildContext context,
+    ServersViewModel serversViewModel,
+  ) async {
+    final server = serversViewModel.selectedServer;
+    if (server == null) return;
+
+    final bundle = context.read<RepositoryBundle?>();
+    WebPanelPaths? paths;
+    if (bundle != null) {
+      final result = await bundle.config.fetchWebPanelPaths();
+      paths = result.getOrNull();
+    }
+
+    await openUrl(
+      buildWebPanelUrl(
+        server.address,
+        prefix: paths?.prefix,
+        webHome: paths?.webHome,
+      ),
+    );
   }
 
   /// Navigates to the [Routes.settingsAppServers] screen, allowing the user to change the current server.

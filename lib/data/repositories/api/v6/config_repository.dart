@@ -34,6 +34,23 @@ class ConfigRepositoryV6 extends BaseV6SidRepository
   }
 
   @override
+  Future<Result<WebPanelPaths?>> fetchWebPanelPaths() async {
+    return runWithResultRetry<WebPanelPaths?>(
+      action: () async {
+        final sid = await getSid();
+        _service.setSid(sid);
+        final result = await _service.getConfig();
+        return result.map((response) {
+          final paths = response.config?.webserver?.paths;
+          if (paths == null) return null;
+          return (prefix: paths.prefix, webHome: paths.webhome);
+        });
+      },
+      onRetry: (_, e) => renewSidIfExpired(e),
+    );
+  }
+
+  @override
   Future<Result<Config>> setDnsQueryLogging(bool status) async {
     return runWithResultRetry<Config>(
       action: () async {

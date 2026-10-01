@@ -58,9 +58,42 @@ Uri resolveServerUri(String serverUrl, String endpoint) {
   );
 }
 
-/// Builds the Pi-hole web-panel URL while preserving a configured subroute.
-String buildWebPanelUrl(String serverUrl) =>
-    resolveServerUri(serverUrl, '/admin/').toString();
+/// Builds the Pi-hole web-panel URL.
+///
+/// With a reported [webHome], the web UI is resolved independently from the
+/// API subroute stored in [serverUrl]. Pi-hole's [prefix] is the external
+/// reverse-proxy prefix and is prepended to [webHome].
+///
+/// Without that capability, the legacy behavior is preserved by resolving
+/// `/admin/` below the configured server address.
+String buildWebPanelUrl(
+  String serverUrl, {
+  String? prefix,
+  String? webHome,
+}) {
+  final normalizedHome = webHome?.trim();
+  if (normalizedHome == null || normalizedHome.isEmpty) {
+    return resolveServerUri(serverUrl, '/admin/').toString();
+  }
+
+  final base = Uri.parse(serverUrl);
+  final origin = base.replace(path: '', query: null, fragment: null);
+  final webPath = _joinWebPanelPath(prefix, normalizedHome);
+  return resolveServerUri(origin.toString(), webPath).toString();
+}
+
+String _joinWebPanelPath(String? prefix, String webHome) {
+  final prefixSegments = Uri(path: prefix?.trim() ?? '').pathSegments
+      .where((segment) => segment.isNotEmpty);
+  final homeSegments = Uri(path: webHome).pathSegments.where(
+    (segment) => segment.isNotEmpty,
+  );
+  final segments = [...prefixSegments, ...homeSegments];
+
+  var path = segments.isEmpty ? '/' : '/${segments.join('/')}';
+  if (webHome.endsWith('/') && path != '/') path += '/';
+  return path;
+}
 
 /// Compares two server URLs ignoring scheme/host case, a trailing slash and a
 /// scheme's default port.

@@ -25,6 +25,11 @@ class ConfigRepositoryV5 extends BaseV5TokenRepository
   }
 
   @override
+  Future<Result<WebPanelPaths?>> fetchWebPanelPaths() async {
+    return const Success<WebPanelPaths?>(null);
+  }
+
+  @override
   Future<Result<Config>> setDnsQueryLogging(bool status) async {
     return Future.value(
       Failure(NotSupportedException(kNotSupportedInV5Message)),
