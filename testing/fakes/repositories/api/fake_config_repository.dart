@@ -6,7 +6,10 @@ import 'package:result_dart/result_dart.dart';
 class FakeConfigRepository implements ConfigRepository {
   bool shouldFailFetch = false;
   bool shouldFailSet = false;
+  bool shouldFailWebPanelPaths = false;
   bool queryLoggingValue = true;
+  String? webPanelPrefix;
+  String? webPanelHome;
 
   @override
   Future<Result<Config>> fetchDnsQueryLogging() async {
@@ -14,6 +17,17 @@ class FakeConfigRepository implements ConfigRepository {
       return Failure(Exception('Force fetchDnsQueryLogging failure'));
     }
     return Success(Config(dns: DnsConfig(queryLogging: queryLoggingValue)));
+  }
+
+  @override
+  Future<Result<WebPanelPaths?>> fetchWebPanelPaths() async {
+    if (shouldFailWebPanelPaths) {
+      return Failure(Exception('Force fetchWebPanelPaths failure'));
+    }
+    if (webPanelPrefix == null && webPanelHome == null) {
+      return const Success<WebPanelPaths?>(null);
+    }
+    return Success((prefix: webPanelPrefix, webHome: webPanelHome));
   }
 
   @override
