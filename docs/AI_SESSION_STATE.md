@@ -1,6 +1,6 @@
 # AI Session State
 
-Updated: 2026-09-27
+Updated: 2026-10-02
 Authority: `main`
 
 This is the compact operational handoff for autonomous Pi-hole Client work. `ROADMAP.md` remains the strategic source of truth. Chat/tool history is not project state.
@@ -8,7 +8,7 @@ This is the compact operational handoff for autonomous Pi-hole Client work. `ROA
 ## Baseline
 - Repository: `HyperCriSiS/pi-hole-client`
 - Default branch: `main`
-- Integrated product baseline before this checkpoint-doc commit: `39a94cfd9833c1a1ee8afca8a13a2026e5a6d898`
+- Integrated product baseline before this checkpoint-doc commit: `cedf40c26a194224f0f17ed3a7a9c744affd61a2`
 - Open fork pull requests: none.
 
 ## 2026-09-27 dependency maintenance block
@@ -47,6 +47,15 @@ Four new Dependabot PRs were reviewed against the repository-pinned Flutter 3.44
   - later versions remain visible to Dependabot; no broad package freeze was introduced.
   - GitHub's native `.github/dependabot.yml` validation, Dart tests, unsigned Android source build, CodeQL, Sonar, Codecov and static analyses passed.
   - squash merged as `8db7499de712facfae790e2dd9df50b05a69c1fc`.
+
+## 2026-10-02 #666 explicit-refresh TOTP recovery
+- Upstream issue #666 remains applicable; upstream PR #762 only wired Sessions and its review noted broader screen-level refresh coverage.
+- Fork PR #129 completed the mechanism across all identified explicit user refresh paths: Sessions, DHCP, Interfaces, Local DNS, Network, Server Info, Clients, Groups, Domains, Adlists and Logs.
+- Added `refreshWithTotpRecovery`: explicit refresh clears a previously declined marker, runs the requested load, invokes the existing TOTP reconnect flow on `TotpRequiredException`, then retries that exact load once after successful recovery.
+- Initial/automatic/background loads deliberately do not use this helper, preventing repeated interactive prompts.
+- Focused tests cover normal refresh, declined-state reset, successful recovery/retry, failed recovery and non-TOTP passthrough.
+- All repository-controlled gates passed, including full Dart tests, unsigned Android source build + artifact verification, CodeQL, Sonar, Codecov, GHAS and static analyses.
+- Squash merge: `cedf40c26a194224f0f17ed3a7a9c744affd61a2`.
 
 ## Upstream refresh
 Open upstream PRs remain unchanged:
@@ -90,15 +99,15 @@ Validation:
 - only the known separate GitHub-managed GHAS AI-agent job failed independently of repository-controlled gates
 
 ## Next autonomous work block
-There is no newly identified deterministic production patch after completing #757.
+Implement upstream #759 as one bounded PR.
 
-Next autonomous action:
-1. Refresh only upstream PRs/issues changed since this checkpoint.
-2. If a new deterministic candidate exists, build an already-present / missing / conflicting delta before implementation.
-3. Keep #754 as a gravity/nginx streaming compatibility/configuration hold unless upstream produces a concrete app-side transport design.
-4. Do not change #442/#636/#501/#293 without affected-device evidence.
-5. Do not advance #134 without the independent-fork product identity decision.
-6. Do not invent production changes merely to keep the tool chain active.
+Target shape:
+1. Treat Pi-hole web-home as a capability distinct from the API/reverse-proxy subroute fixed in #757.
+2. For v6, use the generated config model's `webserver.paths.webhome` when available.
+3. Preserve a safe `/admin/` fallback for v5/older servers where the capability cannot be read.
+4. Do not regress `resolveServerUri` API path handling from #757.
+5. Add focused helper/service/action coverage and keep the slice independent of the larger #748 auth/connection refactor.
+6. After #759, take #689 as the next small UX slice before starting the larger connection/session architecture work.
 
 ## Existing gates / holds
 - #442: Android 16 PopupMenu device confirmation still required.
@@ -110,7 +119,8 @@ Next autonomous action:
 
 ## Resume protocol
 1. Read this file, `ROADMAP.md`, and `UPSTREAM_TRIAGE.md` from `main`.
-2. Resolve live `main` and verify it is at or beyond `39a94cfd`.
+2. Resolve live `main` and verify it is at or beyond `cedf40c2`.
 3. Confirm there are no open fork PRs.
-4. Refresh upstream selectively only for changes newer than this checkpoint.
-5. Keep any new implementation in one bounded short-lived PR and validate with repository-controlled gates.
+4. Start #759 from current `main` as one bounded short-lived branch.
+5. If PR creation through the connector is still unreliable, do not attempt it; provide the compare/create-PR link for the user instead.
+6. Validate with repository-controlled gates before merge.

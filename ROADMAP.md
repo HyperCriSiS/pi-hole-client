@@ -113,6 +113,32 @@ Maintain and improve the unofficial Pi-hole client while upstream activity is li
   - [ ] Resolve package identity before an independent fork submission: this maintenance fork currently retains `io.github.tsutsu3.pi_hole_client`; F-Droid policy requires a fork to use a fresh Android Application ID plus corresponding name, icon and translated string changes. Use the committed identity audit during the dedicated rename, record the legacy ID as forbidden afterward, then perform the lightweight namespace collision scan before downstream metadata changes.
   - [ ] Draft and validate the downstream F-Droid build metadata after the package-identity gate is resolved.
 
+## Phase 4 — connection, session and fork UX architecture
+
+- [x] #666: recover expired TOTP sessions on explicit user refreshes.
+  - [x] Add a shared `refreshWithTotpRecovery` action using the existing reconnect/TOTP flow.
+  - [x] Clear a previously declined TOTP marker only for explicit user refreshes; keep initial/background loads non-interactive.
+  - [x] Apply the recovery path to Sessions, DHCP, Interfaces, Local DNS, Network, Server Info, Clients, Groups, Domains, Adlists and Logs.
+  - [x] Add focused regression coverage for normal refresh, declined-state reset, TOTP recovery/retry, failed recovery and non-TOTP errors. PR #129 merged as `cedf40c2`; Dart, unsigned Android, CodeQL, Sonar, Codecov, GHAS and static-analysis gates were green.
+- [ ] #759: support custom Pi-hole web-interface paths independently of the API/reverse-proxy subroute.
+  - [ ] Read the v6 `webserver.paths.webhome` capability when available instead of assuming `/admin/`.
+  - [ ] Preserve #757 API-subroute behavior and root-server compatibility.
+  - [ ] Define a safe fallback for v5/older v6 servers that do not expose `webhome`.
+  - [ ] Add URL/helper and repository/service coverage plus a web-panel action regression.
+- [ ] #689: add an "edit & add" path from Query Log details so a logged domain can be prefilled and edited before adding it to an allow/block list.
+- [ ] #748: consolidate session/auth recovery so screens and background refreshes share one explicit policy for SID expiry, TOTP, reconnect and retry rather than reproducing orchestration locally.
+  - [ ] Keep user-interactive and automatic/background recovery policies separate so automatic refresh cannot create prompt loops.
+  - [ ] Reuse the diagnostics/App Log path for authentication and reconnect failures.
+- [ ] Connection Doctor: expose per-server capabilities and diagnostics useful for reverse proxies and difficult transports.
+  - [ ] Show resolved API version/FTL version, API base path, web-home path, TOTP/session state and TLS/certificate policy.
+  - [ ] Provide endpoint reachability/latency diagnostics without exposing secrets.
+  - [ ] Surface actionable hints for known proxy/streaming cases such as #754.
+- [ ] #720: standardize loading/revalidation UX after the connection/session architecture is stable.
+  - [ ] Initial load: skeleton or dedicated loading state where structural placeholders are useful.
+  - [ ] Manual refresh with existing data: keep content visible and show lightweight refresh progress.
+  - [ ] Background refresh: avoid blocking the screen unless current data is unusable.
+- [ ] Power-user roadmap after the architecture work: evaluate a multi-Pi-hole dashboard, cross-server quick actions, saved Log Explorer filters and automatic OpenAPI-spec drift reporting for the remaining #639 handwritten holds.
+
 ## Validation and completion criteria
 
 - [ ] Keep regression tests/builds green for each deterministic change.
