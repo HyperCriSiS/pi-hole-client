@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pi_hole_client/ui/core/actions/refresh_with_totp_recovery.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pi_hole_client/domain/model/auth/auth.dart';
 import 'package:pi_hole_client/domain/model/enums.dart';
@@ -97,7 +98,16 @@ class _SessionsScreenState extends State<SessionsScreen> {
                   padding: const EdgeInsets.only(right: 8),
                   child: IconButton(
                     icon: const Icon(Icons.refresh_rounded),
-                    onPressed: () => viewModel.loadSessions.run(),
+                    onPressed: () async {
+                      try {
+                        await refreshWithTotpRecovery(
+                          context,
+                          viewModel.loadSessions.runAsync,
+                        );
+                      } catch (_) {
+                        // Error handled by command.errors
+                      }
+                    },
                     tooltip: locale.refresh,
                   ),
                 ),
@@ -107,7 +117,10 @@ class _SessionsScreenState extends State<SessionsScreen> {
               child: RefreshIndicator(
                 onRefresh: () async {
                   try {
-                    await viewModel.loadSessions.runAsync();
+                    await refreshWithTotpRecovery(
+                      context,
+                      viewModel.loadSessions.runAsync,
+                    );
                   } catch (_) {
                     // Error handled by command.errors
                   }
