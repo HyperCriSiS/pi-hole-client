@@ -10,6 +10,7 @@ import 'package:pi_hole_client/ui/core/view_models/status_viewmodel.dart';
 import 'package:pi_hole_client/utils/open_url.dart';
 import 'package:pi_hole_client/utils/url.dart';
 import 'package:provider/provider.dart';
+import 'package:result_dart/result_dart.dart';
 
 /// A popup menu widget for server-related actions in the app bar.
 ///

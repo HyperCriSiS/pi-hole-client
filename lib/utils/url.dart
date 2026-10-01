@@ -83,9 +83,10 @@ String buildWebPanelUrl(
 }
 
 String _joinWebPanelPath(String? prefix, String webHome) {
-  final prefixSegments = Uri(path: prefix?.trim() ?? '').pathSegments
+  final prefixSegments = (prefix?.trim() ?? '')
+      .split('/')
       .where((segment) => segment.isNotEmpty);
-  final homeSegments = Uri(path: webHome).pathSegments.where(
+  final homeSegments = webHome.split('/').where(
     (segment) => segment.isNotEmpty,
   );
   final segments = [...prefixSegments, ...homeSegments];
