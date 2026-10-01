@@ -23,6 +23,14 @@ void main() {
       expectError(result, messageContains: kNotSupportedInV5Message);
     });
 
+
+    test('fetchWebPanelPaths returns null for legacy v5', () async {
+      final result = await repository.fetchWebPanelPaths();
+
+      expect(result.isSuccess(), isTrue);
+      expect(result.getOrNull(), isNull);
+    });
+
     test('setDnsQueryLogging should return NotSupportedException', () async {
       final result = await repository.setDnsQueryLogging(true);
       expectError(result, messageContains: kNotSupportedInV5Message);

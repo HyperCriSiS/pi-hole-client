@@ -32,7 +32,15 @@ class _FakePiholeV6Service extends PiholeV6Service {
     }
     return Success(
       GetConfig200Response(
-        config: ConfigConfig(dns: ConfigConfigDns(queryLogging: true)),
+        config: ConfigConfig(
+          dns: ConfigConfigDns(queryLogging: true),
+          webserver: ConfigConfigWebserver(
+            paths: ConfigConfigWebserverPaths(
+              prefix: '/pihole',
+              webhome: '/admin2/',
+            ),
+          ),
+        ),
         took: 0.003,
       ),
     );
@@ -89,6 +97,29 @@ void main() {
       service.shouldFailGet = true;
 
       final result = await repository.fetchDnsQueryLogging();
+      expectError(
+        result,
+        messageContains: 'Forced generated getConfig failure',
+      );
+    });
+  });
+
+
+  group('fetchWebPanelPaths', () {
+    test('reads prefix and webhome from generated full config', () async {
+      final result = await repository.fetchWebPanelPaths();
+
+      expect(result.getOrNull(), (
+        prefix: '/pihole',
+        webHome: '/admin2/',
+      ));
+      expect(service.lastSid, 'sid123');
+    });
+
+    test('fails when generated full config read fails', () async {
+      service.shouldFailGet = true;
+
+      final result = await repository.fetchWebPanelPaths();
       expectError(
         result,
         messageContains: 'Forced generated getConfig failure',
