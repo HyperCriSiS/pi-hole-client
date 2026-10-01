@@ -23,7 +23,6 @@ void main() {
       expectError(result, messageContains: kNotSupportedInV5Message);
     });
 
-
     test('fetchWebPanelPaths returns null for legacy v5', () async {
       final result = await repository.fetchWebPanelPaths();
 

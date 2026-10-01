@@ -104,7 +104,6 @@ void main() {
     });
   });
 
-
   group('fetchWebPanelPaths', () {
     test('reads prefix and webhome from generated full config', () async {
       final result = await repository.fetchWebPanelPaths();
