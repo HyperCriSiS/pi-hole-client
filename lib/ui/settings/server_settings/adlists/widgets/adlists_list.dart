@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pi_hole_client/ui/core/actions/refresh_with_totp_recovery.dart';
 import 'package:flutter/rendering.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pi_hole_client/domain/model/enums.dart';
@@ -255,7 +256,10 @@ class _AdlistsListState extends State<AdlistsList> {
             ),
           ),
           loadStatus: viewModel.loadingStatus,
-          onRefresh: () async => viewModel.loadAdlists.run(),
+          onRefresh: () => refreshWithTotpRecovery(
+            context,
+            viewModel.loadAdlists.runAsync,
+          ),
           bottomSpaceHeight: 80,
         ),
         SafeArea(
