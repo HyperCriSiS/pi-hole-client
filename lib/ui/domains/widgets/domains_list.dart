@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pi_hole_client/ui/core/actions/refresh_with_totp_recovery.dart';
 import 'package:flutter/rendering.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pi_hole_client/domain/model/domain/domain.dart';
@@ -262,7 +263,10 @@ class _DomainsListState extends State<DomainsList> {
             ),
           ),
           loadStatus: viewModel.loadingStatus,
-          onRefresh: () async => viewModel.loadDomains.runAsync(),
+          onRefresh: () => refreshWithTotpRecovery(
+            context,
+            viewModel.loadDomains.runAsync,
+          ),
           bottomSpaceHeight: 80,
         ),
         // Stale-While-Revalidate: a thin bar at the top while a background

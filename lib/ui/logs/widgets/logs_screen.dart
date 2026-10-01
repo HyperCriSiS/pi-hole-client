@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:pi_hole_client/ui/core/actions/refresh_with_totp_recovery.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pi_hole_client/domain/model/metrics/queries.dart';
 import 'package:pi_hole_client/routing/route_extra.dart';
@@ -246,7 +247,16 @@ class _LogsScreenState extends State<LogsScreen> with WidgetsBindingObserver {
             logsViewModel.updateSortStatus(value);
             _scrollToTop();
           },
-          onRefresh: logsViewModel.initializeLoad,
+          onRefresh: () async {
+            try {
+              await refreshWithTotpRecovery(
+                context,
+                logsViewModel.initializeLoad,
+              );
+            } catch (_) {
+              // Error state is managed by LogsViewModel.
+            }
+          },
           sortStatus: logsViewModel.sortStatus,
           filterChips: ActiveFilterChips(
             logsViewModel: logsViewModel,
@@ -273,14 +283,16 @@ class _LogsScreenState extends State<LogsScreen> with WidgetsBindingObserver {
               onRefresh: () async {
                 setState(() => _isPullRefreshing = true);
                 try {
-                  if (logsViewModel.isFiltering) {
-                    await logsViewModel.applyFilterAndLoad(
-                      inStartTime: logsViewModel.startTime,
-                      inEndTime: logsViewModel.endTime,
-                    );
-                  } else {
-                    await logsViewModel.initializeLoad();
-                  }
+                  await refreshWithTotpRecovery(context, () async {
+                    if (logsViewModel.isFiltering) {
+                      await logsViewModel.applyFilterAndLoad(
+                        inStartTime: logsViewModel.startTime,
+                        inEndTime: logsViewModel.endTime,
+                      );
+                    } else {
+                      await logsViewModel.initializeLoad();
+                    }
+                  });
                 } finally {
                   if (mounted) setState(() => _isPullRefreshing = false);
                 }
