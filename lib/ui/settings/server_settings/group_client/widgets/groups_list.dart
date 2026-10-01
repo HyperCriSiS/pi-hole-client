@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pi_hole_client/ui/core/actions/refresh_with_totp_recovery.dart';
 import 'package:flutter/rendering.dart';
 import 'package:pi_hole_client/domain/model/group/group.dart';
 import 'package:pi_hole_client/ui/core/l10n/generated/app_localizations.dart';
@@ -251,7 +252,10 @@ class _GroupsListState extends State<GroupsList> {
             ),
           ),
           loadStatus: groupsViewModel.loadingStatus,
-          onRefresh: () async => groupsViewModel.loadGroups.runAsync(),
+          onRefresh: () => refreshWithTotpRecovery(
+            context,
+            groupsViewModel.loadGroups.runAsync,
+          ),
           bottomSpaceHeight: 80,
         ),
         SafeArea(

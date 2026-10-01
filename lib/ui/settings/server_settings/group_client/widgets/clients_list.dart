@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pi_hole_client/ui/core/actions/refresh_with_totp_recovery.dart';
 import 'package:flutter/rendering.dart';
 import 'package:pi_hole_client/domain/model/client/managed_client.dart';
 import 'package:pi_hole_client/ui/core/l10n/generated/app_localizations.dart';
@@ -210,7 +211,10 @@ class _ClientsListState extends State<ClientsList> {
             ),
           ),
           loadStatus: clientsViewModel.loadingStatus,
-          onRefresh: () async => clientsViewModel.loadClients.runAsync(),
+          onRefresh: () => refreshWithTotpRecovery(
+            context,
+            clientsViewModel.loadClients.runAsync,
+          ),
           bottomSpaceHeight: 80,
         ),
         SafeArea(
