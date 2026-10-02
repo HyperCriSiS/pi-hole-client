@@ -11,5 +11,5 @@ abstract interface class ConfigRepository {
   Future<Result<Config>> setDnsQueryLogging(bool status);
 
   /// Returns the Pi-hole web interface path capability when available.
-  Future<Result<WebPanelPaths?>> fetchWebPanelPaths();
+  Future<Result<WebPanelPaths>> fetchWebPanelPaths();
 }

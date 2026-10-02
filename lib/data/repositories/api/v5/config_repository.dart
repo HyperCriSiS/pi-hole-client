@@ -25,8 +25,8 @@ class ConfigRepositoryV5 extends BaseV5TokenRepository
   }
 
   @override
-  Future<Result<WebPanelPaths?>> fetchWebPanelPaths() async {
-    return const Success<WebPanelPaths?>(null);
+  Future<Result<WebPanelPaths>> fetchWebPanelPaths() async {
+    return Success((prefix: null, webHome: null));
   }
 
   @override

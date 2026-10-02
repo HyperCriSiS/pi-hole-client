@@ -20,12 +20,12 @@ class FakeConfigRepository implements ConfigRepository {
   }
 
   @override
-  Future<Result<WebPanelPaths?>> fetchWebPanelPaths() async {
+  Future<Result<WebPanelPaths>> fetchWebPanelPaths() async {
     if (shouldFailWebPanelPaths) {
       return Failure(Exception('Force fetchWebPanelPaths failure'));
     }
     if (webPanelPrefix == null && webPanelHome == null) {
-      return const Success<WebPanelPaths?>(null);
+      return Success((prefix: null, webHome: null));
     }
     return Success((prefix: webPanelPrefix, webHome: webPanelHome));
   }
