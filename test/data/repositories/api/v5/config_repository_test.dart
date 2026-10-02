@@ -27,7 +27,7 @@ void main() {
       final result = await repository.fetchWebPanelPaths();
 
       expect(result.isSuccess(), isTrue);
-      expect(result.getOrNull(), isNull);
+      expect(result.getOrNull(), (prefix: null, webHome: null));
     });
 
     test('setDnsQueryLogging should return NotSupportedException', () async {
