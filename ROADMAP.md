@@ -125,11 +125,11 @@ Maintain and improve the unofficial Pi-hole client while upstream activity is li
   - [x] Preserve #757 API-subroute behavior and root-server compatibility.
   - [x] Keep a legacy `/admin/` fallback for v5/older servers and add focused capability/URL/action coverage.
   - [x] Merged via PR #130 as `4aee4502`.
-- [ ] #689: add Query Log Edit & Add using the existing Add Domain modal.
+- [x] #689: add Query Log Edit & Add using the existing Add Domain modal.
   - [x] Add optional prefilled-domain support to `AddDomainModal` with initial validation.
   - [x] Add the Log Details Edit & Add action with allow/deny default matching the existing direct action.
   - [x] Add focused widget coverage for prefill and enabled Add state.
-  - [ ] Finalize PR #131 after all repository-controlled gates pass.
+  - [x] Merged via PR #131 as `21f4d24c`.
 - [ ] #748: consolidate session/auth recovery so screens and background refreshes share one explicit policy for SID expiry, TOTP, reconnect and retry rather than reproducing orchestration locally.
   - [ ] Keep user-interactive and automatic/background recovery policies separate so automatic refresh cannot create prompt loops.
   - [ ] Reuse the diagnostics/App Log path for authentication and reconnect failures.
