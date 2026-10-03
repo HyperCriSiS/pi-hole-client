@@ -8,9 +8,8 @@ This is the compact operational handoff for autonomous Pi-hole Client work. `ROA
 ## Baseline
 - Repository: `HyperCriSiS/pi-hole-client`
 - Default branch: `main`
-- Current `main`: `4aee4502fbba7137028282d21736f305ca458d9b` (merged PR #130, custom web-interface path support).
-- Open fork pull requests: #131 (`feature/query-log-edit-add` -> `main`).
-- PR #131 head after updating from `main`: `7c066fc1a444f35b051090fb80189a781c3754c3`.
+- Current `main`: `21f4d24ce1500339f9b9af9446a679acee225109` (merged PR #131, Query Log Edit & Add).
+- Open fork pull requests: none at this checkpoint.
 
 ## 2026-09-27 dependency maintenance block
 Four new Dependabot PRs were reviewed against the repository-pinned Flutter 3.44.1 toolchain.
@@ -105,18 +104,26 @@ Validation:
 - Focused config/helper/action tests and repository-controlled CI gates passed before merge.
 
 ## 2026-10-03 #689 Query Log edit-and-add
-- Fork PR #131 is open from `feature/query-log-edit-add` and has been updated onto current `main`.
+- Fork PR #131 squash-merged into `main` as `21f4d24ce1500339f9b9af9446a679acee225109`.
 - `AddDomainModal` accepts an optional initial domain, initializes validation state from it, and disposes its controller.
 - Log Details exposes an Edit & Add action that opens the existing Add Domain flow prefilled with the queried domain; the default allow/deny direction mirrors the existing direct action and exact/regex remains editable in the modal.
 - Focused widget coverage asserts that the modal opens with the selected domain and that Add is immediately enabled for a valid prefilled domain.
-- Dart tests, Sonar, Codecov, CodeQL, GHAS and static analyses are green on PR #131; the unsigned Android source APK is the remaining running gate.
-- Final manual diff review found no code blocker, but did catch stale checkpoint documentation from before PR #130. This branch cleanup removes that stale state before merge.
+- Final review added reliable `ProcessModal` cleanup through `finally`, so navigating away during the async save cannot leave the root overlay behind.
+- Dart tests, unsigned Android source APK, Sonar, Codecov, CodeQL, GHAS and static analyses all passed before merge.
+
+## #748 preparation
+- Upstream issue #748 is the next architecture block. Do not wholesale-port it.
+- Upstream PR #747 extracted update-server rollback/commit/cleanup state into a per-attempt object and added focused rollback coverage.
+- Upstream PR #755 centralized session reuse/forced login, TOTP prompting and blocking-status verification in a shared connection use case.
+- Current fork still duplicates session/TOTP orchestration between `ServerConnectionService` and `AddServerViewModel`, while PR #129 already provides explicit-refresh-only TOTP recovery through `refreshWithTotpRecovery`.
+- Preserve the distinction between user-interactive recovery and initial/automatic/background flows; background work must not create TOTP prompt loops.
+- First bounded #748 slice should be chosen only after comparing current fork behavior with #747/#755 and locking existing rollback/session semantics with focused tests.
 
 ## Next autonomous work block
-1. Wait for the final unsigned Android source APK gate on PR #131.
-2. If all repository-controlled gates remain green, squash-merge PR #131.
-3. Update `ROADMAP.md`, `UPSTREAM_TRIAGE.md`, and this checkpoint to mark #689 integrated.
-4. Start #748 connection/session architecture work as the next larger incremental block.
+1. Start #748 from current `main` as a fresh short-lived branch.
+2. Prefer a small first slice around existing update-server rollback/session semantics rather than importing upstream #747/#755 wholesale.
+3. Preserve PR #129 explicit-refresh behavior and existing App Log diagnostics while centralizing policy incrementally.
+4. Validate focused tests first, then repository-controlled gates before merge.
 
 ## Existing gates / holds
 - #442: Android 16 PopupMenu device confirmation still required.
@@ -128,7 +135,9 @@ Validation:
 
 ## Resume protocol
 1. Read this file, `ROADMAP.md`, and `UPSTREAM_TRIAGE.md` from `main`.
-2. Resolve live `main` and confirm PR #131 status if it is still open.
-3. If PR #131 is merged, begin #748 as a fresh bounded architecture slice.
-4. Keep device-gated #442/#636/#501/#293 validation-only until affected-device evidence exists.
-5. Validate repository-controlled gates before every merge.
+2. Resolve live `main` and verify it is at or beyond `21f4d24c`.
+3. Confirm there are no open fork PRs before starting the next slice.
+4. Begin #748 as a fresh bounded architecture slice; compare current fork behavior with upstream #747/#755 before choosing the exact extraction.
+5. Keep user-interactive TOTP recovery separate from initial/automatic/background flows.
+6. Keep device-gated #442/#636/#501/#293 validation-only until affected-device evidence exists.
+7. Validate repository-controlled gates before every merge.
