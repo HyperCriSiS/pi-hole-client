@@ -1,7 +1,6 @@
 import 'package:pi_hole_client/data/repositories/api/interfaces/dns_repository.dart';
 import 'package:pi_hole_client/domain/model/dns/dns.dart';
 import 'package:pi_hole_client/utils/exceptions.dart';
-import 'package:result_dart/result_dart.dart';
 
 sealed class ExistingSessionProbeOutcome {
   const ExistingSessionProbeOutcome();

@@ -219,7 +219,7 @@ class AddServerViewModel extends ChangeNotifier {
 
   /// Persists password and token as one logical operation.
   ///
-  /// Secure-storage operations return [Result], so a caller must not treat a
+  /// Secure-storage operations return `Result`, so a caller must not treat a
   /// failed write as a successful server save.
   Future<Exception?> _saveCredentials({
     required String address,
