@@ -5,7 +5,13 @@ import 'package:pi_hole_client/domain/model/enums.dart';
 import 'package:pi_hole_client/domain/model/metrics/queries.dart';
 import 'package:pi_hole_client/ui/core/l10n/generated/app_localizations.dart';
 import 'package:pi_hole_client/ui/core/ui/helpers/formats.dart';
+import 'package:pi_hole_client/ui/core/ui/helpers/responsive.dart';
+import 'package:pi_hole_client/ui/core/ui/helpers/snackbar.dart';
 import 'package:pi_hole_client/ui/core/ui/helpers/urls.dart';
+import 'package:pi_hole_client/ui/core/ui/modals/process_modal.dart';
+import 'package:pi_hole_client/ui/core/view_models/app_config_viewmodel.dart';
+import 'package:pi_hole_client/ui/domains/view_models/domains_viewmodel.dart';
+import 'package:pi_hole_client/ui/domains/widgets/add_domain_modal.dart';
 import 'package:pi_hole_client/ui/logs/view_models/logs_viewmodel.dart';
 import 'package:pi_hole_client/ui/logs/widgets/log_status.dart';
 import 'package:pi_hole_client/utils/format.dart';
@@ -53,6 +59,76 @@ class LogDetailsScreen extends StatelessWidget {
       );
     }
 
+    Future<void> addDomain(
+      DomainType type,
+      DomainKind kind,
+      String domain,
+    ) async {
+      final domainsViewModel = context.read<DomainsViewModel>();
+      final appConfigViewModel = context.read<AppConfigViewModel>();
+      final process = ProcessModal(context: context);
+      process.open(AppLocalizations.of(context)!.domainAdding);
+
+      try {
+        await domainsViewModel.addDomain.runAsync((
+          type: type,
+          kind: kind,
+          domain: domain,
+        ));
+        if (!context.mounted) return;
+        process.close();
+
+        showSuccessSnackBar(
+          context: context,
+          appConfigViewModel: appConfigViewModel,
+          label: AppLocalizations.of(context)!.domainAdded,
+        );
+      } catch (e) {
+        if (!context.mounted) return;
+        process.close();
+
+        showSaveFailedSnackBar(
+          context: context,
+          appConfigViewModel: appConfigViewModel,
+          error: e,
+          alreadyExistsLabel: AppLocalizations.of(context)!.domainAlreadyAdded,
+          failedLabel: AppLocalizations.of(context)!.domainAddFailed,
+        );
+      }
+    }
+
+    void openEditAndAdd() {
+      final mediaQuery = MediaQuery.of(context);
+      final isSmallLandscape =
+          mediaQuery.size.width > mediaQuery.size.height &&
+          mediaQuery.size.height < ResponsiveConstants.medium;
+      final selectedList = logsViewModel.isAllowedOrRetried(log.status)
+          ? 'blacklist'
+          : 'whitelist';
+
+      Widget buildModal(BuildContext _) => AddDomainModal(
+        selectedlist: selectedList,
+        addDomain: addDomain,
+        initialDomain: log.url,
+        window: mediaQuery.size.width > ResponsiveConstants.medium,
+      );
+
+      if (mediaQuery.size.width > ResponsiveConstants.medium) {
+        showDialog(
+          context: context,
+          useSafeArea: !isSmallLandscape,
+          useRootNavigator: false,
+          builder: buildModal,
+        );
+      } else {
+        showModalBottomSheet(
+          context: context,
+          builder: buildModal,
+          isScrollControlled: true,
+        );
+      }
+    }
+
     Widget blackWhiteListButton() {
       if (logsViewModel.isAllowedOrRetried(log.status)) {
         return IconButton(
@@ -94,6 +170,12 @@ class LogDetailsScreen extends StatelessWidget {
             onPressed: () => openUrl('${Urls.googleSearch}${log.url}'),
             icon: const Icon(Icons.travel_explore_rounded),
             tooltip: AppLocalizations.of(context)!.domainSearchOnline,
+          ),
+          IconButton(
+            onPressed: openEditAndAdd,
+            icon: const Icon(Icons.edit_rounded),
+            tooltip:
+                '${AppLocalizations.of(context)!.edit} & ${AppLocalizations.of(context)!.add}',
           ),
           blackWhiteListButton(),
           const SizedBox(width: 10),
