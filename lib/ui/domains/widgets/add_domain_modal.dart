@@ -7,10 +7,12 @@ class AddDomainModal extends StatefulWidget {
     required this.selectedlist,
     required this.addDomain,
     required this.window,
+    this.initialDomain,
     super.key,
   });
 
   final String selectedlist;
+  final String? initialDomain;
   final void Function(DomainType type, DomainKind kind, String domain)
   addDomain;
   final bool window;
@@ -22,7 +24,7 @@ class AddDomainModal extends StatefulWidget {
 enum ListType { whitelist, blacklist }
 
 class _AddDomainModalState extends State<AddDomainModal> {
-  final TextEditingController domainController = TextEditingController();
+  late final TextEditingController domainController;
   String? domainError;
   ListType selectedType = ListType.whitelist;
   bool wildcard = false;
@@ -30,10 +32,34 @@ class _AddDomainModalState extends State<AddDomainModal> {
 
   @override
   void initState() {
+    super.initState();
     selectedType = widget.selectedlist == 'whitelist'
         ? ListType.whitelist
         : ListType.blacklist;
-    super.initState();
+    domainController = TextEditingController(text: widget.initialDomain ?? '');
+    allDataValid = _isValidDomain(domainController.text);
+  }
+
+  @override
+  void dispose() {
+    domainController.dispose();
+    super.dispose();
+  }
+
+  bool _isValidDomain(String value) {
+    if (value.isEmpty) return false;
+
+    // Matches "domain-like" strings including IDN (Internationalized Domain Names):
+    // - Single labels: example, local, てすと
+    // - With dots: example.com, sub.domain.co.jp, てすと.com
+    // - With leading dot: .example.com, .co.jp
+    // Uses Unicode letters (\p{L}), digits (\p{N}), '.' and '-'.
+    final domainLikeRegexp = RegExp(
+      r'^\.?-?[\p{L}\p{N}-]+(\.[\p{L}\p{N}-]+)*$',
+      unicode: true,
+      caseSensitive: false,
+    );
+    return domainLikeRegexp.hasMatch(value);
   }
 
   String applyWildcard() {
@@ -41,31 +67,12 @@ class _AddDomainModalState extends State<AddDomainModal> {
   }
 
   void validateDomain(String? value) {
-    if (value != null && value != '') {
-      // Matches "domain-like" strings including IDN (Internationalized Domain Names):
-      // - Single labels: example, local, てすと
-      // - With dots: example.com, sub.domain.co.jp, てすと.com
-      // - With leading dot: .example.com, .co.jp
-      // Uses Unicode letters (\p{L}), digits (\p{N}), '.' and '-'.
-      final domainLikeRegexp = RegExp(
-        r'^\.?-?[\p{L}\p{N}-]+(\.[\p{L}\p{N}-]+)*$',
-        unicode: true,
-        caseSensitive: false,
-      );
-      if (domainLikeRegexp.hasMatch(value)) {
-        setState(() {
-          domainError = null;
-        });
-      } else {
-        setState(() {
-          domainError = AppLocalizations.of(context)!.domainInvalid;
-        });
-      }
-    } else {
-      setState(() {
-        domainError = null;
-      });
-    }
+    final currentValue = value ?? '';
+    setState(() {
+      domainError = currentValue.isEmpty || _isValidDomain(currentValue)
+          ? null
+          : AppLocalizations.of(context)!.domainInvalid;
+    });
     validateAllData();
   }
 

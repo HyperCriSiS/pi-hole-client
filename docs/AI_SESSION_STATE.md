@@ -1,6 +1,6 @@
 # AI Session State
 
-Updated: 2026-10-02
+Updated: 2026-10-03
 Authority: `main`
 
 This is the compact operational handoff for autonomous Pi-hole Client work. `ROADMAP.md` remains the strategic source of truth. Chat/tool history is not project state.
@@ -8,8 +8,9 @@ This is the compact operational handoff for autonomous Pi-hole Client work. `ROA
 ## Baseline
 - Repository: `HyperCriSiS/pi-hole-client`
 - Default branch: `main`
-- Integrated product baseline before this checkpoint-doc commit: `cedf40c26a194224f0f17ed3a7a9c744affd61a2`
-- Open fork pull requests: none.
+- Current `main`: `4aee4502fbba7137028282d21736f305ca458d9b` (merged PR #130, custom web-interface path support).
+- Open fork pull requests: #131 (`feature/query-log-edit-add` -> `main`).
+- PR #131 head after updating from `main`: `7c066fc1a444f35b051090fb80189a781c3754c3`.
 
 ## 2026-09-27 dependency maintenance block
 Four new Dependabot PRs were reviewed against the repository-pinned Flutter 3.44.1 toolchain.
@@ -98,16 +99,24 @@ Validation:
 - CodeQL, Sonar, Codecov, audit and static analyses passed
 - only the known separate GitHub-managed GHAS AI-agent job failed independently of repository-controlled gates
 
-## Next autonomous work block
-Implement upstream #759 as one bounded PR.
+## 2026-10-03 #759 custom web-interface path
+- Fork PR #130 merged into `main` as `4aee4502fbba7137028282d21736f305ca458d9b`.
+- The implementation separates Pi-hole's web-home capability from the API/reverse-proxy subroute, reads v6 `webserver.paths.webhome`/prefix when available, and preserves the legacy `/admin/` fallback for v5/older servers.
+- Focused config/helper/action tests and repository-controlled CI gates passed before merge.
 
-Target shape:
-1. Treat Pi-hole web-home as a capability distinct from the API/reverse-proxy subroute fixed in #757.
-2. For v6, use the generated config model's `webserver.paths.webhome` when available.
-3. Preserve a safe `/admin/` fallback for v5/older servers where the capability cannot be read.
-4. Do not regress `resolveServerUri` API path handling from #757.
-5. Add focused helper/service/action coverage and keep the slice independent of the larger #748 auth/connection refactor.
-6. After #759, take #689 as the next small UX slice before starting the larger connection/session architecture work.
+## 2026-10-03 #689 Query Log edit-and-add
+- Fork PR #131 is open from `feature/query-log-edit-add` and has been updated onto current `main`.
+- `AddDomainModal` accepts an optional initial domain, initializes validation state from it, and disposes its controller.
+- Log Details exposes an Edit & Add action that opens the existing Add Domain flow prefilled with the queried domain; the default allow/deny direction mirrors the existing direct action and exact/regex remains editable in the modal.
+- Focused widget coverage asserts that the modal opens with the selected domain and that Add is immediately enabled for a valid prefilled domain.
+- Dart tests, Sonar, Codecov, CodeQL, GHAS and static analyses are green on PR #131; the unsigned Android source APK is the remaining running gate.
+- Final manual diff review found no code blocker, but did catch stale checkpoint documentation from before PR #130. This branch cleanup removes that stale state before merge.
+
+## Next autonomous work block
+1. Wait for the final unsigned Android source APK gate on PR #131.
+2. If all repository-controlled gates remain green, squash-merge PR #131.
+3. Update `ROADMAP.md`, `UPSTREAM_TRIAGE.md`, and this checkpoint to mark #689 integrated.
+4. Start #748 connection/session architecture work as the next larger incremental block.
 
 ## Existing gates / holds
 - #442: Android 16 PopupMenu device confirmation still required.
@@ -119,8 +128,7 @@ Target shape:
 
 ## Resume protocol
 1. Read this file, `ROADMAP.md`, and `UPSTREAM_TRIAGE.md` from `main`.
-2. Resolve live `main` and verify it is at or beyond `cedf40c2`.
-3. Confirm there are no open fork PRs.
-4. Start #759 from current `main` as one bounded short-lived branch.
-5. If PR creation through the connector is still unreliable, do not attempt it; provide the compare/create-PR link for the user instead.
-6. Validate with repository-controlled gates before merge.
+2. Resolve live `main` and confirm PR #131 status if it is still open.
+3. If PR #131 is merged, begin #748 as a fresh bounded architecture slice.
+4. Keep device-gated #442/#636/#501/#293 validation-only until affected-device evidence exists.
+5. Validate repository-controlled gates before every merge.

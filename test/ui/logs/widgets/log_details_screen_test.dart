@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:pi_hole_client/domain/model/enums.dart';
 import 'package:pi_hole_client/domain/model/metrics/queries.dart';
 import 'package:pi_hole_client/ui/core/view_models/servers_viewmodel.dart';
+import 'package:pi_hole_client/ui/domains/view_models/domains_viewmodel.dart';
+import 'package:pi_hole_client/ui/domains/widgets/add_domain_modal.dart';
 import 'package:pi_hole_client/ui/logs/view_models/logs_viewmodel.dart';
 import 'package:pi_hole_client/ui/logs/widgets/log_details_screen.dart';
 import 'package:provider/provider.dart';
@@ -44,6 +46,7 @@ final _blockedLog = Log(
 Widget _buildScreen(
   Log log, {
   FakeLogsViewModel? viewModel,
+  DomainsViewModel? domainsViewModel,
   void Function(String, Log)? whiteBlackList,
 }) {
   final vm = viewModel ?? FakeLogsViewModel();
@@ -70,6 +73,7 @@ Widget _buildScreen(
     const SizedBox.shrink(),
     logsViewModel: vm,
     serversViewModel: serversVm,
+    domainsViewModel: domainsViewModel,
     router: router,
   );
 }
@@ -218,6 +222,32 @@ void main() async {
     testWidgets('search online button is shown', (WidgetTester tester) async {
       await tester.pumpWidget(_buildScreen(_forwardedLog));
       expect(find.byIcon(Icons.travel_explore_rounded), findsOneWidget);
+    });
+
+    testWidgets('edit and add opens a prefilled Add Domain modal', (
+      WidgetTester tester,
+    ) async {
+      final domainsViewModel = DomainsViewModel();
+      addTearDown(domainsViewModel.dispose);
+
+      await tester.pumpWidget(
+        _buildScreen(
+          _forwardedLog,
+          domainsViewModel: domainsViewModel,
+        ),
+      );
+
+      await tester.tap(find.byIcon(Icons.edit_rounded));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AddDomainModal), findsOneWidget);
+      final textField = tester.widget<TextField>(find.byType(TextField));
+      expect(textField.controller?.text, 'example.com');
+
+      final addButton = tester.widget<TextButton>(
+        find.widgetWithText(TextButton, 'Add'),
+      );
+      expect(addButton.onPressed, isNotNull);
     });
   });
 }

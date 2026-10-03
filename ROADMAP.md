@@ -120,12 +120,16 @@ Maintain and improve the unofficial Pi-hole client while upstream activity is li
   - [x] Clear a previously declined TOTP marker only for explicit user refreshes; keep initial/background loads non-interactive.
   - [x] Apply the recovery path to Sessions, DHCP, Interfaces, Local DNS, Network, Server Info, Clients, Groups, Domains, Adlists and Logs.
   - [x] Add focused regression coverage for normal refresh, declined-state reset, TOTP recovery/retry, failed recovery and non-TOTP errors. PR #129 merged as `cedf40c2`; Dart, unsigned Android, CodeQL, Sonar, Codecov, GHAS and static-analysis gates were green.
-- [ ] #759: support custom Pi-hole web-interface paths independently of the API/reverse-proxy subroute.
-  - [ ] Read the v6 `webserver.paths.webhome` capability when available instead of assuming `/admin/`.
-  - [ ] Preserve #757 API-subroute behavior and root-server compatibility.
-  - [ ] Define a safe fallback for v5/older v6 servers that do not expose `webhome`.
-  - [ ] Add URL/helper and repository/service coverage plus a web-panel action regression.
-- [ ] #689: add an "edit & add" path from Query Log details so a logged domain can be prefilled and edited before adding it to an allow/block list.
+- [x] #759: support custom Pi-hole web-interface paths independently of the API/reverse-proxy subroute.
+  - [x] Read the v6 `webserver.paths.webhome` capability when available instead of assuming `/admin/`.
+  - [x] Preserve #757 API-subroute behavior and root-server compatibility.
+  - [x] Keep a legacy `/admin/` fallback for v5/older servers and add focused capability/URL/action coverage.
+  - [x] Merged via PR #130 as `4aee4502`.
+- [ ] #689: add Query Log Edit & Add using the existing Add Domain modal.
+  - [x] Add optional prefilled-domain support to `AddDomainModal` with initial validation.
+  - [x] Add the Log Details Edit & Add action with allow/deny default matching the existing direct action.
+  - [x] Add focused widget coverage for prefill and enabled Add state.
+  - [ ] Finalize PR #131 after all repository-controlled gates pass.
 - [ ] #748: consolidate session/auth recovery so screens and background refreshes share one explicit policy for SID expiry, TOTP, reconnect and retry rather than reproducing orchestration locally.
   - [ ] Keep user-interactive and automatic/background recovery policies separate so automatic refresh cannot create prompt loops.
   - [ ] Reuse the diagnostics/App Log path for authentication and reconnect failures.
