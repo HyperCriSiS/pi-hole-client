@@ -549,6 +549,73 @@ void main() {
         expect(authRepository.createSessionCallCount, 2);
         expect(authRepository.lastTotp, '123456');
       });
+
+      group('rollback side effects', () {
+        const oldAddress = 'http://localhost:8081';
+        const newAddress = 'http://other.host:9999';
+
+        test('same-address 2FA cancel restores the original password', () async {
+          authRepository.shouldRequireTotp = true;
+          final vm = buildViewModel();
+
+          final outcome = await vm.updateServer.runAsync(
+            updateReq(password: 'new-pass', initPassword: 'old-pass'),
+          );
+
+          expect(outcome, isA<UpdateCancelled>());
+          expect(serversViewModel.savedPasswords, [
+            (address: oldAddress, password: 'new-pass'),
+            (address: oldAddress, password: 'old-pass'),
+          ]);
+          expect(serversViewModel.deletedSidAddresses, isEmpty);
+          expect(authRepository.deleteCurrentSessionCallCount, 0);
+        });
+
+        test('address-change auth failure removes new-address state', () async {
+          authRepository.shouldFail = true;
+          final vm = buildViewModel();
+
+          final outcome = await vm.updateServer.runAsync(
+            updateReq(url: newAddress),
+          );
+
+          expect(outcome, isA<UpdateApiError>());
+          expect(serversViewModel.deletedPasswordAddresses, [newAddress]);
+          expect(serversViewModel.deletedSidAddresses, [newAddress]);
+          expect(authRepository.deleteCurrentSessionCallCount, 0);
+        });
+
+        test('same-address status failure rolls back the new session', () async {
+          dnsRepository.shouldFail = true;
+          final vm = buildViewModel();
+
+          final outcome = await vm.updateServer.runAsync(
+            updateReq(password: 'new-pass', initPassword: 'old-pass'),
+          );
+
+          expect(outcome, isA<UpdateApiError>());
+          expect(serversViewModel.savedPasswords, [
+            (address: oldAddress, password: 'new-pass'),
+            (address: oldAddress, password: 'old-pass'),
+          ]);
+          expect(serversViewModel.deletedSidAddresses, [oldAddress]);
+          expect(authRepository.deleteCurrentSessionCallCount, 1);
+        });
+
+        test('address-change DB failure removes attempted address state', () async {
+          serversViewModel.shouldFailReplaceServer = true;
+          final vm = buildViewModel();
+
+          final outcome = await vm.updateServer.runAsync(
+            updateReq(url: newAddress),
+          );
+
+          expect(outcome, isA<UpdateDbError>());
+          expect(serversViewModel.deletedPasswordAddresses, [newAddress]);
+          expect(serversViewModel.deletedSidAddresses, [newAddress]);
+          expect(authRepository.deleteCurrentSessionCallCount, 1);
+        });
+      });
     });
   });
 }
