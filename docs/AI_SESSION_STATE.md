@@ -1,6 +1,6 @@
 # AI Session State
 
-Updated: 2026-10-02
+Updated: 2026-10-03
 Authority: `main`
 
 This is the compact operational handoff for autonomous Pi-hole Client work. `ROADMAP.md` remains the strategic source of truth. Chat/tool history is not project state.
@@ -8,8 +8,9 @@ This is the compact operational handoff for autonomous Pi-hole Client work. `ROA
 ## Baseline
 - Repository: `HyperCriSiS/pi-hole-client`
 - Default branch: `main`
-- Integrated product baseline before this checkpoint-doc commit: `cedf40c26a194224f0f17ed3a7a9c744affd61a2`
-- Open fork pull requests: none.
+- Current `main`: `7c98597f1e091b26e432aa11fb28c16b6e330ef3` (documentation follow-up after merged PR #129).
+- Open fork pull requests: #130 (`fix/upstream-759-webhome` -> `main`).
+- Additional implementation branch awaiting PR: `feature/query-log-edit-add` for upstream #689.
 
 ## 2026-09-27 dependency maintenance block
 Four new Dependabot PRs were reviewed against the repository-pinned Flutter 3.44.1 toolchain.
@@ -98,16 +99,25 @@ Validation:
 - CodeQL, Sonar, Codecov, audit and static analyses passed
 - only the known separate GitHub-managed GHAS AI-agent job failed independently of repository-controlled gates
 
-## Next autonomous work block
-Implement upstream #759 as one bounded PR.
+## 2026-10-03 #759 custom web-interface path
+- Fork PR #130 is open from `fix/upstream-759-webhome`; current head is `08e1259da145a4839760452a6fc280f542b96338`.
+- The implementation separates Pi-hole's web-home capability from the API/reverse-proxy subroute, reads v6 `webserver.paths.webhome`/prefix when available, and preserves the legacy `/admin/` fallback for v5/older servers.
+- Focused config/helper/action tests are included. The latest observed PR-head checks for Dart tests, test build, v6 legacy-boundary validation and the GHAS AI scan were green.
+- PR review/merge is intentionally reserved for the selected OpenAI Code Review plugin; do not substitute GitHub-MCP PR writes when that plugin is unavailable.
 
-Target shape:
-1. Treat Pi-hole web-home as a capability distinct from the API/reverse-proxy subroute fixed in #757.
-2. For v6, use the generated config model's `webserver.paths.webhome` when available.
-3. Preserve a safe `/admin/` fallback for v5/older servers where the capability cannot be read.
-4. Do not regress `resolveServerUri` API path handling from #757.
-5. Add focused helper/service/action coverage and keep the slice independent of the larger #748 auth/connection refactor.
-6. After #759, take #689 as the next small UX slice before starting the larger connection/session architecture work.
+## 2026-10-03 #689 Query Log edit-and-add
+- Implemented on `feature/query-log-edit-add` from current `main`.
+- `AddDomainModal` accepts an optional initial domain, initializes validation state from it, and disposes its controller.
+- Log Details now exposes an Edit & Add action that opens the existing Add Domain flow prefilled with the queried domain; the default allow/deny direction mirrors the existing direct action and exact/regex remains editable in the modal.
+- Focused widget coverage asserts that the modal opens with the selected domain and that Add is immediately enabled for a valid prefilled domain.
+- Branch commits: `401481d8`, `9fec8463`, `9f5953f9`. CI has not run yet because the Dart workflow triggers on pull requests or pushes to `main`, not ordinary feature-branch pushes.
+
+## Next autonomous work block
+1. Finalize PR #130 through the selected OpenAI Code Review plugin and merge it only after its required checks remain green.
+2. Update/rebase `feature/query-log-edit-add` onto the resulting `main` if #130 changes the base.
+3. Create the #689 PR through Code Review, run the repository-controlled gates, fix only verified failures, then merge.
+4. After #759/#689 are integrated, start the larger #748 connection/session architecture work incrementally.
+5. If Code Review is not exposed in a session, do not substitute GitHub-MCP PR writes; provide the compare/create-PR link instead.
 
 ## Existing gates / holds
 - #442: Android 16 PopupMenu device confirmation still required.
