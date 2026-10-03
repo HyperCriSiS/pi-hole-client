@@ -518,6 +518,7 @@ import 'package:pi_hole_client/domain/services/logs_pagination_service.dart';
 import 'package:pi_hole_client/domain/use_cases/realtime_status/realtime_status_usecase.dart';
 import 'package:pi_hole_client/domain/use_cases/realtime_status/realtime_status_usecase_v5.dart';
 import 'package:pi_hole_client/domain/use_cases/realtime_status/realtime_status_usecase_v6.dart';
+import 'package:pi_hole_client/domain/use_cases/server_connection/probe_existing_session.dart';
 import 'package:pi_hole_client/main.dart';
 import 'package:pi_hole_client/pi_hole_client.dart';
 import 'package:pi_hole_client/routing/app_router.dart';

@@ -8,6 +8,7 @@ import 'package:pi_hole_client/domain/model/dns/dns.dart';
 import 'package:pi_hole_client/domain/model/enums.dart';
 import 'package:pi_hole_client/domain/model/server/api_versions.dart';
 import 'package:pi_hole_client/domain/model/server/server.dart';
+import 'package:pi_hole_client/domain/use_cases/server_connection/probe_existing_session.dart';
 import 'package:pi_hole_client/ui/core/l10n/generated/app_localizations.dart';
 import 'package:pi_hole_client/ui/core/services/totp_login.dart';
 import 'package:pi_hole_client/ui/core/types/resolve_totp.dart';
@@ -229,22 +230,16 @@ class ServerConnectionService {
         // Use skipRenewal: true so that no session renewal happens inside the
         // probe — if the existing session is expired, createSession below is
         // the sole place that creates a new session, preventing duplicates.
-        final preCheck = await bundle.dns.fetchBlockingStatus(
-          skipRenewal: true,
-        );
-        if (preCheck.isSuccess()) {
-          process?.close();
-          return preCheck;
-        }
-        // Only re-authenticate on auth errors (401/SidNotFoundException).
-        // Transient failures (503/504/timeout) should not create a new session
-        // as that would cause session multiplication on the Pi-hole side.
-        final preCheckErr = preCheck.exceptionOrNull();
-        if (!isReauthRequired(preCheckErr)) {
-          process?.close();
-          return Failure(
-            preCheckErr ?? Exception('connection pre-check failed'),
-          );
+        final probe = await ProbeExistingSession(bundle.dns).run();
+        switch (probe) {
+          case ExistingSessionValid(:final blocking):
+            process?.close();
+            return Success(blocking);
+          case ExistingSessionFailed(:final error):
+            process?.close();
+            return Failure(error);
+          case ExistingSessionNeedsReauth():
+            break;
         }
         // Session is missing or expired — re-authenticate, prompting for a
         // TOTP code when the server requires 2FA.
