@@ -8,9 +8,9 @@ This is the compact operational handoff for autonomous Pi-hole Client work. `ROA
 ## Baseline
 - Repository: `HyperCriSiS/pi-hole-client`
 - Default branch: `main`
-- Current `main`: `7c98597f1e091b26e432aa11fb28c16b6e330ef3` (documentation follow-up after merged PR #129).
-- Open fork pull requests: #130 (`fix/upstream-759-webhome` -> `main`).
-- Additional implementation branch awaiting PR: `feature/query-log-edit-add` for upstream #689.
+- Current `main`: `4aee4502fbba7137028282d21736f305ca458d9b` (merged PR #130, custom web-interface path support).
+- Open fork pull requests: #131 (`feature/query-log-edit-add` -> `main`).
+- PR #131 head after updating from `main`: `7c066fc1a444f35b051090fb80189a781c3754c3`.
 
 ## 2026-09-27 dependency maintenance block
 Four new Dependabot PRs were reviewed against the repository-pinned Flutter 3.44.1 toolchain.
@@ -100,24 +100,23 @@ Validation:
 - only the known separate GitHub-managed GHAS AI-agent job failed independently of repository-controlled gates
 
 ## 2026-10-03 #759 custom web-interface path
-- Fork PR #130 is open from `fix/upstream-759-webhome`; current head is `08e1259da145a4839760452a6fc280f542b96338`.
+- Fork PR #130 merged into `main` as `4aee4502fbba7137028282d21736f305ca458d9b`.
 - The implementation separates Pi-hole's web-home capability from the API/reverse-proxy subroute, reads v6 `webserver.paths.webhome`/prefix when available, and preserves the legacy `/admin/` fallback for v5/older servers.
-- Focused config/helper/action tests are included. The latest observed PR-head checks for Dart tests, test build, v6 legacy-boundary validation and the GHAS AI scan were green.
-- PR review/merge is intentionally reserved for the selected OpenAI Code Review plugin; do not substitute GitHub-MCP PR writes when that plugin is unavailable.
+- Focused config/helper/action tests and repository-controlled CI gates passed before merge.
 
 ## 2026-10-03 #689 Query Log edit-and-add
-- Implemented on `feature/query-log-edit-add` from current `main`.
+- Fork PR #131 is open from `feature/query-log-edit-add` and has been updated onto current `main`.
 - `AddDomainModal` accepts an optional initial domain, initializes validation state from it, and disposes its controller.
-- Log Details now exposes an Edit & Add action that opens the existing Add Domain flow prefilled with the queried domain; the default allow/deny direction mirrors the existing direct action and exact/regex remains editable in the modal.
+- Log Details exposes an Edit & Add action that opens the existing Add Domain flow prefilled with the queried domain; the default allow/deny direction mirrors the existing direct action and exact/regex remains editable in the modal.
 - Focused widget coverage asserts that the modal opens with the selected domain and that Add is immediately enabled for a valid prefilled domain.
-- Branch commits: `401481d8`, `9fec8463`, `9f5953f9`. CI has not run yet because the Dart workflow triggers on pull requests or pushes to `main`, not ordinary feature-branch pushes.
+- Dart tests, Sonar, Codecov, CodeQL, GHAS and static analyses are green on PR #131; the unsigned Android source APK is the remaining running gate.
+- Final manual diff review found no code blocker, but did catch stale checkpoint documentation from before PR #130. This branch cleanup removes that stale state before merge.
 
 ## Next autonomous work block
-1. Finalize PR #130 through the selected OpenAI Code Review plugin and merge it only after its required checks remain green.
-2. Update/rebase `feature/query-log-edit-add` onto the resulting `main` if #130 changes the base.
-3. Create the #689 PR through Code Review, run the repository-controlled gates, fix only verified failures, then merge.
-4. After #759/#689 are integrated, start the larger #748 connection/session architecture work incrementally.
-5. If Code Review is not exposed in a session, do not substitute GitHub-MCP PR writes; provide the compare/create-PR link instead.
+1. Wait for the final unsigned Android source APK gate on PR #131.
+2. If all repository-controlled gates remain green, squash-merge PR #131.
+3. Update `ROADMAP.md`, `UPSTREAM_TRIAGE.md`, and this checkpoint to mark #689 integrated.
+4. Start #748 connection/session architecture work as the next larger incremental block.
 
 ## Existing gates / holds
 - #442: Android 16 PopupMenu device confirmation still required.
@@ -129,8 +128,7 @@ Validation:
 
 ## Resume protocol
 1. Read this file, `ROADMAP.md`, and `UPSTREAM_TRIAGE.md` from `main`.
-2. Resolve live `main` and verify it is at or beyond `cedf40c2`.
-3. Confirm there are no open fork PRs.
-4. Start #759 from current `main` as one bounded short-lived branch.
-5. If PR creation through the connector is still unreliable, do not attempt it; provide the compare/create-PR link for the user instead.
-6. Validate with repository-controlled gates before merge.
+2. Resolve live `main` and confirm PR #131 status if it is still open.
+3. If PR #131 is merged, begin #748 as a fresh bounded architecture slice.
+4. Keep device-gated #442/#636/#501/#293 validation-only until affected-device evidence exists.
+5. Validate repository-controlled gates before every merge.
