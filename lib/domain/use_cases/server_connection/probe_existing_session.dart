@@ -37,7 +37,7 @@ class ProbeExistingSession {
     final result = await _dns.fetchBlockingStatus(skipRenewal: true);
 
     if (result.isSuccess()) {
-      return ExistingSessionValid(result.getOrThrow());
+      return ExistingSessionValid(result.getOrNull()!);
     }
 
     final error =

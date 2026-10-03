@@ -10,7 +10,9 @@ class _RecordingDnsRepository extends FakeDnsRepository {
   final List<bool> skipRenewals = [];
 
   @override
-  Future<Result<Blocking>> fetchBlockingStatus({bool skipRenewal = false}) {
+  Future<Result<Blocking>> fetchBlockingStatus({
+    bool skipRenewal = false,
+  }) {
     skipRenewals.add(skipRenewal);
     return super.fetchBlockingStatus(skipRenewal: skipRenewal);
   }
