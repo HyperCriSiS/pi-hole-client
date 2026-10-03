@@ -131,6 +131,8 @@ Maintain and improve the unofficial Pi-hole client while upstream activity is li
   - [x] Add focused widget coverage for prefill and enabled Add state.
   - [x] Merged via PR #131 as `21f4d24c`.
 - [ ] #748: consolidate session/auth recovery so screens and background refreshes share one explicit policy for SID expiry, TOTP, reconnect and retry rather than reproducing orchestration locally.
+  - [x] Extract update-server save-attempt rollback/restore/commit/cleanup state with focused side-effect coverage; merged via PR #135 as `417641f3`.
+  - [ ] Centralize the duplicated interactive session policy shared by server connect and server edit without changing background behavior.
   - [ ] Keep user-interactive and automatic/background recovery policies separate so automatic refresh cannot create prompt loops.
   - [ ] Reuse the diagnostics/App Log path for authentication and reconnect failures.
 - [ ] Connection Doctor: expose per-server capabilities and diagnostics useful for reverse proxies and difficult transports.
