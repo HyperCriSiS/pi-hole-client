@@ -181,5 +181,37 @@ void main() {
         'https://pi.hole/admin/',
       );
     });
+
+    test('uses reported webhome independently from the API subroute', () {
+      expect(
+        buildWebPanelUrl(
+          'https://pi.hole/api-proxy',
+          webHome: '/admin2/',
+        ),
+        'https://pi.hole/admin2/',
+      );
+    });
+
+    test('prepends the reported reverse-proxy prefix to webhome', () {
+      expect(
+        buildWebPanelUrl(
+          'https://pi.hole/api-proxy',
+          prefix: '/pihole',
+          webHome: '/admin2/',
+        ),
+        'https://pi.hole/pihole/admin2/',
+      );
+    });
+
+    test('supports a root webhome below a reported prefix', () {
+      expect(
+        buildWebPanelUrl(
+          'https://pi.hole/api-proxy',
+          prefix: '/pihole',
+          webHome: '/',
+        ),
+        'https://pi.hole/pihole/',
+      );
+    });
   });
 }
