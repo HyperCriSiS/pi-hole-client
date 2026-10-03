@@ -9,11 +9,11 @@ import 'package:flutter/foundation.dart';
 import 'package:pi_hole_client/data/repositories/api/interfaces/repository_bundle.dart';
 import 'package:pi_hole_client/domain/model/server/api_versions.dart';
 import 'package:pi_hole_client/domain/model/server/server.dart';
+import 'package:pi_hole_client/domain/use_cases/server_connection/probe_existing_session.dart';
 import 'package:pi_hole_client/ui/core/services/totp_login.dart';
 import 'package:pi_hole_client/ui/core/types/resolve_totp.dart';
 import 'package:pi_hole_client/ui/core/view_models/servers_viewmodel.dart';
 import 'package:pi_hole_client/ui/core/view_models/status_viewmodel.dart';
-import 'package:pi_hole_client/utils/exceptions.dart';
 import 'package:pi_hole_client/utils/logger.dart';
 import 'package:pi_hole_client/utils/url.dart';
 
@@ -219,7 +219,7 @@ class AddServerViewModel extends ChangeNotifier {
 
   /// Persists password and token as one logical operation.
   ///
-  /// Secure-storage operations return [Result], so a caller must not treat a
+  /// Secure-storage operations return `Result`, so a caller must not treat a
   /// failed write as a successful server save.
   Future<Exception?> _saveCredentials({
     required String address,
@@ -576,26 +576,25 @@ class AddServerViewModel extends ChangeNotifier {
     }
 
     // Same address, password unchanged
-    final preCheck = await bundle.dns.fetchBlockingStatus(skipRenewal: true);
-    if (preCheck.isError()) {
-      final err = preCheck.exceptionOrNull();
-      if (!isReauthRequired(err)) {
+    final probe = await ProbeExistingSession(bundle.dns).run();
+    switch (probe) {
+      case ExistingSessionValid():
         return (
           sessionCreated: false,
-          error: err,
+          error: null,
           needsRollback: false,
           cancelled: false,
         );
-      }
-      return login(needsRollback: false);
+      case ExistingSessionFailed(:final error):
+        return (
+          sessionCreated: false,
+          error: error,
+          needsRollback: false,
+          cancelled: false,
+        );
+      case ExistingSessionNeedsReauth():
+        return login(needsRollback: false);
     }
-
-    return (
-      sessionCreated: false,
-      error: null,
-      needsRollback: false,
-      cancelled: false,
-    );
   }
 
   @override
