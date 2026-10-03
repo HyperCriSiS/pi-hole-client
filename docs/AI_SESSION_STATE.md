@@ -8,9 +8,8 @@ This is the compact operational handoff for autonomous Pi-hole Client work. `ROA
 ## Baseline
 - Repository: `HyperCriSiS/pi-hole-client`
 - Default branch: `main`
-- Current `main`: `4aee4502fbba7137028282d21736f305ca458d9b` (merged PR #130, custom web-interface path support).
-- Open fork pull requests: #131 (`feature/query-log-edit-add` -> `main`).
-- PR #131 head after updating from `main`: `7c066fc1a444f35b051090fb80189a781c3754c3`.
+- Current `main`: `21f4d24ce1500339f9b9af9446a679acee225109` (merged PR #131, Query Log Edit & Add).
+- Open fork pull requests: none.
 
 ## 2026-09-27 dependency maintenance block
 Four new Dependabot PRs were reviewed against the repository-pinned Flutter 3.44.1 toolchain.
@@ -105,18 +104,17 @@ Validation:
 - Focused config/helper/action tests and repository-controlled CI gates passed before merge.
 
 ## 2026-10-03 #689 Query Log edit-and-add
-- Fork PR #131 is open from `feature/query-log-edit-add` and has been updated onto current `main`.
+- Fork PR #131 merged into `main` as `21f4d24ce1500339f9b9af9446a679acee225109`.
 - `AddDomainModal` accepts an optional initial domain, initializes validation state from it, and disposes its controller.
 - Log Details exposes an Edit & Add action that opens the existing Add Domain flow prefilled with the queried domain; the default allow/deny direction mirrors the existing direct action and exact/regex remains editable in the modal.
 - Focused widget coverage asserts that the modal opens with the selected domain and that Add is immediately enabled for a valid prefilled domain.
-- Dart tests, Sonar, Codecov, CodeQL, GHAS and static analyses are green on PR #131; the unsigned Android source APK is the remaining running gate.
-- Final manual diff review found no code blocker, but did catch stale checkpoint documentation from before PR #130. This branch cleanup removes that stale state before merge.
+- Repository-controlled validation completed before merge; #689 is now integrated on `main`.
 
 ## Next autonomous work block
-1. Wait for the final unsigned Android source APK gate on PR #131.
-2. If all repository-controlled gates remain green, squash-merge PR #131.
-3. Update `ROADMAP.md`, `UPSTREAM_TRIAGE.md`, and this checkpoint to mark #689 integrated.
-4. Start #748 connection/session architecture work as the next larger incremental block.
+1. Start #748 connection/session architecture as the next larger incremental block.
+2. Keep user-interactive and automatic/background recovery policies explicitly separate.
+3. Reuse the existing diagnostics/App Log path for authentication and reconnect failures.
+4. Keep the first #748 slice bounded and independently reviewable; do not wholesale-port the upstream refactor.
 
 ## Existing gates / holds
 - #442: Android 16 PopupMenu device confirmation still required.
@@ -128,7 +126,7 @@ Validation:
 
 ## Resume protocol
 1. Read this file, `ROADMAP.md`, and `UPSTREAM_TRIAGE.md` from `main`.
-2. Resolve live `main` and confirm PR #131 status if it is still open.
-3. If PR #131 is merged, begin #748 as a fresh bounded architecture slice.
+2. Resolve live `main` and confirm it is at or beyond `21f4d24c`.
+3. Begin #748 as a fresh bounded architecture slice.
 4. Keep device-gated #442/#636/#501/#293 validation-only until affected-device evidence exists.
 5. Validate repository-controlled gates before every merge.
