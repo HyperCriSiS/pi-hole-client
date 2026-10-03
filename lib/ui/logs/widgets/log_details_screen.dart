@@ -76,7 +76,6 @@ class LogDetailsScreen extends StatelessWidget {
           domain: domain,
         ));
         if (!context.mounted) return;
-        process.close();
 
         showSuccessSnackBar(
           context: context,
@@ -85,7 +84,6 @@ class LogDetailsScreen extends StatelessWidget {
         );
       } catch (e) {
         if (!context.mounted) return;
-        process.close();
 
         showSaveFailedSnackBar(
           context: context,
@@ -94,6 +92,8 @@ class LogDetailsScreen extends StatelessWidget {
           alreadyExistsLabel: AppLocalizations.of(context)!.domainAlreadyAdded,
           failedLabel: AppLocalizations.of(context)!.domainAddFailed,
         );
+      } finally {
+        process.close();
       }
     }
 
