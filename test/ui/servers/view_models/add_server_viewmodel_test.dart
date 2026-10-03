@@ -550,7 +550,6 @@ void main() {
         expect(authRepository.lastTotp, '123456');
       });
 
-
       group('rollback side effects', () {
         const oldAddress = 'http://localhost:8081';
         const newAddress = 'http://other.host:9999';
