@@ -8,7 +8,7 @@ This is the compact operational handoff for autonomous Pi-hole Client work. `ROA
 ## Baseline
 - Repository: `HyperCriSiS/pi-hole-client`
 - Default branch: `main`
-- Current `main`: `a6977e6abaf8a3111b447fca0e0b24e4a28bb072` (merged PR #138, second bounded #748 existing-session probe slice).
+- Current `main`: `6dd57ca369ed24806081ab5d11123136464c707b` (merged PR #144, third bounded #748 interactive connection-verification slice).
 - Open fork pull requests: none at this checkpoint.
 
 ## 2026-09-27 dependency maintenance block
@@ -126,13 +126,23 @@ Validation:
 - Focused unit coverage locks valid-session, HTTP 401, missing-SID and transient-503 outcomes.
 - Full Dart tests, unsigned Android source APK + unsigned-artifact verification, CodeQL, Sonar, Codecov and static analyses passed. The separate GitHub-managed GHAS AI-agent job failed independently during `Processing Request`; its setup and cleanup completed successfully and no repository-controlled gate failed.
 
+## 2026-10-07 #748 slice 3 — interactive connection verification
+- Fork PR #144 squash-merged into `main` as `6dd57ca369ed24806081ab5d11123136464c707b`.
+- Added `runInteractiveConnectionCheck` as the shared user-interactive verification flow for TOTP-aware login plus blocking-status verification.
+- A newly created session is followed by the blocking-status request with `skipRenewal: true`, preventing a transient post-login failure from silently creating another Pi-hole session.
+- The shared outcome reports whether a session was created and whether a failure happened during authentication or blocking-status verification; server edit keeps ownership of rollback/credential restore, while server connect keeps its App Log authentication diagnostic behavior.
+- `ProbeExistingSession` remains the SID policy boundary: valid SID is reused, authentication failure requests explicit login, and transient failures stay terminal instead of triggering reauthentication.
+- PR #129 explicit-refresh TOTP recovery and all initial/automatic/background behavior remain unchanged and non-interactive.
+- Focused helper tests cover no-login verification, new-session verification, TOTP cancellation, authentication failure and post-login status failure; existing caller tests continue to lock 401 reauthentication, transient-503 no-login behavior and rollback of sessions created by the current edit attempt.
+- Full Dart tests, unsigned Android source APK + unsigned-artifact verification, CodeQL, Sonar, Codecov and static analyses passed. The separate GitHub-managed GHAS AI-agent job failed only because its monthly quota is exhausted (HTTP 402), not because of a repository finding.
+
 ## Next autonomous work block
-1. Start a fresh #748 slice from current `main`.
-2. Keep `ProbeExistingSession` as the policy boundary for SID reuse / reauthentication decisions.
-3. Centralize only the remaining duplicated **interactive** login outcome and blocking-status verification shared by server connect and server edit; `runTotpLogin` is already shared, so do not duplicate or redesign it.
-4. Preserve the caller-specific `sessionCreated` / rollback contract and existing connection diagnostics/App Log behavior.
-5. Keep PR #129 explicit user refresh recovery separate; initial/automatic/background flows must remain non-interactive.
-6. Lock the current caller semantics with focused tests before moving ownership, then validate repository-controlled gates before merge.
+1. Start the next bounded #748 slice from current `main`.
+2. Keep `ProbeExistingSession` and `runInteractiveConnectionCheck` as the established interactive connection boundaries; do not fold caller-owned rollback back into them.
+3. Make the user-interactive vs initial/automatic/background recovery policy explicit so background refreshes cannot trigger TOTP prompts or reconnect loops.
+4. Reuse/consolidate the existing diagnostics/App Log path for authentication and reconnect failures rather than adding screen-local logging.
+5. Preserve PR #129 explicit user-refresh TOTP recovery as a distinct interactive entry point unless a smaller shared policy abstraction can replace duplication without changing behavior.
+6. Add focused policy/diagnostic tests first, then validate repository-controlled gates before merge.
 
 ## Existing gates / holds
 - #442: Android 16 PopupMenu device confirmation still required.
@@ -144,9 +154,9 @@ Validation:
 
 ## Resume protocol
 1. Read this file, `ROADMAP.md`, and `UPSTREAM_TRIAGE.md` from `main`.
-2. Resolve live `main` and verify it is at or beyond `a6977e6a`.
+2. Resolve live `main` and verify it is at or beyond `6dd57ca3`.
 3. Confirm there are no open fork PRs before starting the next slice.
-4. Continue #748 as a fresh bounded slice around the remaining interactive login/status orchestration; retain `ProbeExistingSession` and do not re-expand the already-merged save-attempt lifecycle extraction.
-5. Keep user-interactive TOTP recovery separate from initial/automatic/background flows.
+4. Continue #748 as a fresh bounded slice around the user-interactive vs automatic/background recovery policy; retain `ProbeExistingSession`, `runInteractiveConnectionCheck` and the caller-owned save-attempt rollback boundary.
+5. Keep explicit user-interactive TOTP recovery separate from initial/automatic/background flows and consolidate diagnostics without introducing prompt loops.
 6. Keep device-gated #442/#636/#501/#293 validation-only until affected-device evidence exists.
 7. Validate repository-controlled gates before every merge.
