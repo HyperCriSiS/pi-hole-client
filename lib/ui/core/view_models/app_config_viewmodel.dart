@@ -235,6 +235,20 @@ class AppConfigViewModel with ChangeNotifier {
     _appLogService.addLog(log);
   }
 
+  void addDiagnostic({
+    required String type,
+    required String message,
+    String? statusCode,
+    String? resBody,
+  }) {
+    _appLogService.addDiagnostic(
+      type: type,
+      message: message,
+      statusCode: statusCode,
+      resBody: resBody,
+    );
+  }
+
   Future<bool> setUseBiometrics(bool biometrics) async {
     final updated = await _repository.updateUseBiometricAuth(biometrics);
     if (updated.isSuccess()) {
