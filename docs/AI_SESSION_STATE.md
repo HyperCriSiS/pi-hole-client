@@ -4,33 +4,34 @@ Updated: 2026-10-07
 
 ## Current baseline
 - Repository: `HyperCriSiS/pi-hole-client`
-- Current `main`: `1d3d62bddf375930690aeaee4485c76f0372ad99`
-- Upstream auth/server-connection issue #748 remains the active architecture track.
+- Current `main`: `98aae46fed9f62019357997409695fb1e89a38be`
+- Upstream auth/server-connection issue #748 remains open upstream, but the fork roadmap work is complete.
 
 ## #748 completed slices
 1. Save-attempt lifecycle / caller-owned rollback: PR #135, `417641f3`.
 2. Existing-session policy probe: PR #138, `a6977e6a`.
 3. Shared interactive login + blocking verification: PR #144, `6dd57ca3`.
-4. Interactive-vs-background recovery policy + diagnostics: PR #146, `1d3d62bd`.
-   - edit-flow TOTP cancellation is regression-locked: the target address is marked `reauth-declined` before immediate auto-refresh resumes;
-   - successful interactive edit clears that marker;
-   - background `handleTotpReauth` refuses to reopen TOTP after user cancellation;
-   - suppressed automatic TOTP recovery is recorded through the shared redacting App Log diagnostic path;
-   - `AppConfigViewModel.addDiagnostic` delegates to `AppLogService.addDiagnostic`;
-   - `docs/server-connection-flow.md` now documents the implemented policy rather than the obsolete double-prompt behavior.
+4. Interactive-vs-background recovery policy: PR #146, `1d3d62bd`.
+   - edit-flow TOTP cancellation marks the address reauth-declined before immediate auto-refresh resumes;
+   - background recovery respects that marker and does not reopen the prompt;
+   - a later successful interactive connection/edit clears the marker.
+5. Shared connection diagnostics: PR #148, `98aae46f`.
+   - `ServerConnectionService` no longer constructs `AppLog` entries locally;
+   - connection/auth/secure-storage diagnostics use `AppConfigViewModel.addDiagnostic` -> `AppLogService.addDiagnostic`;
+   - focused coverage verifies credential-shaped text is still centrally redacted.
 
-## Policy boundaries that must remain stable
+## Stable policy boundaries
 - `ProbeExistingSession`: valid SID reuse vs auth-required vs transient failure.
 - `runInteractiveConnectionCheck`: explicit user-interactive login/TOTP + blocking verification.
 - `_SaveAttempt` / caller: credentials, SID rollback/restore/commit/cleanup ownership.
-- PR #129 `refreshWithTotpRecovery`: explicit user-triggered refresh recovery; do not make initial/automatic/background loads prompt interactively.
+- PR #129 `refreshWithTotpRecovery`: explicit user-triggered refresh recovery only.
+- Initial/automatic/background loads must remain non-interactive unless they enter the shell-level guarded recovery path.
 - A user-cancelled TOTP recovery suppresses automatic re-prompting until a later successful interactive connection clears the marker.
 
-## Validation for slice 4
-Repository-controlled gates passed on PR #146:
+## Validation
+Repository-controlled gates passed for the final #748 slice:
 - full Dart tests
 - unsigned Android source APK + unsigned-artifact verification
-- docs deployment test
 - CodeQL
 - static analyses
 
@@ -38,10 +39,13 @@ The separate GitHub-managed `github-advanced-security` AI-agent job failed indep
 
 ## Next autonomous work block
 1. Re-read live `main`, `ROADMAP.md` and `UPSTREAM_TRIAGE.md`.
-2. Continue #748 only if a bounded remaining duplication/policy gap is identifiable; do not collapse the established boundaries above.
-3. Audit authentication/reconnect diagnostics for remaining screen-local/manual `AppLog` construction and migrate only clear duplicates to the shared diagnostic entry point.
-4. Preserve #129 explicit-refresh semantics and the reauth-declined suppression contract.
-5. Add focused tests before broad refactors; validate repository-controlled gates before merge.
+2. Start the next roadmap item as a fresh bounded unit; do not reopen #748 without a concrete regression.
+3. Preferred next deterministic architecture item: **Connection Doctor**.
+   - expose per-server capability/diagnostic information already available without secrets;
+   - begin with a read-only model/view slice, not transport rewrites;
+   - preserve all #748 auth/recovery boundaries above.
+4. Keep #720 loading/revalidation UX after connection/session architecture stable.
+5. Keep device-gated items validation-only until affected-device evidence exists.
 
 ## Existing holds
 - #442: Android 16 PopupMenu device confirmation required.
@@ -53,9 +57,8 @@ The separate GitHub-managed `github-advanced-security` AI-agent job failed indep
 
 ## Resume protocol
 1. Read this file, `ROADMAP.md` and `UPSTREAM_TRIAGE.md` from `main`.
-2. Resolve live `main` and confirm it is at or beyond `1d3d62bd`.
-3. Confirm there is no competing open feature PR before starting the next slice.
-4. Continue #748 with a bounded diagnostics/reconnect cleanup only if it removes clear duplication without changing interactive-vs-background behavior.
-5. Keep explicit user-interactive TOTP recovery separate from initial/automatic/background flows.
-6. Keep device-gated #442/#636/#501/#293 validation-only until affected-device evidence exists.
-7. Validate repository-controlled gates before every merge.
+2. Resolve live `main` and confirm it is at or beyond `98aae46f`.
+3. Confirm there is no competing open feature PR before starting a new slice.
+4. Treat #748 as complete in the fork unless a concrete regression or upstream change creates a new bounded gap.
+5. Prefer a fresh chat for the next larger unit because the current conversation contains substantial GitHub/CI history.
+6. Validate repository-controlled gates before every merge.
