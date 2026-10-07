@@ -392,6 +392,25 @@ void main() async {
       expect(serversViewModel.connectingServer, isNull);
     });
 
+    testWidgets('connection diagnostics redact secrets through shared sink', (
+      tester,
+    ) async {
+      serversViewModel.selectedServer = _otherV6;
+      final dns = FakeDnsRepository()
+        ..shouldFail = true
+        ..failureException = Exception('password=super-secret');
+      final ctx = await pumpContext(tester);
+
+      await buildService(ctx, server: _serverV6, dns: dns).connect();
+      await tester.pump();
+
+      final connectionLog = appConfigViewModel.logs.firstWhere(
+        (log) => log.type == 'connection',
+      );
+      expect(connectionLog.message, contains('password=<redacted>'));
+      expect(connectionLog.message, isNot(contains('super-secret')));
+    });
+
     testWidgets('a concurrent connect to the same server is ignored', (
       tester,
     ) async {
