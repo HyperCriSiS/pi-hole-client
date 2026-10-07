@@ -22,14 +22,24 @@ Future<bool> handleTotpReauth(BuildContext context) async {
   final server = serversViewModel.selectedServer;
   if (server == null) return false;
 
-  // The user already cancelled 2FA for this server. Don't auto-prompt again
-  if (serversViewModel.isTotpReauthDeclined(server.address)) return false;
+  final appConfigViewModel = context.read<AppConfigViewModel>();
+
+  // The user already cancelled 2FA for this server. Don't auto-prompt again.
+  if (serversViewModel.isTotpReauthDeclined(server.address)) {
+    appConfigViewModel.addDiagnostic(
+      type: 'auth',
+      message:
+          'Automatic TOTP reauthentication suppressed after user cancellation '
+          'for ${server.address}',
+    );
+    return false;
+  }
 
   final statusViewModel = context.read<StatusViewModel>();
 
   final service = ServerConnectionService(
     context: context,
-    appConfigViewModel: context.read<AppConfigViewModel>(),
+    appConfigViewModel: appConfigViewModel,
     statusViewModel: statusViewModel,
     serversViewModel: serversViewModel,
     server: server,
