@@ -10,7 +10,7 @@ import 'package:pi_hole_client/domain/model/server/api_versions.dart';
 import 'package:pi_hole_client/domain/model/server/server.dart';
 import 'package:pi_hole_client/domain/use_cases/server_connection/probe_existing_session.dart';
 import 'package:pi_hole_client/ui/core/l10n/generated/app_localizations.dart';
-import 'package:pi_hole_client/ui/core/services/totp_login.dart';
+import 'package:pi_hole_client/ui/core/services/interactive_connection_check.dart';
 import 'package:pi_hole_client/ui/core/types/resolve_totp.dart';
 import 'package:pi_hole_client/ui/core/ui/helpers/globals.dart';
 import 'package:pi_hole_client/ui/core/ui/helpers/responsive.dart';
@@ -205,10 +205,9 @@ class ServerConnectionService {
     }
 
     final bundle = createBundle(server: serverForLogin);
-    // Track whether createSession was called so the post-auth probe can be
-    // made with skipRenewal: true, preventing a duplicate session from being created
-    // by clearAndRenewSid if a transient error occurs right after login.
-    var sessionJustCreated = false;
+    var loginRequired = false;
+    var password = '';
+
     if (serverForLogin.apiVersion == SupportedApiVersions.v6) {
       final creds = await serversViewModel.fetchCredentials(
         serverForLogin.address,
@@ -224,12 +223,10 @@ class ServerConnectionService {
         );
         return Failure(error);
       }
-      final pw = creds.getOrNull()?.password ?? '';
-      if (pw.isNotEmpty) {
-        // Try existing session first to avoid creating unnecessary sessions.
-        // Use skipRenewal: true so that no session renewal happens inside the
-        // probe — if the existing session is expired, createSession below is
-        // the sole place that creates a new session, preventing duplicates.
+      password = creds.getOrNull()?.password ?? '';
+      if (password.isNotEmpty) {
+        // Try the current SID first. Only an authentication failure requests an
+        // interactive login; transient failures remain terminal here.
         final probe = await ProbeExistingSession(bundle.dns).run();
         switch (probe) {
           case ExistingSessionValid(:final blocking):
@@ -239,53 +236,14 @@ class ServerConnectionService {
             process?.close();
             return Failure(error);
           case ExistingSessionNeedsReauth():
-            break;
+            loginRequired = true;
         }
-        // Session is missing or expired — re-authenticate, prompting for a
-        // TOTP code when the server requires 2FA.
-        final login = await _createSessionWithTotp(bundle, pw, process);
-        if (login.cancelled) {
-          process?.close();
-          return Failure(TotpCancelledException());
-        }
-
-        if (login.error != null) {
-          process?.close();
-          return Failure(login.error!);
-        }
-        sessionJustCreated = true;
       }
     }
-    // Use skipRenewal: true when a session was just created above to prevent
-    // clearAndRenewSid from creating a second session on transient errors.
-    // Transient errors (e.g. network timeout) are still retried.
-    final result = await bundle.dns.fetchBlockingStatus(
-      skipRenewal: sessionJustCreated,
-    );
-    process?.close();
-    return result;
-  }
 
-  /// Re-authenticates, prompting for a 6-digit TOTP code when the server
-  /// requires 2FA and re-prompting on a rejected code.
-  ///
-  /// The first attempt sends the password only. A 2FA server answers with
-  /// [TotpRequiredException]; the loop then collects a code via [resolveTotp]
-  /// and retries with `password + totp`, looping on [TotpInvalidException].
-  ///
-  /// Returns `cancelled: true` when the user dismisses the prompt, otherwise
-  /// the failing error (null on success).
-  ///
-  /// [process] is the "Connecting..." overlay; it is hidden while the TOTP
-  /// prompt is shown (otherwise it floats on top and blocks the prompt) and
-  /// re-shown while the entered code is validated.
-  Future<({bool cancelled, Exception? error})> _createSessionWithTotp(
-    RepositoryBundle bundle,
-    String password,
-    ProcessModal? process,
-  ) async {
-    final outcome = await runTotpLogin(
+    final outcome = await runInteractiveConnectionCheck(
       auth: bundle.auth,
+      dns: bundle.dns,
       password: password,
       resolveTotp: ({error}) async {
         // Hide the connecting overlay so the TOTP prompt is on top and usable.
@@ -297,15 +255,27 @@ class ServerConnectionService {
         }
         return code;
       },
+      loginRequired: loginRequired,
     );
-    final error = outcome.result.exceptionOrNull();
-    if (!outcome.cancelled && error != null) {
-      _recordDiagnostic(
-        'auth',
-        'Pi-hole v6 authentication failed: ${error.runtimeType}: $error',
-      );
+    process?.close();
+
+    switch (outcome) {
+      case InteractiveConnectionCheckSuccess(:final blocking):
+        return Success(blocking);
+      case InteractiveConnectionCheckCancelled():
+        return Failure(TotpCancelledException());
+      case InteractiveConnectionCheckFailed(
+        :final error,
+        :final stage,
+      ):
+        if (stage == InteractiveConnectionFailureStage.authentication) {
+          _recordDiagnostic(
+            'auth',
+            'Pi-hole v6 authentication failed: ${error.runtimeType}: $error',
+          );
+        }
+        return Failure(error);
     }
-    return (cancelled: outcome.cancelled, error: error);
   }
 
   Future<void> _onSuccess(Blocking blocking, Server connectedServer) async {

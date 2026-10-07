@@ -537,6 +537,7 @@ import 'package:pi_hole_client/ui/core/l10n/generated/app_localizations_pl.dart'
 import 'package:pi_hole_client/ui/core/l10n/languages.dart';
 import 'package:pi_hole_client/ui/core/model/app_screen.dart';
 import 'package:pi_hole_client/ui/core/model/app_screens.dart';
+import 'package:pi_hole_client/ui/core/services/interactive_connection_check.dart';
 import 'package:pi_hole_client/ui/core/services/server_connection_service.dart';
 import 'package:pi_hole_client/ui/core/themes/theme.dart';
 import 'package:pi_hole_client/ui/core/ui/animations.dart';
