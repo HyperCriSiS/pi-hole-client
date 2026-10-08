@@ -282,8 +282,7 @@ GoRouter createAppRouter({
                           title: AppLocalizations.of(context)!.serverInfo,
                           builder: (bundle, server) => createServerInfoScreen(
                             bundle: bundle,
-                            serverAlias: server.alias,
-                            serverAddress: server.address,
+                            server: server,
                           ),
                         ),
                       ),
