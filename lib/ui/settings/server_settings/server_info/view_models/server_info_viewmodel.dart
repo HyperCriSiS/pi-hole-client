@@ -58,7 +58,7 @@ class ServerInfoViewModel extends ChangeNotifier {
     final serverResult = await serverFuture;
     switch (serverResult) {
       case Success():
-        final serverInfo = serverResult.getOrNull();
+        final serverInfo = serverResult.getOrThrow();
         _connectionDiagnostics = _buildConnectionDiagnostics(
           serverInfo: serverInfo,
           mfaEnabled: mfaEnabled,
