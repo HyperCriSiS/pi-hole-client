@@ -81,6 +81,9 @@ class FakeServersViewModel extends ServersViewModel {
   /// inconclusive uniqueness check.
   bool checkUrlExistsFails = false;
 
+  /// When true, [checkUrlExists] throws to simulate an unexpected error.
+  bool checkUrlExistsThrows = false;
+
   // Additional call-tracking fields for non-Command methods
   int setselectedServerCallCount = 0;
   int updateselectedServerStatusCallCount = 0;
@@ -197,6 +200,9 @@ class FakeServersViewModel extends ServersViewModel {
 
   @override
   FutureOr<Map<String, dynamic>> checkUrlExists(String url) async {
+    if (checkUrlExistsThrows) {
+      throw Exception('checkUrlExists failed');
+    }
     if (checkUrlExistsFails) {
       return {'result': 'fail', 'exists': false};
     }
