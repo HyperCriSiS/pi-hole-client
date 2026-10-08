@@ -4,7 +4,7 @@ Updated: 2026-10-08
 
 ## Current baseline
 - Repository: `HyperCriSiS/pi-hole-client`
-- Current `main`: `dcffeafe2ac642b4ace185fcbcd5953b8b6b4ed9`
+- Current `main`: `71b667b203641694817e0080f3fbb37e736407a5`
 - Upstream auth/server-connection issue #748 remains open upstream, but the fork roadmap work is complete.
 
 ## #748 completed slices
@@ -30,6 +30,18 @@ Updated: 2026-10-08
 - Upstream #765 is formatting-only and needs no import.
 - PR #150 validation passed: full Dart tests, unsigned Android source APK + artifact verification, CodeQL, Sonar, Codecov and static analyses.
 
+## Connection Doctor progress
+- Slice 1 merged via PR #152 as `71b667b2`.
+- Server Info now exposes a read-only per-server summary for:
+  - configured API version and reported FTL version;
+  - resolved API base path and web-panel path, including existing reverse-proxy prefix/webhome capability;
+  - MFA capability;
+  - current v6 session state from the already-shared in-memory session cache;
+  - configured TLS/certificate policy.
+- The session diagnostic getter is side-effect-free: it does not read secure storage, make a network request, renew a SID, authenticate or open TOTP UI.
+- Existing #748 auth/recovery boundaries remain unchanged.
+- PR #152 validation passed: full Dart tests, unsigned Android source APK + unsigned-artifact verification, v6 legacy-boundary audit, CodeQL, Sonar, Codecov and static analyses.
+
 ## Stable policy boundaries
 - `ProbeExistingSession`: valid SID reuse vs auth-required vs transient failure.
 - `runInteractiveConnectionCheck`: explicit user-interactive login/TOTP + blocking verification.
@@ -49,12 +61,12 @@ The separate GitHub-managed `github-advanced-security` AI-agent job failed indep
 
 ## Next autonomous work block
 1. Re-read live `main`, `ROADMAP.md` and `UPSTREAM_TRIAGE.md`.
-2. Start the next roadmap item as a fresh bounded unit; do not reopen #748 without a concrete regression.
-3. Preferred next deterministic architecture item: **Connection Doctor**.
-   - expose per-server capability/diagnostic information already available without secrets;
-   - begin with a read-only model/view slice, not transport rewrites;
-   - preserve all #748 auth/recovery boundaries above.
-4. Keep #720 loading/revalidation UX after connection/session architecture stable.
+2. Continue **Connection Doctor** with one bounded read-only slice:
+   - add explicit endpoint reachability/latency diagnostics without exposing secrets;
+   - reuse the existing server URL/TLS policy and shared repositories/transport where practical;
+   - do not create a second authentication/recovery policy or automatic TOTP prompt path.
+3. Keep actionable proxy/streaming hints such as #754 as the following separate slice after reachability/latency is stable.
+4. Keep #720 loading/revalidation UX after Connection Doctor's deterministic diagnostics.
 5. Keep device-gated items validation-only until affected-device evidence exists.
 
 ## Existing holds
@@ -67,8 +79,8 @@ The separate GitHub-managed `github-advanced-security` AI-agent job failed indep
 
 ## Resume protocol
 1. Read this file, `ROADMAP.md` and `UPSTREAM_TRIAGE.md` from `main`.
-2. Resolve live `main` and confirm it is at or beyond `dcffeafe`.
+2. Resolve live `main` and confirm it is at or beyond `71b667b2`.
 3. Re-audit upstream changes after `445424380076d09293ca1a2ce638d6f144e27233`, then confirm there is no competing open feature PR before starting a new slice.
 4. Treat #748 as complete in the fork unless a concrete regression or upstream change creates a new bounded gap.
-5. Prefer a fresh chat for the next larger unit because the current conversation contains substantial GitHub/CI history.
+5. Prefer a fresh chat for the next larger unit if GitHub/CI tool history has become substantial.
 6. Validate repository-controlled gates before every merge.
