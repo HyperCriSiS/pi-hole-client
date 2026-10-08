@@ -29,6 +29,15 @@ Maintain and improve the unofficial Pi-hole client while upstream activity is li
 
 ## Phase 1 — deterministic UI and diagnostics work
 
+- [ ] **P1 — upstream #724:** reproduce and fix the stale Group/Client details pane after deleting an item at tablet/two-column width (~1000 px). Upstream fix: [#725](https://github.com/tsutsu3/pi-hole-client/pull/725).
+  - [ ] Audit deletion ownership in `group_client_screen.dart` and the Group/Client detail screens; current fork clears the selected model but conditionally pops only at `width <= ResponsiveConstants.large`, leaving the two-column pushed detail route visible.
+  - [ ] Make deletion await the repository action and close only the actually pushed detail route; avoid popping the root pane or navigating on failed deletion. Check Group/Client and related Adlist/Domain paths without wholesale upstream porting.
+  - [ ] Add phone/two-column/three-column success/failure widget regressions; require full Dart and unsigned Android gates before merge.
+- [ ] **P1 — upstream #718:** ensure failed initial loads cannot leave Server Settings stuck on a skeleton forever. Upstream fix: [#721](https://github.com/tsutsu3/pi-hole-client/pull/721).
+  - [ ] Reproduce with `mock_api_server --fail all` and `--fail auth/sessions`; check DHCP, Network, Interfaces, Local DNS, Server Info and Sessions.
+  - [ ] Audit the loading `Command` state notification lifecycle; in current fork, several ViewModels listen to command result only, not `isRunning`/`errors`, while screens depend on `ListenableBuilder`. Add symmetric listeners/disposal, without changing #748/TOTP recovery policy.
+  - [ ] Verify error display and pull-to-refresh recovery with focused regressions and full CI.
+
 - [x] #604: add Domain Log Details actions for filtering by domain and copying the domain while retaining the browser action.
 - [x] #404: complete the deterministic documentation/UI item tracked in `UPSTREAM_TRIAGE.md`.
 - [x] #638: introduce/reuse a shared error-state widget and migrate duplicated generic error states incrementally.
@@ -47,6 +56,13 @@ Maintain and improve the unofficial Pi-hole client while upstream activity is li
   - [ ] Re-test the Home server-actions popup on Android 16 while opening/closing it and navigating/changing server. If the old crash still reproduces on Flutter 3.44.1, capture the current stack before adding any app-specific workaround.
 
 ## Phase 2 — device-dependent regressions
+
+- [ ] **P2 / device gate — upstream #741:** validate the Android 17 / Pixel 10 Pro XL Flutter Impeller/Vulkan crash reported on Flutter 3.44.1. Upstream closed the report after moving to Flutter 3.47.4 without affected-device confirmation; the fork still pins 3.44.1.
+  - [ ] Capture a current affected-device crash stack and exact rendering/backend/device details; keep separate from #636 self-signed HTTPS networking.
+  - [ ] Evaluate a Flutter upgrade only as a dedicated compatibility slice (Dart, Android compileSdk 36, F-Droid, pinned dependencies, test/build gates); do not assume upgrading or disabling Impeller is safe without evidence.
+- [ ] **P2 / device gate — upstream #686:** verify Android IME/keyboard inset corruption after returning from background with an open Bottom Sheet. Upstream fix: [#687](https://github.com/tsutsu3/pi-hole-client/pull/687).
+  - [ ] Test MFA and Add Domain sheets on affected Android devices: background with keyboard open, resume, dismiss/submit, and inspect underlying Home layout.
+  - [ ] If reproducible, evaluate a guarded Android-only focus/keyboard dismissal during `inactive`/`hidden` lifecycle events; current `lib/ui/shell/base.dart` lacks the upstream lifecycle handling. Avoid desktop/iOS regressions and add deterministic lifecycle coverage where feasible.
 
 - [ ] #636: reproduce the current Android 17 self-signed-HTTPS connectivity failure with App Log diagnostics and fix only a verified network/TLS cause; upstream now has a concrete Pixel 10 / Android 17 / GrapheneOS report where Allow Untrusted Certificates has no effect while the same server works from Android 16.
   - [x] Audit transport wiring: `allowUntrustedCert`, `ignoreCertificateErrors` and `pinnedCertificateSha256` are forwarded unchanged to the handwritten v6 client, generated v6 service and v5 client, all through the shared `createHttpClient` policy.
