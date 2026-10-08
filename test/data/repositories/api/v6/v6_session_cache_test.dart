@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pi_hole_client/data/repositories/api/v6/v6_session_cache.dart';
+import 'package:pi_hole_client/domain/model/server/connection_diagnostics.dart';
 import 'package:pi_hole_client/utils/exceptions.dart';
 
 import '../../../../../testing/fakes/services/fake_pihole_v6_api_client.dart';
@@ -16,6 +17,51 @@ void main() {
     creds = FakeSessionCredentialService();
     client = FakePiholeV6ApiClient();
     cache = V6SessionCache(creds: creds, client: client);
+  });
+
+  // ---------------------------------------------------------------------------
+  // Diagnostic session state
+  // ---------------------------------------------------------------------------
+  group('diagnosticSessionState', () {
+    test('is unknown before the cache has been observed', () {
+      expect(cache.diagnosticSessionState, ConnectionSessionState.unknown);
+      expect(client.postAuthCallCount, 0);
+    });
+
+    test('reports active after a SID is loaded', () async {
+      await cache.getSid();
+
+      expect(cache.diagnosticSessionState, ConnectionSessionState.active);
+      expect(client.postAuthCallCount, 0);
+    });
+
+    test('reports no authentication required for an empty SID', () async {
+      creds
+        ..shouldFailSidRead = true
+        ..addressPassword = '';
+      await cache.getSid();
+
+      expect(
+        cache.diagnosticSessionState,
+        ConnectionSessionState.noAuthenticationRequired,
+      );
+      expect(client.postAuthCallCount, 0);
+    });
+
+    test('reports interactive re-auth requirement without retrying', () async {
+      client.shouldRequireTotp = true;
+      await expectLater(
+        cache.clearAndRenewSid(),
+        throwsA(isA<TotpRequiredException>()),
+      );
+      final callsBefore = client.postAuthCallCount;
+
+      expect(
+        cache.diagnosticSessionState,
+        ConnectionSessionState.interactiveReauthRequired,
+      );
+      expect(client.postAuthCallCount, callsBefore);
+    });
   });
 
   // ---------------------------------------------------------------------------

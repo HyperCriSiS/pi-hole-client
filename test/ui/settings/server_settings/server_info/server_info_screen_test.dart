@@ -1,8 +1,11 @@
 import 'package:command_it/command_it.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pi_hole_client/domain/model/server/connection_diagnostics.dart';
+import 'package:pi_hole_client/domain/model/server/server.dart';
 import 'package:pi_hole_client/ui/core/ui/components/error_message.dart';
 import 'package:pi_hole_client/ui/settings/server_settings/server_info/view_models/server_info_viewmodel.dart';
+import 'package:pi_hole_client/ui/settings/server_settings/server_info/widgets/connection_diagnostics_section.dart';
 import 'package:pi_hole_client/ui/settings/server_settings/server_info/widgets/host_information_section.dart';
 import 'package:pi_hole_client/ui/settings/server_settings/server_info/widgets/performance_usage_section.dart';
 import 'package:pi_hole_client/ui/settings/server_settings/server_info/widgets/pihole_version_section.dart';
@@ -10,8 +13,15 @@ import 'package:pi_hole_client/ui/settings/server_settings/server_info/widgets/s
 import 'package:pi_hole_client/ui/settings/server_settings/server_info/widgets/server_info_screen.dart';
 
 import '../../../../../testing/fakes/repositories/api/fake_auth_repository.dart';
+import '../../../../../testing/fakes/repositories/api/fake_config_repository.dart';
 import '../../../../../testing/fakes/repositories/api/fake_ftl_repository.dart';
 import '../../../../../testing/test_app.dart';
+
+const _server = Server(
+  address: 'http://192.168.1.100',
+  alias: 'Test Server',
+  apiVersion: 'v6',
+);
 
 void main() async {
   await initTestApp();
@@ -19,15 +29,20 @@ void main() async {
   group('ServerInfoScreen tests', () {
     late FakeFtlRepository fakeFtlRepository;
     late FakeAuthRepository fakeAuthRepository;
+    late FakeConfigRepository fakeConfigRepository;
     late ServerInfoViewModel viewModel;
 
     setUp(() async {
       Command.globalExceptionHandler = (_, _) {};
       fakeFtlRepository = FakeFtlRepository();
       fakeAuthRepository = FakeAuthRepository();
+      fakeConfigRepository = FakeConfigRepository();
       viewModel = ServerInfoViewModel(
         ftlRepository: fakeFtlRepository,
         authRepository: fakeAuthRepository,
+        configRepository: fakeConfigRepository,
+        server: _server,
+        connectionSessionStateProvider: () => ConnectionSessionState.active,
       );
     });
 
@@ -40,8 +55,8 @@ void main() async {
       return buildTestApp(
         ServerInfoScreen(
           viewModel: viewModel..loadServerInfo.run(),
-          serverAlias: 'Test Server',
-          serverAddress: 'http://192.168.1.100',
+          serverAlias: _server.alias,
+          serverAddress: _server.address,
         ),
       );
     }
@@ -62,13 +77,19 @@ void main() async {
 
       expect(find.byType(ServerInfoScreen), findsOneWidget);
       expect(find.byType(ServerConnectionSection), findsOneWidget);
+      expect(find.byType(ConnectionDiagnosticsSection), findsOneWidget);
       expect(find.byType(HostInformationSection), findsOneWidget);
       expect(find.byType(PerformanceUsageSection), findsOneWidget);
       expect(find.byType(PiholeVersionSection), findsOneWidget);
 
-      // Verify server connection info
       expect(find.text('Test Server'), findsOneWidget);
       expect(find.text('http://192.168.1.100'), findsOneWidget);
+
+      expect(find.text('V6'), findsOneWidget);
+      expect(find.text('/api/'), findsOneWidget);
+      expect(find.text('/admin/'), findsOneWidget);
+      expect(find.text('Valid'), findsOneWidget);
+      expect(find.text('HTTP'), findsOneWidget);
     });
 
     testWidgets('should show error screen when fetching fails', (
@@ -93,8 +114,8 @@ void main() async {
         buildTestApp(
           ServerInfoScreen(
             viewModel: viewModel,
-            serverAlias: 'Test Server',
-            serverAddress: 'http://192.168.1.100',
+            serverAlias: _server.alias,
+            serverAddress: _server.address,
           ),
         ),
       );
@@ -168,7 +189,6 @@ void main() async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 2.0;
 
-      // getAuth failure mimics v5, which has no MFA support.
       fakeAuthRepository.shouldFail = true;
 
       addTearDown(() {
