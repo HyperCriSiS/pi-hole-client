@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:command_it/command_it.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pi_hole_client/domain/model/server/connection_diagnostics.dart';
+import 'package:pi_hole_client/domain/model/server/endpoint_diagnostics.dart';
 import 'package:pi_hole_client/domain/model/server/server.dart';
 import 'package:pi_hole_client/ui/settings/server_settings/server_info/view_models/server_info_viewmodel.dart';
 
@@ -45,6 +46,61 @@ void main() {
     tearDown(() {
       viewModel.dispose();
       Command.globalExceptionHandler = null;
+    });
+
+    test('endpoint checks are manual, sequential and report four successes', () async {
+      await viewModel.loadServerInfo.runAsync();
+      expect(viewModel.endpointChecks, isEmpty);
+
+      await viewModel.runEndpointDiagnostics();
+
+      expect(viewModel.isCheckingEndpoints, isFalse);
+      expect(viewModel.endpointChecks.map((c) => c.endpoint), [
+        FtlEndpoint.host,
+        FtlEndpoint.sensors,
+        FtlEndpoint.system,
+        FtlEndpoint.version,
+      ]);
+      for (final check in viewModel.endpointChecks) {
+        expect(check.outcome, EndpointOutcome.success);
+        expect(check.elapsed, greaterThanOrEqualTo(Duration.zero));
+      }
+    });
+
+    test('endpoint probe failures do not mutate server info', () async {
+      await viewModel.loadServerInfo.runAsync();
+      final previousInfo = viewModel.loadServerInfo.value;
+      fakeFtlRepository.shouldFail = true;
+
+      await viewModel.runEndpointDiagnostics();
+
+      expect(viewModel.endpointChecks, hasLength(4));
+      expect(viewModel.endpointChecks.every(
+        (result) => result.outcome == EndpointOutcome.unknown,
+      ), isTrue);
+      expect(viewModel.loadServerInfo.value, same(previousInfo));
+
+      // A subsequent server-info refresh clears stale endpoint results.
+      fakeFtlRepository.shouldFail = false;
+      await viewModel.loadServerInfo.runAsync();
+      expect(viewModel.endpointChecks, isEmpty);
+    });
+
+    test('no endpoint probes on Pi-hole v5', () async {
+      final legacy = ServerInfoViewModel(
+        ftlRepository: fakeFtlRepository,
+        authRepository: fakeAuthRepository,
+        configRepository: fakeConfigRepository,
+        server: const Server(
+          address: 'http://pi.hole',
+          alias: 'Legacy',
+          apiVersion: 'v5',
+        ),
+      );
+      addTearDown(legacy.dispose);
+      expect(legacy.supportsEndpointDiagnostics, isFalse);
+      await legacy.runEndpointDiagnostics();
+      expect(legacy.endpointChecks, isEmpty);
     });
 
     test('loadServerInfo success populates server info', () async {

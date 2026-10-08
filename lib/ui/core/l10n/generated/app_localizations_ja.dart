@@ -438,6 +438,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String get connectionStatus => '接続状態';
 
   @override
+  String get endpointDiagnosticsTitle => '個別 API エンドポイント';
+
+  @override
+  String get endpointDiagnosticsNote => '既存の接続とセッションで読み取り専用の確認を行います。応答時間にはサーバー処理やセッション再試行が含まれ、失敗してもホストの停止を意味しません。';
+
+  @override
+  String get endpointDiagnosticsRun => 'エンドポイントを確認';
+
+  @override
   String get connectionTimeout => '失敗しました。接続タイムアウト。サーバーが到達可能か確認してください。';
 
   @override

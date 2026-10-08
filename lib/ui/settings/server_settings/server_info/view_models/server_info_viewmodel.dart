@@ -6,6 +6,7 @@ import 'package:pi_hole_client/data/repositories/api/interfaces/ftl_repository.d
 import 'package:pi_hole_client/domain/model/ftl/pihole_server.dart';
 import 'package:pi_hole_client/domain/model/server/api_versions.dart';
 import 'package:pi_hole_client/domain/model/server/connection_diagnostics.dart';
+import 'package:pi_hole_client/domain/model/server/endpoint_diagnostics.dart';
 import 'package:pi_hole_client/domain/model/server/server.dart';
 import 'package:pi_hole_client/utils/url.dart';
 import 'package:result_dart/result_dart.dart';
@@ -43,9 +44,16 @@ class ServerInfoViewModel extends ChangeNotifier {
 
   ConnectionDiagnostics? _connectionDiagnostics;
   FtlRequestDiagnostic? _ftlRequestDiagnostic;
+  final List<EndpointCheckResult> _endpointChecks = [];
+  bool _checkingEndpoints = false;
+  bool _disposed = false;
+  int _diagnosticEpoch = 0;
 
   ConnectionDiagnostics? get connectionDiagnostics => _connectionDiagnostics;
   FtlRequestDiagnostic? get ftlRequestDiagnostic => _ftlRequestDiagnostic;
+  bool get supportsEndpointDiagnostics => _server.apiVersion == SupportedApiVersions.v6;
+  bool get isCheckingEndpoints => _checkingEndpoints;
+  List<EndpointCheckResult> get endpointChecks => List.unmodifiable(_endpointChecks);
 
   /// Server 2FA status. `null` when unavailable (e.g. v5).
   bool? get mfaEnabled => _connectionDiagnostics?.mfaEnabled;
@@ -54,6 +62,8 @@ class ServerInfoViewModel extends ChangeNotifier {
     // A refresh must never retain the previous attempt's timing or status.
     _ftlRequestDiagnostic = null;
     _connectionDiagnostics = null;
+    _diagnosticEpoch++;
+    _endpointChecks.clear();
 
     // Measure only the already-issued FTL request, not the parallel auth and
     // configuration capability reads or the time spent building the UI.
@@ -94,6 +104,65 @@ class ServerInfoViewModel extends ChangeNotifier {
         elapsed: stopwatch.elapsed,
       );
       rethrow;
+    }
+  }
+
+  /// Runs the four existing v6 read-only repository calls on explicit demand.
+  ///
+  /// Sequential execution avoids competing SID renewals on the shared
+  /// transport. Repository-level TLS, URL/subroute, SID retry and auth
+  /// boundaries remain unchanged. No background TOTP prompt is introduced.
+  Future<void> runEndpointDiagnostics() async {
+    if (_disposed ||
+        !supportsEndpointDiagnostics ||
+        _checkingEndpoints ||
+        loadServerInfo.isRunning.value) {
+      return;
+    }
+
+    _checkingEndpoints = true;
+    final epoch = ++_diagnosticEpoch;
+    _endpointChecks.clear();
+    notifyListeners();
+
+    try {
+      final operations = <(FtlEndpoint, Future<Result<Object>> Function())>[
+        (FtlEndpoint.host, _ftlRepository.fetchInfoHost),
+        (FtlEndpoint.sensors, _ftlRepository.fetchInfoSensors),
+        (FtlEndpoint.system, _ftlRepository.fetchInfoSystem),
+        (FtlEndpoint.version, _ftlRepository.fetchInfoVersion),
+      ];
+      for (final (endpoint, fetch) in operations) {
+        final watch = Stopwatch()..start();
+        EndpointOutcome outcome;
+        try {
+          final result = await fetch();
+          outcome = result.isSuccess()
+              ? EndpointOutcome.success
+              : classifyEndpointError(result.exceptionOrNull());
+        } catch (error) {
+          outcome = classifyEndpointError(error);
+        } finally {
+          watch.stop();
+        }
+        if (_disposed || epoch != _diagnosticEpoch) return;
+        _endpointChecks.add(
+          EndpointCheckResult(
+            endpoint: endpoint,
+            outcome: outcome,
+            elapsed: watch.elapsed,
+          ),
+        );
+        notifyListeners();
+      }
+    } finally {
+      if (!_disposed && epoch == _diagnosticEpoch) {
+        _checkingEndpoints = false;
+        notifyListeners();
+      } else if (!_disposed) {
+        _checkingEndpoints = false;
+        notifyListeners();
+      }
     }
   }
 
@@ -146,6 +215,8 @@ class ServerInfoViewModel extends ChangeNotifier {
 
   @override
   void dispose() {
+    _disposed = true;
+    _diagnosticEpoch++;
     loadServerInfo.removeListener(notifyListeners);
     loadServerInfo.isRunning.removeListener(notifyListeners);
     loadServerInfo.errors.removeListener(notifyListeners);

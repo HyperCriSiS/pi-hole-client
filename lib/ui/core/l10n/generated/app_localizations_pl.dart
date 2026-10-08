@@ -451,6 +451,15 @@ class AppLocalizationsPl extends AppLocalizations {
   String get connectionStatus => 'Stan połączenia';
 
   @override
+  String get endpointDiagnosticsTitle => 'Poszczególne endpointy API';
+
+  @override
+  String get endpointDiagnosticsNote => 'Odczyt przez istniejące połączenie i sesję. Czas obejmuje przetwarzanie przez serwer i ewentualne ponowienie sesji; błąd nie dowodzi niedostępności hosta.';
+
+  @override
+  String get endpointDiagnosticsRun => 'Sprawdź endpointy';
+
+  @override
   String get connectionTimeout =>
       'Nie udało się, Przekroczono limit czasu połączenia. Sprawdź czy serwer jest dostępny.';
 
