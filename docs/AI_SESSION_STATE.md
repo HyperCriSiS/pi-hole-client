@@ -104,3 +104,12 @@ The separate GitHub-managed `github-advanced-security` AI-agent job failed indep
 - Each PR passed full Dart tests, CodeQL, Sonar, Codecov, static analysis and unsigned Android source APK build before squash merge.
 - GitHub Advisory Database check found no known advisories for these three updated versions at the time of review.
 - Any future Dependabot pub PR must verify SDK-pinned transitive resolution and `pubspec.lock` stability; do not bypass the strict lockfile check.
+
+## Upstream issue gap audit (2026-10-08)
+- No upstream issue created or updated since the current upstream review cursor; reviewed older upstream reports missing from fork triage.
+- Added **#724** (Group/Client stale tablet detail after delete) and **#718** (settings load error leaves skeleton indefinitely) as P1 deterministic follow-ups in `ROADMAP.md`. Upstream fixes #725/#721 serve as references, not wholesale imports.
+- Added **#741** (Android 17 Impeller/Vulkan crash on Flutter 3.44.1) and **#686** (Android IME/bottom-sheet resume layout) as P2 affected-device validation holds; no unverified framework/platform workaround.
+- Verified **#722** same-IP Local DNS targeting already uses `oldRecord`/`newRecord` with full record equality; no duplicate implementation.
+- **#699** website image quality has no proven equivalence across the fork/upstream docs stacks; not committed as an app blocker.
+- Triage also records upstream dependency PR #764 as selective: fork already integrated its compatible packages while Android 37/`dynamic_color` major blockers remain.
+- Next bounded implementation order: #724, #718, then resume Connection Doctor; device-gated issues await repro evidence.
