@@ -1,10 +1,10 @@
 # AI Session State
 
-Updated: 2026-10-08
+Updated: 2026-10-09
 
 ## Current baseline
 - Repository: `HyperCriSiS/pi-hole-client`
-- Current `main`: `524a1fe449c4dd7b6eac24a4ccd847b337490e45`
+- Last validated application feature merge: `5f10886c0d23e65a2bafb483b5b28476eec8791e` (PR #170; subsequent documentation commits may advance `main`).
 - Upstream auth/server-connection issue #748 remains open upstream, but the fork roadmap work is complete.
 
 ## #748 completed slices
@@ -61,11 +61,8 @@ The separate GitHub-managed `github-advanced-security` AI-agent job failed indep
 
 ## Next autonomous work block
 1. Re-read live `main`, `ROADMAP.md` and `UPSTREAM_TRIAGE.md`.
-2. Continue **Connection Doctor** with one bounded read-only slice:
-   - add explicit endpoint reachability/latency diagnostics without exposing secrets;
-   - reuse the existing server URL/TLS policy and shared repositories/transport where practical;
-   - do not create a second authentication/recovery policy or automatic TOTP prompt path.
-3. Keep actionable proxy/streaming hints such as #754 as the following separate slice after reachability/latency is stable.
+2. **Connection Doctor:** PR #170 measures the existing FTL four-call batch and reports outcome/elapsed time. Preserve shared URL/TLS/auth/SID behavior. Keep per-endpoint reachability/latency evidence as a separately scoped extension where useful.
+3. Next deterministic slice: actionable reverse-proxy/gravity-streaming hints for upstream #754. Do not infer nginx buffering from generic errors, add interactive auth prompts, or change the handwritten gravity streaming transport.
 4. Keep #720 loading/revalidation UX after Connection Doctor's deterministic diagnostics.
 5. Keep device-gated items validation-only until affected-device evidence exists.
 
@@ -128,3 +125,11 @@ The separate GitHub-managed `github-advanced-security` AI-agent job failed indep
 - Full Dart suite, unsigned source Android APK build and unsigned-artifact verification, CodeQL, Sonar, Codecov and all static scans passed before merge.
 - Validation boundary: the physical/integration smoke with `mock_api_server --fail all` / `--fail auth/sessions` has **not** been run; it remains an optional roadmap validation check. No changes were made to TOTP, session or background retry policy.
 - Next bounded architecture work: Connection Doctor per-server read-only diagnostics, per the existing `## Next autonomous work block`. Keep #720 broader loading-UX changes separate.
+
+## Connection Doctor FTL timing completion (2026-10-09)
+- PR #170 merged into `main` as `5f10886c0d23e65a2bafb483b5b28476eec8791e`; final PR HEAD `7d713fb12787eacc6e8b536f24949ee7d1e61591`.
+- The Server Info ViewModel times the existing `fetchAllServerInfo()` batch with `Stopwatch`: four parallel FTL calls (host, sensors, system, version) plus any existing SID renewal retry. No extra ping, credentials, raw exception details or separate auth path.
+- Success/failure and elapsed time display on the Server Info summary and existing failure screen. Refresh clears old diagnostic state. A failed authenticated request does not prove host unreachability; batch latency is not single-endpoint network RTT.
+- ViewModel regressions cover initial success, failure, error-to-retry success, and success-to-refresh error; screen widget regressions cover success and failure display.
+- Full Dart tests, unsigned Android release APK and `Verify unsigned release artifact`, Sonar, Codecov, CodeQL and four static analysis jobs all passed before merge. No physical-device/server benchmark claimed.
+- Next bounded scope: actionable nginx/reverse-proxy buffering help for gravity streaming (#754), with separate per-endpoint diagnostics only when distinct evidence adds value. Keep #720 UX and device-gated items separate.

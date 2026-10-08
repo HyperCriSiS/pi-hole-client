@@ -155,7 +155,8 @@ Maintain and improve the unofficial Pi-hole client while upstream activity is li
   - [x] Reuse the shared redacting diagnostics/App Log path for authentication and reconnect failures; merged via PR #148 as `98aae46f`.
 - [ ] Connection Doctor: expose per-server capabilities and diagnostics useful for reverse proxies and difficult transports.
   - [x] Show resolved API version/FTL version, API base path, web-home path, TOTP/session state and TLS/certificate policy. Implemented as a read-only Server Info summary in PR #152; session state comes only from the existing in-memory v6 cache and does not trigger renewal/authentication.
-  - [ ] Provide endpoint reachability/latency diagnostics without exposing secrets.
+  - [x] Measure the existing FTL Server Info batch (host, sensors, system, version) with a monotonic stopwatch; show success/failure and elapsed time in Server Info and its error state, and reset stale results on refresh. PR #170 merged as `5f10886c`; Dart tests, unsigned Android release APK and artifact verification, CodeQL, Sonar, Codecov and static analyses passed. The batch can include existing SID renewal and is not a per-endpoint RTT.
+  - [ ] Add distinct per-endpoint reachability/latency diagnostics where useful. The PR #170 batch result alone cannot distinguish networking, proxy, server and authentication failures; do not expose secrets or introduce a second authentication/recovery path.
   - [ ] Surface actionable hints for known proxy/streaming cases such as #754.
 - [ ] #720: standardize loading/revalidation UX after the connection/session architecture is stable.
   - [ ] Initial load: skeleton or dedicated loading state where structural placeholders are useful.
