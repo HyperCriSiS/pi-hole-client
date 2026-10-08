@@ -94,47 +94,43 @@ flowchart TD
 
 On `UpdateSuccess` the widget pops and shows the success snackbar.
 
-### `restartAutoRefresh` can trigger a second, independent TOTP prompt
+### TOTP cancellation policy during edit and auto-refresh restart
 
-`restartAutoRefresh` (called on every `updateServer` exit path, including
-`UpdateCancelled`) just calls `StatusViewModel.startAutoRefresh()` — but that
-runs its first tick **immediately** (`runImmediately: true`), not after the
-configured interval. If the edit's own `_authenticate`/`_loginWithTotp` TOTP
-prompt is dismissed because the session is genuinely invalid server-side, that
-immediate tick re-fetches status for the same server, hits the same
-`TotpRequiredException`, and — via a completely separate subsystem outside
-this file — surfaces a **second** TOTP prompt. Cancelling the edit's own
-prompt does not (currently — see `(E8)`/`(E9)`/`(X6)` in the MFA decision
-table) mark the address as reauth-declined, so this second prompt is not
-suppressed.
+`restartAutoRefresh` still calls `StatusViewModel.startAutoRefresh()`, whose first
+tick runs immediately by default. That means an edit which just discovered an
+expired 2FA session can immediately encounter the same `TotpRequiredException`
+again after the edit flow exits.
 
-The second prompt does not come back through `AddServerViewModel`; it is
-raised by the shell-level auto-refresh error handler and goes through the
-connect/switch flow instead:
+The policy boundary is therefore explicit: when the user dismisses the edit
+flow's TOTP prompt, `AddServerViewModel` marks the target address as
+`reauth-declined` before restoring secrets and restarting auto-refresh. The
+shell-level background recovery path checks that marker in `handleTotpReauth`
+and returns without opening another modal. A later successful interactive
+connection/edit clears the marker again.
 
 ```mermaid
 sequenceDiagram
   participant VM as AddServerViewModel
+  participant SV as ServersViewModel
   participant ST as StatusViewModel
   participant Base as _BaseState (base.dart)
   participant H as handleTotpReauth
-  participant SCS as ServerConnectionService
 
+  VM->>VM: interactive TOTP prompt dismissed
+  VM->>SV: markTotpReauthDeclined(address)
   VM->>ST: restartAutoRefresh -> startAutoRefresh(runImmediately: true)
-  ST->>ST: immediate tick: fetchRealtimeStatus() -> TotpRequiredException
-  ST->>ST: _handleFatalConnectionError: stop, set fatalConnectionError, notify
-  ST-->>Base: listener callback (_onFatalConnectionError)
+  ST->>ST: immediate tick may hit TotpRequiredException
+  ST-->>Base: fatalConnectionError
   Base->>H: handleTotpReauth(context)
-  H->>SCS: ServerConnectionService(...).connect()
-  Note over SCS: shows the TOTP modal (2nd prompt)
-  SCS->>SCS: on cancel: _onTotpCancelled -> markTotpReauthDeclined(address)
+  H->>SV: isTotpReauthDeclined(address)
+  SV-->>H: true
+  H-->>Base: false (no second prompt)
 ```
 
-Confirmed on a real device (not just the fake-server test): the two prompts
-appear back-to-back, deterministically, every time — not a timing
-coincidence. See `lib/ui/shell/base.dart` (`_onFatalConnectionError`,
-`StatusViewModel` listener registered in `initState`) and
-`lib/ui/core/actions/handle_totp_reauth.dart`.
+This keeps explicit user-driven recovery (connect/edit/manual refresh) separate
+from automatic/background retry behavior: background status refresh may signal
+that recovery is required, but it cannot override a cancellation and create a
+prompt loop.
 
 ### Session handling inside `updateServer` - `_authenticate`
 
@@ -298,4 +294,3 @@ sequenceDiagram
 - The connecting overlay is driven by a local `isConnecting` flag toggled around
   `runAsync`.
 - See also: [ARCHITECTURE.md](ARCHITECTURE.md).
-```

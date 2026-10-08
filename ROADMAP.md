@@ -130,12 +130,12 @@ Maintain and improve the unofficial Pi-hole client while upstream activity is li
   - [x] Add the Log Details Edit & Add action with allow/deny default matching the existing direct action.
   - [x] Add focused widget coverage for prefill and enabled Add state.
   - [x] Merged via PR #131 as `21f4d24c`.
-- [ ] #748: consolidate session/auth recovery so screens and background refreshes share one explicit policy for SID expiry, TOTP, reconnect and retry rather than reproducing orchestration locally.
+- [x] #748: consolidate session/auth recovery so screens and background refreshes share one explicit policy for SID expiry, TOTP, reconnect and retry rather than reproducing orchestration locally.
   - [x] Extract update-server save-attempt rollback/restore/commit/cleanup state with focused side-effect coverage; merged via PR #135 as `417641f3`.
   - [x] Centralize the existing-session probe shared by server connect and server edit: reuse valid SID state, reauthenticate only on auth failures, and keep transient failures non-login; merged via PR #138 as `a6977e6a`.
-  - [ ] Centralize the remaining duplicated interactive login outcome and blocking-status verification without changing caller-specific rollback/session-created semantics.
-  - [ ] Keep user-interactive and automatic/background recovery policies separate so automatic refresh cannot create prompt loops.
-  - [ ] Reuse the diagnostics/App Log path for authentication and reconnect failures.
+  - [x] Centralize the remaining duplicated interactive login outcome and blocking-status verification without changing caller-specific rollback/session-created semantics; merged via PR #144 as `6dd57ca3`.
+  - [x] Keep user-interactive and automatic/background recovery policies separate so automatic refresh cannot create prompt loops; merged via PR #146 as `1d3d62bd`.
+  - [x] Reuse the shared redacting diagnostics/App Log path for authentication and reconnect failures; merged via PR #148 as `98aae46f`.
 - [ ] Connection Doctor: expose per-server capabilities and diagnostics useful for reverse proxies and difficult transports.
   - [ ] Show resolved API version/FTL version, API base path, web-home path, TOTP/session state and TLS/certificate policy.
   - [ ] Provide endpoint reachability/latency diagnostics without exposing secrets.

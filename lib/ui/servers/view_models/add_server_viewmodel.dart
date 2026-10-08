@@ -10,6 +10,7 @@ import 'package:pi_hole_client/data/repositories/api/interfaces/repository_bundl
 import 'package:pi_hole_client/domain/model/server/api_versions.dart';
 import 'package:pi_hole_client/domain/model/server/server.dart';
 import 'package:pi_hole_client/domain/use_cases/server_connection/probe_existing_session.dart';
+import 'package:pi_hole_client/ui/core/services/interactive_connection_check.dart';
 import 'package:pi_hole_client/ui/core/services/totp_login.dart';
 import 'package:pi_hole_client/ui/core/types/resolve_totp.dart';
 import 'package:pi_hole_client/ui/core/view_models/servers_viewmodel.dart';
@@ -428,45 +429,41 @@ class AddServerViewModel extends ChangeNotifier {
     }
 
     final bundle = _createBundle(server: serverObj);
-    final auth = await _authenticate(
+    final connection = await _checkConnection(
       bundle: bundle,
       req: req,
       isAddressChanged: isAddressChanged,
     );
-    if (auth.cancelled) {
+    if (connection.cancelled) {
       // User dismissed the TOTP prompt: undo this attempt's writes and keep the
       // old server (row, credentials, session) intact, same as a failed save.
       _serversViewModel.markTotpReauthDeclined(attempt.targetAddress);
-      if (auth.needsRollback) {
+      if (connection.needsRollback) {
         await attempt.rollback(bundle: bundle, sessionCreated: false);
       }
       await attempt.restoreSecrets();
       attempt.restartAutoRefresh();
       return const UpdateCancelled();
     }
-    if (auth.error != null) {
-      // Only the address-changed branch wrote credentials under a new address,
-      // so it is the only one that needs a rollback before reporting the error.
-      if (auth.needsRollback) {
-        await attempt.rollback(bundle: bundle, sessionCreated: false);
+    if (connection.error != null) {
+      if (connection.statusFailed) {
+        // Preserve the existing edit semantics: any failed blocking-status
+        // verification rolls back this save attempt, including same-address v5
+        // edits that did not create a session.
+        await attempt.rollback(
+          bundle: bundle,
+          sessionCreated: connection.sessionCreated,
+        );
+      } else {
+        // Login failures only need artifact rollback for an address change; a
+        // same-address failure just restores the credentials written above.
+        if (connection.needsRollback) {
+          await attempt.rollback(bundle: bundle, sessionCreated: false);
+        }
+        await attempt.restoreSecrets();
       }
-      await attempt.restoreSecrets();
       attempt.restartAutoRefresh();
-      return UpdateApiError(auth.error!, req.apiVersion);
-    }
-    // skipRenewal: true only when a new session was just created above to avoid
-    // creating a duplicate session on transient retry failures.
-    final result = await bundle.dns.fetchBlockingStatus(
-      skipRenewal: auth.sessionCreated,
-    );
-
-    if (result.isError()) {
-      await attempt.rollback(
-        bundle: bundle,
-        sessionCreated: auth.sessionCreated,
-      );
-      attempt.restartAutoRefresh();
-      return UpdateApiError(result.exceptionOrNull()!, req.apiVersion);
+      return UpdateApiError(connection.error!, req.apiVersion);
     }
 
     final server = serverObj.copyWith(defaultServer: req.defaultServer);
@@ -477,7 +474,7 @@ class AddServerViewModel extends ChangeNotifier {
       // (row, credentials, session) is left fully intact.
       await attempt.rollback(
         bundle: bundle,
-        sessionCreated: auth.sessionCreated,
+        sessionCreated: connection.sessionCreated,
       );
       attempt.restartAutoRefresh();
       return const UpdateDbError();
@@ -489,93 +486,94 @@ class AddServerViewModel extends ChangeNotifier {
     return const UpdateSuccess();
   }
 
-  /// Ensures a valid v6 session exists before the connection test.
+  /// Verifies the edited server using the shared interactive login + blocking
+  /// status flow while keeping edit-specific rollback ownership here.
   ///
-  /// - Non-v6: nothing to do.
-  /// - Address changed: the new host has no session, so always create one.
-  /// - Same address, password changed: validate the new password by creating a
-  ///   session (so an unverified password can't silently replace the good one).
-  /// - Same address, password unchanged: reuse the current session and only log
-  ///   in again on a 401/SID-missing (avoids duplicate sessions on 503/504).
-  ///
-  /// On failure returns the error and `needsRollback` (true only for the
-  /// address-changed branch, which already wrote new-address credentials).
-  /// `cancelled` is true when the user dismissed the TOTP prompt.
+  /// - Non-v6: verify blocking status without a login.
+  /// - Address changed: always create a session for the new host.
+  /// - Same address, password changed: validate the new password with a new
+  ///   session.
+  /// - Same address, password unchanged: reuse a valid SID, log in only after
+  ///   an authentication failure, and keep transient probe failures terminal.
   Future<
     ({
       bool sessionCreated,
       Exception? error,
       bool needsRollback,
       bool cancelled,
+      bool statusFailed,
     })
   >
-  _authenticate({
+  _checkConnection({
     required RepositoryBundle bundle,
     required UpdateServerRequest req,
     required bool isAddressChanged,
   }) async {
-    // Maps a login attempt to the _authenticate result record. [needsRollback]
-    // is carried through unchanged for the failure/cancel paths.
     Future<
       ({
         bool sessionCreated,
         Exception? error,
         bool needsRollback,
         bool cancelled,
+        bool statusFailed,
       })
     >
-    login({required bool needsRollback}) async {
-      final result = await runTotpLogin(
+    verify({
+      required bool loginRequired,
+      required bool needsRollback,
+    }) async {
+      final outcome = await runInteractiveConnectionCheck(
         auth: bundle.auth,
+        dns: bundle.dns,
         password: req.password,
         resolveTotp: req.resolveTotp,
+        loginRequired: loginRequired,
       );
-      if (result.cancelled) {
-        return (
-          sessionCreated: false,
-          error: null,
-          needsRollback: needsRollback,
-          cancelled: true,
-        );
+      switch (outcome) {
+        case InteractiveConnectionCheckSuccess(:final sessionCreated):
+          return (
+            sessionCreated: sessionCreated,
+            error: null,
+            needsRollback: false,
+            cancelled: false,
+            statusFailed: false,
+          );
+        case InteractiveConnectionCheckCancelled():
+          return (
+            sessionCreated: false,
+            error: null,
+            needsRollback: needsRollback,
+            cancelled: true,
+            statusFailed: false,
+          );
+        case InteractiveConnectionCheckFailed(
+          :final error,
+          :final sessionCreated,
+          :final stage,
+        ):
+          return (
+            sessionCreated: sessionCreated,
+            error: error,
+            needsRollback: needsRollback,
+            cancelled: false,
+            statusFailed:
+                stage == InteractiveConnectionFailureStage.blockingStatus,
+          );
       }
-      if (result.result.isError()) {
-        return (
-          sessionCreated: false,
-          error: result.result.exceptionOrNull()!,
-          needsRollback: needsRollback,
-          cancelled: false,
-        );
-      }
-      return (
-        sessionCreated: true,
-        error: null,
-        needsRollback: false,
-        cancelled: false,
-      );
     }
 
-    // Non-v6: v5 has no 2FA, so the flag is definitively false.
     if (req.apiVersion != SupportedApiVersions.v6) {
-      return (
-        sessionCreated: false,
-        error: null,
-        needsRollback: false,
-        cancelled: false,
-      );
+      return verify(loginRequired: false, needsRollback: false);
     }
 
-    // Address changed: new-address credentials were already written, so a
-    // failure/cancel needs a rollback.
     if (isAddressChanged) {
-      return login(needsRollback: true);
+      return verify(loginRequired: true, needsRollback: true);
     }
 
-    // Same address, password changed
     if (req.password != req.initPassword) {
-      return login(needsRollback: false);
+      return verify(loginRequired: true, needsRollback: false);
     }
 
-    // Same address, password unchanged
     final probe = await ProbeExistingSession(bundle.dns).run();
     switch (probe) {
       case ExistingSessionValid():
@@ -584,6 +582,7 @@ class AddServerViewModel extends ChangeNotifier {
           error: null,
           needsRollback: false,
           cancelled: false,
+          statusFailed: false,
         );
       case ExistingSessionFailed(:final error):
         return (
@@ -591,9 +590,10 @@ class AddServerViewModel extends ChangeNotifier {
           error: error,
           needsRollback: false,
           cancelled: false,
+          statusFailed: false,
         );
       case ExistingSessionNeedsReauth():
-        return login(needsRollback: false);
+        return verify(loginRequired: true, needsRollback: false);
     }
   }
 

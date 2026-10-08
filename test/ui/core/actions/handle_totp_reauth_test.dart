@@ -123,6 +123,13 @@ void main() async {
 
         expect(result, isFalse);
         expect(authRepository.createSessionCallCount, 0);
+        expect(appConfigViewModel.logs, hasLength(1));
+        expect(appConfigViewModel.logs.single.type, 'auth');
+        expect(
+          appConfigViewModel.logs.single.message,
+          contains('Automatic TOTP reauthentication suppressed'),
+        );
+        expect(appConfigViewModel.logs.single.message, contains(_serverV6.address));
       },
     );
   });
