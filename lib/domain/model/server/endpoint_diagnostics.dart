@@ -55,17 +55,17 @@ EndpointOutcome classifyEndpointError(Object? error) {
   if (error is TimeoutException) return EndpointOutcome.timeout;
   if (error is SocketException) return EndpointOutcome.connection;
 
-  final code = switch (error) {
+  final int? code = switch (error) {
     ApiException e => e.statusCode,
     HttpStatusCodeException e => e.statusCode,
     _ => null,
   };
+  if (code != null && code >= 500) return EndpointOutcome.server;
   return switch (code) {
     401 || 403 => EndpointOutcome.authentication,
     495 => EndpointOutcome.tls,
     504 || 408 => EndpointOutcome.timeout,
     404 => EndpointOutcome.notFound,
-    >= 500 => EndpointOutcome.server,
     _ => EndpointOutcome.unknown,
   };
 }
