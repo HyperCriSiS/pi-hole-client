@@ -34,6 +34,7 @@ updates:
       - dependency-name: "sqlite3"
         versions:
           - "3.6.0"
+          - "3.7.0"
       # These majors currently require Android compileSdk 37. Keep them blocked
       # until the project deliberately moves beyond the compileSdk 36 / F-Droid
       # compatibility baseline.
