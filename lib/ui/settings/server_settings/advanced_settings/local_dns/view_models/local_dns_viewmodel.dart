@@ -52,6 +52,8 @@ class LocalDnsViewModel extends ChangeNotifier {
     );
 
     loadRecords.addListener(notifyListeners);
+    loadRecords.isRunning.addListener(notifyListeners);
+    loadRecords.errors.addListener(notifyListeners);
     addRecord.addListener(notifyListeners);
     addRecord.errors.addListener(notifyListeners);
     updateRecord.addListener(notifyListeners);
@@ -290,6 +292,8 @@ class LocalDnsViewModel extends ChangeNotifier {
   @override
   void dispose() {
     loadRecords.removeListener(notifyListeners);
+    loadRecords.isRunning.removeListener(notifyListeners);
+    loadRecords.errors.removeListener(notifyListeners);
     addRecord.removeListener(notifyListeners);
     addRecord.errors.removeListener(notifyListeners);
     updateRecord.removeListener(notifyListeners);

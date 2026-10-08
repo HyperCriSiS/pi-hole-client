@@ -25,6 +25,8 @@ class NetworkViewModel extends ChangeNotifier {
     deleteDevice = Command.createAsyncNoResult<int>(_deleteDevice);
 
     loadDevices.addListener(notifyListeners);
+    loadDevices.isRunning.addListener(notifyListeners);
+    loadDevices.errors.addListener(notifyListeners);
     deleteDevice.addListener(notifyListeners);
     deleteDevice.errors.addListener(notifyListeners);
   }
@@ -73,6 +75,8 @@ class NetworkViewModel extends ChangeNotifier {
   @override
   void dispose() {
     loadDevices.removeListener(notifyListeners);
+    loadDevices.isRunning.removeListener(notifyListeners);
+    loadDevices.errors.removeListener(notifyListeners);
     deleteDevice.removeListener(notifyListeners);
     deleteDevice.errors.removeListener(notifyListeners);
     loadDevices.dispose();

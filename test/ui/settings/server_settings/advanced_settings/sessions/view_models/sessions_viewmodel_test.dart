@@ -43,6 +43,43 @@ void main() {
       expect(viewModel.loadSessions.errors.value, isNotNull);
     });
 
+    test('loadSessions failure and retry notify screen listeners', () async {
+      var sawLoading = false;
+      var sawError = false;
+      var sawRecovered = false;
+      final errorNotified = Completer<void>();
+
+      viewModel.addListener(() {
+        final isLoading = viewModel.loadSessions.isRunning.value;
+        final hasError = viewModel.loadSessions.errors.value != null;
+        if (isLoading) sawLoading = true;
+        if (hasError) {
+          sawError = true;
+          if (!errorNotified.isCompleted) errorNotified.complete();
+        }
+        if (sawError && !isLoading && !hasError) {
+          sawRecovered = true;
+        }
+      });
+
+      fakeAuthRepository.shouldFail = true;
+      viewModel.loadSessions.run();
+      await errorNotified.future;
+      await Future<void>.delayed(Duration.zero);
+
+      expect(sawLoading, isTrue);
+      expect(sawError, isTrue);
+      expect(viewModel.loadSessions.isRunning.value, isFalse);
+
+      fakeAuthRepository.shouldFail = false;
+      await viewModel.loadSessions.runAsync();
+
+      expect(viewModel.loadSessions.errors.value, isNull);
+      expect(viewModel.loadSessions.isRunning.value, isFalse);
+      expect(sawRecovered, isTrue);
+    });
+
+
     test('deleteSession success removes session locally', () async {
       await viewModel.loadSessions.runAsync();
       expect(fakeAuthRepository.getAllSessionsCallCount, 1);
