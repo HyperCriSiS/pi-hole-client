@@ -5,7 +5,7 @@
 
 final _ipAddress = RegExp(r'^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)(\.(?!$)|$)){4}$');
 final _domain = RegExp(
-  r'^(?:([\\w-]+\\.)*[\\w-]+\\.[a-z]+|[\\w-]+)$',
+  r'^(?:([\w-]+\.)*[\w-]+\.[a-z]+|[\w-]+)$',
   caseSensitive: false,
 );
 final _subroute = RegExp(r'^\/\b([A-Za-z0-9_\-~/]*)[^\/|\.|\:]$');
