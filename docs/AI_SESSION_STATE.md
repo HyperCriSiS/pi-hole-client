@@ -4,7 +4,7 @@ Updated: 2026-10-09
 
 ## Current baseline
 - Repository: `HyperCriSiS/pi-hole-client`
-- Last validated application feature merge: `5f10886c0d23e65a2bafb483b5b28476eec8791e` (PR #170; subsequent documentation commits may advance `main`).
+- Last validated application feature merge: `1bf68b5fa8091278d7db429efc9a1138917fe728` (PR #172; subsequent documentation-only commits may advance `main`).
 - Upstream auth/server-connection issue #748 remains open upstream, but the fork roadmap work is complete.
 
 ## #748 completed slices
@@ -62,7 +62,7 @@ The separate GitHub-managed `github-advanced-security` AI-agent job failed indep
 ## Next autonomous work block
 1. Re-read live `main`, `ROADMAP.md` and `UPSTREAM_TRIAGE.md`.
 2. **Connection Doctor:** PR #170 measures the existing FTL four-call batch and reports outcome/elapsed time. Preserve shared URL/TLS/auth/SID behavior. Keep per-endpoint reachability/latency evidence as a separately scoped extension where useful.
-3. Next deterministic slice: actionable reverse-proxy/gravity-streaming hints for upstream #754. Do not infer nginx buffering from generic errors, add interactive auth prompts, or change the handwritten gravity streaming transport.
+3. Connection Doctor #754 conditional reverse-proxy/gravity-streaming guidance is complete (PR #172). Next: assess distinct per-endpoint reachability diagnostics only where the existing read-only repositories provide evidence beyond PR #170's aggregate timing, without new auth/TOTP prompts or sensitive output. Keep #720 broad loading UX separate.
 4. Keep #720 loading/revalidation UX after Connection Doctor's deterministic diagnostics.
 5. Keep device-gated items validation-only until affected-device evidence exists.
 
@@ -133,3 +133,12 @@ The separate GitHub-managed `github-advanced-security` AI-agent job failed indep
 - ViewModel regressions cover initial success, failure, error-to-retry success, and success-to-refresh error; screen widget regressions cover success and failure display.
 - Full Dart tests, unsigned Android release APK and `Verify unsigned release artifact`, Sonar, Codecov, CodeQL and four static analysis jobs all passed before merge. No physical-device/server benchmark claimed.
 - Next bounded scope: actionable nginx/reverse-proxy buffering help for gravity streaming (#754), with separate per-endpoint diagnostics only when distinct evidence adds value. Keep #720 UX and device-gated items separate.
+
+## Connection Doctor gravity reverse-proxy hint completion (2026-10-09)
+- Feature PR #172 merged to `main` as `1bf68b5fa8091278d7db429efc9a1138917fe728` (final implementation HEAD `12502d6fad84a91e29f72cff6f79aefd2f67acd5`).
+- Classified Gravity streaming TimeoutException / HTTP 504 only when no progress has arrived, using the existing read-only failure path; neither auth, TLS, connection/generic failures nor timeouts after progress are diagnosed as nginx buffering.
+- Gravity error UI offers a translated (de/en/es/ja/pl), explicitly conditional check of `proxy_buffering off;` in the matching nginx proxy location for `/api/action/gravity`, including any configured subroute. No raw exceptions, URLs with credentials, SID or tokens are displayed. The hint is ephemeral and cleared on new runs/server changes/reset.
+- Regression tests cover the pure classifier, Gravity stream result failures with/without progress, ViewModel hint propagation/reset, and rendered guidance.
+- PR #172 passed full Dart tests, unsigned Android source release APK with `Verify unsigned release artifact`, Sonar, Codecov, CodeQL, and four static analysis jobs before merge.
+- No live nginx/Pi-hole server or device smoke was performed. A 504/timeout does not uniquely implicate nginx; upstream #754's known workaround is offered as contextual help only. The handwritten stream and existing #748 session/TOTP policy remain unchanged.
+- Remaining Connection Doctor potential follow-up: evaluate distinct individual-endpoint reachability evidence without extra auth or leaking secrets, then separate #720 refresh/revalidation UX. Preserve device-gated holds.
