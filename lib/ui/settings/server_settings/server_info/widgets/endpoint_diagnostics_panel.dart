@@ -24,10 +24,10 @@ class EndpointDiagnosticsPanel extends StatelessWidget {
       EndpointOutcome.success => locale.valid,
       EndpointOutcome.authentication => locale.authentication,
       EndpointOutcome.tls => locale.tlsStatus,
-      EndpointOutcome.timeout => locale.connectionTimeout,
+      EndpointOutcome.timeout => 'Timeout / 504',
       EndpointOutcome.connection => locale.notConnected,
-      EndpointOutcome.notFound => locale.notApplicable,
-      EndpointOutcome.server => locale.error,
+      EndpointOutcome.notFound => 'HTTP 404',
+      EndpointOutcome.server => 'HTTP 5xx',
       EndpointOutcome.unknown => locale.unknown,
     };
 
