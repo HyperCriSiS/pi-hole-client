@@ -6,6 +6,7 @@ import 'package:pi_hole_client/ui/core/ui/behavior/custom_scroll_behavior.dart';
 import 'package:pi_hole_client/ui/core/ui/components/error_message.dart';
 import 'package:pi_hole_client/ui/settings/server_settings/server_info/view_models/server_info_viewmodel.dart';
 import 'package:pi_hole_client/ui/settings/server_settings/server_info/widgets/connection_diagnostics_section.dart';
+import 'package:pi_hole_client/ui/settings/server_settings/server_info/widgets/endpoint_diagnostics_panel.dart';
 import 'package:pi_hole_client/ui/settings/server_settings/server_info/widgets/host_information_section.dart';
 import 'package:pi_hole_client/ui/settings/server_settings/server_info/widgets/performance_usage_section.dart';
 import 'package:pi_hole_client/ui/settings/server_settings/server_info/widgets/pihole_version_section.dart';
@@ -45,7 +46,7 @@ class ServerInfoScreen extends StatelessWidget {
                   padding: const EdgeInsets.only(right: 8),
                   child: IconButton(
                     icon: const Icon(Icons.refresh_rounded),
-                    onPressed: () async {
+                    onPressed: viewModel.isCheckingEndpoints ? null : () async {
                       try {
                         await refreshWithTotpRecovery(
                           context,
@@ -63,6 +64,7 @@ class ServerInfoScreen extends StatelessWidget {
             body: SafeArea(
               child: RefreshIndicator(
                 onRefresh: () async {
+                  if (viewModel.isCheckingEndpoints) return;
                   try {
                     await refreshWithTotpRecovery(
                       context,
@@ -91,6 +93,8 @@ class ServerInfoScreen extends StatelessWidget {
                               FtlRequestDiagnosticTile(
                                 diagnostic: viewModel.ftlRequestDiagnostic!,
                               ),
+                            if (viewModel.supportsEndpointDiagnostics)
+                              _endpointPanel(),
                           ],
                         ),
                       );
@@ -147,6 +151,12 @@ class ServerInfoScreen extends StatelessWidget {
     );
   }
 
+  Widget _endpointPanel() => EndpointDiagnosticsPanel(
+    running: viewModel.isCheckingEndpoints,
+    checks: viewModel.endpointChecks,
+    onRun: () { viewModel.runEndpointDiagnostics(); },
+  );
+
   Widget _buildContent({required PiholeServer serverInfo}) {
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
@@ -165,6 +175,10 @@ class ServerInfoScreen extends StatelessWidget {
               diagnostics: viewModel.connectionDiagnostics!,
               requestDiagnostic: viewModel.ftlRequestDiagnostic,
             ),
+          ],
+          if (viewModel.supportsEndpointDiagnostics) ...[
+            const SizedBox(height: 20),
+            _endpointPanel(),
           ],
           const SizedBox(height: 20),
           if (serverInfo.host != null) ...[
