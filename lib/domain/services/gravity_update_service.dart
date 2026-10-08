@@ -6,6 +6,7 @@ import 'package:pi_hole_client/data/repositories/local/interfaces/gravity_reposi
 import 'package:pi_hole_client/domain/model/enums.dart';
 import 'package:pi_hole_client/domain/model/ftl/message.dart';
 import 'package:pi_hole_client/domain/model/gravity/gravity_snapshot.dart';
+import 'package:pi_hole_client/domain/model/gravity/gravity_stream_diagnostics.dart';
 import 'package:result_dart/result_dart.dart';
 
 /// Orchestrates Pi-hole gravity database updates.
@@ -41,6 +42,7 @@ class GravityUpdateService {
     required void Function(DateTime startTime) onStarted,
     required void Function(DateTime completeTime) onCompleted,
     required void Function(List<FtlMessage> messages) onMessagesUpdated,
+    void Function(GravityStreamHint? hint)? onStreamHint,
   }) async {
     final logs = <String>[];
     final startedAt = DateTime.now();
@@ -82,6 +84,9 @@ class GravityUpdateService {
             }
           },
           (error) async {
+            onStreamHint?.call(
+              diagnoseGravityStreamFailure(error, hasProgress: logs.isNotEmpty),
+            );
             status = GravityStatus.error;
             completedAt = DateTime.now();
             await _repository.upsertGravityUpdate(
@@ -97,6 +102,9 @@ class GravityUpdateService {
         );
       },
       onError: (error) async {
+        onStreamHint?.call(
+          diagnoseGravityStreamFailure(error, hasProgress: logs.isNotEmpty),
+        );
         status = GravityStatus.error;
         completedAt = DateTime.now();
         await _repository.upsertGravityUpdate(

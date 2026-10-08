@@ -941,6 +941,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String get gravityUpdateFailed => 'Gravity-Aktualisierung fehlgeschlagen';
 
   @override
+  String get gravityProxyTimeoutHintTitle => 'Mögliche Pufferung durch Reverse-Proxy';
+
+  @override
+  String get gravityProxyTimeoutHintDetail =>
+      'Der Gravity-Stream hat vor der ersten Ausgabe ein Timeout erreicht. Falls das nur hinter nginx passiert, prüfe proxy_buffering off; im zuständigen Proxy-Location-Block für /api/action/gravity (einschließlich Subroute). Ein Timeout kann auch andere Ursachen haben.';
+
+  @override
   String get groups => 'Gruppen';
 
   @override

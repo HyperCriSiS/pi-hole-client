@@ -926,6 +926,13 @@ class AppLocalizationsPl extends AppLocalizations {
   String get gravityUpdateFailed => 'Aktualizacja Gravity nie powiodła się';
 
   @override
+  String get gravityProxyTimeoutHintTitle => 'Możliwe buforowanie przez reverse proxy';
+
+  @override
+  String get gravityProxyTimeoutHintDetail =>
+      'Strumień Gravity przekroczył limit czasu przed otrzymaniem postępu. Jeśli problem występuje tylko za nginx, sprawdź proxy_buffering off; w bloku location obsługującym /api/action/gravity (wraz ze skonfigurowaną podścieżką). Limit czasu może mieć też inne przyczyny.';
+
+  @override
   String get groups => 'Grupy';
 
   @override

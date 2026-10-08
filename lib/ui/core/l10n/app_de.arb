@@ -292,6 +292,8 @@
   "gravityNotYetRun": "Gravity wurde noch nicht ausgeführt",
   "gravityUpdateCompleted": "Gravity-Aktualisierung abgeschlossen",
   "gravityUpdateFailed": "Gravity-Aktualisierung fehlgeschlagen",
+  "gravityProxyTimeoutHintTitle": "Mögliche Pufferung durch Reverse-Proxy",
+  "gravityProxyTimeoutHintDetail": "Der Gravity-Stream hat vor der ersten Ausgabe ein Timeout erreicht. Falls das nur hinter nginx passiert, prüfe proxy_buffering off; im zuständigen Proxy-Location-Block für /api/action/gravity (einschließlich Subroute). Ein Timeout kann auch andere Ursachen haben.",
   "groups": "Gruppen",
   "hardwareAddress": "Hardwareadresse",
   "helpUsImprove": "Helfen Sie uns, besser zu werden",

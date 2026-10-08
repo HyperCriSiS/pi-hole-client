@@ -4,6 +4,8 @@ import 'package:command_it/command_it.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pi_hole_client/domain/model/enums.dart';
+import 'package:pi_hole_client/domain/model/gravity/gravity_stream_diagnostics.dart';
+import 'package:pi_hole_client/utils/exceptions.dart';
 import 'package:pi_hole_client/ui/settings/server_settings/adlists/view_models/gravity_update_viewmodel.dart';
 import 'package:result_dart/result_dart.dart';
 
@@ -260,6 +262,29 @@ void main() async {
         expect(listenerCalled, true);
       },
     );
+
+    test('timeout hint is exposed and cleared on reset', () async {
+      final completed = Completer<void>();
+      fakeActionsRepository.customGravityStream = () => Stream.value(
+        Failure(HttpStatusCodeException(504, 'timeout')),
+      );
+      gravityUpdateViewModel.addListener(() {
+        if (gravityUpdateViewModel.status == GravityStatus.error &&
+            !completed.isCompleted) {
+          completed.complete();
+        }
+      });
+
+      await gravityUpdateViewModel.start();
+      await completed.future.timeout(const Duration(seconds: 2));
+
+      expect(
+        gravityUpdateViewModel.streamHint,
+        GravityStreamHint.possibleProxyBuffering,
+      );
+      gravityUpdateViewModel.reset();
+      expect(gravityUpdateViewModel.streamHint, isNull);
+    });
 
     test(
       'removeMessage Command removes a message and notifies listeners',

@@ -16,6 +16,8 @@ import 'package:pi_hole_client/domain/model/ftl/sensor.dart';
 import 'package:pi_hole_client/domain/model/ftl/system.dart';
 import 'package:pi_hole_client/domain/model/ftl/version.dart';
 import 'package:pi_hole_client/domain/model/gravity/gravity_snapshot.dart';
+import 'package:pi_hole_client/domain/model/gravity/gravity_stream_diagnostics.dart';
+import 'package:pi_hole_client/utils/exceptions.dart';
 import 'package:pi_hole_client/domain/services/gravity_update_service.dart';
 import 'package:result_dart/result_dart.dart';
 
@@ -338,6 +340,56 @@ void main() {
   // -------------------------------------------------------------------------
 
   group('GravityUpdateService – startUpdate stream error', () {
+    test('gateway timeout without output suggests checking proxy buffering', () async {
+      final controller = StreamController<Result<List<String>>>();
+      final service = _buildService(stream: controller.stream);
+      final completed = Completer<void>();
+      GravityStreamHint? hint;
+
+      unawaited(
+        service.startUpdate(
+          address: 'pi.hole',
+          onLogsUpdated: (_) {},
+          onStatusChanged: (_) {},
+          onStarted: (_) {},
+          onCompleted: (_) => completed.complete(),
+          onMessagesUpdated: (_) {},
+          onStreamHint: (value) => hint = value,
+        ),
+      );
+
+      controller.add(Failure(HttpStatusCodeException(504, 'timeout')));
+      await completed.future.timeout(const Duration(seconds: 2));
+      expect(hint, GravityStreamHint.possibleProxyBuffering);
+      await controller.close();
+    });
+
+    test('timeout after receiving output does not suggest proxy buffering', () async {
+      final controller = StreamController<Result<List<String>>>();
+      final service = _buildService(stream: controller.stream);
+      final completed = Completer<void>();
+      GravityStreamHint? hint;
+
+      unawaited(
+        service.startUpdate(
+          address: 'pi.hole',
+          onLogsUpdated: (_) {},
+          onStatusChanged: (_) {},
+          onStarted: (_) {},
+          onCompleted: (_) => completed.complete(),
+          onMessagesUpdated: (_) {},
+          onStreamHint: (value) => hint = value,
+        ),
+      );
+
+      controller.add(const Success(['progress']));
+      await pumpEventQueue();
+      controller.add(Failure(HttpStatusCodeException(504, 'timeout')));
+      await completed.future.timeout(const Duration(seconds: 2));
+      expect(hint, isNull);
+      await controller.close();
+    });
+
     test('Result.failure sets status to error and calls onCompleted', () async {
       final controller = StreamController<Result<List<String>>>();
       final service = _buildService(stream: controller.stream);
