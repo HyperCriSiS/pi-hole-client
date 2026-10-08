@@ -22,6 +22,7 @@ class ClientDetailsScreen extends StatefulWidget {
     required this.client,
     required this.remove,
     required this.groups,
+    this.embedded = false,
     this.ipToMac = const {},
     this.ipToHostname = const {},
     this.macToIp = const {},
@@ -31,6 +32,8 @@ class ClientDetailsScreen extends StatefulWidget {
 
   final ManagedClient client;
   final void Function(ManagedClient) remove;
+  /// True for the inline three-column detail pane, not pushed routes.
+  final bool embedded;
   final Map<int, String> groups;
   final Map<String, String> ipToMac;
   final Map<String, String> ipToHostname;
@@ -242,7 +245,9 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
 
       widget.remove(client);
       if (!mounted) return;
-      if (MediaQuery.of(context).size.width <= ResponsiveConstants.large) {
+      // A pushed details route must close at both phone and tablet widths.
+      // The three-column embedded detail pane must not pop its parent route.
+      if (!widget.embedded && context.canPop()) {
         context.pop();
       }
 

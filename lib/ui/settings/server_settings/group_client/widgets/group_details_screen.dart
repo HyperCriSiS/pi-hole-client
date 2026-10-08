@@ -25,11 +25,14 @@ class GroupDetailsScreen extends StatefulWidget {
   const GroupDetailsScreen({
     required this.group,
     required this.remove,
+    this.embedded = false,
     super.key,
   });
 
   final Group group;
   final void Function(Group) remove;
+  /// True for the inline three-column detail pane, not pushed routes.
+  final bool embedded;
 
   @override
   State<GroupDetailsScreen> createState() => _GroupDetailsScreenState();
@@ -222,7 +225,9 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
 
       widget.remove(group);
       if (!mounted) return;
-      if (MediaQuery.of(context).size.width <= ResponsiveConstants.large) {
+      // A pushed details route must close at both phone and tablet widths.
+      // The three-column embedded detail pane must not pop its parent route.
+      if (!widget.embedded && context.canPop()) {
         context.pop();
       }
 
