@@ -1,10 +1,10 @@
 # AI Session State
 
-Updated: 2026-10-07
+Updated: 2026-10-08
 
 ## Current baseline
 - Repository: `HyperCriSiS/pi-hole-client`
-- Current `main`: `98aae46fed9f62019357997409695fb1e89a38be`
+- Current `main`: `dcffeafe2ac642b4ace185fcbcd5953b8b6b4ed9`
 - Upstream auth/server-connection issue #748 remains open upstream, but the fork roadmap work is complete.
 
 ## #748 completed slices
@@ -19,6 +19,16 @@ Updated: 2026-10-07
    - `ServerConnectionService` no longer constructs `AppLog` entries locally;
    - connection/auth/secure-storage diagnostics use `AppConfigViewModel.addDiagnostic` -> `AppLogService.addDiagnostic`;
    - focused coverage verifies credential-shaped text is still centrally redacted.
+
+## Upstream sync 2026-10-08
+- Reviewed upstream `tsutsu3/pi-hole-client` through `445424380076d09293ca1a2ce638d6f144e27233`.
+- Imported upstream #756 and #763 selectively through fork PR #150, merged as `dcffeafe`.
+  - #756: full server-address validation plus add/edit save-error recovery so the Connecting overlay cannot remain stuck on an unexpected command failure.
+  - #763: group-load failures during screen initialization are caught and logged rather than surfacing as unhandled/Sentry errors.
+- Upstream #749 needs no duplicate import because equivalent widget replacement/removal synchronization is already present in the fork.
+- Upstream #760 is intentionally not imported wholesale because it crosses proven Flutter/Dart/Android/F-Droid compatibility boundaries; compatible dependency updates remain selective.
+- Upstream #765 is formatting-only and needs no import.
+- PR #150 validation passed: full Dart tests, unsigned Android source APK + artifact verification, CodeQL, Sonar, Codecov and static analyses.
 
 ## Stable policy boundaries
 - `ProbeExistingSession`: valid SID reuse vs auth-required vs transient failure.
@@ -57,8 +67,8 @@ The separate GitHub-managed `github-advanced-security` AI-agent job failed indep
 
 ## Resume protocol
 1. Read this file, `ROADMAP.md` and `UPSTREAM_TRIAGE.md` from `main`.
-2. Resolve live `main` and confirm it is at or beyond `98aae46f`.
-3. Confirm there is no competing open feature PR before starting a new slice.
+2. Resolve live `main` and confirm it is at or beyond `dcffeafe`.
+3. Re-audit upstream changes after `445424380076d09293ca1a2ce638d6f144e27233`, then confirm there is no competing open feature PR before starting a new slice.
 4. Treat #748 as complete in the fork unless a concrete regression or upstream change creates a new bounded gap.
 5. Prefer a fresh chat for the next larger unit because the current conversation contains substantial GitHub/CI history.
 6. Validate repository-controlled gates before every merge.
