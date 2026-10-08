@@ -679,7 +679,7 @@ void main() async {
       });
 
       await tester.pumpWidget(
-        buildWidget(GroupDetailsScreen(group: group, remove: (_) {})),
+        buildWidget(GroupDetailsScreen(group: group, remove: (_) {}, embedded: true)),
       );
       await tester.pumpAndSettle();
 
@@ -812,6 +812,7 @@ void main() async {
             ClientDetailsScreen(
               client: client,
               remove: (_) {},
+              embedded: true,
               groups: const {0: 'Default'},
             ),
           ),
