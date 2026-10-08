@@ -76,7 +76,7 @@ There are **no new upstream issues created or updated since the 2026-10-08 revie
 
 | Upstream issue | Fork assessment | Action |
 |---|---|---|
-| [#724](https://github.com/tsutsu3/pi-hole-client/issues/724) — deleted Group/Client details persist at tablet width | **P1, likely applicable.** Fork `group_client_screen.dart` still clears selection while details screens conditionally pop only below `ResponsiveConstants.large`; upstream merged [#725](https://github.com/tsutsu3/pi-hole-client/pull/725). | Roadmap: reproduce two-column/phone/three-column, fix deletion/navigation ownership without double-delete or wrong pop, add regression tests. |
+| [#724](https://github.com/tsutsu3/pi-hole-client/issues/724) — deleted Group/Client details persist at tablet width | **Implemented in fork via [PR #166](https://github.com/HyperCriSiS/pi-hole-client/pull/166) (`abf57cb2`).** Pushed Group/Client details routes now close after successful deletion at phone and two-column tablet widths, while the three-column inline details stay embedded. Failure leaves the route intact. Added regression tests for both entities at phone/tablet success/failure and three-column inline success; full Dart, unsigned Android artifact, CodeQL, Sonar, Codecov and analyses passed. |
 | [#718](https://github.com/tsutsu3/pi-hole-client/issues/718) — settings screens shimmer indefinitely after load failures | **P1, likely applicable.** Several fork ViewModels currently notify on command result changes but not on `isRunning` or `errors`; upstream merged [#721](https://github.com/tsutsu3/pi-hole-client/pull/721). | Roadmap: reproduce forced API errors across DHCP, Network, Interfaces, Local DNS, Server Info and Sessions, add symmetric command-state subscriptions and regression tests. Preserve interactive/background #748 boundary. |
 | [#741](https://github.com/tsutsu3/pi-hole-client/issues/741) — Android 17 Impeller/Vulkan crash | **P2, affected-device/SDK hold.** Stack was reported with Flutter 3.44.1, the current fork baseline. Upstream upgraded to Flutter 3.47.4 and closed the issue *without affected-device verification*. | Roadmap: get current Pixel/Android 17 crash evidence before changing engine; assess SDK upgrade separately against Android 36/F-Droid and dependency gates. Distinct from #636 TLS/network failure. |
 | [#686](https://github.com/tsutsu3/pi-hole-client/issues/686) — Android bottom sheet remains keyboard-sized after resume | **P2, device-gated.** Upstream [#687](https://github.com/tsutsu3/pi-hole-client/pull/687) dismisses the IME on `inactive`/`hidden`; current fork shell does not. | Roadmap: affected-device reproduction, then selectively evaluate Android-only lifecycle fix and regressions. |
@@ -85,7 +85,7 @@ There are **no new upstream issues created or updated since the 2026-10-08 revie
 
 ## Priority order
 
-1. **#724 and #718** first: address reproducible deletion-navigation and indefinite-error-loading regressions with focused tests; keep changes in separate bounded PRs.
+1. **#718 next:** fix reproducible indefinite-error-loading regressions with focused command-state notification tests; #724 is completed in fork via PR #166.
 2. Connection Doctor: build on the completed #748 connection/session layer to expose per-server capabilities and actionable diagnostics.
 3. #720 loading/revalidation consistency after connection/session behavior is stable; fix #718 correctness separately first.
 4. Device-gated #741/#686/#442/#636/#501/#293 remain validation-only until affected-device evidence exists.
