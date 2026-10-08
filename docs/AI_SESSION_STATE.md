@@ -72,3 +72,13 @@ The separate GitHub-managed `github-advanced-security` AI-agent job failed indep
 4. Treat #748 as complete in the fork unless a concrete regression or upstream change creates a new bounded gap.
 5. Prefer a fresh chat for the next larger unit because the current conversation contains substantial GitHub/CI history.
 6. Validate repository-controlled gates before every merge.
+
+## Dependency maintenance checkpoint (2026-10-08)
+- Website dependency update PR #140 merged as `f9df81b6` (website deployment test passed).
+- `go_router` 18.0.2 PR #143 merged as `ab954bb1`.
+- `cupertino_icons` 2.0.0 PR #142 merged as `524a1fe4`.
+- `sqlite3` 3.7.0 PR #141 was closed: Flutter 3.44.1 pins `meta 1.18.0`, while sqlite3 >=3.6.0 requires `hooks ^2.2.0` -> `record_use >=1.0.0` -> `meta ^1.19.0`.
+- Replacement PR #153 merged as `34ad56f5`: bound `sqlite3` to `>=3.5.2 <3.6.0` and ignored only proven-incompatible 3.6.0 / 3.7.0 in Dependabot.
+- PRs #142 and #153 passed full Dart tests, Android unsigned APK build, CodeQL, Sonar, Codecov and static checks; #153 also passed Dependabot config validation.
+- No known GitHub Advisory Database vulnerabilities found for the retained `sqlite3 3.5.2`, `cupertino_icons 2.0.0` or `go_router 18.0.2` when checked.
+- Revisit the sqlite3 upper bound and exact Dependabot ignores when a validated Flutter baseline supports `meta ^1.19.0`; never force the dependency with overrides.
