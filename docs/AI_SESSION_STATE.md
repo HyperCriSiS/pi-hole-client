@@ -4,7 +4,7 @@ Updated: 2026-10-08
 
 ## Current baseline
 - Repository: `HyperCriSiS/pi-hole-client`
-- Current `main`: `71b667b203641694817e0080f3fbb37e736407a5`
+- Current `main`: `524a1fe449c4dd7b6eac24a4ccd847b337490e45`
 - Upstream auth/server-connection issue #748 remains open upstream, but the fork roadmap work is complete.
 
 ## #748 completed slices
@@ -79,7 +79,7 @@ The separate GitHub-managed `github-advanced-security` AI-agent job failed indep
 
 ## Resume protocol
 1. Read this file, `ROADMAP.md` and `UPSTREAM_TRIAGE.md` from `main`.
-2. Resolve live `main` and confirm it is at or beyond `71b667b2`.
+2. Resolve live `main` and confirm it is at or beyond `524a1fe4`.
 3. Re-audit upstream changes after `445424380076d09293ca1a2ce638d6f144e27233`, then confirm there is no competing open feature PR before starting a new slice.
 4. Treat #748 as complete in the fork unless a concrete regression or upstream change creates a new bounded gap.
 5. Prefer a fresh chat for the next larger unit if GitHub/CI tool history has become substantial.
