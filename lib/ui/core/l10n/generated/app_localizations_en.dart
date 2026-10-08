@@ -450,6 +450,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get connectionStatus => 'Connection Status';
 
   @override
+  String get endpointDiagnosticsTitle => 'Individual API endpoints';
+
+  @override
+  String get endpointDiagnosticsNote => 'Read-only checks using the existing server connection and session. Response time includes server processing and any session retry; failures do not prove the host is offline.';
+
+  @override
+  String get endpointDiagnosticsRun => 'Check endpoints';
+
+  @override
   String get connectionTimeout =>
       'Failed. Connection timeout. Check if server is reachable.';
 

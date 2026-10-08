@@ -457,6 +457,15 @@ class AppLocalizationsEs extends AppLocalizations {
   String get connectionStatus => 'Estado de conexión';
 
   @override
+  String get endpointDiagnosticsTitle => 'Endpoints de API individuales';
+
+  @override
+  String get endpointDiagnosticsNote => 'Consultas de solo lectura con la conexión y sesión existentes. La duración incluye procesamiento y reintentos de sesión; un fallo no demuestra que el servidor esté desconectado.';
+
+  @override
+  String get endpointDiagnosticsRun => 'Comprobar endpoints';
+
+  @override
   String get connectionTimeout =>
       'Error. Tiempo de conexión agotado. Comprueba si el servidor está disponible.';
 

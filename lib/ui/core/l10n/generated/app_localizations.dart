@@ -956,6 +956,24 @@ abstract class AppLocalizations {
   /// **'Connection Status'**
   String get connectionStatus;
 
+  /// No description provided for @endpointDiagnosticsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Individual API endpoints'**
+  String get endpointDiagnosticsTitle;
+
+  /// No description provided for @endpointDiagnosticsNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Read-only checks using the existing server connection and session. Response time includes server processing and any session retry; failures do not prove the host is offline.'**
+  String get endpointDiagnosticsNote;
+
+  /// No description provided for @endpointDiagnosticsRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Check endpoints'**
+  String get endpointDiagnosticsRun;
+
   /// No description provided for @connectionTimeout.
   ///
   /// In en, this message translates to:

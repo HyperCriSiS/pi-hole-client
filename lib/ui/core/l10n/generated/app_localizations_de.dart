@@ -460,6 +460,15 @@ class AppLocalizationsDe extends AppLocalizations {
   String get connectionStatus => 'Verbindungsstatus';
 
   @override
+  String get endpointDiagnosticsTitle => 'Einzelne API-Endpunkte';
+
+  @override
+  String get endpointDiagnosticsNote => 'Schreibgeschützte Abfragen über die bestehende Verbindung und Sitzung. Die Dauer umfasst Serververarbeitung und mögliche Sitzungswiederholungen; Fehler beweisen nicht, dass der Host offline ist.';
+
+  @override
+  String get endpointDiagnosticsRun => 'Endpunkte prüfen';
+
+  @override
   String get connectionTimeout =>
       'Fehlgeschlagen. Zeitüberschreitung während der Verbindung. Überprüfen Sie, ob der Server erreichbar ist.';
 
