@@ -8,6 +8,11 @@ This file tracks the open upstream pull requests and issues reviewed while maint
 
 | Upstream | Topic | Fork status | Notes |
 |---|---|---|---|
+| #765 | Metrics formatting newline | No import needed | Formatting-only blank line in a test fixture; no behavior change. |
+| #763 | Group-load errors on screen open | Imported / fork-adapted | Ported via fork PR #150 (`dcffeafe`). Four group-dependent screens catch expected load-command failures and log a warning so expired-session/group-load errors do not become unhandled crash reports. |
+| #760 | Dart/Flutter dependency group update | Selective / blocked | Do not import wholesale: it includes versions already proven incompatible with the fork's Flutter 3.44.1 / Dart 3.12.1 / Android-36 and F-Droid constraints. Compatible dependency updates continue selectively through the fork dependency work. |
+| #756 | Server-address validation / save recovery | Imported / fork-adapted | Ported via fork PR #150 (`dcffeafe`). Full-value address validation rejects malformed trailing-match inputs; unparsable certificate URLs and unexpected create/edit command failures recover without leaving the Connecting overlay stuck. Focused validator/widget regressions are included. |
+| #749 | Widget sync after server edit/delete | Already present | Current fork already remaps widget bindings on server replacement and handles removed-server widget state through the existing WidgetChannel/worker path; no duplicate import needed. |
 | #737 | Dart/Flutter dependency group update | Selective / blocked on current toolchain | Revalidated through fork PRs #121-#126. Most compatible updates are already present independently in current `main`. PR #121 proved `mockito 5.8.1` incompatible with `freezed 3.2.5` (analyzer >=13.3 vs <11) and `sqlite3 3.6.0` incompatible with Flutter 3.44.1 (`hooks -> record_use -> meta ^1.19.0` while Flutter pins meta 1.18.0). Dependabot PR #124 separately proved `freezed 4.0.2` requires Dart >=3.13 while Flutter 3.44.1 provides Dart 3.12.1. PR #126 now ignores only those exact proven-unresolvable versions so later compatible/security releases still surface. Compatible patch updates `command_it 9.5.2` (#122), `sentry_flutter 9.30.1` (#123), and the website dependency group (#125) were normalized/validated and merged. The broader platform-major holds remain intentional (`flutter_secure_storage` 11.x and `permission_handler` 13.x require the deferred compileSdk path; `dynamic_color` 2.x remains a major migration). Upstream #727 is closed/superseded by #737. |
 | #735 | Duplicate and group-in-use save feedback | Imported / fork-adapted | Selectively ported through fork PRs #116-#120. Repository handling covers generated-v6 Domain/Client/Adlist/Group duplicates, old-database Group foreign-key failures, real generated `ApiException` + Pi-hole `error.hint`, non-retry semantics, and legacy-v5 duplicate success responses. UI handling adds duplicate-aware caution feedback to Domain/Client/Adlist/Group/query-log saves plus explanatory Group-in-use feedback. Existing fork-specific Local DNS duplicate UX from #113 was preserved. |
 | #734 | Local DNS multi-hostname + duplicate guard | Imported / fork-adapted | Selectively ported using the existing generic AlreadyExistsException, preserving CNAME support and first-match edit/delete semantics. Added normalized multi-hostname input plus focused validator/ViewModel/widget coverage. |
@@ -66,8 +71,8 @@ The dependency update from upstream #660 also moves Dio from 5.9.2 to 5.11.0. Di
 
 ## Priority order
 
-1. #748 connection/session architecture: consolidate SID/TOTP/reconnect policy incrementally; #666 explicit-refresh recovery is already complete via PR #129.
-2. Connection Doctor: build on the centralized connection/session layer to expose per-server capabilities and actionable diagnostics.
-3. #720 loading/revalidation consistency after connection/session behavior is stable.
-4. Device-gated #442/#636/#501/#293 remain validation-only until affected-device evidence exists.
-5. #639 generated-v6 migration remains bounded by the three documented handwritten holds; #754 reinforces the gravity-streaming proxy compatibility hold. #134 remains blocked on the independent-fork product identity decision.
+1. Connection Doctor: build on the completed #748 connection/session layer to expose per-server capabilities and actionable diagnostics.
+2. #720 loading/revalidation consistency after connection/session behavior is stable.
+3. Device-gated #442/#636/#501/#293 remain validation-only until affected-device evidence exists.
+4. #639 generated-v6 migration remains bounded by the three documented handwritten holds; #754 reinforces the gravity-streaming proxy compatibility hold. #134 remains blocked on the independent-fork product identity decision.
+5. Treat #748 as complete in the fork unless a concrete regression or upstream change exposes a new bounded gap.
