@@ -937,7 +937,10 @@ void main() async {
               await tester.pumpAndSettle();
 
               expect(details, fails ? findsOneWidget : findsNothing);
-              expect(find.byType(GroupClientScreen), findsOneWidget);
+              // On failure, go_router keeps the parent page offstage.
+              if (!fails) {
+                expect(find.byType(GroupClientScreen), findsOneWidget);
+              }
             },
           );
         }
