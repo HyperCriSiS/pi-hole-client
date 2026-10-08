@@ -237,6 +237,7 @@ class _GroupClientScreenWidgetState extends State<GroupClientScreenWidget>
                 ? selectedGroup != null
                       ? GroupDetailsScreen(
                           group: selectedGroup!,
+                          embedded: true,
                           remove: (group) => setState(() {
                             selectedGroup = null;
                           }),
@@ -265,6 +266,7 @@ class _GroupClientScreenWidgetState extends State<GroupClientScreenWidget>
                 : selectedClient != null
                 ? ClientDetailsScreen(
                     client: selectedClient!,
+                    embedded: true,
                     remove: (client) => setState(() {
                       selectedClient = null;
                     }),

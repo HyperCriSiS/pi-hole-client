@@ -679,7 +679,7 @@ void main() async {
       });
 
       await tester.pumpWidget(
-        buildWidget(GroupDetailsScreen(group: group, remove: (_) {})),
+        buildWidget(GroupDetailsScreen(group: group, remove: (_) {}, embedded: true)),
       );
       await tester.pumpAndSettle();
 
@@ -812,6 +812,7 @@ void main() async {
             ClientDetailsScreen(
               client: client,
               remove: (_) {},
+              embedded: true,
               groups: const {0: 'Default'},
             ),
           ),
@@ -829,5 +830,160 @@ void main() async {
         expect(find.text('Client removed successfully'), findsOneWidget);
       },
     );
+
+    // Upstream #724 regression: phone and tablet push details routes while
+    // three-column layouts render details directly inside the parent route.
+    Widget buildDeletionApp() {
+      final router = GoRouter(
+        initialLocation: '/group-client',
+        routes: [
+          GoRoute(
+            path: '/group-client',
+            builder: (context, state) => MultiProvider(
+              providers: [
+                ChangeNotifierProvider<ServersViewModel>.value(value: fakeServersViewModel),
+                ChangeNotifierProvider<ClientsViewModel>.value(value: clientsViewModel),
+                ChangeNotifierProvider<GroupsViewModel>.value(value: groupsViewModel),
+                ChangeNotifierProvider<LocalDnsViewModel>.value(value: localDnsViewModel),
+                ChangeNotifierProvider<DomainsViewModel>.value(value: domainsViewModel),
+                ChangeNotifierProvider<AdlistsViewModel>.value(value: adlistsViewModel),
+              ],
+              child: const GroupClientScreen(),
+            ),
+            routes: [
+              GoRoute(
+                path: 'group-details',
+                name: Routes.settingsServerGroupDetails,
+                builder: (context, state) {
+                  final extra = state.extra! as GroupDetailsExtra;
+                  return MultiProvider(
+                    providers: [
+                      ChangeNotifierProvider.value(value: extra.groupsViewModel),
+                      ChangeNotifierProvider.value(value: extra.clientsViewModel),
+                      ChangeNotifierProvider.value(value: extra.domainsViewModel),
+                      ChangeNotifierProvider.value(value: extra.adlistsViewModel),
+                    ],
+                    child: GroupDetailsScreen(group: extra.group, remove: extra.remove),
+                  );
+                },
+              ),
+              GoRoute(
+                path: 'client-details',
+                name: Routes.settingsServerClientDetails,
+                builder: (context, state) {
+                  final extra = state.extra! as ClientDetailsExtra;
+                  return ChangeNotifierProvider.value(
+                    value: extra.viewModel,
+                    child: ClientDetailsScreen(
+                      client: extra.client,
+                      remove: extra.remove,
+                      groups: extra.groups,
+                      ipToMac: extra.ipToMac,
+                      ipToHostname: extra.ipToHostname,
+                      macToIp: extra.macToIp,
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ],
+      );
+      return buildTestApp(const SizedBox.shrink(), router: router);
+    }
+
+    for (final width in [540.0, 1000.0]) {
+      for (final isGroup in [true, false]) {
+        for (final fails in [false, true]) {
+          testWidgets(
+            'delete ${isGroup ? "group" : "client"} '
+            '${fails ? "failure keeps" : "success closes"} route '
+            'at width $width',
+            (tester) async {
+              tester.view.physicalSize = Size(width, 900);
+              tester.view.devicePixelRatio = 1.0;
+              addTearDown(() {
+                tester.view.resetPhysicalSize();
+                tester.view.resetDevicePixelRatio();
+              });
+              await tester.pumpWidget(buildDeletionApp());
+              await tester.pumpAndSettle();
+              if (isGroup) {
+                await tester.tap(find.text('Default'));
+              } else {
+                await tester.tap(find.text('Clients').first);
+                await tester.pumpAndSettle();
+                await tester.tap(find.text('192.168.1.100 (desktop)'));
+              }
+              await tester.pumpAndSettle();
+              final details = isGroup
+                  ? find.byType(GroupDetailsScreen)
+                  : find.byType(ClientDetailsScreen);
+              expect(details, findsOneWidget);
+
+              if (fails) {
+                if (isGroup) {
+                  fakeGroupRepository.shouldFail = true;
+                } else {
+                  fakeClientRepository.shouldFail = true;
+                }
+              }
+              await tester.tap(find.descendant(
+                of: details,
+                matching: find.byIcon(Icons.delete_rounded),
+              ));
+              await tester.pumpAndSettle();
+              expect(find.byType(DeleteModal), findsOneWidget);
+              await tester.tap(find.text('Delete'));
+              await tester.pumpAndSettle();
+
+              expect(details, fails ? findsOneWidget : findsNothing);
+              // On failure, go_router keeps the parent page offstage.
+              if (!fails) {
+                expect(find.byType(GroupClientScreen), findsOneWidget);
+              }
+            },
+          );
+        }
+      }
+    }
+
+    for (final isGroup in [true, false]) {
+      testWidgets(
+        'three-column ${isGroup ? "group" : "client"} deletion stays inline',
+        (tester) async {
+          tester.view.physicalSize = const Size(1320, 900);
+          tester.view.devicePixelRatio = 1.0;
+          addTearDown(() {
+            tester.view.resetPhysicalSize();
+            tester.view.resetDevicePixelRatio();
+          });
+          await tester.pumpWidget(buildDeletionApp());
+          await tester.pumpAndSettle();
+          if (isGroup) {
+            await tester.tap(find.text('Default'));
+          } else {
+            await tester.tap(find.text('Clients').first);
+            await tester.pumpAndSettle();
+            await tester.tap(find.text('192.168.1.100 (desktop)'));
+          }
+          await tester.pumpAndSettle();
+          final details = isGroup
+              ? find.byType(GroupDetailsScreen)
+              : find.byType(ClientDetailsScreen);
+          expect(details, findsOneWidget);
+          await tester.tap(find.descendant(
+            of: details,
+            matching: find.byIcon(Icons.delete_rounded),
+          ));
+          await tester.pumpAndSettle();
+          await tester.tap(find.text('Delete'));
+          await tester.pumpAndSettle();
+          expect(details, findsNothing);
+          expect(find.byType(GroupClientScreen), findsOneWidget);
+        },
+      );
+    }
+
   });
 }
