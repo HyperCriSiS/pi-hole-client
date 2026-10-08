@@ -36,6 +36,7 @@ import 'package:pi_hole_client/data/services/api/wrappers/pihole_v6_service.dart
 import 'package:pi_hole_client/data/services/local/secure_storage_service.dart';
 import 'package:pi_hole_client/data/services/local/session_credential_service.dart';
 import 'package:pi_hole_client/domain/model/server/api_versions.dart';
+import 'package:pi_hole_client/domain/model/server/connection_diagnostics.dart';
 import 'package:pi_hole_client/domain/model/server/server.dart';
 
 class RepositoryBundleFactory {
@@ -132,6 +133,8 @@ class RepositoryBundleFactory {
           allowUntrustedCert: server.allowUntrustedCert,
           ignoreCertificateErrors: server.ignoreCertificateErrors,
           pinnedCertificateSha256: server.pinnedCertificateSha256,
+          connectionSessionStateProvider: () =>
+              sessionCache.diagnosticSessionState,
         );
       default:
         final client = PiholeV5ApiClient(
@@ -163,6 +166,8 @@ class RepositoryBundleFactory {
           allowUntrustedCert: server.allowUntrustedCert,
           ignoreCertificateErrors: server.ignoreCertificateErrors,
           pinnedCertificateSha256: server.pinnedCertificateSha256,
+          connectionSessionStateProvider: () =>
+              ConnectionSessionState.notApplicable,
         );
     }
   }

@@ -5,6 +5,7 @@ import 'package:pi_hole_client/ui/core/l10n/generated/app_localizations.dart';
 import 'package:pi_hole_client/ui/core/ui/behavior/custom_scroll_behavior.dart';
 import 'package:pi_hole_client/ui/core/ui/components/error_message.dart';
 import 'package:pi_hole_client/ui/settings/server_settings/server_info/view_models/server_info_viewmodel.dart';
+import 'package:pi_hole_client/ui/settings/server_settings/server_info/widgets/connection_diagnostics_section.dart';
 import 'package:pi_hole_client/ui/settings/server_settings/server_info/widgets/host_information_section.dart';
 import 'package:pi_hole_client/ui/settings/server_settings/server_info/widgets/performance_usage_section.dart';
 import 'package:pi_hole_client/ui/settings/server_settings/server_info/widgets/pihole_version_section.dart';
@@ -149,6 +150,12 @@ class ServerInfoScreen extends StatelessWidget {
             serverAddress: serverAddress,
             mfaEnabled: viewModel.mfaEnabled,
           ),
+          if (viewModel.connectionDiagnostics != null) ...[
+            const SizedBox(height: 20),
+            ConnectionDiagnosticsSection(
+              diagnostics: viewModel.connectionDiagnostics!,
+            ),
+          ],
           const SizedBox(height: 20),
           if (serverInfo.host != null) ...[
             HostInformationSection(host: serverInfo.host),

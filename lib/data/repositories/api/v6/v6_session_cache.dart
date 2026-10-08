@@ -4,6 +4,7 @@ import 'package:pi_hole_client/data/services/api/pihole_v6_api_client.dart';
 import 'package:pi_hole_client/data/services/api/wrappers/pihole_v6_service.dart';
 import 'package:pi_hole_client/data/services/local/session_credential_service.dart';
 import 'package:pi_hole_client/domain/model/auth/auth.dart';
+import 'package:pi_hole_client/domain/model/server/connection_diagnostics.dart';
 import 'package:pi_hole_client/domain/services/app_log_service.dart';
 import 'package:pi_hole_client/utils/exceptions.dart';
 import 'package:pi_hole_client/utils/logger.dart';
@@ -48,6 +49,24 @@ class V6SessionCache {
   // ---------------------------------------------------------------------------
   // Public API
   // ---------------------------------------------------------------------------
+  /// Returns the current in-memory session state for diagnostics only.
+  ///
+  /// This intentionally performs no secure-storage read, network request, SID
+  /// renewal, or authentication. A successful API call will have already
+  /// loaded the SID into this cache, so Connection Doctor can report that
+  /// state without changing recovery policy.
+  ConnectionSessionState get diagnosticSessionState {
+    if (_interactiveReauthRequired) {
+      return ConnectionSessionState.interactiveReauthRequired;
+    }
+    final sid = _sid;
+    if (sid == null) return ConnectionSessionState.unknown;
+    if (sid.isEmpty) {
+      return ConnectionSessionState.noAuthenticationRequired;
+    }
+    return ConnectionSessionState.active;
+  }
+
   /// Swaps in freshly built dependencies while keeping the session state
   /// (`_sid` and the 2FA gate) intact, so a new bundle reuses this cache.
   ///

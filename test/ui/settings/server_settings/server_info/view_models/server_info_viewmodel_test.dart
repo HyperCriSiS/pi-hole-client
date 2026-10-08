@@ -2,25 +2,43 @@ import 'dart:async';
 
 import 'package:command_it/command_it.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pi_hole_client/domain/model/server/connection_diagnostics.dart';
+import 'package:pi_hole_client/domain/model/server/server.dart';
 import 'package:pi_hole_client/ui/settings/server_settings/server_info/view_models/server_info_viewmodel.dart';
 
 import '../../../../../../testing/fakes/repositories/api/fake_auth_repository.dart';
+import '../../../../../../testing/fakes/repositories/api/fake_config_repository.dart';
 import '../../../../../../testing/fakes/repositories/api/fake_ftl_repository.dart';
 import '../../../../../../testing/models/v6/ftl.dart';
+
+const _server = Server(
+  address: 'https://pi.hole/pihole',
+  alias: 'Test Server',
+  apiVersion: 'v6',
+  allowUntrustedCert: true,
+  pinnedCertificateSha256: 'AA:BB',
+);
 
 void main() {
   group('ServerInfoViewModel', () {
     late FakeFtlRepository fakeFtlRepository;
     late FakeAuthRepository fakeAuthRepository;
+    late FakeConfigRepository fakeConfigRepository;
+    late ConnectionSessionState sessionState;
     late ServerInfoViewModel viewModel;
 
     setUp(() {
       Command.globalExceptionHandler = (_, _) {};
       fakeFtlRepository = FakeFtlRepository();
       fakeAuthRepository = FakeAuthRepository();
+      fakeConfigRepository = FakeConfigRepository();
+      sessionState = ConnectionSessionState.active;
       viewModel = ServerInfoViewModel(
         ftlRepository: fakeFtlRepository,
         authRepository: fakeAuthRepository,
+        configRepository: fakeConfigRepository,
+        server: _server,
+        connectionSessionStateProvider: () => sessionState,
       );
     });
 
@@ -82,10 +100,55 @@ void main() {
     });
 
     test('mfaEnabled is null when 2FA status is unavailable', () async {
-      // getAuth failure mimics v5, which has no 2FA support.
       fakeAuthRepository.shouldFail = true;
       await viewModel.loadServerInfo.runAsync();
       expect(viewModel.mfaEnabled, isNull);
+    });
+
+    test('builds read-only connection diagnostics from existing state', () async {
+      fakeConfigRepository
+        ..webPanelPrefix = '/proxy'
+        ..webPanelHome = '/admin2/';
+      fakeAuthRepository.serverUsesTotp = true;
+
+      await viewModel.loadServerInfo.runAsync();
+
+      final diagnostics = viewModel.connectionDiagnostics;
+      expect(diagnostics, isNotNull);
+      expect(diagnostics!.apiVersion, 'v6');
+      expect(
+        diagnostics.ftlVersion,
+        kRepoFetchAllServerInfo.version!.ftl.local.version,
+      );
+      expect(diagnostics.apiBasePath, '/pihole/api/');
+      expect(diagnostics.webPanelPath, '/proxy/admin2/');
+      expect(diagnostics.mfaEnabled, isTrue);
+      expect(diagnostics.sessionState, ConnectionSessionState.active);
+      expect(diagnostics.tlsPolicy, ConnectionTlsPolicy.httpsPinned);
+    });
+
+    test(
+      'web path capability failure falls back without failing server info',
+      () async {
+        fakeConfigRepository.shouldFailWebPanelPaths = true;
+
+        await viewModel.loadServerInfo.runAsync();
+
+        expect(viewModel.loadServerInfo.errors.value, isNull);
+        expect(viewModel.connectionDiagnostics?.webPanelPath, '/pihole/admin/');
+      },
+    );
+
+    test('reads session state from provider without changing it', () async {
+      sessionState = ConnectionSessionState.interactiveReauthRequired;
+
+      await viewModel.loadServerInfo.runAsync();
+
+      expect(
+        viewModel.connectionDiagnostics?.sessionState,
+        ConnectionSessionState.interactiveReauthRequired,
+      );
+      expect(sessionState, ConnectionSessionState.interactiveReauthRequired);
     });
   });
 }

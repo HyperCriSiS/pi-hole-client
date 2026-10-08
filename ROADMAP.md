@@ -137,7 +137,7 @@ Maintain and improve the unofficial Pi-hole client while upstream activity is li
   - [x] Keep user-interactive and automatic/background recovery policies separate so automatic refresh cannot create prompt loops; merged via PR #146 as `1d3d62bd`.
   - [x] Reuse the shared redacting diagnostics/App Log path for authentication and reconnect failures; merged via PR #148 as `98aae46f`.
 - [ ] Connection Doctor: expose per-server capabilities and diagnostics useful for reverse proxies and difficult transports.
-  - [ ] Show resolved API version/FTL version, API base path, web-home path, TOTP/session state and TLS/certificate policy.
+  - [x] Show resolved API version/FTL version, API base path, web-home path, TOTP/session state and TLS/certificate policy. Implemented as a read-only Server Info summary in PR #152; session state comes only from the existing in-memory v6 cache and does not trigger renewal/authentication.
   - [ ] Provide endpoint reachability/latency diagnostics without exposing secrets.
   - [ ] Surface actionable hints for known proxy/streaming cases such as #754.
 - [ ] #720: standardize loading/revalidation UX after the connection/session architecture is stable.
