@@ -51,6 +51,43 @@ void main() {
       expect(viewModel.loadLeases.errors.value, isNotNull);
     });
 
+    test('loadLeases failure and retry notify screen listeners', () async {
+      var sawLoading = false;
+      var sawError = false;
+      var sawRecovered = false;
+      final errorNotified = Completer<void>();
+
+      viewModel.addListener(() {
+        final isLoading = viewModel.loadLeases.isRunning.value;
+        final hasError = viewModel.loadLeases.errors.value != null;
+        if (isLoading) sawLoading = true;
+        if (hasError) {
+          sawError = true;
+          if (!errorNotified.isCompleted) errorNotified.complete();
+        }
+        if (sawError && !isLoading && !hasError) {
+          sawRecovered = true;
+        }
+      });
+
+      fakeDhcpRepository.shouldFail = true;
+      viewModel.loadLeases.run();
+      await errorNotified.future;
+      await Future<void>.delayed(Duration.zero);
+
+      expect(sawLoading, isTrue);
+      expect(sawError, isTrue);
+      expect(viewModel.loadLeases.isRunning.value, isFalse);
+
+      fakeDhcpRepository.shouldFail = false;
+      await viewModel.loadLeases.runAsync();
+
+      expect(viewModel.loadLeases.errors.value, isNull);
+      expect(viewModel.loadLeases.isRunning.value, isFalse);
+      expect(sawRecovered, isTrue);
+    });
+
+
     test('deleteLease success removes lease locally', () async {
       await viewModel.loadLeases.runAsync();
       expect(fakeDhcpRepository.fetchDhcpLeasesCallCount, 1);

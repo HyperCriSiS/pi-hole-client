@@ -94,6 +94,43 @@ void main() {
       expect(viewModel.loadRecords.errors.value, isNotNull);
     });
 
+    test('loadRecords failure and retry notify screen listeners', () async {
+      var sawLoading = false;
+      var sawError = false;
+      var sawRecovered = false;
+      final errorNotified = Completer<void>();
+
+      viewModel.addListener(() {
+        final isLoading = viewModel.loadRecords.isRunning.value;
+        final hasError = viewModel.loadRecords.errors.value != null;
+        if (isLoading) sawLoading = true;
+        if (hasError) {
+          sawError = true;
+          if (!errorNotified.isCompleted) errorNotified.complete();
+        }
+        if (sawError && !isLoading && !hasError) {
+          sawRecovered = true;
+        }
+      });
+
+      fakeLocalDnsRepository.shouldFail = true;
+      viewModel.loadRecords.run();
+      await errorNotified.future;
+      await Future<void>.delayed(Duration.zero);
+
+      expect(sawLoading, isTrue);
+      expect(sawError, isTrue);
+      expect(viewModel.loadRecords.isRunning.value, isFalse);
+
+      fakeLocalDnsRepository.shouldFail = false;
+      await viewModel.loadRecords.runAsync();
+
+      expect(viewModel.loadRecords.errors.value, isNull);
+      expect(viewModel.loadRecords.isRunning.value, isFalse);
+      expect(sawRecovered, isTrue);
+    });
+
+
     test('addRecord success appends record locally', () async {
       await viewModel.loadRecords.runAsync();
 

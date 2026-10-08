@@ -51,6 +51,43 @@ void main() {
       expect(viewModel.loadDevices.errors.value, isNotNull);
     });
 
+    test('loadDevices failure and retry notify screen listeners', () async {
+      var sawLoading = false;
+      var sawError = false;
+      var sawRecovered = false;
+      final errorNotified = Completer<void>();
+
+      viewModel.addListener(() {
+        final isLoading = viewModel.loadDevices.isRunning.value;
+        final hasError = viewModel.loadDevices.errors.value != null;
+        if (isLoading) sawLoading = true;
+        if (hasError) {
+          sawError = true;
+          if (!errorNotified.isCompleted) errorNotified.complete();
+        }
+        if (sawError && !isLoading && !hasError) {
+          sawRecovered = true;
+        }
+      });
+
+      fakeNetworkRepository.shouldFail = true;
+      viewModel.loadDevices.run();
+      await errorNotified.future;
+      await Future<void>.delayed(Duration.zero);
+
+      expect(sawLoading, isTrue);
+      expect(sawError, isTrue);
+      expect(viewModel.loadDevices.isRunning.value, isFalse);
+
+      fakeNetworkRepository.shouldFail = false;
+      await viewModel.loadDevices.runAsync();
+
+      expect(viewModel.loadDevices.errors.value, isNull);
+      expect(viewModel.loadDevices.isRunning.value, isFalse);
+      expect(sawRecovered, isTrue);
+    });
+
+
     test('deleteDevice success removes device locally', () async {
       await viewModel.loadDevices.runAsync();
       expect(fakeNetworkRepository.fetchDevicesCallCount, 1);

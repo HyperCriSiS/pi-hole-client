@@ -68,6 +68,43 @@ void main() {
       expect(viewModel.loadServerInfo.errors.value, isNotNull);
     });
 
+    test('loadServerInfo failure and retry notify screen listeners', () async {
+      var sawLoading = false;
+      var sawError = false;
+      var sawRecovered = false;
+      final errorNotified = Completer<void>();
+
+      viewModel.addListener(() {
+        final isLoading = viewModel.loadServerInfo.isRunning.value;
+        final hasError = viewModel.loadServerInfo.errors.value != null;
+        if (isLoading) sawLoading = true;
+        if (hasError) {
+          sawError = true;
+          if (!errorNotified.isCompleted) errorNotified.complete();
+        }
+        if (sawError && !isLoading && !hasError) {
+          sawRecovered = true;
+        }
+      });
+
+      fakeFtlRepository.shouldFail = true;
+      viewModel.loadServerInfo.run();
+      await errorNotified.future;
+      await Future<void>.delayed(Duration.zero);
+
+      expect(sawLoading, isTrue);
+      expect(sawError, isTrue);
+      expect(viewModel.loadServerInfo.isRunning.value, isFalse);
+
+      fakeFtlRepository.shouldFail = false;
+      await viewModel.loadServerInfo.runAsync();
+
+      expect(viewModel.loadServerInfo.errors.value, isNull);
+      expect(viewModel.loadServerInfo.isRunning.value, isFalse);
+      expect(sawRecovered, isTrue);
+    });
+
+
     test('isRunning is true while loading', () async {
       final future = viewModel.loadServerInfo.runAsync();
 
