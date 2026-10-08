@@ -94,3 +94,13 @@ The separate GitHub-managed `github-advanced-security` AI-agent job failed indep
 - PRs #142 and #153 passed full Dart tests, Android unsigned APK build, CodeQL, Sonar, Codecov and static checks; #153 also passed Dependabot config validation.
 - No known GitHub Advisory Database vulnerabilities found for the retained `sqlite3 3.5.2`, `cupertino_icons 2.0.0` or `go_router 18.0.2` when checked.
 - Revisit the sqlite3 upper bound and exact Dependabot ignores when a validated Flutter baseline supports `meta ^1.19.0`; never force the dependency with overrides.
+
+## Dependency maintenance follow-up (2026-10-08)
+- Dependabot PR #158: `url_launcher` 6.3.2 -> 6.3.3, merged as `dc84ce2c`.
+- Dependabot PR #159: `package_info_plus` 10.2.1 -> 10.2.2, merged as `b5b6ae7e`.
+- Dependabot PR #160: `device_info_plus` 13.2.0 -> 13.3.0, merged as `f2674e16`.
+- Each Dependabot-generated lockfile initially contained newer Flutter-SDK-pinned transitives (`intl`, `matcher`, `meta`, `test_api`, `vector_math`); these were aligned with the Flutter 3.44.1 baseline.
+- The follow-up CI failures were caused solely by a missing final newline in `pubspec.lock`. All three files were corrected; PR diffs then contained only their direct dependency upgrades.
+- Each PR passed full Dart tests, CodeQL, Sonar, Codecov, static analysis and unsigned Android source APK build before squash merge.
+- GitHub Advisory Database check found no known advisories for these three updated versions at the time of review.
+- Any future Dependabot pub PR must verify SDK-pinned transitive resolution and `pubspec.lock` stability; do not bypass the strict lockfile check.
