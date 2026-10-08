@@ -12,6 +12,7 @@ import 'package:pi_hole_client/data/repositories/api/interfaces/local_dns_reposi
 import 'package:pi_hole_client/data/repositories/api/interfaces/metrics_repository.dart';
 import 'package:pi_hole_client/data/repositories/api/interfaces/network_repository.dart';
 import 'package:pi_hole_client/data/repositories/api/interfaces/realtime_status_repository.dart';
+import 'package:pi_hole_client/domain/model/server/connection_diagnostics.dart';
 import 'package:pi_hole_client/domain/model/server/server.dart';
 
 /// Function signature for creating a [RepositoryBundle].
@@ -19,6 +20,8 @@ import 'package:pi_hole_client/domain/model/server/server.dart';
 /// Used to make the factory injectable for testing.
 typedef CreateRepositoryBundle =
     RepositoryBundle Function({required Server server});
+
+typedef ConnectionSessionStateProvider = ConnectionSessionState Function();
 
 class RepositoryBundle {
   const RepositoryBundle({
@@ -41,6 +44,7 @@ class RepositoryBundle {
     this.allowUntrustedCert = false,
     this.ignoreCertificateErrors = false,
     this.pinnedCertificateSha256,
+    this.connectionSessionStateProvider,
   });
 
   final ActionsRepository actions;
@@ -62,4 +66,8 @@ class RepositoryBundle {
   final bool allowUntrustedCert;
   final bool ignoreCertificateErrors;
   final String? pinnedCertificateSha256;
+  final ConnectionSessionStateProvider? connectionSessionStateProvider;
+
+  ConnectionSessionState get connectionSessionState =>
+      connectionSessionStateProvider?.call() ?? ConnectionSessionState.unknown;
 }
