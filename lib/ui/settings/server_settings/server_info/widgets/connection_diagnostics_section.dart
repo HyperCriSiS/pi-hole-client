@@ -8,10 +8,12 @@ import 'package:skeletonizer/skeletonizer.dart';
 class ConnectionDiagnosticsSection extends StatelessWidget {
   const ConnectionDiagnosticsSection({
     required this.diagnostics,
+    this.requestDiagnostic,
     super.key,
   });
 
   final ConnectionDiagnostics diagnostics;
+  final FtlRequestDiagnostic? requestDiagnostic;
 
   @override
   Widget build(BuildContext context) {
@@ -33,6 +35,8 @@ class ConnectionDiagnosticsSection extends StatelessWidget {
           title: 'FTL ${locale.version}',
           value: diagnostics.ftlVersion ?? '-',
         ),
+        if (requestDiagnostic != null)
+          FtlRequestDiagnosticTile(diagnostic: requestDiagnostic!),
         _diagnosticTile(
           context,
           icon: Icons.route_rounded,
@@ -116,5 +120,51 @@ class ConnectionDiagnosticsSection extends StatelessWidget {
         locale.dontCheckCertificate,
       ConnectionTlsPolicy.unknown => locale.serverSecurityHttpsUnknown,
     };
+  }
+}
+/// Displays the measured FTL information request without leaking URLs,
+/// credentials, server responses or exception details.
+class FtlRequestDiagnosticTile extends StatelessWidget {
+  const FtlRequestDiagnosticTile({required this.diagnostic, super.key});
+
+  final FtlRequestDiagnostic diagnostic;
+
+  @override
+  Widget build(BuildContext context) {
+    final locale = AppLocalizations.of(context)!;
+    final colorScheme = Theme.of(context).colorScheme;
+    final duration = diagnostic.elapsed.inMicroseconds < 1000
+        ? '<1 ms'
+        : '${diagnostic.elapsed.inMilliseconds} ms';
+    final status = diagnostic.succeeded ? locale.valid : locale.error;
+    final value = '$status ($duration)';
+
+    return ListTile(
+      dense: true,
+      leading: const Skeleton.keep(child: Icon(Icons.speed_rounded)),
+      title: Skeleton.keep(
+        child: listTileTitleNoPadding(
+          'FTL ${locale.connectionStatus}',
+          colorScheme: colorScheme,
+        ),
+      ),
+      trailing: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 220),
+        child: Tooltip(
+          message: value,
+          child: Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.end,
+            style: TextStyle(
+              fontWeight: FontWeight.normal,
+              fontSize: 16,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

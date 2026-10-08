@@ -42,14 +42,25 @@ class ServerInfoViewModel extends ChangeNotifier {
   late final Command<void, PiholeServer> loadServerInfo;
 
   ConnectionDiagnostics? _connectionDiagnostics;
+  FtlRequestDiagnostic? _ftlRequestDiagnostic;
 
   ConnectionDiagnostics? get connectionDiagnostics => _connectionDiagnostics;
+  FtlRequestDiagnostic? get ftlRequestDiagnostic => _ftlRequestDiagnostic;
 
   /// Server 2FA status. `null` when unavailable (e.g. v5).
   bool? get mfaEnabled => _connectionDiagnostics?.mfaEnabled;
 
   Future<PiholeServer> _loadServerInfo() async {
-    final serverFuture = _ftlRepository.fetchAllServerInfo();
+    // A refresh must never retain the previous attempt's timing or status.
+    _ftlRequestDiagnostic = null;
+    _connectionDiagnostics = null;
+
+    // Measure only the already-issued FTL request, not the parallel auth and
+    // configuration capability reads or the time spent building the UI.
+    final stopwatch = Stopwatch()..start();
+    final serverFuture = Future.sync(
+      _ftlRepository.fetchAllServerInfo,
+    ).whenComplete(stopwatch.stop);
     final authFuture = _authRepository.getAuth(useSid: false);
     final webPanelPathsFuture = _configRepository.fetchWebPanelPaths();
 
@@ -57,18 +68,32 @@ class ServerInfoViewModel extends ChangeNotifier {
     final mfaEnabled = authResult.getOrNull()?.totp;
     final webPanelPaths = (await webPanelPathsFuture).getOrNull();
 
-    final serverResult = await serverFuture;
-    switch (serverResult) {
-      case Success():
-        final serverInfo = serverResult.getOrThrow();
-        _connectionDiagnostics = _buildConnectionDiagnostics(
-          serverInfo: serverInfo,
-          mfaEnabled: mfaEnabled,
-          webPanelPaths: webPanelPaths,
-        );
-        return serverInfo;
-      case Failure():
-        throw serverResult.exceptionOrNull();
+    try {
+      final serverResult = await serverFuture;
+      _ftlRequestDiagnostic = FtlRequestDiagnostic(
+        succeeded: serverResult is Success,
+        elapsed: stopwatch.elapsed,
+      );
+      switch (serverResult) {
+        case Success():
+          final serverInfo = serverResult.getOrThrow();
+          _connectionDiagnostics = _buildConnectionDiagnostics(
+            serverInfo: serverInfo,
+            mfaEnabled: mfaEnabled,
+            webPanelPaths: webPanelPaths,
+          );
+          return serverInfo;
+        case Failure():
+          throw serverResult.exceptionOrNull();
+      }
+    } catch (_) {
+      // Also record failures thrown by a repository instead of returned as
+      // Result.Failure. Never include raw exception text or credentials.
+      _ftlRequestDiagnostic ??= FtlRequestDiagnostic(
+        succeeded: false,
+        elapsed: stopwatch.elapsed,
+      );
+      rethrow;
     }
   }
 
