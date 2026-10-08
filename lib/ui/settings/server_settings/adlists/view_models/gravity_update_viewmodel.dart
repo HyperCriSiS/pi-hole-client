@@ -5,6 +5,7 @@ import 'package:pi_hole_client/data/repositories/api/interfaces/ftl_repository.d
 import 'package:pi_hole_client/data/repositories/local/interfaces/gravity_repository.dart';
 import 'package:pi_hole_client/domain/model/enums.dart';
 import 'package:pi_hole_client/domain/model/ftl/message.dart';
+import 'package:pi_hole_client/domain/model/gravity/gravity_stream_diagnostics.dart';
 import 'package:pi_hole_client/domain/services/gravity_update_service.dart';
 import 'package:pi_hole_client/utils/logger.dart';
 
@@ -31,6 +32,7 @@ class GravityUpdateViewModel with ChangeNotifier {
   GravityUpdateService? _service;
 
   GravityStatus _status = GravityStatus.idle;
+  GravityStreamHint? _streamHint;
   List<String> _logs = [];
   List<FtlMessage> _messages = [];
   DateTime? _startedAt;
@@ -41,6 +43,7 @@ class GravityUpdateViewModel with ChangeNotifier {
   late final Command<int, void> removeMessage;
 
   GravityStatus get status => _status;
+  GravityStreamHint? get streamHint => _streamHint;
   List<String> get logs => _logs;
   DateTime? get startedAtTime => _startedAt;
   DateTime? get completedAtTime => _completedAt;
@@ -89,6 +92,7 @@ class GravityUpdateViewModel with ChangeNotifier {
     String? serverAddress,
   }) {
     _service?.cancelUpdate();
+    _streamHint = null;
     _serverAddress = serverAddress;
     if (actionsRepository != null && ftlRepository != null) {
       _service = GravityUpdateService(
@@ -132,6 +136,7 @@ class GravityUpdateViewModel with ChangeNotifier {
     final snapshot = await _service!.loadGravityData(address);
     _messages = snapshot.messages.toList();
     _logs = snapshot.logs.toList();
+    _streamHint = null; // Not persisted: failures from previous runs are unknown.
     _status = snapshot.status;
     _startedAt = snapshot.startedAt;
     _completedAt = snapshot.completedAt;
@@ -165,6 +170,7 @@ class GravityUpdateViewModel with ChangeNotifier {
     // Reset the state before starting the update
     _logs.clear();
     _messages.clear();
+    _streamHint = null;
     _startedAt = DateTime.now();
     _completedAt = null;
     _status = GravityStatus.running;
@@ -192,6 +198,10 @@ class GravityUpdateViewModel with ChangeNotifier {
         _messages = messages;
         notifyListeners();
       },
+      onStreamHint: (hint) {
+        _streamHint = hint;
+        notifyListeners();
+      },
     );
   }
 
@@ -203,6 +213,7 @@ class GravityUpdateViewModel with ChangeNotifier {
     }
     _messages.clear();
     _logs.clear();
+    _streamHint = null;
     _status = GravityStatus.idle;
     _startedAt = null;
     _completedAt = null;

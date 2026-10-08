@@ -14,6 +14,7 @@ import 'package:pi_hole_client/ui/core/view_models/app_config_viewmodel.dart';
 import 'package:pi_hole_client/ui/settings/server_settings/adlists/view_models/adlists_viewmodel.dart';
 import 'package:pi_hole_client/ui/settings/server_settings/adlists/view_models/gravity_update_viewmodel.dart';
 import 'package:pi_hole_client/ui/settings/server_settings/adlists/widgets/adlist_actions.dart';
+import 'package:pi_hole_client/ui/settings/server_settings/adlists/widgets/gravity_stream_hint_card.dart';
 import 'package:pi_hole_client/ui/settings/server_settings/group_client/view_models/groups_viewmodel.dart';
 import 'package:pi_hole_client/utils/format.dart';
 import 'package:pi_hole_client/utils/logger.dart';
@@ -339,6 +340,11 @@ class _GravityUpdateState extends State<GravityUpdate> {
                   ],
                 ),
               ),
+              if (gravityProvider.status == GravityStatus.error &&
+                  gravityProvider.streamHint != null) ...[
+                const SizedBox(height: 12),
+                GravityStreamHintCard(hint: gravityProvider.streamHint!),
+              ],
               const SizedBox(height: 24),
               SectionLabel(
                 icon: Icons.circle_notifications_outlined,
