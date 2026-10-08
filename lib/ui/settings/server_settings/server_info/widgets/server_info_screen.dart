@@ -83,7 +83,16 @@ class ServerInfoScreen extends StatelessWidget {
 
                     if (hasError) {
                       return _wrapWithScroll(
-                        ErrorMessage(message: locale.dataFetchFailed),
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            ErrorMessage(message: locale.dataFetchFailed),
+                            if (viewModel.ftlRequestDiagnostic != null)
+                              FtlRequestDiagnosticTile(
+                                diagnostic: viewModel.ftlRequestDiagnostic!,
+                              ),
+                          ],
+                        ),
                       );
                     }
 
@@ -154,6 +163,7 @@ class ServerInfoScreen extends StatelessWidget {
             const SizedBox(height: 20),
             ConnectionDiagnosticsSection(
               diagnostics: viewModel.connectionDiagnostics!,
+              requestDiagnostic: viewModel.ftlRequestDiagnostic,
             ),
           ],
           const SizedBox(height: 20),

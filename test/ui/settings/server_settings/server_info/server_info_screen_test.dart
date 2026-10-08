@@ -78,6 +78,8 @@ void main() async {
       expect(find.byType(ServerInfoScreen), findsOneWidget);
       expect(find.byType(ServerConnectionSection), findsOneWidget);
       expect(find.byType(ConnectionDiagnosticsSection), findsOneWidget);
+      expect(find.byType(FtlRequestDiagnosticTile), findsOneWidget);
+      expect(find.text('FTL Connection Status'), findsOneWidget);
       expect(find.byType(HostInformationSection), findsOneWidget);
       expect(find.byType(PerformanceUsageSection), findsOneWidget);
       expect(find.byType(PiholeVersionSection), findsOneWidget);
@@ -123,6 +125,9 @@ void main() async {
 
       expect(find.byType(ServerInfoScreen), findsOneWidget);
       expect(find.byType(ErrorMessage), findsOneWidget);
+      expect(find.byType(FtlRequestDiagnosticTile), findsOneWidget);
+      expect(find.text('FTL Connection Status'), findsOneWidget);
+      expect(find.textContaining('Error ('), findsOneWidget);
     });
 
     testWidgets('should show refresh button', (WidgetTester tester) async {

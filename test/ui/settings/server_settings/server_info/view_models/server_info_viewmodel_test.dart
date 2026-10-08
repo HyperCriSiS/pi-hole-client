@@ -48,8 +48,15 @@ void main() {
     });
 
     test('loadServerInfo success populates server info', () async {
+      expect(viewModel.ftlRequestDiagnostic, isNull);
+
       await viewModel.loadServerInfo.runAsync();
 
+      expect(viewModel.ftlRequestDiagnostic?.succeeded, isTrue);
+      expect(
+        viewModel.ftlRequestDiagnostic?.elapsed,
+        greaterThanOrEqualTo(Duration.zero),
+      );
       expect(viewModel.loadServerInfo.value, equals(kRepoFetchAllServerInfo));
       expect(viewModel.loadServerInfo.value.host, isNotNull);
       expect(viewModel.loadServerInfo.value.version, isNotNull);
@@ -66,6 +73,33 @@ void main() {
       await completer.future;
 
       expect(viewModel.loadServerInfo.errors.value, isNotNull);
+      expect(viewModel.ftlRequestDiagnostic?.succeeded, isFalse);
+      expect(
+        viewModel.ftlRequestDiagnostic?.elapsed,
+        greaterThanOrEqualTo(Duration.zero),
+      );
+      expect(viewModel.connectionDiagnostics, isNull);
+    });
+
+    test('failed refresh replaces successful diagnostics', () async {
+      await viewModel.loadServerInfo.runAsync();
+      expect(viewModel.ftlRequestDiagnostic?.succeeded, isTrue);
+      expect(viewModel.connectionDiagnostics, isNotNull);
+
+      fakeFtlRepository.shouldFail = true;
+      final failed = Completer<void>();
+      viewModel.loadServerInfo.errors.addListener(() {
+        if (viewModel.loadServerInfo.errors.value != null &&
+            !failed.isCompleted) {
+          failed.complete();
+        }
+      });
+
+      viewModel.loadServerInfo.run();
+      await failed.future;
+
+      expect(viewModel.ftlRequestDiagnostic?.succeeded, isFalse);
+      expect(viewModel.connectionDiagnostics, isNull);
     });
 
     test('loadServerInfo failure and retry notify screen listeners', () async {
@@ -101,6 +135,8 @@ void main() {
 
       expect(viewModel.loadServerInfo.errors.value, isNull);
       expect(viewModel.loadServerInfo.isRunning.value, isFalse);
+      expect(viewModel.ftlRequestDiagnostic?.succeeded, isTrue);
+      expect(viewModel.connectionDiagnostics, isNotNull);
       expect(sawRecovered, isTrue);
     });
 
