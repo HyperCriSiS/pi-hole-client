@@ -29,10 +29,10 @@ Maintain and improve the unofficial Pi-hole client while upstream activity is li
 
 ## Phase 1 — deterministic UI and diagnostics work
 
-- [ ] **P1 — upstream #724:** reproduce and fix the stale Group/Client details pane after deleting an item at tablet/two-column width (~1000 px). Upstream fix: [#725](https://github.com/tsutsu3/pi-hole-client/pull/725).
-  - [ ] Audit deletion ownership in `group_client_screen.dart` and the Group/Client detail screens; current fork clears the selected model but conditionally pops only at `width <= ResponsiveConstants.large`, leaving the two-column pushed detail route visible.
-  - [ ] Make deletion await the repository action and close only the actually pushed detail route; avoid popping the root pane or navigating on failed deletion. Check Group/Client and related Adlist/Domain paths without wholesale upstream porting.
-  - [ ] Add phone/two-column/three-column success/failure widget regressions; require full Dart and unsigned Android gates before merge.
+- [x] **P1 — upstream #724:** fixed the stale Group/Client details pane after deleting an item at tablet/two-column width (~1000 px). Upstream fix: [#725](https://github.com/tsutsu3/pi-hole-client/pull/725).
+  - [x] Audit deletion ownership in `group_client_screen.dart` and the Group/Client detail screens; former fork code cleared the selected model but conditionally pops only at `width <= ResponsiveConstants.large`, leaving the two-column pushed detail route visible (confirmed and fixed in PR #166).
+  - [x] Close pushed detail routes after successful deletion at phone and tablet widths, explicitly mark inline three-column details as embedded, and preserve detail route on failure; PR #166 (`abf57cb2`).
+  - [x] Added phone and tablet Group/Client success/failure regression tests plus inline three-column successful deletion tests; full Dart tests, unsigned Android source APK/artifact verification, CodeQL, Sonar, Codecov and static checks passed before PR #166 merge.
 - [ ] **P1 — upstream #718:** ensure failed initial loads cannot leave Server Settings stuck on a skeleton forever. Upstream fix: [#721](https://github.com/tsutsu3/pi-hole-client/pull/721).
   - [ ] Reproduce with `mock_api_server --fail all` and `--fail auth/sessions`; check DHCP, Network, Interfaces, Local DNS, Server Info and Sessions.
   - [ ] Audit the loading `Command` state notification lifecycle; in current fork, several ViewModels listen to command result only, not `isRunning`/`errors`, while screens depend on `ListenableBuilder`. Add symmetric listeners/disposal, without changing #748/TOTP recovery policy.

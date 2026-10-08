@@ -113,3 +113,10 @@ The separate GitHub-managed `github-advanced-security` AI-agent job failed indep
 - **#699** website image quality has no proven equivalence across the fork/upstream docs stacks; not committed as an app blocker.
 - Triage also records upstream dependency PR #764 as selective: fork already integrated its compatible packages while Android 37/`dynamic_color` major blockers remain.
 - Next bounded implementation order: #724, #718, then resume Connection Doctor; device-gated issues await repro evidence.
+
+## Upstream #724 completion (2026-10-08)
+- PR #166 merged into `main` as `abf57cb2bf07c6369a234a752b0d1569bbc766f9` after all repository-controlled validation checks passed.
+- Group/Client delete detail routes are now closed after successful deletion at both phone and two-column tablet width; inline three-column detail panes do not pop parent routes.
+- Failed deletes keep details available. Added Group/Client phone/tablet success+failure tests and inline three-column success tests; 958 Dart tests passed, unsigned Android release APK built and unsigned artifact verified, CodeQL/Sonar/Codecov/static analyses passed.
+- Next bounded unit: **upstream #718** settings screens stuck on loading skeleton after errors. Six ViewModels need symmetric command `isRunning`/`errors` notification subscriptions with explicit failure/retry regression tests: DHCP, Network, Interfaces, Local DNS, Sessions and Server Info. Keep #748 auth/background recovery policy intact.
+- Prefer a fresh chat for #718 given the extensive GitHub/CI tooling used for #724. Verify `main` is at or beyond `abf57cb2` before starting.
