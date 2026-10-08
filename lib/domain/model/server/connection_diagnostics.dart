@@ -34,6 +34,7 @@ class ConnectionDiagnostics {
   final ConnectionSessionState sessionState;
   final ConnectionTlsPolicy tlsPolicy;
 }
+
 /// Result of the existing FTL server-info request, not a standalone ping.
 ///
 /// A failed authenticated request does not by itself prove the host is offline.

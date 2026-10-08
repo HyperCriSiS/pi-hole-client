@@ -81,6 +81,27 @@ void main() {
       expect(viewModel.connectionDiagnostics, isNull);
     });
 
+    test('failed refresh replaces successful diagnostics', () async {
+      await viewModel.loadServerInfo.runAsync();
+      expect(viewModel.ftlRequestDiagnostic?.succeeded, isTrue);
+      expect(viewModel.connectionDiagnostics, isNotNull);
+
+      fakeFtlRepository.shouldFail = true;
+      final failed = Completer<void>();
+      viewModel.loadServerInfo.errors.addListener(() {
+        if (viewModel.loadServerInfo.errors.value != null &&
+            !failed.isCompleted) {
+          failed.complete();
+        }
+      });
+
+      viewModel.loadServerInfo.run();
+      await failed.future;
+
+      expect(viewModel.ftlRequestDiagnostic?.succeeded, isFalse);
+      expect(viewModel.connectionDiagnostics, isNull);
+    });
+
     test('loadServerInfo failure and retry notify screen listeners', () async {
       var sawLoading = false;
       var sawError = false;

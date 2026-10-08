@@ -122,6 +122,7 @@ class ConnectionDiagnosticsSection extends StatelessWidget {
     };
   }
 }
+
 /// Displays the measured FTL information request without leaking URLs,
 /// credentials, server responses or exception details.
 class FtlRequestDiagnosticTile extends StatelessWidget {
