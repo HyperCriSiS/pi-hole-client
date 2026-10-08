@@ -60,7 +60,9 @@ EndpointOutcome classifyEndpointError(Object? error) {
     HttpStatusCodeException e => e.statusCode,
     _ => null,
   };
-  if (code != null && code >= 500) return EndpointOutcome.server;
+  if (code != null && code >= 500 && code != 504) {
+    return EndpointOutcome.server;
+  }
   return switch (code) {
     401 || 403 => EndpointOutcome.authentication,
     495 => EndpointOutcome.tls,
