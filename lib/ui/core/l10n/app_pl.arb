@@ -292,6 +292,8 @@
   "gravityNotYetRun": "Aktualizacja Gravity jeszcze nie została uruchomiona",
   "gravityUpdateCompleted": "Aktualizacja Gravity została zakończona",
   "gravityUpdateFailed": "Aktualizacja Gravity nie powiodła się",
+  "gravityProxyTimeoutHintTitle": "Możliwe buforowanie przez reverse proxy",
+  "gravityProxyTimeoutHintDetail": "Strumień Gravity przekroczył limit czasu przed otrzymaniem postępu. Jeśli problem występuje tylko za nginx, sprawdź proxy_buffering off; w bloku location obsługującym /api/action/gravity (wraz ze skonfigurowaną podścieżką). Limit czasu może mieć też inne przyczyny.",
   "groups": "Grupy",
   "hardwareAddress": "Adres sprzętowy",
   "helpUsImprove": "Pomóż nam ulepszyć",

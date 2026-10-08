@@ -293,6 +293,8 @@
   "gravityNotYetRun": "Aún no se ha ejecutado la actualización de Gravity",
   "gravityUpdateCompleted": "Actualización de Gravity completada",
   "gravityUpdateFailed": "Error en la actualización de Gravity",
+  "gravityProxyTimeoutHintTitle": "Posible almacenamiento en búfer del proxy",
+  "gravityProxyTimeoutHintDetail": "El flujo de Gravity agotó el tiempo de espera sin mostrar progreso. Si solo ocurre detrás de nginx, prueba proxy_buffering off; en la ubicación del proxy para /api/action/gravity (incluida la subruta configurada). El tiempo de espera también puede tener otras causas.",
   "groups": "Grupos",
   "hardwareAddress": "Dirección de hardware",
   "helpUsImprove": "Ayúdanos a mejorar",

@@ -292,6 +292,8 @@
   "gravityNotYetRun": "Gravity update has not run yet",
   "gravityUpdateCompleted": "Gravity update completed",
   "gravityUpdateFailed": "Gravity update failed",
+  "gravityProxyTimeoutHintTitle": "Possible reverse-proxy buffering",
+  "gravityProxyTimeoutHintDetail": "The Gravity stream timed out before any output. If this happens only behind nginx, try proxy_buffering off; in the proxy location handling /api/action/gravity (including any configured subroute). A timeout can have other causes.",
   "groups": "Groups",
   "hardwareAddress": "Hardware Address",
   "helpUsImprove": "Help Us Improve",

@@ -895,6 +895,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get gravityUpdateFailed => 'Gravityの更新に失敗しました';
 
   @override
+  String get gravityProxyTimeoutHintTitle => 'リバースプロキシのバッファリングの可能性';
+
+  @override
+  String get gravityProxyTimeoutHintDetail =>
+      'Gravity のストリームは進行状況を受信する前にタイムアウトしました。nginx 経由でのみ発生する場合は、/api/action/gravity（設定したサブルートを含む）を転送する location で proxy_buffering off; を確認してください。別の原因によるタイムアウトの可能性もあります。';
+
+  @override
   String get groups => 'グループ';
 
   @override

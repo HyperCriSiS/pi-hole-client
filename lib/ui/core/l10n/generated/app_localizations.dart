@@ -1856,6 +1856,18 @@ abstract class AppLocalizations {
   /// **'Gravity update failed'**
   String get gravityUpdateFailed;
 
+  /// No description provided for @gravityProxyTimeoutHintTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Possible reverse-proxy buffering'**
+  String get gravityProxyTimeoutHintTitle;
+
+  /// No description provided for @gravityProxyTimeoutHintDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'The Gravity stream timed out before any output.'**
+  String get gravityProxyTimeoutHintDetail;
+
   /// No description provided for @groups.
   ///
   /// In en, this message translates to:

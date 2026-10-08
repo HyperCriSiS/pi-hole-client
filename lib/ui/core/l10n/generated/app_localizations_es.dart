@@ -938,6 +938,13 @@ class AppLocalizationsEs extends AppLocalizations {
   String get gravityUpdateFailed => 'Error en la actualización de Gravity';
 
   @override
+  String get gravityProxyTimeoutHintTitle => 'Posible almacenamiento en búfer del proxy';
+
+  @override
+  String get gravityProxyTimeoutHintDetail =>
+      'El flujo de Gravity agotó el tiempo de espera sin mostrar progreso. Si solo ocurre detrás de nginx, prueba proxy_buffering off; en la ubicación del proxy para /api/action/gravity (incluida la subruta configurada). El tiempo de espera también puede tener otras causas.';
+
+  @override
   String get groups => 'Grupos';
 
   @override
