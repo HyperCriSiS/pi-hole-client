@@ -120,3 +120,11 @@ The separate GitHub-managed `github-advanced-security` AI-agent job failed indep
 - Failed deletes keep details available. Added Group/Client phone/tablet success+failure tests and inline three-column success tests; 958 Dart tests passed, unsigned Android release APK built and unsigned artifact verified, CodeQL/Sonar/Codecov/static analyses passed.
 - Next bounded unit: **upstream #718** settings screens stuck on loading skeleton after errors. Six ViewModels need symmetric command `isRunning`/`errors` notification subscriptions with explicit failure/retry regression tests: DHCP, Network, Interfaces, Local DNS, Sessions and Server Info. Keep #748 auth/background recovery policy intact.
 - Prefer a fresh chat for #718 given the extensive GitHub/CI tooling used for #724. Verify `main` is at or beyond `abf57cb2` before starting.
+
+## Upstream #718 completion (2026-10-08)
+- PR #168 merged to `main` as `8c091c39b9a60482ab37dc4cda5c154067740def`.
+- Six settings ViewModels (DHCP, Network, Interfaces, Local DNS, Sessions, Server Info) forward their load Command `isRunning` and `errors` changes through ChangeNotifier. Subscriptions are removed symmetrically in `dispose()`.
+- Six new ViewModel regressions exercise failed load/error notification and successful retry/recovery; the associated screens already use `ListenableBuilder` and `ErrorMessage`.
+- Full Dart suite, unsigned source Android APK build and unsigned-artifact verification, CodeQL, Sonar, Codecov and all static scans passed before merge.
+- Validation boundary: the physical/integration smoke with `mock_api_server --fail all` / `--fail auth/sessions` has **not** been run; it remains an optional roadmap validation check. No changes were made to TOTP, session or background retry policy.
+- Next bounded architecture work: Connection Doctor per-server read-only diagnostics, per the existing `## Next autonomous work block`. Keep #720 broader loading-UX changes separate.

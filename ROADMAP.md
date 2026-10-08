@@ -33,10 +33,11 @@ Maintain and improve the unofficial Pi-hole client while upstream activity is li
   - [x] Audit deletion ownership in `group_client_screen.dart` and the Group/Client detail screens; former fork code cleared the selected model but conditionally pops only at `width <= ResponsiveConstants.large`, leaving the two-column pushed detail route visible (confirmed and fixed in PR #166).
   - [x] Close pushed detail routes after successful deletion at phone and tablet widths, explicitly mark inline three-column details as embedded, and preserve detail route on failure; PR #166 (`abf57cb2`).
   - [x] Added phone and tablet Group/Client success/failure regression tests plus inline three-column successful deletion tests; full Dart tests, unsigned Android source APK/artifact verification, CodeQL, Sonar, Codecov and static checks passed before PR #166 merge.
-- [ ] **P1 — upstream #718:** ensure failed initial loads cannot leave Server Settings stuck on a skeleton forever. Upstream fix: [#721](https://github.com/tsutsu3/pi-hole-client/pull/721).
-  - [ ] Reproduce with `mock_api_server --fail all` and `--fail auth/sessions`; check DHCP, Network, Interfaces, Local DNS, Server Info and Sessions.
-  - [ ] Audit the loading `Command` state notification lifecycle; in current fork, several ViewModels listen to command result only, not `isRunning`/`errors`, while screens depend on `ListenableBuilder`. Add symmetric listeners/disposal, without changing #748/TOTP recovery policy.
-  - [ ] Verify error display and pull-to-refresh recovery with focused regressions and full CI.
+- [x] **P1 — upstream #718:** restore error/loading UI updates after failed Server Settings requests; fixed via fork PR #168 (`8c091c39`) following upstream #721.
+  - [x] Reproduce failure→retry through deterministic repository fakes for DHCP, Network, Interfaces, Local DNS, Server Info and Sessions; verify the pre-fix missing ViewModel error notification and corrected behavior via new tests.
+  - [ ] Optional end-to-end smoke with `mock_api_server --fail all` and `--fail auth/sessions` on a running app; not claimed as performed in CI.
+  - [x] Added symmetric `Command.isRunning`/`.errors` listener subscriptions and removal on dispose across six affected ViewModels, while keeping #748/TOTP recovery policy unchanged.
+  - [x] Six ViewModel regression tests assert loading/error notifications and successful retry recovery. Existing UI `ListenableBuilder`/`ErrorMessage` branches were inspected; full Dart, unsigned Android APK/artifact validation, CodeQL, Sonar, Codecov and static checks passed on PR #168. Screen-level interactive refresh smoke remains covered by the optional end-to-end item above.
 
 - [x] #604: add Domain Log Details actions for filtering by domain and copying the domain while retaining the browser action.
 - [x] #404: complete the deterministic documentation/UI item tracked in `UPSTREAM_TRIAGE.md`.
