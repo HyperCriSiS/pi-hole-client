@@ -1,7 +1,12 @@
+import 'dart:async';
+
 import 'package:command_it/command_it.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pi_hole_client/domain/model/server/connection_diagnostics.dart';
+import 'package:pi_hole_client/domain/model/ftl/pihole_server.dart';
+import 'package:result_dart/result_dart.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import 'package:pi_hole_client/domain/model/server/server.dart';
 import 'package:pi_hole_client/ui/core/ui/components/error_message.dart';
 import 'package:pi_hole_client/ui/settings/server_settings/server_info/view_models/server_info_viewmodel.dart';
@@ -16,6 +21,7 @@ import '../../../../../testing/fakes/repositories/api/fake_auth_repository.dart'
 import '../../../../../testing/fakes/repositories/api/fake_config_repository.dart';
 import '../../../../../testing/fakes/repositories/api/fake_ftl_repository.dart';
 import '../../../../../testing/test_app.dart';
+import '../../../../../testing/models/v6/ftl.dart';
 
 const _server = Server(
   address: 'http://192.168.1.100',
@@ -23,18 +29,29 @@ const _server = Server(
   apiVersion: 'v6',
 );
 
+class _ControlledFtlRepository extends FakeFtlRepository {
+  Completer<Result<PiholeServer>>? pending;
+
+  @override
+  Future<Result<PiholeServer>> fetchAllServerInfo() async {
+    final next = pending;
+    if (next != null) return next.future;
+    return super.fetchAllServerInfo();
+  }
+}
+
 void main() async {
   await initTestApp();
 
   group('ServerInfoScreen tests', () {
-    late FakeFtlRepository fakeFtlRepository;
+    late _ControlledFtlRepository fakeFtlRepository;
     late FakeAuthRepository fakeAuthRepository;
     late FakeConfigRepository fakeConfigRepository;
     late ServerInfoViewModel viewModel;
 
     setUp(() async {
       Command.globalExceptionHandler = (_, _) {};
-      fakeFtlRepository = FakeFtlRepository();
+      fakeFtlRepository = _ControlledFtlRepository();
       fakeAuthRepository = FakeAuthRepository();
       fakeConfigRepository = FakeConfigRepository();
       viewModel = ServerInfoViewModel(
@@ -128,6 +145,55 @@ void main() async {
       expect(find.byType(FtlRequestDiagnosticTile), findsOneWidget);
       expect(find.text('FTL Connection Status'), findsOneWidget);
       expect(find.textContaining('Error ('), findsOneWidget);
+    });
+
+    testWidgets('keeps successful content visible while refresh is pending', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(buildServerInfoWidget());
+      await tester.pumpAndSettle();
+      expect(find.byType(ConnectionDiagnosticsSection), findsOneWidget);
+
+      final pending = Completer<Result<PiholeServer>>();
+      fakeFtlRepository.pending = pending;
+      await tester.tap(find.byIcon(Icons.refresh_rounded));
+      await tester.pump();
+
+      expect(find.byType(LinearProgressIndicator), findsOneWidget);
+      expect(find.byType(ConnectionDiagnosticsSection), findsOneWidget);
+      expect(find.byType(HostInformationSection), findsOneWidget);
+      expect(find.byType(Skeletonizer), findsNothing);
+      final refresh = tester.widget<IconButton>(
+        find.widgetWithIcon(IconButton, Icons.refresh_rounded),
+      );
+      expect(refresh.onPressed, isNull);
+
+      fakeFtlRepository.pending = null;
+      pending.complete(const Success(kRepoFetchAllServerInfo));
+      await tester.pumpAndSettle();
+      expect(find.byType(LinearProgressIndicator), findsNothing);
+      expect(find.byType(ConnectionDiagnosticsSection), findsOneWidget);
+    });
+
+    testWidgets('failed refresh retains content with an explicit warning', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(buildServerInfoWidget());
+      await tester.pumpAndSettle();
+
+      fakeFtlRepository.shouldFail = true;
+      await tester.tap(find.byIcon(Icons.refresh_rounded));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Refresh failed.'), findsOneWidget);
+      expect(find.byType(HostInformationSection), findsOneWidget);
+      expect(find.byType(ConnectionDiagnosticsSection), findsOneWidget);
+      expect(find.byType(ErrorMessage), findsNothing);
+
+      fakeFtlRepository.shouldFail = false;
+      await tester.tap(find.byIcon(Icons.refresh_rounded));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Refresh failed.'), findsNothing);
     });
 
     testWidgets('should show refresh button', (WidgetTester tester) async {

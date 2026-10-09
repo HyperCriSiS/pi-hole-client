@@ -105,8 +105,11 @@ void main() {
 
     test('loadServerInfo success populates server info', () async {
       expect(viewModel.ftlRequestDiagnostic, isNull);
+      expect(viewModel.lastSuccessfulServerInfo, isNull);
 
       await viewModel.loadServerInfo.runAsync();
+
+      expect(viewModel.lastSuccessfulServerInfo, equals(kRepoFetchAllServerInfo));
 
       expect(viewModel.ftlRequestDiagnostic?.succeeded, isTrue);
       expect(
@@ -135,9 +138,10 @@ void main() {
         greaterThanOrEqualTo(Duration.zero),
       );
       expect(viewModel.connectionDiagnostics, isNull);
+      expect(viewModel.lastSuccessfulServerInfo, isNull);
     });
 
-    test('failed refresh replaces successful diagnostics', () async {
+    test('failed refresh preserves last successful diagnostics', () async {
       await viewModel.loadServerInfo.runAsync();
       expect(viewModel.ftlRequestDiagnostic?.succeeded, isTrue);
       expect(viewModel.connectionDiagnostics, isNotNull);
@@ -155,7 +159,11 @@ void main() {
       await failed.future;
 
       expect(viewModel.ftlRequestDiagnostic?.succeeded, isFalse);
-      expect(viewModel.connectionDiagnostics, isNull);
+      // Preserve the last known-good server capabilities even if the
+      // refresh fails; the UI marks them as stale.
+      expect(viewModel.connectionDiagnostics, isNotNull);
+      expect(viewModel.lastSuccessfulServerInfo, isNotNull);
+      expect(viewModel.lastSuccessfulServerInfo!.host, isNotNull);
     });
 
     test('loadServerInfo failure and retry notify screen listeners', () async {
