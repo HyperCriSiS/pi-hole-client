@@ -85,9 +85,9 @@ There are **no new upstream issues created or updated since the 2026-10-08 revie
 
 ## Priority order
 
-1. **Connection Doctor next:** continue the bounded read-only diagnostic slice built on #748; #724 and #718 core fixes are completed via fork PRs #166/#168.
-2. Connection Doctor: build on the completed #748 connection/session layer to expose per-server capabilities and actionable diagnostics.
-3. #720 broader loading/revalidation UX after connection/session behavior is stable; #718 correctness fix is integrated. Keep optional end-to-end failed-API smoke as an independent validation task.
+1. **Connection Doctor complete in fork:** #748 stable session/auth layer, PR #152 per-server capabilities, PR #170 aggregate FTL timing, PR #172 conditional gravity proxy hint and PR #174 on-demand per-endpoint evidence. Tests and repository CI gates passed; no synthetic ping, raw secret display, or new TOTP recovery path.
+2. **#720 next:** standardize initial loading versus manual revalidation in bounded UI slices, preserving #718 failure/retry behavior and #748 recovery policy.
+3. Device/integration validation remains independent: optional failed-API smoke and live nginx/Pi-hole/Android reproductions are not implicitly resolved by CI.
 4. Device-gated #741/#686/#442/#636/#501/#293 remain validation-only until affected-device evidence exists.
 4. #639 generated-v6 migration remains bounded by the three documented handwritten holds; #754 reinforces the gravity-streaming proxy compatibility hold. #134 remains blocked on the independent-fork product identity decision.
 5. Treat #748 as complete in the fork unless a concrete regression or upstream change exposes a new bounded gap.
