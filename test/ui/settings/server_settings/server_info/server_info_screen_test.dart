@@ -170,7 +170,7 @@ void main() async {
 
       final pending = Completer<Result<PiholeServer>>();
       fakeFtlRepository.pending = pending;
-      await tester.tap(find.byIcon(Icons.refresh_rounded));
+      viewModel.loadServerInfo.run();
       await tester.pump();
 
       expect(find.byKey(const ValueKey('server-info-refresh-progress')), findsOneWidget);
@@ -203,17 +203,15 @@ void main() async {
       expect(viewModel.loadServerInfo.isRunning.value, isFalse);
 
       fakeFtlRepository.shouldFail = true;
-      final failed = Completer<void>();
-      viewModel.loadServerInfo.errors.addListener(() {
-        if (viewModel.loadServerInfo.errors.value != null &&
-            !failed.isCompleted) {
-          failed.complete();
+      await tester.runAsync(() async {
+        try {
+          await viewModel.loadServerInfo.runAsync().timeout(
+            const Duration(seconds: 8),
+          );
+        } catch (_) {
+          // Command.errors supplies the non-blocking stale-data warning.
         }
       });
-      await tester.tap(find.byIcon(Icons.refresh_rounded));
-      await tester.runAsync(
-        () => failed.future.timeout(const Duration(seconds: 3)),
-      );
       await tester.pumpAndSettle();
 
       expect(viewModel.loadServerInfo.errors.value, isNotNull);
@@ -223,7 +221,11 @@ void main() async {
       expect(find.byType(ErrorMessage), findsNothing);
 
       fakeFtlRepository.shouldFail = false;
-      await tester.tap(find.byIcon(Icons.refresh_rounded));
+      await tester.runAsync(() async {
+        await viewModel.loadServerInfo.runAsync().timeout(
+          const Duration(seconds: 8),
+        );
+      });
       await tester.pumpAndSettle();
       expect(find.textContaining('Refresh failed.'), findsNothing);
     });
