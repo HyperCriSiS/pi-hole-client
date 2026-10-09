@@ -753,5 +753,6 @@
   "chipTooltipCpuUsage": "CPU usage",
   "chipTooltipRamUsage": "RAM usage",
   "chipTooltipCpuTemperature": "CPU temperature",
-  "chipTooltipSystemUptime": "System uptime"
+  "chipTooltipSystemUptime": "System uptime",
+  "refreshFailedShowingPrevious": "Refresh failed. The last successfully loaded data remains visible."
 }

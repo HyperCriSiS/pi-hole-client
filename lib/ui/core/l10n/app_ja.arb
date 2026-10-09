@@ -755,5 +755,6 @@
   "chipTooltipCpuUsage": "CPU使用率",
   "chipTooltipRamUsage": "メモリ使用率",
   "chipTooltipCpuTemperature": "CPU温度",
-  "chipTooltipSystemUptime": "システム稼働時間"
+  "chipTooltipSystemUptime": "システム稼働時間",
+  "refreshFailedShowingPrevious": "更新に失敗しました。最後に正常に読み込んだデータを引き続き表示します。"
 }
