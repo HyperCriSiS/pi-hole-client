@@ -753,5 +753,6 @@
   "chipTooltipCpuUsage": "Użycie CPU",
   "chipTooltipRamUsage": "Użycie RAM",
   "chipTooltipCpuTemperature": "Temperatura CPU",
-  "chipTooltipSystemUptime": "Czas działania systemu"
+  "chipTooltipSystemUptime": "Czas działania systemu",
+  "refreshFailedShowingPrevious": "Odświeżenie nie powiodło się. Ostatnio pobrane dane pozostają widoczne."
 }

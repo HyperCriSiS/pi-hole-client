@@ -508,6 +508,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get dataFetchFailed => 'データの取得に失敗しました。';
 
   @override
+  String get refreshFailedShowingPrevious => '更新に失敗しました。最後に正常に読み込んだデータを引き続き表示します。';
+
+  @override
   String get dateAdded => '追加日';
 
   @override

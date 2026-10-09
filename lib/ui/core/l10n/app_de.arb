@@ -753,5 +753,6 @@
   "chipTooltipCpuUsage": "CPU-Auslastung",
   "chipTooltipRamUsage": "RAM-Auslastung",
   "chipTooltipCpuTemperature": "CPU-Temperatur",
-  "chipTooltipSystemUptime": "Systemlaufzeit"
+  "chipTooltipSystemUptime": "Systemlaufzeit",
+  "refreshFailedShowingPrevious": "Aktualisierung fehlgeschlagen. Die zuletzt geladenen Daten bleiben sichtbar."
 }

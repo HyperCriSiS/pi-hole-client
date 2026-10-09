@@ -522,6 +522,9 @@ class AppLocalizationsPl extends AppLocalizations {
   String get dataFetchFailed => 'Nie udało się pobrać danych.';
 
   @override
+  String get refreshFailedShowingPrevious => 'Odświeżenie nie powiodło się. Ostatnio pobrane dane pozostają widoczne.';
+
+  @override
   String get dateAdded => 'Data dodania';
 
   @override

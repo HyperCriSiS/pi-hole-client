@@ -44,6 +44,7 @@ class ServerInfoViewModel extends ChangeNotifier {
 
   ConnectionDiagnostics? _connectionDiagnostics;
   FtlRequestDiagnostic? _ftlRequestDiagnostic;
+  PiholeServer? _lastSuccessfulServerInfo;
   final List<EndpointCheckResult> _endpointChecks = [];
   bool _checkingEndpoints = false;
   bool _disposed = false;
@@ -51,6 +52,10 @@ class ServerInfoViewModel extends ChangeNotifier {
 
   ConnectionDiagnostics? get connectionDiagnostics => _connectionDiagnostics;
   FtlRequestDiagnostic? get ftlRequestDiagnostic => _ftlRequestDiagnostic;
+
+  /// Only a completed successful fetch counts as cached display data.
+  /// The Command has a placeholder PiholeServer before its first load.
+  PiholeServer? get lastSuccessfulServerInfo => _lastSuccessfulServerInfo;
   bool get supportsEndpointDiagnostics => _server.apiVersion == SupportedApiVersions.v6;
   bool get isCheckingEndpoints => _checkingEndpoints;
   List<EndpointCheckResult> get endpointChecks => List.unmodifiable(_endpointChecks);
@@ -59,9 +64,9 @@ class ServerInfoViewModel extends ChangeNotifier {
   bool? get mfaEnabled => _connectionDiagnostics?.mfaEnabled;
 
   Future<PiholeServer> _loadServerInfo() async {
-    // A refresh must never retain the previous attempt's timing or status.
+    // Keep previously successful server data and capabilities visible during
+    // revalidation. Do not show the old request timing as a new measurement.
     _ftlRequestDiagnostic = null;
-    _connectionDiagnostics = null;
     _diagnosticEpoch++;
     _endpointChecks.clear();
 
@@ -92,6 +97,7 @@ class ServerInfoViewModel extends ChangeNotifier {
             mfaEnabled: mfaEnabled,
             webPanelPaths: webPanelPaths,
           );
+          _lastSuccessfulServerInfo = serverInfo;
           return serverInfo;
         case Failure():
           throw serverResult.exceptionOrNull();

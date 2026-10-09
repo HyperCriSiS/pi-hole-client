@@ -529,6 +529,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get dataFetchFailed => 'No se pudo obtener los datos.';
 
   @override
+  String get refreshFailedShowingPrevious => 'La actualización falló. Los últimos datos cargados correctamente siguen visibles.';
+
+  @override
   String get dateAdded => 'Fecha añadido';
 
   @override

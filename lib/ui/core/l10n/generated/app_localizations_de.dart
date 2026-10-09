@@ -532,6 +532,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get dataFetchFailed => 'Fehler beim Abrufen der Daten.';
 
   @override
+  String get refreshFailedShowingPrevious => 'Aktualisierung fehlgeschlagen. Die zuletzt geladenen Daten bleiben sichtbar.';
+
+  @override
   String get dateAdded => 'Hinzugefügt am';
 
   @override
