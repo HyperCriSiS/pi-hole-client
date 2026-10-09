@@ -68,10 +68,11 @@ void main() async {
       Command.globalExceptionHandler = null;
     });
 
-    Widget buildServerInfoWidget() {
+    Widget buildServerInfoWidget({bool startLoad = true}) {
+      if (startLoad) viewModel.loadServerInfo.run();
       return buildTestApp(
         ServerInfoScreen(
-          viewModel: viewModel..loadServerInfo.run(),
+          viewModel: viewModel,
           serverAlias: _server.alias,
           serverAddress: _server.address,
         ),
@@ -150,8 +151,11 @@ void main() async {
     testWidgets('keeps successful content visible while refresh is pending', (
       WidgetTester tester,
     ) async {
-      await tester.pumpWidget(buildServerInfoWidget());
+      // Settle the initial load before enabling the manual refresh action.
+      await viewModel.loadServerInfo.runAsync();
+      await tester.pumpWidget(buildServerInfoWidget(startLoad: false));
       await tester.pumpAndSettle();
+      expect(viewModel.loadServerInfo.isRunning.value, isFalse);
       expect(find.byType(ConnectionDiagnosticsSection), findsOneWidget);
 
       final pending = Completer<Result<PiholeServer>>();
@@ -178,8 +182,11 @@ void main() async {
     testWidgets('failed refresh retains content with an explicit warning', (
       WidgetTester tester,
     ) async {
-      await tester.pumpWidget(buildServerInfoWidget());
+      // Settle the initial load before enabling the manual refresh action.
+      await viewModel.loadServerInfo.runAsync();
+      await tester.pumpWidget(buildServerInfoWidget(startLoad: false));
       await tester.pumpAndSettle();
+      expect(viewModel.loadServerInfo.isRunning.value, isFalse);
 
       fakeFtlRepository.shouldFail = true;
       final failed = Completer<void>();
