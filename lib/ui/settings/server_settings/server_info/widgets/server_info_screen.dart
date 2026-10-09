@@ -110,6 +110,7 @@ class ServerInfoScreen extends StatelessWidget {
                     }
 
                     return _buildContent(
+                      context,
                       serverInfo: serverInfo,
                       showRefreshError: hasError,
                     );
@@ -171,7 +172,8 @@ class ServerInfoScreen extends StatelessWidget {
     onRun: () { viewModel.runEndpointDiagnostics(); },
   );
 
-  Widget _buildContent({
+  Widget _buildContent(
+    BuildContext context, {
     required PiholeServer serverInfo,
     required bool showRefreshError,
   }) {
