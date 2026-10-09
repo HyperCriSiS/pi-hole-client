@@ -39,9 +39,11 @@ class NetworkViewModel extends ChangeNotifier {
 
   // --- State ---
   NetworkData _data = const NetworkData(devices: [], currentClientIp: '');
+  bool _hasLoadedSuccessfully = false;
 
   // --- Getters ---
   NetworkData get data => _data;
+  bool get hasLoadedSuccessfully => _hasLoadedSuccessfully;
 
   Future<void> _loadDevices() async {
     final (devicesResult, clientResult) = await (
@@ -55,6 +57,7 @@ class NetworkViewModel extends ChangeNotifier {
       devices: devicesResult.getOrNull()!,
       currentClientIp: clientResult.getOrNull()!.addr,
     );
+    _hasLoadedSuccessfully = true;
     notifyListeners();
   }
 

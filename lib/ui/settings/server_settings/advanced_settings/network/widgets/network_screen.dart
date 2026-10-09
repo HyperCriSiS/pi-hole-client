@@ -90,6 +90,7 @@ class _NetworkScreenState extends State<NetworkScreen> {
         final isLoading = viewModel.loadDevices.isRunning.value;
         final hasError = viewModel.loadDevices.errors.value != null;
         final networkData = viewModel.data;
+        final hasPreviousData = viewModel.hasLoadedSuccessfully;
 
         return ScrollConfiguration(
           behavior: CustomScrollBehavior(),
@@ -111,74 +112,102 @@ class _NetworkScreenState extends State<NetworkScreen> {
                   padding: const EdgeInsets.only(right: 8),
                   child: IconButton(
                     icon: const Icon(Icons.refresh_rounded),
-                    onPressed: () async {
-                      try {
-                        await refreshWithTotpRecovery(
-                          context,
-                          viewModel.loadDevices.runAsync,
-                        );
-                      } catch (_) {
-                        // Error handled by command.errors
-                      }
-                    },
+                    onPressed: isLoading
+                        ? null
+                        : () async {
+                            try {
+                              await refreshWithTotpRecovery(
+                                context,
+                                viewModel.loadDevices.runAsync,
+                              );
+                            } catch (_) {
+                              // Error handled by command.errors
+                            }
+                          },
                     tooltip: locale.refresh,
                   ),
                 ),
               ],
             ),
             body: SafeArea(
-              child: RefreshIndicator(
-                onRefresh: () async {
-                  try {
-                    await refreshWithTotpRecovery(
-                      context,
-                      viewModel.loadDevices.runAsync,
-                    );
-                  } catch (_) {
-                    // Error handled by command.errors
-                  }
-                },
-                child: Builder(
-                  builder: (context) {
-                    if (isLoading) {
-                      return Skeletonizer(
-                        effect: ShimmerEffect(
-                          baseColor: Theme.of(
+              child: Column(
+                children: [
+                  if (isLoading && hasPreviousData)
+                    const LinearProgressIndicator(
+                      key: ValueKey('network-refresh-progress'),
+                      minHeight: 2,
+                    ),
+                  if (hasError && hasPreviousData)
+                    Card(
+                      child: ListTile(
+                        leading: Icon(
+                          Icons.error_outline_rounded,
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                        title: Text(locale.refreshFailedShowingPrevious),
+                      ),
+                    ),
+                  Expanded(
+                    child: RefreshIndicator(
+                      onRefresh: () async {
+                        if (isLoading) return;
+                        try {
+                          await refreshWithTotpRecovery(
                             context,
-                          ).colorScheme.secondaryContainer,
-                          highlightColor: Theme.of(context).colorScheme.surface,
-                        ),
-                        child: NetworkListView(
-                          devices: _fakeDevices,
-                          currentClientIp: '',
-                          onDeviceTap: (device) {},
-                        ),
-                      );
-                    }
-
-                    if (hasError) {
-                      return ErrorMessage(message: locale.dataFetchFailed);
-                    }
-
-                    if (networkData.devices.isEmpty) {
-                      return const EmptyDataScreen();
-                    }
-
-                    return NetworkListView(
-                      devices: networkData.devices,
-                      currentClientIp: networkData.currentClientIp,
-                      onDeviceTap: (device) {
-                        context.pushNamed(
-                          Routes.settingsServerAdvancedNetworkDetails,
-                          extra: NetworkDetailsExtra(
-                            device: device,
-                            onDelete: _removeDevice,
-                          ),
-                        );
+                            viewModel.loadDevices.runAsync,
+                          );
+                        } catch (_) {
+                          // Error handled by command.errors
+                        }
                       },
-                    );
-                  },
-                ),
+                      child: Builder(
+                        builder: (context) {
+                          if (isLoading && !hasPreviousData) {
+                            return Skeletonizer(
+                              effect: ShimmerEffect(
+                                baseColor: Theme.of(
+                                  context,
+                                ).colorScheme.secondaryContainer,
+                                highlightColor: Theme.of(
+                                  context,
+                                ).colorScheme.surface,
+                              ),
+                              child: NetworkListView(
+                                devices: _fakeDevices,
+                                currentClientIp: '',
+                                onDeviceTap: (device) {},
+                              ),
+                            );
+                          }
+
+                          if (hasError && !hasPreviousData) {
+                            return ErrorMessage(
+                              message: locale.dataFetchFailed,
+                            );
+                          }
+
+                          if (networkData.devices.isEmpty) {
+                            return const EmptyDataScreen();
+                          }
+
+                          return NetworkListView(
+                            devices: networkData.devices,
+                            currentClientIp: networkData.currentClientIp,
+                            onDeviceTap: (device) {
+                              context.pushNamed(
+                                Routes.settingsServerAdvancedNetworkDetails,
+                                extra: NetworkDetailsExtra(
+                                  device: device,
+                                  onDelete: _removeDevice,
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
