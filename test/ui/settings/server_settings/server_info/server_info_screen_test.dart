@@ -9,6 +9,7 @@ import 'package:result_dart/result_dart.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:pi_hole_client/domain/model/server/server.dart';
 import 'package:pi_hole_client/ui/core/ui/components/error_message.dart';
+import 'package:pi_hole_client/ui/core/view_models/servers_viewmodel.dart';
 import 'package:pi_hole_client/ui/settings/server_settings/server_info/view_models/server_info_viewmodel.dart';
 import 'package:pi_hole_client/ui/settings/server_settings/server_info/widgets/connection_diagnostics_section.dart';
 import 'package:pi_hole_client/ui/settings/server_settings/server_info/widgets/host_information_section.dart';
@@ -20,6 +21,7 @@ import 'package:pi_hole_client/ui/settings/server_settings/server_info/widgets/s
 import '../../../../../testing/fakes/repositories/api/fake_auth_repository.dart';
 import '../../../../../testing/fakes/repositories/api/fake_config_repository.dart';
 import '../../../../../testing/fakes/repositories/api/fake_ftl_repository.dart';
+import '../../../../../testing/fakes/repositories/local/fake_server_repository.dart';
 import '../../../../../testing/test_app.dart';
 import '../../../../../testing/models/v6/ftl.dart';
 
@@ -48,12 +50,14 @@ void main() async {
     late FakeAuthRepository fakeAuthRepository;
     late FakeConfigRepository fakeConfigRepository;
     late ServerInfoViewModel viewModel;
+    late ServersViewModel serversViewModel;
 
     setUp(() async {
       Command.globalExceptionHandler = (_, _) {};
       fakeFtlRepository = _ControlledFtlRepository();
       fakeAuthRepository = FakeAuthRepository();
       fakeConfigRepository = FakeConfigRepository();
+      serversViewModel = ServersViewModel(FakeServerRepository());
       viewModel = ServerInfoViewModel(
         ftlRepository: fakeFtlRepository,
         authRepository: fakeAuthRepository,
@@ -65,6 +69,7 @@ void main() async {
 
     tearDown(() {
       viewModel.dispose();
+      serversViewModel.dispose();
       Command.globalExceptionHandler = null;
     });
 
@@ -76,6 +81,7 @@ void main() async {
           serverAlias: _server.alias,
           serverAddress: _server.address,
         ),
+        serversViewModel: serversViewModel,
       );
     }
 
