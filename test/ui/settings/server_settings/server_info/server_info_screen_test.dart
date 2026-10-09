@@ -170,7 +170,14 @@ void main() async {
 
       final pending = Completer<Result<PiholeServer>>();
       fakeFtlRepository.pending = pending;
-      viewModel.loadServerInfo.run();
+      // Start the blocking request in the real async zone and let it reach
+      // the fake repository before rendering the pending-refresh state.
+      await tester.runAsync(() async {
+        viewModel.loadServerInfo.run();
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+      });
+      expect(viewModel.lastSuccessfulServerInfo, isNotNull);
+      expect(viewModel.loadServerInfo.isRunning.value, isTrue);
       await tester.pump();
 
       expect(find.byKey(const ValueKey('server-info-refresh-progress')), findsOneWidget);
