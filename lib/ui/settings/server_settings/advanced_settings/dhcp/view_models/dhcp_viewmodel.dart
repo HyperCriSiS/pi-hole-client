@@ -39,9 +39,11 @@ class DhcpViewModel extends ChangeNotifier {
 
   // --- State ---
   DhcpData _data = const DhcpData(leases: [], currentClientIp: '');
+  bool _hasLoadedSuccessfully = false;
 
   // --- Getters ---
   DhcpData get data => _data;
+  bool get hasLoadedSuccessfully => _hasLoadedSuccessfully;
 
   Future<void> _loadLeases() async {
     final (leasesResult, clientResult) = await (
@@ -55,6 +57,7 @@ class DhcpViewModel extends ChangeNotifier {
       leases: leasesResult.getOrNull()!,
       currentClientIp: clientResult.getOrNull()!.addr,
     );
+    _hasLoadedSuccessfully = true;
     notifyListeners();
   }
 

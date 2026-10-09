@@ -80,6 +80,7 @@ class _DhcpScreenState extends State<DhcpScreen> {
         final isLoading = viewModel.loadLeases.isRunning.value;
         final hasError = viewModel.loadLeases.errors.value != null;
         final dhcpData = viewModel.data;
+        final hasPreviousData = viewModel.hasLoadedSuccessfully;
 
         return ScrollConfiguration(
           behavior: CustomScrollBehavior(),
@@ -91,74 +92,101 @@ class _DhcpScreenState extends State<DhcpScreen> {
                   padding: const EdgeInsets.only(right: 8),
                   child: IconButton(
                     icon: const Icon(Icons.refresh_rounded),
-                    onPressed: () async {
-                      try {
-                        await refreshWithTotpRecovery(
-                          context,
-                          viewModel.loadLeases.runAsync,
-                        );
-                      } catch (_) {
-                        // Error handled by command.errors
-                      }
-                    },
+                    onPressed: isLoading
+                        ? null
+                        : () async {
+                            try {
+                              await refreshWithTotpRecovery(
+                                context,
+                                viewModel.loadLeases.runAsync,
+                              );
+                            } catch (_) {
+                              // Error handled by command.errors
+                            }
+                          },
                     tooltip: locale.refresh,
                   ),
                 ),
               ],
             ),
             body: SafeArea(
-              child: RefreshIndicator(
-                onRefresh: () async {
-                  try {
-                    await refreshWithTotpRecovery(
-                      context,
-                      viewModel.loadLeases.runAsync,
-                    );
-                  } catch (_) {
-                    // Error handled by command.errors
-                  }
-                },
-                child: Builder(
-                  builder: (context) {
-                    if (isLoading) {
-                      return Skeletonizer(
-                        effect: ShimmerEffect(
-                          baseColor: Theme.of(
+              child: Column(
+                children: [
+                  if (isLoading && hasPreviousData)
+                    const LinearProgressIndicator(
+                      key: ValueKey('dhcp-refresh-progress'),
+                      minHeight: 2,
+                    ),
+                  if (hasError && hasPreviousData)
+                    Card(
+                      child: ListTile(
+                        leading: Icon(
+                          Icons.error_outline_rounded,
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                        title: Text(locale.refreshFailedShowingPrevious),
+                      ),
+                    ),
+                  Expanded(
+                    child: RefreshIndicator(
+                      onRefresh: () async {
+                        if (isLoading) return;
+                        try {
+                          await refreshWithTotpRecovery(
                             context,
-                          ).colorScheme.secondaryContainer,
-                          highlightColor: Theme.of(context).colorScheme.surface,
-                        ),
-                        child: DhcpListView(
-                          leases: _fakeLeases,
-                          currentClientIp: '',
-                          onLeaseTap: (lease) {},
-                        ),
-                      );
-                    }
-
-                    if (hasError) {
-                      return ErrorMessage(message: locale.dataFetchFailed);
-                    }
-
-                    if (dhcpData.leases.isEmpty) {
-                      return const DhcpDisabledScreen();
-                    }
-
-                    return DhcpListView(
-                      leases: dhcpData.leases,
-                      currentClientIp: dhcpData.currentClientIp,
-                      onLeaseTap: (lease) {
-                        context.pushNamed(
-                          Routes.settingsServerAdvancedDhcpDetails,
-                          extra: DhcpDetailsExtra(
-                            lease: lease,
-                            onDelete: _removeLease,
-                          ),
-                        );
+                            viewModel.loadLeases.runAsync,
+                          );
+                        } catch (_) {
+                          // Error handled by command.errors
+                        }
                       },
-                    );
-                  },
-                ),
+                      child: Builder(
+                        builder: (context) {
+                          if (isLoading && !hasPreviousData) {
+                            return Skeletonizer(
+                              effect: ShimmerEffect(
+                                baseColor: Theme.of(
+                                  context,
+                                ).colorScheme.secondaryContainer,
+                                highlightColor: Theme.of(context)
+                                    .colorScheme.surface,
+                              ),
+                              child: DhcpListView(
+                                leases: _fakeLeases,
+                                currentClientIp: '',
+                                onLeaseTap: (lease) {},
+                              ),
+                            );
+                          }
+
+                          if (hasError && !hasPreviousData) {
+                            return ErrorMessage(
+                              message: locale.dataFetchFailed,
+                            );
+                          }
+
+                          if (dhcpData.leases.isEmpty) {
+                            return const DhcpDisabledScreen();
+                          }
+
+                          return DhcpListView(
+                            leases: dhcpData.leases,
+                            currentClientIp: dhcpData.currentClientIp,
+                            onLeaseTap: (lease) {
+                              context.pushNamed(
+                                Routes.settingsServerAdvancedDhcpDetails,
+                                extra: DhcpDetailsExtra(
+                                  lease: lease,
+                                  onDelete: _removeLease,
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
