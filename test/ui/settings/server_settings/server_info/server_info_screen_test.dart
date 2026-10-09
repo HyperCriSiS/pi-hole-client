@@ -152,7 +152,9 @@ void main() async {
       WidgetTester tester,
     ) async {
       // Settle the initial load before enabling the manual refresh action.
-      await viewModel.loadServerInfo.runAsync();
+      await tester.runAsync(
+        () => viewModel.loadServerInfo.runAsync().timeout(const Duration(seconds: 8)),
+      );
       await tester.pumpWidget(buildServerInfoWidget(startLoad: false));
       await tester.pumpAndSettle();
       expect(viewModel.loadServerInfo.isRunning.value, isFalse);
@@ -183,7 +185,9 @@ void main() async {
       WidgetTester tester,
     ) async {
       // Settle the initial load before enabling the manual refresh action.
-      await viewModel.loadServerInfo.runAsync();
+      await tester.runAsync(
+        () => viewModel.loadServerInfo.runAsync().timeout(const Duration(seconds: 8)),
+      );
       await tester.pumpWidget(buildServerInfoWidget(startLoad: false));
       await tester.pumpAndSettle();
       expect(viewModel.loadServerInfo.isRunning.value, isFalse);
