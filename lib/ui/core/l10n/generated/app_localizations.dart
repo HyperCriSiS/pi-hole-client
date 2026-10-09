@@ -1094,6 +1094,12 @@ abstract class AppLocalizations {
   /// **'Failed to fetch data.'**
   String get dataFetchFailed;
 
+  /// No description provided for @refreshFailedShowingPrevious.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh failed. The last successfully loaded data remains visible.'**
+  String get refreshFailedShowingPrevious;
+
   /// No description provided for @dateAdded.
   ///
   /// In en, this message translates to:
