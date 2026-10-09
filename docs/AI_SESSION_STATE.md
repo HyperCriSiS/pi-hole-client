@@ -2,41 +2,43 @@
 
 Updated: 2026-10-10
 
-## Baseline and active work
+## Current integrated baseline
 
-- Repository: `HyperCriSiS/pi-hole-client`; `main` is the canonical integration branch. Work in short-lived topic branches with PRs and validate the exact final PR HEAD.
-- Last fully validated **merged** feature at checkpoint: #720 Server Info revalidation, PR #176, squash commit `6728a230156ff1f1e30174f68c0599cd6de892da`. Full Dart, unsigned Android APK/signature verification, CodeQL, Sonar, Codecov and static analysis succeeded on PR HEAD `2d4f1eeb`.
-- Active #720 follow-ups: PR #177 DHCP lease revalidation (`feat/720-dhcp-refresh`, HEAD `9fa28613`) and PR #178 Network-device revalidation (`feat/720-network-refresh`, HEAD `0b8a731a`). Both preserve successful content, show progress/stale errors and have widget regressions. **Do not mark as merged until full CI passes on their exact commits.** They are intentionally independent, and both derive from `main` after #176.
-- New upstream audit: docs-only PR #179 records the **unfixed P1 credential-read/edit risk** from upstream #766 at `docs/maintenance/upstream-credential-load-2026-10-10.md`. GitHub Issues are disabled in this fork (HTTP 410); track in repository docs/roadmap.
-- CI policy: no merge with failing/unverified full Dart tests, Android unsigned source APK and `Verify unsigned release artifact`, CodeQL, Sonar, Codecov or applicable static checks. Tests on an earlier HEAD do not validate new commits.
+- Repository: `HyperCriSiS/pi-hole-client`. `main` is the canonical integration branch; use task-specific branches and PRs with exact-HEAD checks.
+- **Latest validated application merge:** #720 Network revalidation PR #178, squash `d610ad8ecf700ef4e79bf072240b3920541c183e` (HEAD `0b8a731a`).
+- Other #720 completed slices:
+  - PR #176 Server Info: `6728a230156ff1f1e30174f68c0599cd6de892da` (HEAD `2d4f1eeb`). Preserves last good server data/capabilities, progress indicator, stale-data warning after failure; initial skeleton/error states unchanged.
+  - PR #177 DHCP leases: `2b60914a087ae9b7746bc327b03811626b87d50b` (HEAD `9fa28613`). Successful leases/client IP retained during manual refresh; progress/stale warning; successful-empty tracked separately from initial placeholder; duplicate refresh disabled.
+  - PR #178 Network devices: `d610ad8ecf700ef4e79bf072240b3920541c183e` (HEAD `0b8a731a`). Equivalent bounded Network-device refresh preservation.
+- All three feature PR HEADs passed full Dart tests, Sonar, Codecov, CodeQL, static analyses, unsigned Android source APK build and **Verify unsigned release artifact** before merge. No live Pi-hole/server/device smoke is claimed.
+- PR #179 docs/upstream audit merged as `c7110c81906c511630ef4336375e0cd96601fb50`: `docs/maintenance/upstream-credential-load-2026-10-10.md`, plus compact session checkpoint. GitHub Issues are disabled in this fork (HTTP 410).
 
-## Completed architecture foundations
+## Completed architecture foundations / boundaries
 
-- #748 authentication/session recovery complete in fork: #135 SaveAttempt lifecycle and rollback, #138 existing-session probe, #144 shared interactive login and blocking verification, #146 interactive vs background recovery/declined TOTP policy, #148 centrally redacted connection diagnostics. The upstream issue may still be open; do not duplicate the fork work.
-- Explicit user-triggered refresh recovery uses shared `refreshWithTotpRecovery` (PR #129). No automatic/background prompt loops; do not change TOTP session or credential restoration policy casually.
-- Connection Doctor complete in bounded slices: #152 read-only server capabilities/TLS/session summary, #170 existing FTL-batch elapsed time/outcome, #172 conditional Gravity timeout/nginx-buffering guidance, #174 manually started v6 per-endpoint read-only diagnostics. No synthetic pings, credential leakage or second auth flow.
-- Upstream #724 Group/Client detail after successful delete fixed via #166; #718 settings failed-load notification/retry on six ViewModels fixed via #168. Both passed full repository-controlled CI.
-- Pinned v6.7 OpenAPI client migration and architecture guard constrain remaining handwritten transport to `/api/info/ftl`, detailed `/api/network/gateway` and gravity streaming, for documented schema/behavior holds.
-- `sqlite3` is intentionally restricted to `>=3.5.2 <3.6.0` pending Flutter SDK support for `meta ^1.19.0`; preserve pinned Flutter/Dart and F-Droid/native packaging boundaries.
+- #748 fork auth/session recovery completed via #135 SaveAttempt rollback, #138 existing-session probe, #144 shared interactive login/verification, #146 interactive-vs-background recovery / declined TOTP marker, #148 centrally redacted diagnostics. Upstream #748's open status does not make the fork implementation incomplete.
+- Explicit user-triggered refresh/TOTP recovery uses `refreshWithTotpRecovery` (#129). Background/initial loads must not prompt or create retry loops. Preserve owner-controlled secrets/SID rollback and central redaction.
+- Connection Doctor complete in bounded slices: #152 read-only server capabilities/TLS/session state, #170 timing of existing FTL batch, #172 conditional Gravity/nginx buffering hint, #174 manually triggered v6 endpoint checks. No synthetic ping, duplicate authentication or raw diagnostic secrets.
+- Upstream #724 stale Group/Client delete detail fixed in #166; #718 failed-load notifier/retry in six settings ViewModels fixed in #168.
+- Pinned FTL v6.7 OpenAPI generation and boundary guard restrict remaining handwritten transport to documented `/api/info/ftl`, detailed `/api/network/gateway`, and gravity streaming holds.
+- `sqlite3` deliberately bounded to `>=3.5.2 <3.6.0` until the Flutter baseline permits `meta ^1.19.0`; do not force overrides or relax F-Droid native source-build policy.
 
-## New upstream gap (P1, open)
+## Highest-priority open security gap: upstream #766 (P1)
 
-- Upstream `tsutsu3/pi-hole-client` #766 merged as `b3c940460ba7f25e7ef2fd0328fc91b2ed0a2abe` on 2026-10-09. Our fork's secure-storage read failures can still become empty credential placeholders in `fetchCredentials`, and edit Save can be enabled after failed load.
-- **Next prioritized security fix:** distinguish genuinely missing keys vs read errors, propagate failed credential fetches, block Save on failed loading and permit explicit Reload, and preserve #748 rollback/redaction semantics. Cover data-loss regressions; upstream code must not be imported blindly because fork architecture differs. See the dedicated audit document.
-- Upstream #768 privacy-policy/copyright change requires fork-specific attribution review; upstream #767 codegen regeneration is not a safe blanket import without pinned generator parity.
-- Previous audited upstream baseline was `445424380076d09293ca1a2ce638d6f144e27233` (#765). New review cursor: `b3c940460ba7f25e7ef2fd0328fc91b2ed0a2abe`.
+- New upstream commit `b3c940460ba7f25e7ef2fd0328fc91b2ed0a2abe` (2026-10-09) fixes editing server settings when securely stored credentials cannot be read.
+- **Fork still affected:** `SecureStorageService.getValue` has generic missing/read-error failures; `LocalServerRepository.fetchCredentials` transforms real read failures to empty placeholders; edit UI may enable Save after failed load. Existing #748 `secretsLoadSucceeded` rollback guard does not fully prevent saving with empty credentials.
+- **Next autonomous P1 slice:** distinguish legitimately absent secrets from read/decrypt failures, propagate genuine failures; keep edit Save disabled until read success with localized Reload; test storage, repository, edit screen and rollback. Preserve the fork-specific diagnostics redaction and #748 SaveAttempt/TOTP policy; **do not wholesale import upstream #766**.
+- Detailed audited paths and acceptance criteria: `docs/maintenance/upstream-credential-load-2026-10-10.md`.
+- Previous upstream cursor `445424380076d09293ca1a2ce638d6f144e27233`; reviewed new cursor `b3c940460ba7f25e7ef2fd0328fc91b2ed0a2abe`. Upstream #768 policy/copyright only needs independent-fork review; #767 generated-code changes need pinned generator parity.
 
-## Roadmap / holds
+## Remaining roadmap and external validation
 
-1. Finish the full exact-HEAD CI and merge #177/#178 only if all gates pass. Correct failures on their own branches and re-run CI after changes.
-2. Implement upstream #766 credential-read/save lockout as a separate **P1** bounded security slice with regression tests, preserving established fork auth/rollback boundaries.
-3. Continue #720 across remaining settings/screens: first-load skeletons vs manual cached revalidation vs background refresh must be differentiated, and #718 error/retry retained. Next candidates: Sessions, Local DNS, Interfaces, and broader list views.
-4. Evaluate next power-user roadmap only after architecture work: multi-Pi-hole dashboard, cross-server actions, saved Log Explorer filters, automatic OpenAPI drift reporting.
-5. Separate optional failed-API `mock_api_server --fail all` / `--fail auth/sessions` integration smoke, real-server reverse-proxy diagnostics and device-dependent tests. Never claim a missing reproduction is fixed.
-6. Device/distribution holds: #442 Android 16 PopupMenu device retest, #636 Android 17 self-signed TLS with App Log, #501 widget density tablet, #293 secure-storage migration, #686 Android IME/bottom-sheet, #741 Android 17 Impeller/Vulkan; #134 final independent fork ID/name/icon and F-Droid submission decision.
+1. Prioritize upstream #766 credential-load/save fix before further optional visual work.
+2. Continue #720 loading/revalidation across Sessions, Local DNS, Interfaces and other screens after preserving first-load skeletons, manual cached refresh and nonblocking background behavior. Do not mark #720 globally complete yet.
+3. Then evaluate power-user roadmap: multi-Pi-hole dashboard, cross-server quick actions, saved Log Explorer filters and OpenAPI-spec drift reporting.
+4. Optional separate smoke: `mock_api_server --fail all` / `--fail auth/sessions`, real-server Gravity/proxy diagnostics; lack of reproduction is not resolution.
+5. Device/distribution holds: #442 Android 16 PopupMenu; #636 Android 17 self-signed TLS with App Log; #501 tablet/widget layout; #293 secure-storage migration; #686 keyboard layout; #741 Android 17 Impeller/Vulkan; #134 final independent application ID/name/icon and F-Droid publication.
+6. Maintain full Dart, unsigned Android artifact/signature verification, static analyses, Sonar, Codecov and CodeQL checks for application changes on the exact final HEAD. Docs-only changes can use the repository's lighter workflow.
 
-## Resume protocol
+## Resume instructions
 
-1. Read this checkpoint, root `ROADMAP.md`, `UPSTREAM_TRIAGE.md`, `AGENTS.md` and relevant architecture document.
-2. Confirm live `main` SHA, open PRs and exact-HEAD CI before any merge/new overlapping slice; keep tool outputs targeted and avoid tight CI polling.
-3. For substantial completed work, update this checkpoint with merge SHA and remaining blockers. If tool history becomes large, use a fresh chat after a clean checkpoint.
+Read this file, root `ROADMAP.md` (authoritative), `UPSTREAM_TRIAGE.md`, `AGENTS.md` and relevant architecture before starting; verify live `main`/open PR/CI status. Keep commits and CI queries targeted, no tight polling. Prefer a fresh conversation when tool history grows; add a compact checkpoint after larger finished work.
