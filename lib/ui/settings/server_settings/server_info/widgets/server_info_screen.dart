@@ -34,7 +34,9 @@ class ServerInfoScreen extends StatelessWidget {
       builder: (context, _) {
         final isLoading = viewModel.loadServerInfo.isRunning.value;
         final hasError = viewModel.loadServerInfo.errors.value != null;
-        final serverInfo = viewModel.loadServerInfo.value;
+        final previousInfo = viewModel.lastSuccessfulServerInfo;
+        final hasPreviousData = previousInfo != null;
+        final serverInfo = previousInfo ?? viewModel.loadServerInfo.value;
 
         return ScrollConfiguration(
           behavior: CustomScrollBehavior(),
@@ -46,7 +48,9 @@ class ServerInfoScreen extends StatelessWidget {
                   padding: const EdgeInsets.only(right: 8),
                   child: IconButton(
                     icon: const Icon(Icons.refresh_rounded),
-                    onPressed: viewModel.isCheckingEndpoints ? null : () async {
+                    onPressed: (isLoading || viewModel.isCheckingEndpoints)
+                        ? null
+                        : () async {
                       try {
                         await refreshWithTotpRecovery(
                           context,
@@ -62,9 +66,14 @@ class ServerInfoScreen extends StatelessWidget {
               ],
             ),
             body: SafeArea(
-              child: RefreshIndicator(
+              child: Column(
+                children: [
+                  if (isLoading && hasPreviousData)
+                    const LinearProgressIndicator(minHeight: 2),
+                  Expanded(
+                    child: RefreshIndicator(
                 onRefresh: () async {
-                  if (viewModel.isCheckingEndpoints) return;
+                  if (isLoading || viewModel.isCheckingEndpoints) return;
                   try {
                     await refreshWithTotpRecovery(
                       context,
@@ -76,14 +85,14 @@ class ServerInfoScreen extends StatelessWidget {
                 },
                 child: Builder(
                   builder: (context) {
-                    if (isLoading) {
+                    if (isLoading && !hasPreviousData) {
                       return _buildSkeletonLoading(
                         context,
                         serverInfo: serverInfo,
                       );
                     }
 
-                    if (hasError) {
+                    if (hasError && !hasPreviousData) {
                       return _wrapWithScroll(
                         Column(
                           mainAxisSize: MainAxisSize.min,
@@ -100,9 +109,14 @@ class ServerInfoScreen extends StatelessWidget {
                       );
                     }
 
-                    return _buildContent(serverInfo: serverInfo);
+                    return _buildContent(
+                      serverInfo: serverInfo,
+                      showRefreshError: hasError,
+                    );
                   },
-                ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -157,13 +171,30 @@ class ServerInfoScreen extends StatelessWidget {
     onRun: () { viewModel.runEndpointDiagnostics(); },
   );
 
-  Widget _buildContent({required PiholeServer serverInfo}) {
+  Widget _buildContent({
+    required PiholeServer serverInfo,
+    required bool showRefreshError,
+  }) {
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (showRefreshError) ...[
+            Card(
+              child: ListTile(
+                leading: Icon(
+                  Icons.error_outline_rounded,
+                  color: Theme.of(context).colorScheme.error,
+                ),
+                title: Text(
+                  AppLocalizations.of(context)!.refreshFailedShowingPrevious,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
           ServerConnectionSection(
             serverAlias: serverAlias,
             serverAddress: serverAddress,
