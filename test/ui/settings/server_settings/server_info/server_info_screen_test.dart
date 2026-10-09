@@ -159,7 +159,7 @@ void main() async {
       await tester.tap(find.byIcon(Icons.refresh_rounded));
       await tester.pump();
 
-      expect(find.byType(LinearProgressIndicator), findsOneWidget);
+      expect(find.byKey(const ValueKey('server-info-refresh-progress')), findsOneWidget);
       expect(find.byType(ConnectionDiagnosticsSection), findsOneWidget);
       expect(find.byType(HostInformationSection), findsOneWidget);
       expect(find.byType(Skeletonizer), findsNothing);
@@ -171,7 +171,7 @@ void main() async {
       fakeFtlRepository.pending = null;
       pending.complete(const Success(kRepoFetchAllServerInfo));
       await tester.pumpAndSettle();
-      expect(find.byType(LinearProgressIndicator), findsNothing);
+      expect(find.byKey(const ValueKey('server-info-refresh-progress')), findsNothing);
       expect(find.byType(ConnectionDiagnosticsSection), findsOneWidget);
     });
 
@@ -182,9 +182,20 @@ void main() async {
       await tester.pumpAndSettle();
 
       fakeFtlRepository.shouldFail = true;
+      final failed = Completer<void>();
+      viewModel.loadServerInfo.errors.addListener(() {
+        if (viewModel.loadServerInfo.errors.value != null &&
+            !failed.isCompleted) {
+          failed.complete();
+        }
+      });
       await tester.tap(find.byIcon(Icons.refresh_rounded));
+      await tester.runAsync(
+        () => failed.future.timeout(const Duration(seconds: 3)),
+      );
       await tester.pumpAndSettle();
 
+      expect(viewModel.loadServerInfo.errors.value, isNotNull);
       expect(find.textContaining('Refresh failed.'), findsOneWidget);
       expect(find.byType(HostInformationSection), findsOneWidget);
       expect(find.byType(ConnectionDiagnosticsSection), findsOneWidget);

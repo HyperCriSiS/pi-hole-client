@@ -69,7 +69,10 @@ class ServerInfoScreen extends StatelessWidget {
               child: Column(
                 children: [
                   if (isLoading && hasPreviousData)
-                    const LinearProgressIndicator(minHeight: 2),
+                    const LinearProgressIndicator(
+                      key: ValueKey('server-info-refresh-progress'),
+                      minHeight: 2,
+                    ),
                   Expanded(
                     child: RefreshIndicator(
                 onRefresh: () async {
