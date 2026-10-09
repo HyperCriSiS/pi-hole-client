@@ -4,7 +4,7 @@ Updated: 2026-10-09
 
 ## Current baseline
 - Repository: `HyperCriSiS/pi-hole-client`
-- Last validated application feature merge: `1bf68b5fa8091278d7db429efc9a1138917fe728` (PR #172; subsequent documentation-only commits may advance `main`).
+- Last validated application feature merge: `d0c17b61360ac3feb0ae76c24a753e3f0d77f76d` (PR #174; subsequent documentation-only commits may advance `main`).
 - Upstream auth/server-connection issue #748 remains open upstream, but the fork roadmap work is complete.
 
 ## #748 completed slices
@@ -61,9 +61,9 @@ The separate GitHub-managed `github-advanced-security` AI-agent job failed indep
 
 ## Next autonomous work block
 1. Re-read live `main`, `ROADMAP.md` and `UPSTREAM_TRIAGE.md`.
-2. **Connection Doctor:** PR #170 measures the existing FTL four-call batch and reports outcome/elapsed time. Preserve shared URL/TLS/auth/SID behavior. Keep per-endpoint reachability/latency evidence as a separately scoped extension where useful.
-3. Connection Doctor #754 conditional reverse-proxy/gravity-streaming guidance is complete (PR #172). Next: assess distinct per-endpoint reachability diagnostics only where the existing read-only repositories provide evidence beyond PR #170's aggregate timing, without new auth/TOTP prompts or sensitive output. Keep #720 broad loading UX separate.
-4. Keep #720 loading/revalidation UX after Connection Doctor's deterministic diagnostics.
+2. **Connection Doctor complete:** PRs #152, #170, #172 and #174 cover static capabilities, aggregate FTL timing, conditional Gravity/nginx hints and explicit per-endpoint v6 diagnostics. Do not create synthetic pings or a second auth/TOTP policy.
+3. **Next bounded implementation: #720 loading/revalidation UX.** Preserve visible content and show lightweight progress on explicit refresh where appropriate. Keep initial-load skeletons and background revalidation separate; retain #718 error/retry and #748 TOTP boundaries.
+4. Continue optional failed-API integration smoke and real-device/network checks separately, never treating missing reproduction as resolved.
 5. Keep device-gated items validation-only until affected-device evidence exists.
 
 ## Existing holds
@@ -142,3 +142,11 @@ The separate GitHub-managed `github-advanced-security` AI-agent job failed indep
 - PR #172 passed full Dart tests, unsigned Android source release APK with `Verify unsigned release artifact`, Sonar, Codecov, CodeQL, and four static analysis jobs before merge.
 - No live nginx/Pi-hole server or device smoke was performed. A 504/timeout does not uniquely implicate nginx; upstream #754's known workaround is offered as contextual help only. The handwritten stream and existing #748 session/TOTP policy remain unchanged.
 - Remaining Connection Doctor potential follow-up: evaluate distinct individual-endpoint reachability evidence without extra auth or leaking secrets, then separate #720 refresh/revalidation UX. Preserve device-gated holds.
+
+## Connection Doctor manual endpoint diagnostics completion (2026-10-09)
+- Feature PR #174 merged to `main` as `d0c17b61360ac3feb0ae76c24a753e3f0d77f76d` after full CI passed (final feature HEAD `7b48f59abdd9c38b135314f653a129bbe29adb5d`).
+- Pi-hole v6 Server Info now offers an explicit user-started read-only check of `/api/info/host`, `/api/info/sensors`, `/api/info/system` and `/api/info/version`. The checks run sequentially through the existing FTL repository and SID/TLS/subroute policies. No automatic calls, second authentication policy, interactive TOTP prompts or v5 unsupported probes.
+- Each result reports sanitized auth/TLS/timeout/404/5xx/unknown categories and elapsed request time. Values are not raw socket RTT and may include server processing/SID retry; a timeout/5xx does not uniquely prove host, network or proxy root cause. No credentials, SID or raw exception bodies shown.
+- The state is ephemeral, clears on refresh, guards simultaneous checks and ignores results after disposal. UI and explanation localized de/en/es/ja/pl. Regression tests cover the pure failure classifier, four successful and failing checks, v5 omission, reset, and the widget presentation/run control.
+- PR #174 passed full Dart tests, unsigned Android source APK and `Verify unsigned release artifact`, CodeQL, Sonar, Codecov and four static analyses before merge.
+- Connection Doctor's bounded roadmap slices are complete; next priority is #720 loading and manual revalidation UX. Live server/device latency verification and optional failed-API smoke remain unperformed.
