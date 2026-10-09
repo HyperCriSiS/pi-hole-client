@@ -117,6 +117,7 @@ class ServerInfoScreen extends StatelessWidget {
                   },
                     ),
                   ),
+                  ),
                 ],
               ),
             ),
