@@ -1,152 +1,42 @@
 # AI Session State
 
-Updated: 2026-10-09
+Updated: 2026-10-10
 
-## Current baseline
-- Repository: `HyperCriSiS/pi-hole-client`
-- Last validated application feature merge: `d0c17b61360ac3feb0ae76c24a753e3f0d77f76d` (PR #174; subsequent documentation-only commits may advance `main`).
-- Upstream auth/server-connection issue #748 remains open upstream, but the fork roadmap work is complete.
+## Baseline and active work
 
-## #748 completed slices
-1. Save-attempt lifecycle / caller-owned rollback: PR #135, `417641f3`.
-2. Existing-session policy probe: PR #138, `a6977e6a`.
-3. Shared interactive login + blocking verification: PR #144, `6dd57ca3`.
-4. Interactive-vs-background recovery policy: PR #146, `1d3d62bd`.
-   - edit-flow TOTP cancellation marks the address reauth-declined before immediate auto-refresh resumes;
-   - background recovery respects that marker and does not reopen the prompt;
-   - a later successful interactive connection/edit clears the marker.
-5. Shared connection diagnostics: PR #148, `98aae46f`.
-   - `ServerConnectionService` no longer constructs `AppLog` entries locally;
-   - connection/auth/secure-storage diagnostics use `AppConfigViewModel.addDiagnostic` -> `AppLogService.addDiagnostic`;
-   - focused coverage verifies credential-shaped text is still centrally redacted.
+- Repository: `HyperCriSiS/pi-hole-client`; `main` is the canonical integration branch. Work in short-lived topic branches with PRs and validate the exact final PR HEAD.
+- Last fully validated **merged** feature at checkpoint: #720 Server Info revalidation, PR #176, squash commit `6728a230156ff1f1e30174f68c0599cd6de892da`. Full Dart, unsigned Android APK/signature verification, CodeQL, Sonar, Codecov and static analysis succeeded on PR HEAD `2d4f1eeb`.
+- Active #720 follow-ups: PR #177 DHCP lease revalidation (`feat/720-dhcp-refresh`, HEAD `9fa28613`) and PR #178 Network-device revalidation (`feat/720-network-refresh`, HEAD `0b8a731a`). Both preserve successful content, show progress/stale errors and have widget regressions. **Do not mark as merged until full CI passes on their exact commits.** They are intentionally independent, and both derive from `main` after #176.
+- New upstream audit: docs-only PR #179 records the **unfixed P1 credential-read/edit risk** from upstream #766 at `docs/maintenance/upstream-credential-load-2026-10-10.md`. GitHub Issues are disabled in this fork (HTTP 410); track in repository docs/roadmap.
+- CI policy: no merge with failing/unverified full Dart tests, Android unsigned source APK and `Verify unsigned release artifact`, CodeQL, Sonar, Codecov or applicable static checks. Tests on an earlier HEAD do not validate new commits.
 
-## Upstream sync 2026-10-08
-- Reviewed upstream `tsutsu3/pi-hole-client` through `445424380076d09293ca1a2ce638d6f144e27233`.
-- Imported upstream #756 and #763 selectively through fork PR #150, merged as `dcffeafe`.
-  - #756: full server-address validation plus add/edit save-error recovery so the Connecting overlay cannot remain stuck on an unexpected command failure.
-  - #763: group-load failures during screen initialization are caught and logged rather than surfacing as unhandled/Sentry errors.
-- Upstream #749 needs no duplicate import because equivalent widget replacement/removal synchronization is already present in the fork.
-- Upstream #760 is intentionally not imported wholesale because it crosses proven Flutter/Dart/Android/F-Droid compatibility boundaries; compatible dependency updates remain selective.
-- Upstream #765 is formatting-only and needs no import.
-- PR #150 validation passed: full Dart tests, unsigned Android source APK + artifact verification, CodeQL, Sonar, Codecov and static analyses.
+## Completed architecture foundations
 
-## Connection Doctor progress
-- Slice 1 merged via PR #152 as `71b667b2`.
-- Server Info now exposes a read-only per-server summary for:
-  - configured API version and reported FTL version;
-  - resolved API base path and web-panel path, including existing reverse-proxy prefix/webhome capability;
-  - MFA capability;
-  - current v6 session state from the already-shared in-memory session cache;
-  - configured TLS/certificate policy.
-- The session diagnostic getter is side-effect-free: it does not read secure storage, make a network request, renew a SID, authenticate or open TOTP UI.
-- Existing #748 auth/recovery boundaries remain unchanged.
-- PR #152 validation passed: full Dart tests, unsigned Android source APK + unsigned-artifact verification, v6 legacy-boundary audit, CodeQL, Sonar, Codecov and static analyses.
+- #748 authentication/session recovery complete in fork: #135 SaveAttempt lifecycle and rollback, #138 existing-session probe, #144 shared interactive login and blocking verification, #146 interactive vs background recovery/declined TOTP policy, #148 centrally redacted connection diagnostics. The upstream issue may still be open; do not duplicate the fork work.
+- Explicit user-triggered refresh recovery uses shared `refreshWithTotpRecovery` (PR #129). No automatic/background prompt loops; do not change TOTP session or credential restoration policy casually.
+- Connection Doctor complete in bounded slices: #152 read-only server capabilities/TLS/session summary, #170 existing FTL-batch elapsed time/outcome, #172 conditional Gravity timeout/nginx-buffering guidance, #174 manually started v6 per-endpoint read-only diagnostics. No synthetic pings, credential leakage or second auth flow.
+- Upstream #724 Group/Client detail after successful delete fixed via #166; #718 settings failed-load notification/retry on six ViewModels fixed via #168. Both passed full repository-controlled CI.
+- Pinned v6.7 OpenAPI client migration and architecture guard constrain remaining handwritten transport to `/api/info/ftl`, detailed `/api/network/gateway` and gravity streaming, for documented schema/behavior holds.
+- `sqlite3` is intentionally restricted to `>=3.5.2 <3.6.0` pending Flutter SDK support for `meta ^1.19.0`; preserve pinned Flutter/Dart and F-Droid/native packaging boundaries.
 
-## Stable policy boundaries
-- `ProbeExistingSession`: valid SID reuse vs auth-required vs transient failure.
-- `runInteractiveConnectionCheck`: explicit user-interactive login/TOTP + blocking verification.
-- `_SaveAttempt` / caller: credentials, SID rollback/restore/commit/cleanup ownership.
-- PR #129 `refreshWithTotpRecovery`: explicit user-triggered refresh recovery only.
-- Initial/automatic/background loads must remain non-interactive unless they enter the shell-level guarded recovery path.
-- A user-cancelled TOTP recovery suppresses automatic re-prompting until a later successful interactive connection clears the marker.
+## New upstream gap (P1, open)
 
-## Validation
-Repository-controlled gates passed for the final #748 slice:
-- full Dart tests
-- unsigned Android source APK + unsigned-artifact verification
-- CodeQL
-- static analyses
+- Upstream `tsutsu3/pi-hole-client` #766 merged as `b3c940460ba7f25e7ef2fd0328fc91b2ed0a2abe` on 2026-10-09. Our fork's secure-storage read failures can still become empty credential placeholders in `fetchCredentials`, and edit Save can be enabled after failed load.
+- **Next prioritized security fix:** distinguish genuinely missing keys vs read errors, propagate failed credential fetches, block Save on failed loading and permit explicit Reload, and preserve #748 rollback/redaction semantics. Cover data-loss regressions; upstream code must not be imported blindly because fork architecture differs. See the dedicated audit document.
+- Upstream #768 privacy-policy/copyright change requires fork-specific attribution review; upstream #767 codegen regeneration is not a safe blanket import without pinned generator parity.
+- Previous audited upstream baseline was `445424380076d09293ca1a2ce638d6f144e27233` (#765). New review cursor: `b3c940460ba7f25e7ef2fd0328fc91b2ed0a2abe`.
 
-The separate GitHub-managed `github-advanced-security` AI-agent job failed independently because the monthly Copilot quota is exhausted (HTTP 402); this is not a repository finding.
+## Roadmap / holds
 
-## Next autonomous work block
-1. Re-read live `main`, `ROADMAP.md` and `UPSTREAM_TRIAGE.md`.
-2. **Connection Doctor complete:** PRs #152, #170, #172 and #174 cover static capabilities, aggregate FTL timing, conditional Gravity/nginx hints and explicit per-endpoint v6 diagnostics. Do not create synthetic pings or a second auth/TOTP policy.
-3. **Next bounded implementation: #720 loading/revalidation UX.** Preserve visible content and show lightweight progress on explicit refresh where appropriate. Keep initial-load skeletons and background revalidation separate; retain #718 error/retry and #748 TOTP boundaries.
-4. Continue optional failed-API integration smoke and real-device/network checks separately, never treating missing reproduction as resolved.
-5. Keep device-gated items validation-only until affected-device evidence exists.
-
-## Existing holds
-- #442: Android 16 PopupMenu device confirmation required.
-- #636: Android 17 self-signed HTTPS reproduction/App Log required.
-- #501: widget density/layout device validation required.
-- #293: secure-storage/auth device migration validation required.
-- #134: independent-fork product identity decision blocks final F-Droid rename/submission.
-- #639: handwritten holds remain `/api/info/ftl`, detailed network gateway and gravity streaming for documented schema/behavior reasons.
+1. Finish the full exact-HEAD CI and merge #177/#178 only if all gates pass. Correct failures on their own branches and re-run CI after changes.
+2. Implement upstream #766 credential-read/save lockout as a separate **P1** bounded security slice with regression tests, preserving established fork auth/rollback boundaries.
+3. Continue #720 across remaining settings/screens: first-load skeletons vs manual cached revalidation vs background refresh must be differentiated, and #718 error/retry retained. Next candidates: Sessions, Local DNS, Interfaces, and broader list views.
+4. Evaluate next power-user roadmap only after architecture work: multi-Pi-hole dashboard, cross-server actions, saved Log Explorer filters, automatic OpenAPI drift reporting.
+5. Separate optional failed-API `mock_api_server --fail all` / `--fail auth/sessions` integration smoke, real-server reverse-proxy diagnostics and device-dependent tests. Never claim a missing reproduction is fixed.
+6. Device/distribution holds: #442 Android 16 PopupMenu device retest, #636 Android 17 self-signed TLS with App Log, #501 widget density tablet, #293 secure-storage migration, #686 Android IME/bottom-sheet, #741 Android 17 Impeller/Vulkan; #134 final independent fork ID/name/icon and F-Droid submission decision.
 
 ## Resume protocol
-1. Read this file, `ROADMAP.md` and `UPSTREAM_TRIAGE.md` from `main`.
-2. Resolve live `main` and confirm it is at or beyond `524a1fe4`.
-3. Re-audit upstream changes after `445424380076d09293ca1a2ce638d6f144e27233`, then confirm there is no competing open feature PR before starting a new slice.
-4. Treat #748 as complete in the fork unless a concrete regression or upstream change creates a new bounded gap.
-5. Prefer a fresh chat for the next larger unit if GitHub/CI tool history has become substantial.
-6. Validate repository-controlled gates before every merge.
 
-## Dependency maintenance checkpoint (2026-10-08)
-- Website dependency update PR #140 merged as `f9df81b6` (website deployment test passed).
-- `go_router` 18.0.2 PR #143 merged as `ab954bb1`.
-- `cupertino_icons` 2.0.0 PR #142 merged as `524a1fe4`.
-- `sqlite3` 3.7.0 PR #141 was closed: Flutter 3.44.1 pins `meta 1.18.0`, while sqlite3 >=3.6.0 requires `hooks ^2.2.0` -> `record_use >=1.0.0` -> `meta ^1.19.0`.
-- Replacement PR #153 merged as `34ad56f5`: bound `sqlite3` to `>=3.5.2 <3.6.0` and ignored only proven-incompatible 3.6.0 / 3.7.0 in Dependabot.
-- PRs #142 and #153 passed full Dart tests, Android unsigned APK build, CodeQL, Sonar, Codecov and static checks; #153 also passed Dependabot config validation.
-- No known GitHub Advisory Database vulnerabilities found for the retained `sqlite3 3.5.2`, `cupertino_icons 2.0.0` or `go_router 18.0.2` when checked.
-- Revisit the sqlite3 upper bound and exact Dependabot ignores when a validated Flutter baseline supports `meta ^1.19.0`; never force the dependency with overrides.
-
-## Dependency maintenance follow-up (2026-10-08)
-- Dependabot PR #158: `url_launcher` 6.3.2 -> 6.3.3, merged as `dc84ce2c`.
-- Dependabot PR #159: `package_info_plus` 10.2.1 -> 10.2.2, merged as `b5b6ae7e`.
-- Dependabot PR #160: `device_info_plus` 13.2.0 -> 13.3.0, merged as `f2674e16`.
-- Each Dependabot-generated lockfile initially contained newer Flutter-SDK-pinned transitives (`intl`, `matcher`, `meta`, `test_api`, `vector_math`); these were aligned with the Flutter 3.44.1 baseline.
-- The follow-up CI failures were caused solely by a missing final newline in `pubspec.lock`. All three files were corrected; PR diffs then contained only their direct dependency upgrades.
-- Each PR passed full Dart tests, CodeQL, Sonar, Codecov, static analysis and unsigned Android source APK build before squash merge.
-- GitHub Advisory Database check found no known advisories for these three updated versions at the time of review.
-- Any future Dependabot pub PR must verify SDK-pinned transitive resolution and `pubspec.lock` stability; do not bypass the strict lockfile check.
-
-## Upstream issue gap audit (2026-10-08)
-- No upstream issue created or updated since the current upstream review cursor; reviewed older upstream reports missing from fork triage.
-- Added **#724** (Group/Client stale tablet detail after delete) and **#718** (settings load error leaves skeleton indefinitely) as P1 deterministic follow-ups in `ROADMAP.md`. Upstream fixes #725/#721 serve as references, not wholesale imports.
-- Added **#741** (Android 17 Impeller/Vulkan crash on Flutter 3.44.1) and **#686** (Android IME/bottom-sheet resume layout) as P2 affected-device validation holds; no unverified framework/platform workaround.
-- Verified **#722** same-IP Local DNS targeting already uses `oldRecord`/`newRecord` with full record equality; no duplicate implementation.
-- **#699** website image quality has no proven equivalence across the fork/upstream docs stacks; not committed as an app blocker.
-- Triage also records upstream dependency PR #764 as selective: fork already integrated its compatible packages while Android 37/`dynamic_color` major blockers remain.
-- Next bounded implementation order: #724, #718, then resume Connection Doctor; device-gated issues await repro evidence.
-
-## Upstream #724 completion (2026-10-08)
-- PR #166 merged into `main` as `abf57cb2bf07c6369a234a752b0d1569bbc766f9` after all repository-controlled validation checks passed.
-- Group/Client delete detail routes are now closed after successful deletion at both phone and two-column tablet width; inline three-column detail panes do not pop parent routes.
-- Failed deletes keep details available. Added Group/Client phone/tablet success+failure tests and inline three-column success tests; 958 Dart tests passed, unsigned Android release APK built and unsigned artifact verified, CodeQL/Sonar/Codecov/static analyses passed.
-- Next bounded unit: **upstream #718** settings screens stuck on loading skeleton after errors. Six ViewModels need symmetric command `isRunning`/`errors` notification subscriptions with explicit failure/retry regression tests: DHCP, Network, Interfaces, Local DNS, Sessions and Server Info. Keep #748 auth/background recovery policy intact.
-- Prefer a fresh chat for #718 given the extensive GitHub/CI tooling used for #724. Verify `main` is at or beyond `abf57cb2` before starting.
-
-## Upstream #718 completion (2026-10-08)
-- PR #168 merged to `main` as `8c091c39b9a60482ab37dc4cda5c154067740def`.
-- Six settings ViewModels (DHCP, Network, Interfaces, Local DNS, Sessions, Server Info) forward their load Command `isRunning` and `errors` changes through ChangeNotifier. Subscriptions are removed symmetrically in `dispose()`.
-- Six new ViewModel regressions exercise failed load/error notification and successful retry/recovery; the associated screens already use `ListenableBuilder` and `ErrorMessage`.
-- Full Dart suite, unsigned source Android APK build and unsigned-artifact verification, CodeQL, Sonar, Codecov and all static scans passed before merge.
-- Validation boundary: the physical/integration smoke with `mock_api_server --fail all` / `--fail auth/sessions` has **not** been run; it remains an optional roadmap validation check. No changes were made to TOTP, session or background retry policy.
-- Next bounded architecture work: Connection Doctor per-server read-only diagnostics, per the existing `## Next autonomous work block`. Keep #720 broader loading-UX changes separate.
-
-## Connection Doctor FTL timing completion (2026-10-09)
-- PR #170 merged into `main` as `5f10886c0d23e65a2bafb483b5b28476eec8791e`; final PR HEAD `7d713fb12787eacc6e8b536f24949ee7d1e61591`.
-- The Server Info ViewModel times the existing `fetchAllServerInfo()` batch with `Stopwatch`: four parallel FTL calls (host, sensors, system, version) plus any existing SID renewal retry. No extra ping, credentials, raw exception details or separate auth path.
-- Success/failure and elapsed time display on the Server Info summary and existing failure screen. Refresh clears old diagnostic state. A failed authenticated request does not prove host unreachability; batch latency is not single-endpoint network RTT.
-- ViewModel regressions cover initial success, failure, error-to-retry success, and success-to-refresh error; screen widget regressions cover success and failure display.
-- Full Dart tests, unsigned Android release APK and `Verify unsigned release artifact`, Sonar, Codecov, CodeQL and four static analysis jobs all passed before merge. No physical-device/server benchmark claimed.
-- Next bounded scope: actionable nginx/reverse-proxy buffering help for gravity streaming (#754), with separate per-endpoint diagnostics only when distinct evidence adds value. Keep #720 UX and device-gated items separate.
-
-## Connection Doctor gravity reverse-proxy hint completion (2026-10-09)
-- Feature PR #172 merged to `main` as `1bf68b5fa8091278d7db429efc9a1138917fe728` (final implementation HEAD `12502d6fad84a91e29f72cff6f79aefd2f67acd5`).
-- Classified Gravity streaming TimeoutException / HTTP 504 only when no progress has arrived, using the existing read-only failure path; neither auth, TLS, connection/generic failures nor timeouts after progress are diagnosed as nginx buffering.
-- Gravity error UI offers a translated (de/en/es/ja/pl), explicitly conditional check of `proxy_buffering off;` in the matching nginx proxy location for `/api/action/gravity`, including any configured subroute. No raw exceptions, URLs with credentials, SID or tokens are displayed. The hint is ephemeral and cleared on new runs/server changes/reset.
-- Regression tests cover the pure classifier, Gravity stream result failures with/without progress, ViewModel hint propagation/reset, and rendered guidance.
-- PR #172 passed full Dart tests, unsigned Android source release APK with `Verify unsigned release artifact`, Sonar, Codecov, CodeQL, and four static analysis jobs before merge.
-- No live nginx/Pi-hole server or device smoke was performed. A 504/timeout does not uniquely implicate nginx; upstream #754's known workaround is offered as contextual help only. The handwritten stream and existing #748 session/TOTP policy remain unchanged.
-- Remaining Connection Doctor potential follow-up: evaluate distinct individual-endpoint reachability evidence without extra auth or leaking secrets, then separate #720 refresh/revalidation UX. Preserve device-gated holds.
-
-## Connection Doctor manual endpoint diagnostics completion (2026-10-09)
-- Feature PR #174 merged to `main` as `d0c17b61360ac3feb0ae76c24a753e3f0d77f76d` after full CI passed (final feature HEAD `7b48f59abdd9c38b135314f653a129bbe29adb5d`).
-- Pi-hole v6 Server Info now offers an explicit user-started read-only check of `/api/info/host`, `/api/info/sensors`, `/api/info/system` and `/api/info/version`. The checks run sequentially through the existing FTL repository and SID/TLS/subroute policies. No automatic calls, second authentication policy, interactive TOTP prompts or v5 unsupported probes.
-- Each result reports sanitized auth/TLS/timeout/404/5xx/unknown categories and elapsed request time. Values are not raw socket RTT and may include server processing/SID retry; a timeout/5xx does not uniquely prove host, network or proxy root cause. No credentials, SID or raw exception bodies shown.
-- The state is ephemeral, clears on refresh, guards simultaneous checks and ignores results after disposal. UI and explanation localized de/en/es/ja/pl. Regression tests cover the pure failure classifier, four successful and failing checks, v5 omission, reset, and the widget presentation/run control.
-- PR #174 passed full Dart tests, unsigned Android source APK and `Verify unsigned release artifact`, CodeQL, Sonar, Codecov and four static analyses before merge.
-- Connection Doctor's bounded roadmap slices are complete; next priority is #720 loading and manual revalidation UX. Live server/device latency verification and optional failed-API smoke remain unperformed.
+1. Read this checkpoint, root `ROADMAP.md`, `UPSTREAM_TRIAGE.md`, `AGENTS.md` and relevant architecture document.
+2. Confirm live `main` SHA, open PRs and exact-HEAD CI before any merge/new overlapping slice; keep tool outputs targeted and avoid tight CI polling.
+3. For substantial completed work, update this checkpoint with merge SHA and remaining blockers. If tool history becomes large, use a fresh chat after a clean checkpoint.
