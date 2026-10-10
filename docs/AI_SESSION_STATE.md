@@ -1,14 +1,15 @@
 # AI Session State
 
-Updated: 2026-10-10 (crash recovery)
+Updated: 2026-10-10 (#720 Query Logs revalidation validated)
 
 ## Integrated baseline
 
 - Canonical branch: `main` in `HyperCriSiS/pi-hole-client`.
-- Latest application merge: **PR #190**, squash `ed5682636ba950defe05641dd3704ebed3718c8c`, exact tested feature HEAD `60c70ef5ca992e199ec3dfb4ad64c44bd2a459d7`.
+- Latest application merge: **PR #193**, squash `7510a1ce262b3041e5058c716b98ac7ef3c3fa57`, exact tested feature HEAD `b1bb442d24d1cade93f06c3a810262764e00342d`. Prior Groups/Clients merge PR #190 (`ed5682636ba950defe05641dd3704ebed3718c8c`).
 - Latest dependency merge: **PR #191**, squash `3fedf7c66015133e1a77818ca63a7f675b74d7d0`: website `@typescript-eslint/parser` 8.71.0 → 8.71.1; website deployment test passed.
 - #720 Groups/Clients **PR #190**: successful-empty cache is distinguished from initial state; prior groups and clients are kept visible during refresh and failed revalidation; nonblocking progress and localized stale-data warning; overlapping refresh guarded; repository seams, ViewModel regressions and widget regressions added. All applicable 14 check runs passed or were intentionally skipped at tested HEAD: Dart test/analyzer, Sonar, Codecov, CodeQL, static analyses, unsigned source APK build and successful `Verify unsigned release artifact` in job 114315913460 (workflow 38087128774). No device smoke performed.
-- #720 earlier: Server Info PR #176; DHCP PR #177; Network devices PR #178; Sessions, Interfaces, Local DNS PR #185 (`ad1a1941`); Domains successful-empty SWR PR #188 (`4d3c3bba`). Settings six sections, Domains and now Groups/Clients covered; #720 **not globally complete**.
+- #720 Query Logs **PR #193**: successful empty log result remains a valid cache; revalidation preserves the last successful logs (including empty lists) while pending and after failed pagination, avoids publishing partial failed replacements, shows a localized nonblocking warning, clears it on retry/server switch and preserves first-load error behavior. Added controllable pagination fake, three ViewModel regressions and screen warning test. Exact-HEAD Dart/analyzer in job 114321276715, Sonar, Codecov, CodeQL, four static analysis jobs, unsigned Android source APK and successful `Verify unsigned release artifact` in job 114321277054 (workflow 38088966740) all passed. No live device check.
+- #720 earlier: Server Info PR #176; DHCP PR #177; Network devices PR #178; Sessions, Interfaces, Local DNS PR #185 (`ad1a1941`); Domains successful-empty SWR PR #188 (`4d3c3bba`); Groups/Clients PR #190 (`ed568263`). Six Settings screens, Domains, Groups/Clients, and Logs now covered; #720 **not globally complete**.
 - Security #766 secure-storage read failure fail-closed fix PR #183 (`c1406910`); #748 authentication/TOTP hardening previously completed. Never allow background load to open interactive TOTP prompts; explicit user-triggered refresh may use `refreshWithTotpRecovery`. Never expose credentials or raw exception text.
 
 ## Technical and release constraints
@@ -21,8 +22,8 @@ Updated: 2026-10-10 (crash recovery)
 
 ## Next autonomous work unit
 
-1. Recheck live `main`, PRs, and selective CI before modifying. Never repeat merged #190 or #191.
-2. Audit at most one remaining specific #720 first-load / manual refresh / background inconsistency outside Settings, Domains and Groups/Clients (for example Home or Logs). Choose only a reproducible change with focused regressions; do not rewrite all loading widgets.
+1. Recheck live `main`, PRs and targeted CI before modifying. Do not repeat merged #190–#193 or this checkpoint.
+2. Audit a single remaining #720 Home first-load/manual-refresh/background inconsistency. Initial candidate: HomeTiles falls back to fixed example metric values when realtime status is null; inspect whether connection-failure states can expose these as real data before proposing a bounded fix. Preserve first-load skeleton, cached manual refresh, and background nonblocking behavior as distinct cases. Test first; do not blanket-rewrite status handling.
 3. If no concrete #720 issue, implement a small validated power-user roadmap slice: multi-Pi-hole dashboard, cross-server actions, saved Log Explorer filters or automated OpenAPI drift report, prioritized by feasibility.
 4. For application PRs require exact-HEAD Dart/analyzer, source APK + unsigned verification, CodeQL, Sonar, Codecov, static checks. Squash merge only after passes. Docs-only change uses lighter workflow.
 
