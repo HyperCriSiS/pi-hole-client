@@ -156,6 +156,25 @@ void main() async {
       expect(find.byIcon(Icons.error), findsOneWidget);
     });
 
+    testWidgets('keeps cached log and displays stale-data warning', (
+      WidgetTester tester,
+    ) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 2.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      logsViewModel.hasRevalidationError = true;
+      await tester.pumpWidget(buildAppWithRouter());
+      await tester.pumpAndSettle();
+
+      expect(find.text('white.example.com'), findsWidgets);
+      expect(find.byIcon(Icons.warning_amber_rounded), findsOneWidget);
+      expect(find.text("Logs couldn't be loaded"), findsOneWidget);
+    });
+
     testWidgets('should set blacklist domains on tablet layout', (
       WidgetTester tester,
     ) async {
