@@ -162,6 +162,41 @@ class _GatePaginationService extends LogsPaginationService {
   }
 }
 
+/// Stateful fake for success, empty-cache refresh, failure and recovery.
+class _RevalidationPaginationService extends LogsPaginationService {
+  _RevalidationPaginationService(this.logs)
+    : super(repository: _StubMetricsRepository());
+
+  List<Log> logs;
+  Completer<void>? refreshGate;
+  bool failRefresh = false;
+  bool _done = false;
+  LoadStatus _finished = LoadStatus.loading;
+
+  @override
+  LoadStatus get finished => _finished;
+
+  @override
+  void reset(DateTime start, DateTime until) {
+    super.reset(start, until);
+    _done = false;
+    _finished = LoadStatus.loading;
+  }
+
+  @override
+  Future<List<Log>> loadNextPage() async {
+    if (_done) return const [];
+    if (refreshGate != null) await refreshGate!.future;
+    _done = true;
+    if (failRefresh) {
+      _finished = LoadStatus.error;
+      return const [];
+    }
+    _finished = LoadStatus.loaded;
+    return List.of(logs);
+  }
+}
+
 /// [LiveLogsService] that records tick invocations.
 class _CountingLiveLogsService extends LiveLogsService {
   _CountingLiveLogsService({
@@ -491,6 +526,8 @@ void main() {
         expect(vm.isFiltering, isFalse);
         expect(vm.isLoadingMore, isFalse);
         expect(vm.isRevalidating, isFalse);
+        expect(vm.hasSuccessfulLoad, isFalse);
+        expect(vm.hasRevalidationError, isFalse);
         vm.dispose();
       },
     );
@@ -646,6 +683,100 @@ void main() {
         vm.dispose();
       },
     );
+  });
+
+  group('LogsViewModel – cached revalidation', () {
+    test('successful empty result remains visible during a delayed refresh',
+        () async {
+      final service = _RevalidationPaginationService(const []);
+      final vm = _buildVm(
+        overrideFactory: ({required MetricsRepository repository}) => service,
+      );
+      await _initAndLoad(vm);
+
+      expect(vm.hasSuccessfulLoad, isTrue);
+      expect(vm.loadStatus, LoadStatus.loaded);
+      expect(vm.logsList, isEmpty);
+
+      final gate = Completer<void>();
+      service.refreshGate = gate;
+      final pending = vm.initializeLoad();
+
+      expect(vm.loadStatus, LoadStatus.loaded);
+      expect(vm.isRevalidating, isTrue);
+      expect(vm.logsListDisplay, isEmpty);
+      expect(vm.hasRevalidationError, isFalse);
+
+      gate.complete();
+      await pending;
+
+      expect(vm.loadStatus, LoadStatus.loaded);
+      expect(vm.isRevalidating, isFalse);
+      expect(vm.logsList, isEmpty);
+      expect(vm.hasSuccessfulLoad, isTrue);
+      vm.dispose();
+    });
+
+    test('failed refresh keeps cached logs and recovery replaces them',
+        () async {
+      final previous = _allowedLog(
+        url: 'cached.example',
+        device: '10.0.0.1',
+        id: 7,
+      );
+      final replacement = _allowedLog(
+        url: 'fresh.example',
+        device: '10.0.0.1',
+        id: 8,
+      );
+      final service = _RevalidationPaginationService([previous]);
+      final vm = _buildVm(
+        overrideFactory: ({required MetricsRepository repository}) => service,
+      );
+      await _initAndLoad(vm);
+
+      final gate = Completer<void>();
+      service.refreshGate = gate;
+      service.failRefresh = true;
+      final pending = vm.initializeLoad();
+
+      expect(vm.isRevalidating, isTrue);
+      expect(vm.logsListDisplay.single.url, 'cached.example');
+      gate.complete();
+      await pending;
+
+      expect(vm.isRevalidating, isFalse);
+      expect(vm.loadStatus, LoadStatus.loaded);
+      expect(vm.hasRevalidationError, isTrue);
+      expect(vm.logsListDisplay.single.url, 'cached.example');
+
+      service.failRefresh = false;
+      service.logs = [replacement];
+      await vm.initializeLoad();
+
+      expect(vm.hasRevalidationError, isFalse);
+      expect(vm.logsListDisplay.single.url, 'fresh.example');
+      expect(vm.loadStatus, LoadStatus.loaded);
+      vm.dispose();
+    });
+
+    test('failed refresh of cached empty list keeps loaded empty state',
+        () async {
+      final service = _RevalidationPaginationService(const []);
+      final vm = _buildVm(
+        overrideFactory: ({required MetricsRepository repository}) => service,
+      );
+      await _initAndLoad(vm);
+
+      service.failRefresh = true;
+      await vm.initializeLoad();
+
+      expect(vm.hasSuccessfulLoad, isTrue);
+      expect(vm.hasRevalidationError, isTrue);
+      expect(vm.loadStatus, LoadStatus.loaded);
+      expect(vm.logsListDisplay, isEmpty);
+      vm.dispose();
+    });
   });
 
   // -------------------------------------------------------------------------

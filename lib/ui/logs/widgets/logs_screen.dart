@@ -280,6 +280,7 @@ class _LogsScreenState extends State<LogsScreen> with WidgetsBindingObserver {
               // already provides sufficient feedback in that case.
               isRevalidating:
                   logsViewModel.isRevalidating && !_isPullRefreshing,
+              hasRevalidationError: logsViewModel.hasRevalidationError,
               onRefresh: () async {
                 setState(() => _isPullRefreshing = true);
                 try {

@@ -287,6 +287,8 @@ class LogsViewModel extends ChangeNotifier {
   int _logAutoRefreshTime = 5;
 
   bool _isRevalidating = false;
+  bool _hasSuccessfulLoad = false;
+  bool _hasRevalidationError = false;
   int _serverEpoch = 0;
 
   List<Log> get logsList => _logsList;
@@ -294,6 +296,8 @@ class LogsViewModel extends ChangeNotifier {
   int get sortStatus => _sortStatus;
   bool get isLoadingMore => _isLoadingMore;
   bool get isRevalidating => _isRevalidating;
+  bool get hasSuccessfulLoad => _hasSuccessfulLoad;
+  bool get hasRevalidationError => _hasRevalidationError;
   Log? get selectedLog => _selectedLog;
   String get searchText => _searchText;
   double get logsPerQuery => _logsPerQuery;
@@ -527,7 +531,9 @@ class LogsViewModel extends ChangeNotifier {
     _isFiltering = false;
     _enableNextWindow = true;
 
-    final hasCache = _logsList.isNotEmpty;
+    // A successfully loaded empty list is cached data too.
+    final hasCache = _hasSuccessfulLoad;
+    _hasRevalidationError = false;
 
     // Notify listeners immediately
     if (hasCache) {
@@ -550,7 +556,10 @@ class LogsViewModel extends ChangeNotifier {
       if (!_isCurrentServerEpoch(serverEpoch)) return;
       _isRevalidating = false;
 
-      if (_paginationService!.finished != LoadStatus.error) {
+      if (_paginationService!.finished == LoadStatus.error) {
+        // Retain the old list and expose a nonblocking stale-data warning.
+        _hasRevalidationError = true;
+      } else {
         _loadStatus = LoadStatus.loaded;
       }
       notifyListeners();
@@ -564,6 +573,7 @@ class LogsViewModel extends ChangeNotifier {
         return;
       }
 
+      _hasSuccessfulLoad = true;
       _loadStatus = LoadStatus.loaded;
       notifyListeners();
     }
@@ -615,6 +625,13 @@ class LogsViewModel extends ChangeNotifier {
     }
 
     if (!_isCurrentServerEpoch(serverEpoch)) return;
+    if (shouldReloadFromServer &&
+        _paginationService!.finished == LoadStatus.error) {
+      _loadStatus = LoadStatus.error;
+      notifyListeners();
+      return;
+    }
+    _hasSuccessfulLoad = true;
     _loadStatus = LoadStatus.loaded;
     notifyListeners();
 
@@ -702,6 +719,8 @@ class LogsViewModel extends ChangeNotifier {
     }
 
     if (!_isCurrentServerEpoch(serverEpoch)) return;
+    // A failed refresh must never publish an empty or partial result.
+    if (_paginationService!.finished == LoadStatus.error) return;
     _logsList = freshLogs;
     _loadedLogKeys
       ..clear()
@@ -798,6 +817,8 @@ class LogsViewModel extends ChangeNotifier {
   // ------------------------------------------
 
   void _resetLogsCache() {
+    _hasSuccessfulLoad = false;
+    _hasRevalidationError = false;
     _logsList = [];
     logsDisplayNotifier.value = [];
     _loadedLogKeys.clear();

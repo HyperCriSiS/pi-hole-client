@@ -25,6 +25,7 @@ class FakeLogsViewModel extends LogsViewModel {
   bool _hasActiveChips = false;
   bool _screenActive = true;
   bool _isFiltering = false;
+  bool _hasRevalidationError = false;
   double _logsPerQuery = 2.0;
 
   // --- Filter state ---
@@ -91,6 +92,9 @@ class FakeLogsViewModel extends LogsViewModel {
   bool get isFiltering => _isFiltering;
 
   @override
+  bool get hasRevalidationError => _hasRevalidationError;
+
+  @override
   double get logsPerQuery => _logsPerQuery;
 
   @override
@@ -124,6 +128,11 @@ class FakeLogsViewModel extends LogsViewModel {
   bool isAllowedOrRetried(QueryStatusType? status) => true;
 
   // --- Setters for test state ---
+
+  set hasRevalidationError(bool value) {
+    _hasRevalidationError = value;
+    notifyListeners();
+  }
 
   set loadStatus(LoadStatus value) {
     _loadStatus = value;
