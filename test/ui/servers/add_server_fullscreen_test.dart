@@ -775,7 +775,7 @@ void main() async {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 200));
 
       IconButton saveButton() => tester.widget<IconButton>(
         find.ancestor(
@@ -798,7 +798,7 @@ void main() async {
 
       // A second failure cannot erase the draft or unlock Save.
       await tester.tap(find.byKey(const ValueKey('credential-load-retry')));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 200));
       expect(saveButton().onPressed, isNull);
       expect(
         tester.widget<TextField>(find.byType(TextField).at(3)).controller!.text,
@@ -808,7 +808,7 @@ void main() async {
 
       serversViewModel.failFetchCredentials = false;
       await tester.tap(find.byKey(const ValueKey('credential-load-retry')));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 200));
 
       expect(find.byKey(const ValueKey('credential-load-error')), findsNothing);
       expect(saveButton().onPressed, isNotNull);
@@ -2124,13 +2124,10 @@ void main() async {
     );
 
     testWidgets(
-      'a failed credential load does not wipe the stored secret when the save '
-      'fails',
+      'a failed credential load blocks saving and preserves existing secrets',
       (WidgetTester tester) async {
         useLargeView(tester);
 
-        // Secure-storage read fails on load, so initPassword is an empty
-        // placeholder even though a real secret still exists in storage.
         serversViewModel.failFetchCredentials = true;
         fakeDnsRepository
           ..shouldFail = true
@@ -2145,22 +2142,26 @@ void main() async {
             ),
           ),
         );
-        // Let the (failing) credential load settle before editing the field so
-        // it can't overwrite the value entered below. pumpAndSettle is unusable
-        // here because the connecting spinner animates indefinitely.
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 500));
 
-        // Re-enter the (correct) password and save; the connection then fails.
+        // Even if the user types a replacement value, a storage read failure
+        // must not become a save attempt or trigger any rollback writes.
         await tester.enterText(find.byType(TextField).at(3), 'real-pass');
         await tester.pump();
 
-        await tester.tap(find.byIcon(Icons.save_rounded));
-        await tester.pump(const Duration(milliseconds: 1000));
-
-        // The rollback must not restore the empty placeholder over the secret.
-        expect(find.text('Failed. Check address.'), findsOneWidget);
-        expect(serversViewModel.lastSavedPassword, 'real-pass');
+        final saveButton = tester.widget<IconButton>(
+          find.ancestor(
+            of: find.byIcon(Icons.save_rounded),
+            matching: find.byType(IconButton),
+          ),
+        );
+        expect(saveButton.onPressed, isNull);
+        expect(find.byKey(const ValueKey('credential-load-error')), findsOneWidget);
+        expect(serversViewModel.savePasswordCallCount, 0);
+        expect(serversViewModel.editServerCallCount, 0);
+        expect(serversViewModel.replaceServerCallCount, 0);
+        expect(serversViewModel.lastSavedPassword, isNull);
       },
     );
   });
