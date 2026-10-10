@@ -45,7 +45,7 @@ Updated: 2026-10-10
 - Optional toolkit relocated from `tools/identity/` to `tools/archive/fork-identity/`: app identity config/audit, migration, local F-Droid App ID collision checker and both standalone tests. This tooling is parked and should not run on every Android PR.
 - The active F-Droid-compatible source-build path, free QR scanner, `tools/prepare_fdroid_source_build.dart`, and unsigned APK/artifact verification are **not** archived or disabled.
 - Speed-up policy: batch related low-risk UI changes into one tested PR rather than separate full builds, run focused checks before pushing, retain the final exact-HEAD gates, skip archived/docs-only PRs in expensive Flutter/Android CI, and avoid repeated no-op CI polling. Do not bundle credential/security changes with UI or platform migration.
-- CI on the archive/refactor PR still needs to pass; never record an unvalidated merge as completed.
+- Completed in PR #181 (squash `e88b27aa1c9f30d61d064749b61247b686c766ab`): 9/9 archived Python tests passed locally; exact-HEAD Dart tests, Sonar, Codecov, CodeQL, static analyses, documentation validation, unsigned Android source APK build and **Verify unsigned release artifact** passed before merge. No runtime Pi-hole/device smoke claimed.
 
 ## Resume instructions
 
