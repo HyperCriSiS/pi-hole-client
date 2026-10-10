@@ -65,6 +65,62 @@ void main() async {
       expect(find.byType(ErrorMessage), findsOneWidget);
     });
 
+    testWidgets('revalidation error preserves previously visible content', (
+      WidgetTester tester,
+    ) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 2.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await tester.runAsync(() async {
+        await viewModel.loadRecords.runAsync().timeout(
+          const Duration(seconds: 8),
+        );
+      });
+      await tester.pumpWidget(
+        buildTestApp(LocalDnsScreen(viewModel: viewModel)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('server1'), findsOneWidget);
+
+      fakeLocalDnsRepository.shouldFail = true;
+      await tester.runAsync(() async {
+        try {
+          await viewModel.loadRecords.runAsync().timeout(
+            const Duration(seconds: 8),
+          );
+        } catch (_) {
+          // Command exposes its failure through errors for the screen.
+        }
+      });
+      await tester.pumpAndSettle();
+
+      expect(find.text('server1'), findsOneWidget);
+      expect(
+        find.text('Refresh failed. The last successfully loaded data remains visible.'),
+        findsOneWidget,
+      );
+      expect(find.byType(ErrorMessage), findsNothing);
+      expect(viewModel.hasLoadedSuccessfully, isTrue);
+
+      fakeLocalDnsRepository.shouldFail = false;
+      await tester.runAsync(() async {
+        await viewModel.loadRecords.runAsync().timeout(
+          const Duration(seconds: 8),
+        );
+      });
+      await tester.pumpAndSettle();
+
+      expect(find.text('server1'), findsOneWidget);
+      expect(
+        find.text('Refresh failed. The last successfully loaded data remains visible.'),
+        findsNothing,
+      );
+    });
+
     testWidgets('should show local dns records', (WidgetTester tester) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 2.0;

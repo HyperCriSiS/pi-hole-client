@@ -323,6 +323,7 @@ class _LocalDnsScreenState extends State<LocalDnsScreen> {
         final viewModel = widget.viewModel;
         final isLoading = viewModel.loadRecords.isRunning.value;
         final hasError = viewModel.loadRecords.errors.value != null;
+        final hasPreviousData = viewModel.hasLoadedSuccessfully;
         final data = viewModel.data;
 
         return ScrollConfiguration(
@@ -335,16 +336,18 @@ class _LocalDnsScreenState extends State<LocalDnsScreen> {
                   padding: const EdgeInsets.only(right: 8),
                   child: IconButton(
                     icon: const Icon(Icons.refresh_rounded),
-                    onPressed: () async {
-                      try {
-                        await refreshWithTotpRecovery(
-                          context,
-                          viewModel.loadRecords.runAsync,
-                        );
-                      } catch (_) {
-                        // Error handled by command.errors
-                      }
-                    },
+                    onPressed: isLoading
+                        ? null
+                        : () async {
+                            try {
+                              await refreshWithTotpRecovery(
+                                context,
+                                viewModel.loadRecords.runAsync,
+                              );
+                            } catch (_) {
+                              // Error handled by command.errors
+                            }
+                          },
                     tooltip: locale.refresh,
                   ),
                 ),
@@ -353,6 +356,7 @@ class _LocalDnsScreenState extends State<LocalDnsScreen> {
             body: SafeArea(
               child: RefreshIndicator(
                 onRefresh: () async {
+                  if (isLoading) return;
                   try {
                     await refreshWithTotpRecovery(
                       context,
@@ -367,11 +371,28 @@ class _LocalDnsScreenState extends State<LocalDnsScreen> {
                     Column(
                       children: [
                         _buildModeSelector(locale),
+                        if (isLoading && hasPreviousData)
+                          const LinearProgressIndicator(
+                            key: ValueKey('local-dns-refresh-progress'),
+                            minHeight: 2,
+                          ),
+                        if (hasError && hasPreviousData)
+                          Card(
+                            child: ListTile(
+                              leading: Icon(
+                                Icons.error_outline_rounded,
+                                color: Theme.of(context).colorScheme.error,
+                              ),
+                              title: Text(locale.refreshFailedShowingPrevious),
+                            ),
+                          ),
                         Expanded(
                           child: Builder(
                             builder: (context) {
-                              if (isLoading) return _buildSkeleton();
-                              if (hasError) {
+                              if (isLoading && !hasPreviousData) {
+                                return _buildSkeleton();
+                              }
+                              if (hasError && !hasPreviousData) {
                                 return ErrorMessage(
                                   message: locale.dataFetchFailed,
                                 );

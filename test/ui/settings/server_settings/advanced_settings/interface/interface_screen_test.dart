@@ -109,6 +109,62 @@ void main() async {
       expect(find.byType(ErrorMessage), findsOneWidget);
     });
 
+    testWidgets('revalidation error preserves previously visible content', (
+      WidgetTester tester,
+    ) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 2.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await tester.runAsync(() async {
+        await viewModel.loadInterfaces.runAsync().timeout(
+          const Duration(seconds: 8),
+        );
+      });
+      await tester.pumpWidget(
+        buildTestApp(InterfaceScreen(viewModel: viewModel)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('eth0 - UP'), findsOneWidget);
+
+      fakeNetworkRepository.shouldFail = true;
+      await tester.runAsync(() async {
+        try {
+          await viewModel.loadInterfaces.runAsync().timeout(
+            const Duration(seconds: 8),
+          );
+        } catch (_) {
+          // Command exposes its failure through errors for the screen.
+        }
+      });
+      await tester.pumpAndSettle();
+
+      expect(find.text('eth0 - UP'), findsOneWidget);
+      expect(
+        find.text('Refresh failed. The last successfully loaded data remains visible.'),
+        findsOneWidget,
+      );
+      expect(find.byType(ErrorMessage), findsNothing);
+      expect(viewModel.hasLoadedSuccessfully, isTrue);
+
+      fakeNetworkRepository.shouldFail = false;
+      await tester.runAsync(() async {
+        await viewModel.loadInterfaces.runAsync().timeout(
+          const Duration(seconds: 8),
+        );
+      });
+      await tester.pumpAndSettle();
+
+      expect(find.text('eth0 - UP'), findsOneWidget);
+      expect(
+        find.text('Refresh failed. The last successfully loaded data remains visible.'),
+        findsNothing,
+      );
+    });
+
     testWidgets('should show interface section', (WidgetTester tester) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 2.0;

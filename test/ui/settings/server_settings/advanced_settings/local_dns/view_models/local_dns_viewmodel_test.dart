@@ -81,6 +81,41 @@ void main() {
       expect(viewModel.data.deviceOptions, isNotEmpty);
     });
 
+    test('keeps last successful result after failed revalidation and retry', () async {
+      expect(viewModel.hasLoadedSuccessfully, isFalse);
+      await viewModel.loadRecords.runAsync();
+      expect(viewModel.hasLoadedSuccessfully, isTrue);
+      expect(viewModel.data.records, equals(kRepoFetchLocalDnsRecords));
+
+      fakeLocalDnsRepository.shouldFail = true;
+      await expectLater(
+        viewModel.loadRecords.runAsync(),
+        throwsA(isA<Exception>()),
+      );
+      expect(viewModel.hasLoadedSuccessfully, isTrue);
+      expect(viewModel.data.records, equals(kRepoFetchLocalDnsRecords));
+
+      fakeLocalDnsRepository.shouldFail = false;
+      await viewModel.loadRecords.runAsync();
+      expect(viewModel.loadRecords.errors.value, isNull);
+      expect(viewModel.data.records, equals(kRepoFetchLocalDnsRecords));
+    });
+
+    test('successful empty result counts as loaded', () async {
+      fakeLocalDnsRepository.records = [];
+      expect(viewModel.hasLoadedSuccessfully, isFalse);
+      await viewModel.loadRecords.runAsync();
+      expect(viewModel.hasLoadedSuccessfully, isTrue);
+      expect(viewModel.data.records, isEmpty);
+      fakeLocalDnsRepository.shouldFail = true;
+      await expectLater(
+        viewModel.loadRecords.runAsync(),
+        throwsA(isA<Exception>()),
+      );
+      expect(viewModel.hasLoadedSuccessfully, isTrue);
+      expect(viewModel.data.records, isEmpty);
+    });
+
     test('loadRecords failure sets error', () async {
       fakeLocalDnsRepository.shouldFail = true;
 

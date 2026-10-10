@@ -86,6 +86,7 @@ class _SessionsScreenState extends State<SessionsScreen> {
         final viewModel = widget.viewModel;
         final isLoading = viewModel.loadSessions.isRunning.value;
         final hasError = viewModel.loadSessions.errors.value != null;
+        final hasPreviousData = viewModel.hasLoadedSuccessfully;
         final sessions = viewModel.sessions;
 
         return ScrollConfiguration(
@@ -98,72 +99,100 @@ class _SessionsScreenState extends State<SessionsScreen> {
                   padding: const EdgeInsets.only(right: 8),
                   child: IconButton(
                     icon: const Icon(Icons.refresh_rounded),
-                    onPressed: () async {
-                      try {
-                        await refreshWithTotpRecovery(
-                          context,
-                          viewModel.loadSessions.runAsync,
-                        );
-                      } catch (_) {
-                        // Error handled by command.errors
-                      }
-                    },
+                    onPressed: isLoading
+                        ? null
+                        : () async {
+                            try {
+                              await refreshWithTotpRecovery(
+                                context,
+                                viewModel.loadSessions.runAsync,
+                              );
+                            } catch (_) {
+                              // Error handled by command.errors
+                            }
+                          },
                     tooltip: locale.refresh,
                   ),
                 ),
               ],
             ),
             body: SafeArea(
-              child: RefreshIndicator(
-                onRefresh: () async {
-                  try {
-                    await refreshWithTotpRecovery(
-                      context,
-                      viewModel.loadSessions.runAsync,
-                    );
-                  } catch (_) {
-                    // Error handled by command.errors
-                  }
-                },
-                child: Builder(
-                  builder: (context) {
-                    if (isLoading) {
-                      return Skeletonizer(
-                        effect: ShimmerEffect(
-                          baseColor: Theme.of(
+              child: Column(
+                children: [
+                  if (isLoading && hasPreviousData)
+                    const LinearProgressIndicator(
+                      key: ValueKey('sessions-refresh-progress'),
+                      minHeight: 2,
+                    ),
+                  if (hasError && hasPreviousData)
+                    Card(
+                      child: ListTile(
+                        leading: Icon(
+                          Icons.error_outline_rounded,
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                        title: Text(locale.refreshFailedShowingPrevious),
+                      ),
+                    ),
+                  Expanded(
+                    child: RefreshIndicator(
+                      onRefresh: () async {
+                        if (isLoading) return;
+                        try {
+                          await refreshWithTotpRecovery(
                             context,
-                          ).colorScheme.secondaryContainer,
-                          highlightColor: Theme.of(context).colorScheme.surface,
-                        ),
-                        child: SessionListView(
-                          sessions: _fakeSessions,
-                          onSessionTap: (session) {},
-                        ),
-                      );
-                    }
-
-                    if (hasError) {
-                      return ErrorMessage(message: locale.dataFetchFailed);
-                    }
-
-                    if (sessions.isEmpty) {
-                      return const EmptyDataScreen();
-                    }
-
-                    return SessionListView(
-                      sessions: sessions,
-                      onSessionTap: (session) {
-                        context.pushNamed(
-                          Routes.settingsServerAdvancedSessionsDetails,
-                          extra: SessionDetailsExtra(
-                            session: session,
-                            onDelete: _removeSession,
-                          ),
-                        );
+                            viewModel.loadSessions.runAsync,
+                          );
+                        } catch (_) {
+                          // Error handled by command.errors
+                        }
                       },
-                    );
-                  },
-                ),
+                      child: Builder(
+                        builder: (context) {
+                          if (isLoading && !hasPreviousData) {
+                            return Skeletonizer(
+                              effect: ShimmerEffect(
+                                baseColor: Theme.of(
+                                  context,
+                                ).colorScheme.secondaryContainer,
+                                highlightColor: Theme.of(
+                                  context,
+                                ).colorScheme.surface,
+                              ),
+                              child: SessionListView(
+                                sessions: _fakeSessions,
+                                onSessionTap: (session) {},
+                              ),
+                            );
+                          }
+
+                          if (hasError && !hasPreviousData) {
+                            return ErrorMessage(
+                              message: locale.dataFetchFailed,
+                            );
+                          }
+
+                          if (sessions.isEmpty) {
+                            return const EmptyDataScreen();
+                          }
+
+                          return SessionListView(
+                            sessions: sessions,
+                            onSessionTap: (session) {
+                              context.pushNamed(
+                                Routes.settingsServerAdvancedSessionsDetails,
+                                extra: SessionDetailsExtra(
+                                  session: session,
+                                  onDelete: _removeSession,
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

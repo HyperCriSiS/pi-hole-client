@@ -34,6 +34,26 @@ void main() {
       expect(viewModel.loadInterfaces.value.first.name, 'eth0');
     });
 
+    test('keeps last successful result after failed revalidation and retry', () async {
+      expect(viewModel.hasLoadedSuccessfully, isFalse);
+      await viewModel.loadInterfaces.runAsync();
+      expect(viewModel.hasLoadedSuccessfully, isTrue);
+      expect(viewModel.interfaces, equals(kRepoFetchGatewaysDetailed.interfaces));
+
+      fakeNetworkRepository.shouldFail = true;
+      await expectLater(
+        viewModel.loadInterfaces.runAsync(),
+        throwsA(isA<Exception>()),
+      );
+      expect(viewModel.hasLoadedSuccessfully, isTrue);
+      expect(viewModel.interfaces, equals(kRepoFetchGatewaysDetailed.interfaces));
+
+      fakeNetworkRepository.shouldFail = false;
+      await viewModel.loadInterfaces.runAsync();
+      expect(viewModel.loadInterfaces.errors.value, isNull);
+      expect(viewModel.interfaces, equals(kRepoFetchGatewaysDetailed.interfaces));
+    });
+
     test('loadInterfaces failure sets error', () async {
       fakeNetworkRepository.shouldFail = true;
 
