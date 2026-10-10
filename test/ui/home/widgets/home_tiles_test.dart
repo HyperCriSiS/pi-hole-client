@@ -11,6 +11,13 @@ import '../../../../testing/fakes/viewmodels/fake_status_viewmodel.dart';
 import '../../../../testing/models/v5/realtime_status.dart' as fixture;
 import '../../../../testing/test_app.dart';
 
+// Skeletonizer is an abstract factory widget; the mounted widget is a
+// concrete subtype, so an exact-type finder does not match it.
+bool _skeletonEnabled(WidgetTester tester) {
+  final matches = find.byWidgetPredicate((widget) => widget is Skeletonizer);
+  return tester.widget<Skeletonizer>(matches).enabled;
+}
+
 void main() async {
   await initTestApp();
 
@@ -38,7 +45,7 @@ void main() async {
       );
 
       expect(find.text('—'), findsNWidgets(4));
-      expect(tester.widget<Skeletonizer>(find.byType(Skeletonizer)).enabled, isFalse);
+      expect(_skeletonEnabled(tester), isFalse);
       expect(find.text('12345'), findsNothing);
       expect(find.text('1234'), findsNothing);
       expect(find.text('12.34%'), findsNothing);
@@ -57,7 +64,7 @@ void main() async {
         ),
       );
 
-      expect(tester.widget<Skeletonizer>(find.byType(Skeletonizer)).enabled, isTrue);
+      expect(_skeletonEnabled(tester), isTrue);
     });
 
     testWidgets('refresh retains real cached metrics without skeleton', (
@@ -75,7 +82,7 @@ void main() async {
         ),
       );
 
-      expect(tester.widget<Skeletonizer>(find.byType(Skeletonizer)).enabled, isFalse);
+      expect(_skeletonEnabled(tester), isFalse);
       expect(find.text('—'), findsNothing);
       expect(
         find.text(intFormat(cached.summary.dnsQueriesToday, Platform.localeName)),
@@ -85,7 +92,7 @@ void main() async {
       // A refresh that finishes without changing data must keep the value.
       statusViewModel.statusLoading = LoadStatus.loaded;
       await tester.pump();
-      expect(tester.widget<Skeletonizer>(find.byType(Skeletonizer)).enabled, isFalse);
+      expect(_skeletonEnabled(tester), isFalse);
       expect(
         find.text(intFormat(cached.summary.dnsQueriesToday, Platform.localeName)),
         findsOneWidget,
@@ -108,7 +115,7 @@ void main() async {
 
       expect(find.text('—'), findsNothing);
       expect(find.byIcon(Icons.warning_amber_rounded), findsNWidgets(4));
-      expect(tester.widget<Skeletonizer>(find.byType(Skeletonizer)).enabled, isFalse);
+      expect(_skeletonEnabled(tester), isFalse);
     });
   });
 }

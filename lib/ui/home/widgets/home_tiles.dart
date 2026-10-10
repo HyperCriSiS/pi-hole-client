@@ -68,6 +68,8 @@ class HomeTiles extends StatelessWidget {
     );
     // Keep real cached values visible during revalidation. Only show a
     // skeleton for the first request before any realtime status exists.
+    // The separate overtime request may complete while realtime status is
+    // still unavailable; that is not proof that these metrics were loaded.
     final hasRealtimeStatus = context.select<StatusViewModel, bool>(
       (provider) => provider.getRealtimeStatus != null,
     );
