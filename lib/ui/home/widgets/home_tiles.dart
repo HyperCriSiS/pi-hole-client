@@ -15,10 +15,33 @@ import 'package:pi_hole_client/utils/conversions.dart';
 import 'package:provider/provider.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
-const _fakeTotal = 12345;
-const _fakeblocked = 1234;
-const _fakePercentage = 12.34;
-const _fakeDomains = 123456;
+// Values used *only* inside the initial Skeletonizer placeholders.
+// Never display synthetic statistics when a server result is unavailable.
+const _skeletonTotal = 12345;
+const _skeletonBlocked = 1234;
+const _skeletonPercentage = 12.34;
+const _skeletonDomains = 123456;
+
+const _unavailableValue = '—';
+
+String _displayCount(
+  int? value,
+  String locale, {
+  required bool showSkeleton,
+  required int skeletonValue,
+}) {
+  if (value == null && !showSkeleton) return _unavailableValue;
+  return intFormat(value ?? skeletonValue, locale);
+}
+
+String _displayPercentage(
+  double? value,
+  String locale, {
+  required bool showSkeleton,
+}) {
+  if (value == null && !showSkeleton) return _unavailableValue;
+  return '${formatPercentage(value ?? _skeletonPercentage, locale)}%';
+}
 
 /// A widget that displays a set of summary tiles on the home screen, each showing
 /// a different Pi-hole status metric (total queries, queries blocked, percentage blocked,
@@ -43,7 +66,13 @@ class HomeTiles extends StatelessWidget {
     final statusLoading = context.select<StatusViewModel, LoadStatus>(
       (provider) => provider.getStatusLoading,
     );
-    final isLoading = statusLoading == LoadStatus.loading;
+    // Keep real cached values visible during revalidation. Only show a
+    // skeleton for the first request before any realtime status exists.
+    final hasRealtimeStatus = context.select<StatusViewModel, bool>(
+      (provider) => provider.getRealtimeStatus != null,
+    );
+    final showSkeleton =
+        statusLoading == LoadStatus.loading && !hasRealtimeStatus;
 
     final locale = Platform.localeName;
     final theme = Theme.of(context).extension<DataVisColors>()!;
@@ -52,7 +81,7 @@ class HomeTiles extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8),
       child: Skeletonizer(
-        enabled: isLoading,
+        enabled: showSkeleton,
         effect: ShimmerEffect(
           baseColor: Colors.white.withValues(alpha: 0.4),
           highlightColor: Colors.white.withValues(alpha: 0.8),
@@ -67,10 +96,11 @@ class HomeTiles extends StatelessWidget {
               label: loc.totalQueries,
               valueSelector: (context) {
                 return context.select<StatusViewModel, String>(
-                  (provider) => intFormat(
-                    provider.getRealtimeStatus?.summary.dnsQueriesToday ??
-                        _fakeTotal,
+                  (provider) => _displayCount(
+                    provider.getRealtimeStatus?.summary.dnsQueriesToday,
                     locale,
+                    showSkeleton: showSkeleton,
+                    skeletonValue: _skeletonTotal,
                   ),
                 );
               },
@@ -94,10 +124,11 @@ class HomeTiles extends StatelessWidget {
               label: loc.queriesBlocked,
               valueSelector: (context) {
                 return context.select<StatusViewModel, String>(
-                  (provider) => intFormat(
-                    provider.getRealtimeStatus?.summary.adsBlockedToday ??
-                        _fakeblocked,
+                  (provider) => _displayCount(
+                    provider.getRealtimeStatus?.summary.adsBlockedToday,
                     locale,
+                    showSkeleton: showSkeleton,
+                    skeletonValue: _skeletonBlocked,
                   ),
                 );
               },
@@ -115,8 +146,11 @@ class HomeTiles extends StatelessWidget {
               label: loc.percentageBlocked,
               valueSelector: (context) {
                 return context.select<StatusViewModel, String>(
-                  (provider) =>
-                      '${formatPercentage(provider.getRealtimeStatus?.summary.adsPercentageToday ?? _fakePercentage, locale)}%',
+                  (provider) => _displayPercentage(
+                    provider.getRealtimeStatus?.summary.adsPercentageToday,
+                    locale,
+                    showSkeleton: showSkeleton,
+                  ),
                 );
               },
               width: width,
@@ -133,10 +167,11 @@ class HomeTiles extends StatelessWidget {
               label: loc.domainsAdlists,
               valueSelector: (context) {
                 return context.select<StatusViewModel, String>(
-                  (provider) => intFormat(
-                    provider.getRealtimeStatus?.summary.domainsBeingBlocked ??
-                        _fakeDomains,
+                  (provider) => _displayCount(
+                    provider.getRealtimeStatus?.summary.domainsBeingBlocked,
                     locale,
+                    showSkeleton: showSkeleton,
+                    skeletonValue: _skeletonDomains,
                   ),
                 );
               },
