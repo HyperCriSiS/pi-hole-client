@@ -39,6 +39,14 @@ Updated: 2026-10-10
 5. Device/distribution holds: #442 Android 16 PopupMenu; #636 Android 17 self-signed TLS with App Log; #501 tablet/widget layout; #293 secure-storage migration; #686 keyboard layout; #741 Android 17 Impeller/Vulkan; #134 final independent application ID/name/icon and F-Droid publication.
 6. Maintain full Dart, unsigned Android artifact/signature verification, static analyses, Sonar, Codecov and CodeQL checks for application changes on the exact final HEAD. Docs-only changes can use the repository's lighter workflow.
 
+## Fork identity archival and throughput decision (2026-10-10)
+
+- User preference: hold independent app branding/publication while exploring collaboration with active upstream maintainer. Do not further develop app-ID migration tools unless a separate release is explicitly approved.
+- Optional toolkit relocated from `tools/identity/` to `tools/archive/fork-identity/`: app identity config/audit, migration, local F-Droid App ID collision checker and both standalone tests. This tooling is parked and should not run on every Android PR.
+- The active F-Droid-compatible source-build path, free QR scanner, `tools/prepare_fdroid_source_build.dart`, and unsigned APK/artifact verification are **not** archived or disabled.
+- Speed-up policy: batch related low-risk UI changes into one tested PR rather than separate full builds, run focused checks before pushing, retain the final exact-HEAD gates, skip archived/docs-only PRs in expensive Flutter/Android CI, and avoid repeated no-op CI polling. Do not bundle credential/security changes with UI or platform migration.
+- CI on the archive/refactor PR still needs to pass; never record an unvalidated merge as completed.
+
 ## Resume instructions
 
 Read this file, root `ROADMAP.md` (authoritative), `UPSTREAM_TRIAGE.md`, `AGENTS.md` and relevant architecture before starting; verify live `main`/open PR/CI status. Keep commits and CI queries targeted, no tight polling. Prefer a fresh conversation when tool history grows; add a compact checkpoint after larger finished work.

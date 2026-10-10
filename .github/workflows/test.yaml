@@ -8,12 +8,16 @@ on:
       - 'website/**'
       - 'docs/**'
       - 'ROADMAP.md'
+      - 'AGENTS.md'
+      - 'tools/archive/**'
       - 'UPSTREAM_TRIAGE.md'
   pull_request:
     paths-ignore:
       - 'website/**'
       - 'docs/**'
       - 'ROADMAP.md'
+      - 'AGENTS.md'
+      - 'tools/archive/**'
       - 'UPSTREAM_TRIAGE.md'
 
 env:
