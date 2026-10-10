@@ -26,6 +26,7 @@ class LogsContentView extends StatelessWidget {
     required this.logs,
     required this.isLoadingMore,
     required this.isRevalidating,
+    required this.hasRevalidationError,
     required this.onRefresh,
     required this.onLogTap,
     required this.selectedLog,
@@ -38,6 +39,7 @@ class LogsContentView extends StatelessWidget {
   final List<Log> logs;
   final bool isLoadingMore;
   final bool isRevalidating;
+  final bool hasRevalidationError;
   final Future<void> Function() onRefresh;
   final void Function(Log) onLogTap;
   final Log? selectedLog;
@@ -73,6 +75,27 @@ class LogsContentView extends StatelessWidget {
         return Column(
           children: [
             if (isRevalidating) const LinearProgressIndicator(),
+            if (hasRevalidationError && !isRevalidating)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.warning_amber_rounded,
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        AppLocalizations.of(context)!.couldntLoadLogs,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             Expanded(
               child: RefreshIndicator(
                 onRefresh: onRefresh,
