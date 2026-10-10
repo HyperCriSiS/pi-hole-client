@@ -131,7 +131,7 @@ def update_env_text(current_text: str, current: Identity, new: Identity, path: P
 
 def plan_migration(repo_root: Path, new_identity: Identity) -> MigrationPlan:
     repo_root = repo_root.resolve()
-    config = repo_root / "tools/identity/android-identity.env"
+    config = repo_root / "tools/archive/fork-identity/android-identity.env"
     if not config.is_file():
         raise ValueError(f"Identity config not found: {config}")
 
@@ -296,7 +296,7 @@ def apply_plan(repo_root: Path, plan: MigrationPlan) -> None:
 
 def run_audit(repo_root: Path) -> None:
     subprocess.run(
-        ["bash", "tools/identity/audit_android_identity.sh"],
+        ["bash", "tools/archive/fork-identity/audit_android_identity.sh"],
         cwd=repo_root,
         check=True,
     )
@@ -338,7 +338,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--repo-root",
         type=Path,
-        default=Path(__file__).resolve().parents[2],
+        default=Path(__file__).resolve().parents[3],
         help=argparse.SUPPRESS,
     )
     return parser

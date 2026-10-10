@@ -2,7 +2,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 CONFIG_FILE="${ANDROID_IDENTITY_CONFIG:-$SCRIPT_DIR/android-identity.env}"
 
 if [[ ! -f "$CONFIG_FILE" ]]; then
@@ -152,7 +152,7 @@ for asset in "${launcher_assets[@]}"; do
 done
 
 if [[ -n "$FORBIDDEN_APPLICATION_IDS" ]]; then
-  scan_paths=(android .github/workflows tools/identity/android-identity.env)
+  scan_paths=(android .github/workflows)
   for forbidden_id in $FORBIDDEN_APPLICATION_IDS; do
     [[ -n "$forbidden_id" ]] || continue
     [[ "$forbidden_id" != "$EXPECTED_APPLICATION_ID" ]] \

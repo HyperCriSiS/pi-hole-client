@@ -47,6 +47,16 @@ that an in-repository metadata file has already been accepted by F-Droid.
 A downstream build entry should be proposed only after all eligibility blockers
 below are resolved and should reference an immutable commit.
 
+## Parked independent-fork tooling
+
+The Android application-ID migration, static identity audit, and F-Droid ID-collision
+checker are **not needed for an official upstream F-Droid build** and have been
+moved to [`tools/archive/fork-identity/`](../tools/archive/fork-identity/README.md).
+They are retained, but deliberately excluded from normal Android CI until a
+separate fork publication is explicitly chosen. Their tests can still be run
+manually as documented in that directory. The active source-build/SQLite helper
+remains at `tools/prepare_fdroid_source_build.dart` and continues to run in CI.
+
 ## Remaining eligibility blockers
 
 ### Android QR scanner

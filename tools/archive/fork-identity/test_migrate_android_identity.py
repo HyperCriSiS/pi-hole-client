@@ -34,7 +34,7 @@ class AndroidIdentityMigratorTest(unittest.TestCase):
 
     def _write_fixture(self) -> None:
         self._write(
-            "tools/identity/android-identity.env",
+            "tools/archive/fork-identity/android-identity.env",
             "\n".join(
                 [
                     f"ANDROID_APPLICATION_ID='{OLD_ID}'",
@@ -100,7 +100,7 @@ class AndroidIdentityMigratorTest(unittest.TestCase):
         self.assertTrue(
             (self.root / f"android/app/src/main/kotlin/{OLD_ID.replace('.', '/')}/MainActivity.kt").exists()
         )
-        config = (self.root / "tools/identity/android-identity.env").read_text()
+        config = (self.root / "tools/archive/fork-identity/android-identity.env").read_text()
         self.assertIn(OLD_ID, config)
         self.assertNotIn(NEW_ID, config)
 
@@ -121,7 +121,7 @@ class AndroidIdentityMigratorTest(unittest.TestCase):
         self.assertIn(f"{NEW_ID}.widget.REFRESH", widget.read_text())
         self.assertNotIn(OLD_ID, widget.read_text())
 
-        config = (self.root / "tools/identity/android-identity.env").read_text()
+        config = (self.root / "tools/archive/fork-identity/android-identity.env").read_text()
         self.assertIn(f"ANDROID_APPLICATION_ID={NEW_ID}", config)
         self.assertIn(f"ANDROID_FORBIDDEN_APPLICATION_IDS={OLD_ID}", config)
 
