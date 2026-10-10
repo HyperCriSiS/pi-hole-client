@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:command_it/command_it.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pi_hole_client/domain/model/group/group.dart';
+import 'package:result_dart/result_dart.dart';
 import 'package:pi_hole_client/domain/model/enums.dart';
 import 'package:pi_hole_client/ui/settings/server_settings/group_client/view_models/groups_viewmodel.dart';
 
@@ -34,6 +38,47 @@ void main() {
       expect(viewModel.searchMode, false);
       expect(viewModel.groupItems, {});
       expect(listenerCalled, false);
+    });
+
+    test('retains successful cache during refresh, failure and recovery', () async {
+      await viewModel.loadGroups.runAsync();
+      expect(viewModel.hasSuccessfulLoad, isTrue);
+      final prior = List<Group>.of(viewModel.groups);
+      final pending = Completer<Result<List<Group>>>();
+      fakeGroupRepository.fetchGroupsOverride = () => pending.future;
+
+      final refresh = viewModel.loadGroups.runAsync();
+      expect(viewModel.loadingStatus, LoadStatus.loaded);
+      expect(viewModel.isRevalidating, isTrue);
+      expect(viewModel.groups, prior);
+
+      pending.complete(Failure(Exception('refresh unavailable')));
+      await expectLater(refresh, throwsA(isA<Exception>()));
+
+      expect(viewModel.loadingStatus, LoadStatus.loaded);
+      expect(viewModel.hasRevalidationError, isTrue);
+      expect(viewModel.isRevalidating, isFalse);
+      expect(viewModel.groups, prior);
+
+      fakeGroupRepository.fetchGroupsOverride = null;
+      await viewModel.loadGroups.runAsync();
+      expect(viewModel.groups, prior);
+      expect(viewModel.hasRevalidationError, isFalse);
+    });
+
+    test('successful empty cache is retained after refresh failure', () async {
+      fakeGroupRepository.fetchGroupsOverride =
+          () async => const Success<List<Group>>([]);
+      await viewModel.loadGroups.runAsync();
+      expect(viewModel.groups, isEmpty);
+      expect(viewModel.hasSuccessfulLoad, isTrue);
+
+      fakeGroupRepository.fetchGroupsOverride =
+          () async => Failure(Exception('offline'));
+      await expectLater(viewModel.loadGroups.runAsync(), throwsA(isA<Exception>()));
+      expect(viewModel.loadingStatus, LoadStatus.loaded);
+      expect(viewModel.groups, isEmpty);
+      expect(viewModel.hasRevalidationError, isTrue);
     });
 
     test('setSearchMode updates search mode', () {

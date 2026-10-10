@@ -252,10 +252,18 @@ class _GroupsListState extends State<GroupsList> {
             ),
           ),
           loadStatus: groupsViewModel.loadingStatus,
-          onRefresh: () => refreshWithTotpRecovery(
-            context,
-            groupsViewModel.loadGroups.runAsync,
-          ),
+          isRevalidating: groupsViewModel.isRevalidating,
+          revalidationErrorMessage:
+              groupsViewModel.hasRevalidationError
+              ? AppLocalizations.of(context)!.groupsNotLoaded
+              : null,
+          onRefresh: () async {
+            if (groupsViewModel.loadGroups.isRunning.value) return;
+            await refreshWithTotpRecovery(
+              context,
+              groupsViewModel.loadGroups.runAsync,
+            );
+          },
           bottomSpaceHeight: 80,
         ),
         SafeArea(

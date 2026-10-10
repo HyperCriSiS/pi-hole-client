@@ -21,6 +21,8 @@ class CustomTabContentList extends StatelessWidget {
     required this.errorGenerator,
     required this.loadStatus,
     required this.onRefresh,
+    this.isRevalidating = false,
+    this.revalidationErrorMessage,
     this.bottomSpaceHeight = 0,
     super.key,
   });
@@ -45,6 +47,12 @@ class CustomTabContentList extends StatelessWidget {
 
   /// A callback function triggered by pull-to-refresh.
   final Future<void> Function() onRefresh;
+
+  /// Show lightweight progress while retaining previously loaded data.
+  final bool isRevalidating;
+
+  /// Localized stale-data warning shown only when cached data is retained.
+  final String? revalidationErrorMessage;
 
   /// Optional space to add at the bottom of the scroll view. Default is 0 (no space).
   final double bottomSpaceHeight;
@@ -85,26 +93,57 @@ class CustomTabContentList extends StatelessWidget {
         return SafeArea(
           top: false,
           bottom: false,
-          child: RefreshIndicator(
-            onRefresh: onRefresh,
-            edgeOffset: 95,
-            child: CustomScrollView(
-              slivers: <Widget>[
-                _safeOverlapInjector(context),
-                if (itemsCount > 0)
-                  SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) => contentWidget(index),
-                      childCount: itemsCount,
-                    ),
+          child: Column(
+            children: [
+              if (isRevalidating) const LinearProgressIndicator(),
+              if (revalidationErrorMessage != null && !isRevalidating)
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
                   ),
-                if (itemsCount == 0) SliverFillRemaining(child: noData),
-                if (bottomSpaceHeight > 0)
-                  SliverToBoxAdapter(
-                    child: SizedBox(height: bottomSpaceHeight),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.warning_amber_rounded,
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          revalidationErrorMessage!,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-              ],
-            ),
+                ),
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: onRefresh,
+                  edgeOffset: 95,
+                  child: CustomScrollView(
+                    slivers: <Widget>[
+                      _safeOverlapInjector(context),
+                      if (itemsCount > 0)
+                        SliverList(
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) => contentWidget(index),
+                            childCount: itemsCount,
+                          ),
+                        ),
+                      if (itemsCount == 0) SliverFillRemaining(child: noData),
+                      if (bottomSpaceHeight > 0)
+                        SliverToBoxAdapter(
+                          child: SizedBox(height: bottomSpaceHeight),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         );
 

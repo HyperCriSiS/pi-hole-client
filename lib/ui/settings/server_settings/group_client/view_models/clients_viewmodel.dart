@@ -51,6 +51,8 @@ class ClientsViewModel extends ChangeNotifier {
 
   // --- State ---
   List<ManagedClient> _clients = [];
+  // Distinguishes a successful empty result from an uninitialized cache.
+  bool _hasSuccessfulLoad = false;
   List<ManagedClient> _filteredClients = [];
   Map<String, String> _ipToMac = {};
   Map<int, String> _groupNames = {};
@@ -59,11 +61,19 @@ class ClientsViewModel extends ChangeNotifier {
 
   // --- Getters ---
   List<ManagedClient> get clients => _clients;
+  bool get hasSuccessfulLoad => _hasSuccessfulLoad;
+  bool get isRevalidating => _hasSuccessfulLoad && loadClients.isRunning.value;
+  bool get hasRevalidationError =>
+      _hasSuccessfulLoad &&
+      !loadClients.isRunning.value &&
+      loadClients.errors.value != null;
   List<ManagedClient> get filteredClients => _filteredClients;
   String get searchTerm => _searchTerm;
   bool get searchMode => _searchMode;
 
   LoadStatus get loadingStatus {
+    // Keep last known data (including a successful empty list) on reload.
+    if (_hasSuccessfulLoad) return LoadStatus.loaded;
     if (loadClients.isRunning.value) return LoadStatus.loading;
     if (loadClients.errors.value != null) return LoadStatus.error;
     return LoadStatus.loaded;
@@ -94,6 +104,7 @@ class ClientsViewModel extends ChangeNotifier {
     switch (result) {
       case Success():
         _clients = result.getOrNull();
+        _hasSuccessfulLoad = true;
         _applyFilters();
         notifyListeners();
       case Failure():
