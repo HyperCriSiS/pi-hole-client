@@ -83,14 +83,11 @@ void main() async {
       expect(find.text('server1'), findsOneWidget);
 
       fakeLocalDnsRepository.shouldFail = true;
-      await tester.runAsync(() async {
-        try {
-          await viewModel.loadRecords.runAsync();
-        } catch (_) {
-          // Command exposes its failure through errors for the screen.
-        }
-      });
+      // Avoid awaiting a Command inside tester.runAsync while widgets listen:
+      // the fake-async event loop must be driven by the widget tester.
+      viewModel.loadRecords.run();
       await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
 
       expect(find.text('server1'), findsOneWidget);
       expect(
@@ -101,8 +98,9 @@ void main() async {
       expect(viewModel.hasLoadedSuccessfully, isTrue);
 
       fakeLocalDnsRepository.shouldFail = false;
-      await viewModel.loadRecords.runAsync();
+      viewModel.loadRecords.run();
       await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
 
       expect(find.text('server1'), findsOneWidget);
       expect(

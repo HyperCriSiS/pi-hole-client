@@ -127,14 +127,11 @@ void main() async {
       expect(find.text('eth0 - UP'), findsOneWidget);
 
       fakeNetworkRepository.shouldFail = true;
-      await tester.runAsync(() async {
-        try {
-          await viewModel.loadInterfaces.runAsync();
-        } catch (_) {
-          // Command exposes its failure through errors for the screen.
-        }
-      });
+      // Avoid awaiting a Command inside tester.runAsync while widgets listen:
+      // the fake-async event loop must be driven by the widget tester.
+      viewModel.loadInterfaces.run();
       await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
 
       expect(find.text('eth0 - UP'), findsOneWidget);
       expect(
@@ -145,8 +142,9 @@ void main() async {
       expect(viewModel.hasLoadedSuccessfully, isTrue);
 
       fakeNetworkRepository.shouldFail = false;
-      await viewModel.loadInterfaces.runAsync();
+      viewModel.loadInterfaces.run();
       await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
 
       expect(find.text('eth0 - UP'), findsOneWidget);
       expect(

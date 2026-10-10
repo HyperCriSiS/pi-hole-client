@@ -134,14 +134,11 @@ void main() async {
       expect(find.text('192.168.0.31'), findsOneWidget);
 
       fakeAuthRepository.shouldFail = true;
-      await tester.runAsync(() async {
-        try {
-          await viewModel.loadSessions.runAsync();
-        } catch (_) {
-          // Command exposes its failure through errors for the screen.
-        }
-      });
+      // Avoid awaiting a Command inside tester.runAsync while widgets listen:
+      // the fake-async event loop must be driven by the widget tester.
+      viewModel.loadSessions.run();
       await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
 
       expect(find.text('192.168.0.31'), findsOneWidget);
       expect(
@@ -152,8 +149,9 @@ void main() async {
       expect(viewModel.hasLoadedSuccessfully, isTrue);
 
       fakeAuthRepository.shouldFail = false;
-      await viewModel.loadSessions.runAsync();
+      viewModel.loadSessions.run();
       await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
 
       expect(find.text('192.168.0.31'), findsOneWidget);
       expect(
