@@ -16,9 +16,13 @@ The fork still has a concrete gap:
 - In `AddServerFullscreen._loadSecrets()`, a failed fetch completes the loading flag, enabling Save even though the credentials were never recovered.
 - The existing `secretsLoadSucceeded` rollback safeguard avoids one specific destructive restore but does **not** prevent a save using empty placeholders.
 
-**Status: candidate fix on `fix/766-safe-credential-load`; do not mark resolved until exact-HEAD CI passes and the PR merges.**
+**Status: resolved in the fork via PR #183**, squash `c14069103475160356d7e88be7643958c9da584e` (final tested HEAD `8fc0be0c`). Exact-HEAD full Dart tests, unsigned Android release source build + artefact verification, CodeQL, Sonar, Codecov and static checks passed. No physical Android keystore failure reproduced.
 
-## Required bounded remediation
+## Implementation result
+
+The original failure analysis above is preserved for history; it describes the **pre-fix** state. The fork now distinguishes absent optional credentials from real secure-storage failures, propagates failed reads, disables Save during/after failed loads, and exposes a localized explicit retry that retains drafts until successful retrieval. Existing `_SaveAttempt` and `secretsLoadSucceeded` rollback, TOTP and shared diagnostic redaction remain unchanged. Added service, repository and widget regressions; full CI passed on final PR HEAD. See `docs/AI_SESSION_STATE.md` for the current handoff.
+
+## Required bounded remediation (completed)
 
 1. Preserve the fork's centralized secret-redacting App Log / diagnostic behavior, while distinguishing a key that is genuinely absent from a read/decryption failure without logging key contents, token, SID or password.
 2. In `fetchCredentials()`, only absent values may map to empty credentials; propagate real read failures.
