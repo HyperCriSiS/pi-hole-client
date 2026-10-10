@@ -5,12 +5,13 @@ Updated: 2026-10-10
 ## Current integrated baseline
 
 - Repository: `HyperCriSiS/pi-hole-client`. `main` is the canonical integration branch; use task-specific branches and PRs with exact-HEAD checks.
-- **Latest validated application merge:** upstream #766 credential-read safety fix, PR #183 squash `c14069103475160356d7e88be7643958c9da584e`, final feature HEAD `8fc0be0c4df7ca42b8d615d99f2a1ca44473ca1d`.
-- Other #720 completed slices:
+- **Latest validated application merge:** #720 remaining Settings revalidation PR #185 squash `ad1a19411dd7e080d975d13a9f7151ec9ff012e3` (final PR HEAD `89b951552406d5c55be77bf4658e9ad7ea407362`). Previous security fix: PR #183 squash `c14069103475160356d7e88be7643958c9da584e`.
+- #720 completed Settings slices:
   - PR #176 Server Info: `6728a230156ff1f1e30174f68c0599cd6de892da` (HEAD `2d4f1eeb`). Preserves last good server data/capabilities, progress indicator, stale-data warning after failure; initial skeleton/error states unchanged.
   - PR #177 DHCP leases: `2b60914a087ae9b7746bc327b03811626b87d50b` (HEAD `9fa28613`). Successful leases/client IP retained during manual refresh; progress/stale warning; successful-empty tracked separately from initial placeholder; duplicate refresh disabled.
   - PR #178 Network devices: `d610ad8ecf700ef4e79bf072240b3920541c183e` (HEAD `0b8a731a`). Equivalent bounded Network-device refresh preservation.
-- All three feature PR HEADs passed full Dart tests, Sonar, Codecov, CodeQL, static analyses, unsigned Android source APK build and **Verify unsigned release artifact** before merge. No live Pi-hole/server/device smoke is claimed.
+  - PR #185 Sessions, Interfaces and Local DNS: `ad1a19411dd7e080d975d13a9f7151ec9ff012e3` (HEAD `89b951552406d5c55be77bf4658e9ad7ea407362`). Preserves successful loaded content, including empty responses, on explicit revalidation and failure; lightweight refresh progress, localized stale warning, duplicate refresh guard; retains original first-load states and #748 TOTP/deletion/CRUD behavior. Three sections covered with ViewModel/widget regressions.
+- PRs #176, #177, #178 and #185 each passed full Dart tests, Sonar, Codecov, CodeQL, static analyses, unsigned Android source APK build and **Verify unsigned release artifact** on their final HEAD before merge. For #185 the release artifact verification succeeded on workflow run 38069751644. No live Pi-hole/server/device smoke is claimed. No live Pi-hole/server/device smoke is claimed.
 - PR #179 docs/upstream audit merged as `c7110c81906c511630ef4336375e0cd96601fb50`: `docs/maintenance/upstream-credential-load-2026-10-10.md`, plus compact session checkpoint. GitHub Issues are disabled in this fork (HTTP 410).
 
 ## Completed architecture foundations / boundaries
@@ -32,8 +33,8 @@ Updated: 2026-10-10
 
 ## Remaining roadmap and external validation
 
-1. **Next:** batch remaining #720 Settings revalidation for Sessions, Interfaces, Local DNS into a coherent UI PR with retained loaded content, lightweight explicit-refresh progress and failure/retry regressions. Keep initial loads separate and preserve #748 TOTP boundaries.
-2. Continue #720 loading/revalidation across Sessions, Local DNS, Interfaces and other screens after preserving first-load skeletons, manual cached refresh and nonblocking background behavior. Do not mark #720 globally complete yet.
+1. **Next:** audit non-Settings #720 surfaces (Home, Logs, Groups/Clients and other screens), prioritizing reproducible content loss on manual refresh over cosmetic skeleton conversions. Make the next change as a bounded slice with deterministic tests. Do not mark #720 globally complete; all six identified Settings sections have now been covered.
+2. Preserve initial-load structural placeholders, cached manual revalidation, and non-interactive/background refresh separately, with no new automatic TOTP dialogs or auth/session logic.
 3. Then evaluate power-user roadmap: multi-Pi-hole dashboard, cross-server quick actions, saved Log Explorer filters and OpenAPI-spec drift reporting.
 4. Optional separate smoke: `mock_api_server --fail all` / `--fail auth/sessions`, real-server Gravity/proxy diagnostics; lack of reproduction is not resolution.
 5. Device/distribution holds: #442 Android 16 PopupMenu; #636 Android 17 self-signed TLS with App Log; #501 tablet/widget layout; #293 secure-storage migration; #686 keyboard layout; #741 Android 17 Impeller/Vulkan; #134 final independent application ID/name/icon and F-Droid publication.
