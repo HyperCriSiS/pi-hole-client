@@ -126,7 +126,11 @@ void main() async {
         tester.view.resetDevicePixelRatio();
       });
 
-      await viewModel.loadSessions.runAsync();
+      await tester.runAsync(() async {
+        await viewModel.loadSessions.runAsync().timeout(
+          const Duration(seconds: 8),
+        );
+      });
       await tester.pumpWidget(
         buildTestApp(SessionsScreen(viewModel: viewModel)),
       );
@@ -134,11 +138,16 @@ void main() async {
       expect(find.text('192.168.0.31'), findsOneWidget);
 
       fakeAuthRepository.shouldFail = true;
-      // Avoid awaiting a Command inside tester.runAsync while widgets listen:
-      // the fake-async event loop must be driven by the widget tester.
-      viewModel.loadSessions.run();
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 200));
+      await tester.runAsync(() async {
+        try {
+          await viewModel.loadSessions.runAsync().timeout(
+            const Duration(seconds: 8),
+          );
+        } catch (_) {
+          // Command exposes its failure through errors for the screen.
+        }
+      });
+      await tester.pumpAndSettle();
 
       expect(find.text('192.168.0.31'), findsOneWidget);
       expect(
@@ -149,9 +158,12 @@ void main() async {
       expect(viewModel.hasLoadedSuccessfully, isTrue);
 
       fakeAuthRepository.shouldFail = false;
-      viewModel.loadSessions.run();
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 200));
+      await tester.runAsync(() async {
+        await viewModel.loadSessions.runAsync().timeout(
+          const Duration(seconds: 8),
+        );
+      });
+      await tester.pumpAndSettle();
 
       expect(find.text('192.168.0.31'), findsOneWidget);
       expect(

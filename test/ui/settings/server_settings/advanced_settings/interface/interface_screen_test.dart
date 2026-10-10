@@ -119,7 +119,11 @@ void main() async {
         tester.view.resetDevicePixelRatio();
       });
 
-      await viewModel.loadInterfaces.runAsync();
+      await tester.runAsync(() async {
+        await viewModel.loadInterfaces.runAsync().timeout(
+          const Duration(seconds: 8),
+        );
+      });
       await tester.pumpWidget(
         buildTestApp(InterfaceScreen(viewModel: viewModel)),
       );
@@ -127,11 +131,16 @@ void main() async {
       expect(find.text('eth0 - UP'), findsOneWidget);
 
       fakeNetworkRepository.shouldFail = true;
-      // Avoid awaiting a Command inside tester.runAsync while widgets listen:
-      // the fake-async event loop must be driven by the widget tester.
-      viewModel.loadInterfaces.run();
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 200));
+      await tester.runAsync(() async {
+        try {
+          await viewModel.loadInterfaces.runAsync().timeout(
+            const Duration(seconds: 8),
+          );
+        } catch (_) {
+          // Command exposes its failure through errors for the screen.
+        }
+      });
+      await tester.pumpAndSettle();
 
       expect(find.text('eth0 - UP'), findsOneWidget);
       expect(
@@ -142,9 +151,12 @@ void main() async {
       expect(viewModel.hasLoadedSuccessfully, isTrue);
 
       fakeNetworkRepository.shouldFail = false;
-      viewModel.loadInterfaces.run();
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 200));
+      await tester.runAsync(() async {
+        await viewModel.loadInterfaces.runAsync().timeout(
+          const Duration(seconds: 8),
+        );
+      });
+      await tester.pumpAndSettle();
 
       expect(find.text('eth0 - UP'), findsOneWidget);
       expect(
