@@ -4,11 +4,13 @@ import 'package:result_dart/result_dart.dart';
 
 class FakeGroupRepository implements GroupRepository {
   bool shouldFail = false;
+  Future<Result<List<Group>>> Function()? fetchGroupsOverride;
 
   final _now = DateTime(2025, 1, 1);
 
   @override
   Future<Result<List<Group>>> fetchGroups() async {
+    if (fetchGroupsOverride != null) return fetchGroupsOverride!();
     if (shouldFail) {
       return Failure(Exception('Force fetchGroups failure'));
     }

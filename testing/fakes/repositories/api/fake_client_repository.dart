@@ -4,11 +4,13 @@ import 'package:result_dart/result_dart.dart';
 
 class FakeClientRepository implements ClientRepository {
   bool shouldFail = false;
+  Future<Result<List<ManagedClient>>> Function()? fetchClientsOverride;
 
   final _now = DateTime(2025, 1, 1);
 
   @override
   Future<Result<List<ManagedClient>>> fetchClients() async {
+    if (fetchClientsOverride != null) return fetchClientsOverride!();
     if (shouldFail) {
       return Failure(Exception('Force fetchClients failure'));
     }

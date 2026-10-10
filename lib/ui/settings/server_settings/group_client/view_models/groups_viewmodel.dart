@@ -39,12 +39,20 @@ class GroupsViewModel extends ChangeNotifier {
 
   // --- State ---
   List<Group> _groups = [];
+  // Distinguishes a successful empty result from an uninitialized cache.
+  bool _hasSuccessfulLoad = false;
   List<Group> _filteredGroups = [];
   String _searchTerm = '';
   bool _searchMode = false;
 
   // --- Getters ---
   List<Group> get groups => _groups;
+  bool get hasSuccessfulLoad => _hasSuccessfulLoad;
+  bool get isRevalidating => _hasSuccessfulLoad && loadGroups.isRunning.value;
+  bool get hasRevalidationError =>
+      _hasSuccessfulLoad &&
+      !loadGroups.isRunning.value &&
+      loadGroups.errors.value != null;
   List<Group> get filteredGroups => _filteredGroups;
   String get searchTerm => _searchTerm;
   bool get searchMode => _searchMode;
@@ -54,6 +62,8 @@ class GroupsViewModel extends ChangeNotifier {
   }
 
   LoadStatus get loadingStatus {
+    // Keep last known data (including a successful empty list) on reload.
+    if (_hasSuccessfulLoad) return LoadStatus.loaded;
     if (loadGroups.isRunning.value) return LoadStatus.loading;
     if (loadGroups.errors.value != null) return LoadStatus.error;
     return LoadStatus.loaded;
@@ -65,6 +75,7 @@ class GroupsViewModel extends ChangeNotifier {
     switch (result) {
       case Success():
         _groups = result.getOrNull();
+        _hasSuccessfulLoad = true;
         _applyFilters();
         notifyListeners();
       case Failure():

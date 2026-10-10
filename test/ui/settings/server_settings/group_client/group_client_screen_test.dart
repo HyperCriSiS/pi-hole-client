@@ -347,6 +347,52 @@ void main() async {
       expect(find.byType(DeleteModal), findsOneWidget);
     });
 
+    testWidgets('Groups keep cached content and show a stale warning on failed refresh', (
+      WidgetTester tester,
+    ) async {
+      tester.view.physicalSize = const Size(1200, 900);
+      tester.view.devicePixelRatio = 1;
+      final controller = ScrollController();
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+        controller.dispose();
+      });
+
+      groupsViewModel.loadGroups.run();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+      await tester.pumpWidget(
+        buildWidget(
+          GroupsList(
+            scrollController: controller,
+            searchTerm: '',
+            selectedGroup: null,
+            onGroupSelected: (_) {},
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(find.text('Default'), findsOneWidget);
+
+      fakeGroupRepository.shouldFail = true;
+      groupsViewModel.loadGroups.run();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+      await tester.pump();
+
+      expect(find.text('Default'), findsOneWidget);
+      expect(find.byIcon(Icons.warning_amber_rounded), findsOneWidget);
+
+      fakeGroupRepository.shouldFail = false;
+      groupsViewModel.loadGroups.run();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+      await tester.pump();
+      expect(find.byIcon(Icons.warning_amber_rounded), findsNothing);
+      expect(find.text('Default'), findsOneWidget);
+    });
+
     testWidgets('GroupsList filters groups and opens add modal', (
       WidgetTester tester,
     ) async {
@@ -425,6 +471,52 @@ void main() async {
       expect(find.text('Group added successfully'), findsOneWidget);
     });
 
+    testWidgets('Clients keep cached content and show a stale warning on failed refresh', (
+      WidgetTester tester,
+    ) async {
+      tester.view.physicalSize = const Size(1200, 900);
+      tester.view.devicePixelRatio = 1;
+      final controller = ScrollController();
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+        controller.dispose();
+      });
+
+      clientsViewModel.loadClients.run();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+      await tester.pumpWidget(
+        buildWidget(
+          ClientsList(
+            scrollController: controller,
+            onClientSelected: (_) {},
+            selectedClient: null,
+            groups: const {0: 'Default'},
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(find.text('192.168.1.100 (desktop)'), findsOneWidget);
+
+      fakeClientRepository.shouldFail = true;
+      clientsViewModel.loadClients.run();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+      await tester.pump();
+
+      expect(find.text('192.168.1.100 (desktop)'), findsOneWidget);
+      expect(find.byIcon(Icons.warning_amber_rounded), findsOneWidget);
+
+      fakeClientRepository.shouldFail = false;
+      clientsViewModel.loadClients.run();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+      await tester.pump();
+      expect(find.byIcon(Icons.warning_amber_rounded), findsNothing);
+      expect(find.text('192.168.1.100 (desktop)'), findsOneWidget);
+    });
+
     testWidgets('ClientsList shows client tile and opens add modal', (
       WidgetTester tester,
     ) async {
@@ -461,7 +553,6 @@ void main() async {
 
       expect(find.byType(AddClientModal), findsOneWidget);
     });
-
     testWidgets('ClientsList adds client and shows success snackbar', (
       WidgetTester tester,
     ) async {

@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:command_it/command_it.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pi_hole_client/domain/model/client/managed_client.dart';
+import 'package:result_dart/result_dart.dart';
 import 'package:pi_hole_client/domain/model/enums.dart';
 import 'package:pi_hole_client/ui/settings/server_settings/group_client/view_models/clients_viewmodel.dart';
 
@@ -33,6 +37,47 @@ void main() {
       expect(viewModel.searchTerm, '');
       expect(viewModel.searchMode, false);
       expect(listenerCalled, false);
+    });
+
+    test('retains successful cache during refresh, failure and recovery', () async {
+      await viewModel.loadClients.runAsync();
+      expect(viewModel.hasSuccessfulLoad, isTrue);
+      final prior = List<ManagedClient>.of(viewModel.clients);
+      final pending = Completer<Result<List<ManagedClient>>>();
+      fakeClientRepository.fetchClientsOverride = () => pending.future;
+
+      final refresh = viewModel.loadClients.runAsync();
+      expect(viewModel.loadingStatus, LoadStatus.loaded);
+      expect(viewModel.isRevalidating, isTrue);
+      expect(viewModel.clients, prior);
+
+      pending.complete(Failure(Exception('refresh unavailable')));
+      await expectLater(refresh, throwsA(isA<Exception>()));
+
+      expect(viewModel.loadingStatus, LoadStatus.loaded);
+      expect(viewModel.hasRevalidationError, isTrue);
+      expect(viewModel.isRevalidating, isFalse);
+      expect(viewModel.clients, prior);
+
+      fakeClientRepository.fetchClientsOverride = null;
+      await viewModel.loadClients.runAsync();
+      expect(viewModel.clients, prior);
+      expect(viewModel.hasRevalidationError, isFalse);
+    });
+
+    test('successful empty cache is retained after refresh failure', () async {
+      fakeClientRepository.fetchClientsOverride =
+          () async => const Success<List<ManagedClient>, Exception>([]);
+      await viewModel.loadClients.runAsync();
+      expect(viewModel.clients, isEmpty);
+      expect(viewModel.hasSuccessfulLoad, isTrue);
+
+      fakeClientRepository.fetchClientsOverride =
+          () async => Failure(Exception('offline'));
+      await expectLater(viewModel.loadClients.runAsync(), throwsA(isA<Exception>()));
+      expect(viewModel.loadingStatus, LoadStatus.loaded);
+      expect(viewModel.clients, isEmpty);
+      expect(viewModel.hasRevalidationError, isTrue);
     });
 
     test('setSearchMode updates search mode', () {

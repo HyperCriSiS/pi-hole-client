@@ -211,10 +211,18 @@ class _ClientsListState extends State<ClientsList> {
             ),
           ),
           loadStatus: clientsViewModel.loadingStatus,
-          onRefresh: () => refreshWithTotpRecovery(
-            context,
-            clientsViewModel.loadClients.runAsync,
-          ),
+          isRevalidating: clientsViewModel.isRevalidating,
+          revalidationErrorMessage:
+              clientsViewModel.hasRevalidationError
+              ? AppLocalizations.of(context)!.clientsNotLoaded
+              : null,
+          onRefresh: () async {
+            if (clientsViewModel.loadClients.isRunning.value) return;
+            await refreshWithTotpRecovery(
+              context,
+              clientsViewModel.loadClients.runAsync,
+            );
+          },
           bottomSpaceHeight: 80,
         ),
         SafeArea(
