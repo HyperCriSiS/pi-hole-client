@@ -346,6 +346,42 @@ void main() {
       },
     );
 
+    test('successful empty cache survives pending and failed refresh', () async {
+      final empty = DomainLists(
+        allowExact: const [],
+        allowRegex: const [],
+        denyExact: const [],
+        denyRegex: const [],
+      );
+      final repo = _ControllableDomainRepository(empty);
+      final vm = DomainsViewModel(domainRepository: repo);
+      addTearDown(vm.dispose);
+
+      await vm.loadDomains.runAsync();
+      expect(vm.hasLoadedSuccessfully, isTrue);
+      expect(vm.loadingStatus, LoadStatus.loaded);
+      expect(vm.whitelistDomains, isEmpty);
+
+      repo.gate = Completer<void>();
+      final pending = vm.loadDomains.runAsync();
+      await Future<void>.delayed(Duration.zero);
+      expect(vm.isRevalidating, isTrue);
+      expect(vm.loadingStatus, LoadStatus.loaded);
+
+      repo.shouldFail = true;
+      repo.gate!.complete();
+      await expectLater(pending, throwsA(isA<Exception>()));
+      expect(vm.isRevalidating, isFalse);
+      expect(vm.loadingStatus, LoadStatus.loaded);
+      expect(vm.hasLoadedSuccessfully, isTrue);
+
+      repo.shouldFail = false;
+      repo.gate = null;
+      await vm.loadDomains.runAsync();
+      expect(vm.loadDomains.errors.value, isNull);
+      expect(vm.loadingStatus, LoadStatus.loaded);
+    });
+
     test('failed background reload keeps the cached list', () async {
       final repo = _ControllableDomainRepository(_listsWith('cached.com'));
       final vm = DomainsViewModel(domainRepository: repo);
@@ -430,6 +466,7 @@ void main() {
 
       expect(vm.whitelistDomains, isEmpty);
       expect(vm.blacklistDomains, isEmpty);
+      expect(vm.hasLoadedSuccessfully, isFalse);
       expect(vm.filteredWhitelistDomains, isEmpty);
       expect(vm.filteredBlacklistDomains, isEmpty);
       expect(vm.loadingStatus, LoadStatus.loading);

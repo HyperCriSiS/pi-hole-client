@@ -519,6 +519,41 @@ void main() async {
       await tester.pumpAndSettle();
     });
 
+    testWidgets('successful empty Domains refresh keeps empty state and warns on failure', (
+      WidgetTester tester,
+    ) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 2.0;
+      Command.globalExceptionHandler = (_, _) {};
+      addTearDown(() {
+        Command.globalExceptionHandler = null;
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      final repo = _ConfigurableFakeDomainRepository(customAllowExact: []);
+      createViewModels(domainRepository: repo);
+      await pumpAndLoad(tester);
+      expect(domainsViewModel.hasLoadedSuccessfully, isTrue);
+      expect(find.text('Loading domains...'), findsNothing);
+
+      repo.shouldFail = true;
+      domainsViewModel.loadDomains.run();
+      for (var i = 0; i < 4; i++) {
+        await tester.pump(const Duration(milliseconds: 1));
+      }
+      expect(domainsViewModel.loadingStatus, LoadStatus.loaded);
+      expect(find.text("Domains list couldn't be loaded"), findsNothing);
+      expect(find.textContaining('Refresh failed.'), findsWidgets);
+
+      repo.shouldFail = false;
+      domainsViewModel.loadDomains.run();
+      for (var i = 0; i < 4; i++) {
+        await tester.pump(const Duration(milliseconds: 1));
+      }
+      expect(find.textContaining('Refresh failed.'), findsNothing);
+    });
+
     testWidgets('should show loading message', (WidgetTester tester) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 2.0;

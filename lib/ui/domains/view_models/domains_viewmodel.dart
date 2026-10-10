@@ -49,6 +49,7 @@ class DomainsViewModel extends ChangeNotifier {
   LoadStatus _loadingStatus = LoadStatus.loading;
   bool _disposed = false;
   bool _isRevalidating = false;
+  bool _hasLoadedSuccessfully = false;
   int _serverEpoch = 0;
 
   /// Bumped on every locally-confirmed add/delete/update. Used to detect a
@@ -72,6 +73,7 @@ class DomainsViewModel extends ChangeNotifier {
   }
 
   bool get isRevalidating => _isRevalidating;
+  bool get hasLoadedSuccessfully => _hasLoadedSuccessfully;
 
   /// Called by the app-level `ChangeNotifierProxyProvider` whenever the active
   /// [DomainRepository] changes (i.e. the selected server changed).
@@ -97,6 +99,7 @@ class DomainsViewModel extends ChangeNotifier {
   /// Clears the loaded and filtered domain lists (e.g. on a server switch or
   /// before the first load of a server).
   void _resetCache() {
+    _hasLoadedSuccessfully = false;
     _whitelistDomains = [];
     _blacklistDomains = [];
     _filteredWhitelistDomains = [];
@@ -115,8 +118,9 @@ class DomainsViewModel extends ChangeNotifier {
     // background. The full-screen spinner is only shown on the very first load
     // (and after a server switch, where the cache was just cleared), so
     // returning to the Domains tab no longer flashes a spinner.
-    final hasCache =
-        _whitelistDomains.isNotEmpty || _blacklistDomains.isNotEmpty;
+    // An empty response is still a successful cache. Do not replace its
+    // empty-state UI with the first-load spinner or an error on revalidation.
+    final hasCache = _hasLoadedSuccessfully;
 
     if (hasCache) {
       _isRevalidating = true;
@@ -143,6 +147,7 @@ class DomainsViewModel extends ChangeNotifier {
           _blacklistDomains = [...lists.denyExact, ...lists.denyRegex];
           _applyFilters();
         }
+        _hasLoadedSuccessfully = true;
         _loadingStatus = LoadStatus.loaded;
         _isRevalidating = false;
         _safeNotifyListeners();

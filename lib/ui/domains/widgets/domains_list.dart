@@ -278,6 +278,25 @@ class _DomainsListState extends State<DomainsList> {
             right: 0,
             child: LinearProgressIndicator(),
           ),
+        if (viewModel.hasLoadedSuccessfully &&
+            viewModel.loadDomains.errors.value != null)
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Material(
+              color: Theme.of(context).colorScheme.errorContainer,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Text(
+                  AppLocalizations.of(context)!.refreshFailedShowingPrevious,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onErrorContainer,
+                  ),
+                ),
+              ),
+            ),
+          ),
         SafeArea(
           child: Stack(
             children: [
