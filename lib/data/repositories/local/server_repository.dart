@@ -393,7 +393,25 @@ class LocalServerRepository implements ServerRepository {
   ) async {
     try {
       final token = await _secureStorage.getValue('${address}_token');
+      if (token.isError() &&
+          token.exceptionOrNull() is! SecureValueNotFoundException) {
+        return Failure(
+          token.exceptionOrNull() ??
+              Exception('Failed to read stored token credential'),
+        );
+      }
+
       final password = await _secureStorage.getValue('${address}_password');
+      if (password.isError() &&
+          password.exceptionOrNull() is! SecureValueNotFoundException) {
+        return Failure(
+          password.exceptionOrNull() ??
+              Exception('Failed to read stored password credential'),
+        );
+      }
+
+      // Absent optional credentials are valid. Actual read failures must not
+      // be converted into empty placeholders in the server edit form.
       return Success((
         token: token.getOrElse((_) => ''),
         password: password.getOrElse((_) => ''),

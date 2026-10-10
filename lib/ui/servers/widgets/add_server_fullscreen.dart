@@ -82,6 +82,8 @@ class _AddServerFullscreenState extends State<AddServerFullscreen> {
   /// empty placeholders and wipe a credential that is still present. Forwarded
   /// to the view model via [UpdateServerRequest.secretsLoadSucceeded].
   bool _secretsLoadSucceeded = false;
+  bool _secretsLoadFailed = false;
+  bool _secretsLoadInProgress = false;
 
   @override
   void initState() {
@@ -184,38 +186,40 @@ class _AddServerFullscreenState extends State<AddServerFullscreen> {
   );
 
   Future<void> _loadSecrets() async {
-    var password = '';
-    var token = '';
-    var loaded = false;
-    if (widget.server != null) {
-      try {
-        final serversViewModel = context.read<ServersViewModel>();
-        final result = await serversViewModel.fetchCredentials(
-          widget.server!.address,
-        );
-        final creds = result.getOrNull();
-        if (creds != null) {
-          password = creds.password;
-          token = creds.token;
-          loaded = true;
-        }
-      } catch (e) {
-        password = '';
-        token = '';
-      }
+    if (widget.server == null || _secretsLoadInProgress) return;
+
+    _secretsLoadInProgress = true;
+    setState(() {
+      _secretsLoaded = false;
+      _secretsLoadSucceeded = false;
+      _secretsLoadFailed = false;
+    });
+
+    ({String token, String password})? credentials;
+    try {
+      final result = await context.read<ServersViewModel>().fetchCredentials(
+        widget.server!.address,
+      );
+      credentials = result.getOrNull();
+    } catch (_) {
+      // A storage failure is not an absent credential. Keep the form locked
+      // and retain any draft text until the user explicitly retries.
     }
-    // Mark loaded on both the success and failure paths so the Save button is
-    // never permanently disabled if the credential read throws.
-    if (mounted) {
-      setState(() {
-        passwordFieldController.text = password;
-        tokenFieldController.text = token;
-        initToken = token;
-        initPassword = password;
-        _secretsLoadSucceeded = loaded;
+
+    if (!mounted) return;
+    setState(() {
+      _secretsLoadInProgress = false;
+      if (credentials == null) {
+        _secretsLoadFailed = true;
+      } else {
+        passwordFieldController.text = credentials.password;
+        tokenFieldController.text = credentials.token;
+        initPassword = credentials.password;
+        initToken = credentials.token;
+        _secretsLoadSucceeded = true;
         _secretsLoaded = true;
-      });
-    }
+      }
+    });
   }
 
   @override
@@ -630,6 +634,10 @@ class _AddServerFullscreenState extends State<AddServerFullscreen> {
   }
 
   Future<void> updateServer() async {
+    // Reject programmatic calls as well as disabled Save button presses.
+    if (widget.server == null || !validData() || !_secretsLoadSucceeded) {
+      return;
+    }
     final appConfigViewModel = context.read<AppConfigViewModel>();
     final viewModel = _ensureViewModel();
     FocusManager.instance.primaryFocus?.unfocus();
@@ -726,7 +734,9 @@ class _AddServerFullscreenState extends State<AddServerFullscreen> {
     // In edit mode the Save button stays disabled until the stored secrets have
     // loaded, so a save can't overwrite credentials before they are ready.
     final isEditMode = widget.server != null;
-    if (isEditMode && !_secretsLoaded) return false;
+    if (isEditMode && (!_secretsLoaded || !_secretsLoadSucceeded)) {
+      return false;
+    }
 
     return true;
   }
@@ -832,8 +842,27 @@ class _AddServerFullscreenState extends State<AddServerFullscreen> {
 
   Widget formItems() {
     final appColors = Theme.of(context).extension<AppColors>()!;
+    final locale = AppLocalizations.of(context)!;
     return ListView(
       children: [
+        if (widget.server != null && _secretsLoadFailed)
+          Card(
+            key: const ValueKey('credential-load-error'),
+            margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+            child: ListTile(
+              leading: Icon(
+                Icons.error_outline_rounded,
+                color: Theme.of(context).colorScheme.error,
+              ),
+              title: Text(locale.dataFetchFailed),
+              subtitle: Text(locale.cantSaveConnectionData),
+              trailing: TextButton(
+                key: const ValueKey('credential-load-retry'),
+                onPressed: _secretsLoadInProgress ? null : _loadSecrets,
+                child: Text(locale.refresh),
+              ),
+            ),
+          ),
         Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
