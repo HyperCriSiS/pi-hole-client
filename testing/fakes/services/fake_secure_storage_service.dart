@@ -6,6 +6,7 @@ class FakeSecureStorageService implements SecureStorageService {
 
   bool shouldFailSave = false;
   bool shouldFailRead = false;
+  final Set<String> failReadKeys = {};
   bool shouldFailDelete = false;
   bool shouldFailClear = false;
   bool shouldFailReadAll = false;
@@ -30,8 +31,8 @@ class FakeSecureStorageService implements SecureStorageService {
 
   @override
   Future<Result<String>> getValue(String key) async {
-    if (shouldFailRead) {
-      return Failure(Exception('Forced read failure'));
+    if (shouldFailRead || failReadKeys.contains(key)) {
+      return Failure(const SecureValueReadException());
     }
     if (shouldThrowOnRead) {
       throw Exception('Forced read exception');
@@ -39,7 +40,7 @@ class FakeSecureStorageService implements SecureStorageService {
     final value = store[key];
     return value != null
         ? Success(value)
-        : Failure(Exception('Value not found'));
+        : Failure(const SecureValueNotFoundException());
   }
 
   @override

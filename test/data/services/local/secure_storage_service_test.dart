@@ -80,9 +80,10 @@ void main() {
       ).thenAnswer((_) async => null);
       final result = await service.getValue('testKey');
       expect(result.isError(), true);
+      expect(result.exceptionOrNull(), isA<SecureValueNotFoundException>());
       expect(
         result.exceptionOrNull()?.toString(),
-        contains('No value found for key: testKey'),
+        equals('Secure value not found'),
       );
     });
 
@@ -92,9 +93,10 @@ void main() {
       ).thenThrow(Exception('read error'));
       final result = await service.getValue('testKey');
       expect(result.isError(), true);
+      expect(result.exceptionOrNull(), isA<SecureValueReadException>());
       expect(
         result.exceptionOrNull()?.toString(),
-        contains('Failed to read value: Exception: read error'),
+        equals('Secure value could not be read'),
       );
     });
 

@@ -16,7 +16,7 @@ The fork still has a concrete gap:
 - In `AddServerFullscreen._loadSecrets()`, a failed fetch completes the loading flag, enabling Save even though the credentials were never recovered.
 - The existing `secretsLoadSucceeded` rollback safeguard avoids one specific destructive restore but does **not** prevent a save using empty placeholders.
 
-**Status: open, not fixed. Do not mistake the upstream merge for fork completion.**
+**Status: candidate fix on `fix/766-safe-credential-load`; do not mark resolved until exact-HEAD CI passes and the PR merges.**
 
 ## Required bounded remediation
 

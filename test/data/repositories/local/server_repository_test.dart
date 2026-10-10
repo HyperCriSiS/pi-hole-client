@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pi_hole_client/data/repositories/local/secure_data_repository.dart';
 import 'package:pi_hole_client/data/repositories/local/server_repository.dart';
+import 'package:pi_hole_client/data/services/local/secure_storage_service.dart';
 import 'package:pi_hole_client/domain/model/enums.dart';
 import 'package:pi_hole_client/domain/model/server/server.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -14,6 +15,69 @@ void sqfliteTestInit() {
 }
 
 void main() {
+  group('fetchCredentials secure-storage failures', () {
+    late FakeSecureStorageService storage;
+    late LocalServerRepository repository;
+    const address = 'http://server.example';
+
+    setUp(() {
+      storage = FakeSecureStorageService();
+      repository = LocalServerRepository(
+        FakeDatabaseService(path: inMemoryDatabasePath),
+        storage,
+      );
+    });
+
+    test('truly missing token and password are optional', () async {
+      final result = await repository.fetchCredentials(address);
+
+      expect(result.isSuccess(), isTrue);
+      expect(result.getOrThrow().token, isEmpty);
+      expect(result.getOrThrow().password, isEmpty);
+    });
+
+    test('stored credentials are preserved', () async {
+      storage.store['${address}_token'] = 'saved-token';
+      storage.store['${address}_password'] = 'saved-password';
+
+      final result = await repository.fetchCredentials(address);
+
+      expect(result.getOrThrow().token, 'saved-token');
+      expect(result.getOrThrow().password, 'saved-password');
+    });
+
+    test('token read failure cannot become an empty credential', () async {
+      storage.store['${address}_password'] = 'saved-password';
+      storage.failReadKeys.add('${address}_token');
+
+      final result = await repository.fetchCredentials(address);
+
+      expect(result.isError(), isTrue);
+      expect(result.exceptionOrNull(), isA<SecureValueReadException>());
+      expect(storage.store['${address}_password'], 'saved-password');
+    });
+
+    test('password read failure cannot become an empty credential', () async {
+      storage.store['${address}_token'] = 'saved-token';
+      storage.failReadKeys.add('${address}_password');
+
+      final result = await repository.fetchCredentials(address);
+
+      expect(result.isError(), isTrue);
+      expect(result.exceptionOrNull(), isA<SecureValueReadException>());
+      expect(storage.store['${address}_token'], 'saved-token');
+    });
+
+    test('a missing token does not conceal a failed password read', () async {
+      storage.failReadKeys.add('${address}_password');
+
+      final result = await repository.fetchCredentials(address);
+
+      expect(result.isError(), isTrue);
+    });
+  });
+
+
   const dbName = inMemoryDatabasePath;
   const serverV5 = Server(
     address: 'http://localhost:8080',

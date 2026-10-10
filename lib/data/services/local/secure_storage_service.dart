@@ -3,6 +3,23 @@ import 'package:pi_hole_client/domain/services/app_log_service.dart';
 import 'package:pi_hole_client/utils/logger.dart';
 import 'package:result_dart/result_dart.dart';
 
+/// An absent key is not the same as a keystore read/decryption failure.
+/// Do not include the key, address or credential in the exception.
+class SecureValueNotFoundException implements Exception {
+  const SecureValueNotFoundException();
+
+  @override
+  String toString() => 'Secure value not found';
+}
+
+/// A secure-storage read failed; the caller must not assume a missing value.
+class SecureValueReadException implements Exception {
+  const SecureValueReadException();
+
+  @override
+  String toString() => 'Secure value could not be read';
+}
+
 /// A service for securely managing key-value pairs using [FlutterSecureStorage].
 ///
 /// This service provides a simple and consistent API for performing secure
@@ -71,19 +88,20 @@ class SecureStorageService {
   ///
   /// Returns a [Result<String>] with:
   /// - [Success] containing the value if found.
-  /// - [Failure] if not found or an error occurs.
+  /// - [Failure] with [SecureValueNotFoundException] when absent.
+  /// - [Failure] with [SecureValueReadException] when a read actually fails.
   Future<Result<String>> getValue(String key) async {
     try {
       final value = await _secureStorage.read(key: key);
       if (value == null) {
         logger.w('No secure value found for ${_safeKeyLabel(key)}');
-        return Failure(Exception('No value found for key: $key'));
+        return Failure(const SecureValueNotFoundException());
       }
       logger.d('Secure value retrieved successfully: ${_safeKeyLabel(key)}');
       return Success(value);
     } catch (e, st) {
       _recordFailure(operation: 'read', key: key, error: e, stackTrace: st);
-      return Failure(Exception('Failed to read value: $e\n$st'));
+      return Failure(const SecureValueReadException());
     }
   }
 
