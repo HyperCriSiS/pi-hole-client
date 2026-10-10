@@ -116,6 +116,52 @@ void main() async {
       expect(find.byIcon(Icons.delete_rounded), findsNothing);
     });
 
+    testWidgets('revalidation error preserves previously visible content', (
+      WidgetTester tester,
+    ) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 2.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await viewModel.loadSessions.runAsync();
+      await tester.pumpWidget(
+        buildTestApp(SessionsScreen(viewModel: viewModel)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('192.168.0.31'), findsOneWidget);
+
+      fakeAuthRepository.shouldFail = true;
+      await tester.runAsync(() async {
+        try {
+          await viewModel.loadSessions.runAsync();
+        } catch (_) {
+          // Command exposes its failure through errors for the screen.
+        }
+      });
+      await tester.pump();
+
+      expect(find.text('192.168.0.31'), findsOneWidget);
+      expect(
+        find.text('Refresh failed. The last successfully loaded data remains visible.'),
+        findsOneWidget,
+      );
+      expect(find.byType(ErrorMessage), findsNothing);
+      expect(viewModel.hasLoadedSuccessfully, isTrue);
+
+      fakeAuthRepository.shouldFail = false;
+      await viewModel.loadSessions.runAsync();
+      await tester.pump();
+
+      expect(find.text('192.168.0.31'), findsOneWidget);
+      expect(
+        find.text('Refresh failed. The last successfully loaded data remains visible.'),
+        findsNothing,
+      );
+    });
+
     testWidgets('should refresh sessions on tap', (WidgetTester tester) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 2.0;

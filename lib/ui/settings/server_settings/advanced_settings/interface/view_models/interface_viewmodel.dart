@@ -21,11 +21,20 @@ class InterfaceViewModel extends ChangeNotifier {
 
   late final Command<void, List<NetInterface>> loadInterfaces;
 
+  List<NetInterface> _interfaces = [];
+  bool _hasLoadedSuccessfully = false;
+
+  List<NetInterface> get interfaces => _interfaces;
+  bool get hasLoadedSuccessfully => _hasLoadedSuccessfully;
+
   Future<List<NetInterface>> _loadInterfaces() async {
     final result = await _networkRepository.fetchGateways(isDetailed: true);
     switch (result) {
       case Success():
-        return result.getOrNull().interfaces ?? [];
+        _interfaces = result.getOrNull().interfaces ?? [];
+        _hasLoadedSuccessfully = true;
+        notifyListeners();
+        return _interfaces;
       case Failure():
         throw result.exceptionOrNull();
     }

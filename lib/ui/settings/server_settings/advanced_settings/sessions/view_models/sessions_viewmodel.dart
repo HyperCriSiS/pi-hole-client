@@ -27,15 +27,18 @@ class SessionsViewModel extends ChangeNotifier {
 
   // --- State ---
   List<AuthSession> _sessions = [];
+  bool _hasLoadedSuccessfully = false;
 
   // --- Getters ---
   List<AuthSession> get sessions => _sessions;
+  bool get hasLoadedSuccessfully => _hasLoadedSuccessfully;
 
   Future<void> _loadSessions() async {
     final result = await _authRepository.getAllSessions();
     switch (result) {
       case Success():
         _sessions = result.getOrNull();
+        _hasLoadedSuccessfully = true;
         notifyListeners();
       case Failure():
         throw result.exceptionOrNull();

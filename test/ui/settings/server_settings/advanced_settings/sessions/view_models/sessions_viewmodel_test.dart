@@ -30,6 +30,26 @@ void main() {
       expect(viewModel.sessions.length, 3);
     });
 
+    test('keeps last successful result after failed revalidation and retry', () async {
+      expect(viewModel.hasLoadedSuccessfully, isFalse);
+      await viewModel.loadSessions.runAsync();
+      expect(viewModel.hasLoadedSuccessfully, isTrue);
+      expect(viewModel.sessions, equals(kRepoGetAllSessions));
+
+      fakeAuthRepository.shouldFail = true;
+      await expectLater(
+        viewModel.loadSessions.runAsync(),
+        throwsA(isA<Exception>()),
+      );
+      expect(viewModel.hasLoadedSuccessfully, isTrue);
+      expect(viewModel.sessions, equals(kRepoGetAllSessions));
+
+      fakeAuthRepository.shouldFail = false;
+      await viewModel.loadSessions.runAsync();
+      expect(viewModel.loadSessions.errors.value, isNull);
+      expect(viewModel.sessions, equals(kRepoGetAllSessions));
+    });
+
     test('loadSessions failure sets error', () async {
       fakeAuthRepository.shouldFail = true;
 

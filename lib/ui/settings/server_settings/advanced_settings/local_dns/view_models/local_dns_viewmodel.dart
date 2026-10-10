@@ -83,8 +83,10 @@ class LocalDnsViewModel extends ChangeNotifier {
   late final Command<CnameRecord, void> deleteCnameRecord;
 
   LocalDnsData _data = const LocalDnsData(records: [], deviceOptions: []);
+  bool _hasLoadedSuccessfully = false;
 
   LocalDnsData get data => _data;
+  bool get hasLoadedSuccessfully => _hasLoadedSuccessfully;
   bool get supportsCname => _cnameRepository != null;
 
   Future<void> _loadRecords() async {
@@ -105,6 +107,7 @@ class LocalDnsViewModel extends ChangeNotifier {
       deviceOptions: _devicesToOptions(devicesResult.getOrNull()!),
       cnameRecords: cnameResult?.getOrNull() ?? const [],
     );
+    _hasLoadedSuccessfully = true;
     notifyListeners();
   }
 

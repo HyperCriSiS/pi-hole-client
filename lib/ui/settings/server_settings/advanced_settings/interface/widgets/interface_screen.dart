@@ -127,7 +127,8 @@ class _InterfaceScreenState extends State<InterfaceScreen> {
         final viewModel = widget.viewModel;
         final isLoading = viewModel.loadInterfaces.isRunning.value;
         final hasError = viewModel.loadInterfaces.errors.value != null;
-        final interfaces = viewModel.loadInterfaces.value;
+        final hasPreviousData = viewModel.hasLoadedSuccessfully;
+        final interfaces = viewModel.interfaces;
 
         return ScrollConfiguration(
           behavior: CustomScrollBehavior(),
@@ -139,58 +140,84 @@ class _InterfaceScreenState extends State<InterfaceScreen> {
                   padding: const EdgeInsets.only(right: 8),
                   child: IconButton(
                     icon: const Icon(Icons.refresh_rounded),
-                    onPressed: () async {
-                      try {
-                        await refreshWithTotpRecovery(
-                          context,
-                          viewModel.loadInterfaces.runAsync,
-                        );
-                      } catch (_) {
-                        // Error handled by command.errors
-                      }
-                    },
+                    onPressed: isLoading
+                        ? null
+                        : () async {
+                            try {
+                              await refreshWithTotpRecovery(
+                                context,
+                                viewModel.loadInterfaces.runAsync,
+                              );
+                            } catch (_) {
+                              // Error handled by command.errors
+                            }
+                          },
                     tooltip: locale.refresh,
                   ),
                 ),
               ],
             ),
             body: SafeArea(
-              child: RefreshIndicator(
-                onRefresh: () async {
-                  try {
-                    await refreshWithTotpRecovery(
-                      context,
-                      viewModel.loadInterfaces.runAsync,
-                    );
-                  } catch (_) {
-                    // Error handled by command.errors
-                  }
-                },
-                child: Builder(
-                  builder: (context) {
-                    if (isLoading) {
-                      return _buildSkeletonLoading(context);
-                    }
-
-                    if (hasError) {
-                      return ErrorMessage(message: locale.dataFetchFailed);
-                    }
-
-                    if (interfaces.isEmpty) {
-                      return const EmptyDataScreen();
-                    }
-
-                    return SingleChildScrollView(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: interfaces
-                            .map(NetInterfaceSection.new)
-                            .toList(),
+              child: Column(
+                children: [
+                  if (isLoading && hasPreviousData)
+                    const LinearProgressIndicator(
+                      key: ValueKey('interfaces-refresh-progress'),
+                      minHeight: 2,
+                    ),
+                  if (hasError && hasPreviousData)
+                    Card(
+                      child: ListTile(
+                        leading: Icon(
+                          Icons.error_outline_rounded,
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                        title: Text(locale.refreshFailedShowingPrevious),
                       ),
-                    );
-                  },
-                ),
+                    ),
+                  Expanded(
+                    child: RefreshIndicator(
+                      onRefresh: () async {
+                        if (isLoading) return;
+                        try {
+                          await refreshWithTotpRecovery(
+                            context,
+                            viewModel.loadInterfaces.runAsync,
+                          );
+                        } catch (_) {
+                          // Error handled by command.errors
+                        }
+                      },
+                      child: Builder(
+                        builder: (context) {
+                          if (isLoading && !hasPreviousData) {
+                            return _buildSkeletonLoading(context);
+                          }
+
+                          if (hasError && !hasPreviousData) {
+                            return ErrorMessage(
+                              message: locale.dataFetchFailed,
+                            );
+                          }
+
+                          if (interfaces.isEmpty) {
+                            return const EmptyDataScreen();
+                          }
+
+                          return SingleChildScrollView(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: interfaces
+                                  .map(NetInterfaceSection.new)
+                                  .toList(),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
