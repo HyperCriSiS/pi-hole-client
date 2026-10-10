@@ -166,6 +166,7 @@ Maintain and improve the unofficial Pi-hole client while upstream activity is li
   - [x] Domains preserve successful empty cache during failed revalidation (#188).
   - [x] Groups and Clients retain cached content during refresh/failure, with nonblocking status UI (#190).
   - [x] Query Logs retain successful empty or stale cached logs on refresh failure and show a nonblocking warning (#193).
+  - [x] Home KPI tiles never expose synthetic skeleton example metrics when realtime data is unavailable; retain genuine cached figures without shimmer during refresh (#195).
   - [ ] Initial load: skeleton or dedicated loading state where structural placeholders are useful.
   - [ ] Manual refresh with existing data: keep content visible and show lightweight refresh progress.
   - [ ] Background refresh: avoid blocking the screen unless current data is unusable.
