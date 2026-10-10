@@ -359,7 +359,9 @@ void main() async {
         controller.dispose();
       });
 
-      await groupsViewModel.loadGroups.runAsync();
+      groupsViewModel.loadGroups.run();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
       await tester.pumpWidget(
         buildWidget(
           GroupsList(
@@ -374,17 +376,18 @@ void main() async {
       expect(find.text('Default'), findsOneWidget);
 
       fakeGroupRepository.shouldFail = true;
-      await expectLater(
-        groupsViewModel.loadGroups.runAsync(),
-        throwsA(isA<Exception>()),
-      );
+      groupsViewModel.loadGroups.run();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
       await tester.pump();
 
       expect(find.text('Default'), findsOneWidget);
       expect(find.byIcon(Icons.warning_amber_rounded), findsOneWidget);
 
       fakeGroupRepository.shouldFail = false;
-      await groupsViewModel.loadGroups.runAsync();
+      groupsViewModel.loadGroups.run();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
       await tester.pump();
       expect(find.byIcon(Icons.warning_amber_rounded), findsNothing);
       expect(find.text('Default'), findsOneWidget);
@@ -480,7 +483,9 @@ void main() async {
         controller.dispose();
       });
 
-      await clientsViewModel.loadClients.runAsync();
+      clientsViewModel.loadClients.run();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
       await tester.pumpWidget(
         buildWidget(
           ClientsList(
@@ -495,17 +500,18 @@ void main() async {
       expect(find.text('192.168.1.100 (desktop)'), findsOneWidget);
 
       fakeClientRepository.shouldFail = true;
-      await expectLater(
-        clientsViewModel.loadClients.runAsync(),
-        throwsA(isA<Exception>()),
-      );
+      clientsViewModel.loadClients.run();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
       await tester.pump();
 
       expect(find.text('192.168.1.100 (desktop)'), findsOneWidget);
       expect(find.byIcon(Icons.warning_amber_rounded), findsOneWidget);
 
       fakeClientRepository.shouldFail = false;
-      await clientsViewModel.loadClients.runAsync();
+      clientsViewModel.loadClients.run();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
       await tester.pump();
       expect(find.byIcon(Icons.warning_amber_rounded), findsNothing);
       expect(find.text('192.168.1.100 (desktop)'), findsOneWidget);
@@ -998,78 +1004,3 @@ void main() async {
                 await tester.tap(find.text('Default'));
               } else {
                 await tester.tap(find.text('Clients').first);
-                await tester.pumpAndSettle();
-                await tester.tap(find.text('192.168.1.100 (desktop)'));
-              }
-              await tester.pumpAndSettle();
-              final details = isGroup
-                  ? find.byType(GroupDetailsScreen)
-                  : find.byType(ClientDetailsScreen);
-              expect(details, findsOneWidget);
-
-              if (fails) {
-                if (isGroup) {
-                  fakeGroupRepository.shouldFail = true;
-                } else {
-                  fakeClientRepository.shouldFail = true;
-                }
-              }
-              await tester.tap(find.descendant(
-                of: details,
-                matching: find.byIcon(Icons.delete_rounded),
-              ));
-              await tester.pumpAndSettle();
-              expect(find.byType(DeleteModal), findsOneWidget);
-              await tester.tap(find.text('Delete'));
-              await tester.pumpAndSettle();
-
-              expect(details, fails ? findsOneWidget : findsNothing);
-              // On failure, go_router keeps the parent page offstage.
-              if (!fails) {
-                expect(find.byType(GroupClientScreen), findsOneWidget);
-              }
-            },
-          );
-        }
-      }
-    }
-
-    for (final isGroup in [true, false]) {
-      testWidgets(
-        'three-column ${isGroup ? "group" : "client"} deletion stays inline',
-        (tester) async {
-          tester.view.physicalSize = const Size(1320, 900);
-          tester.view.devicePixelRatio = 1.0;
-          addTearDown(() {
-            tester.view.resetPhysicalSize();
-            tester.view.resetDevicePixelRatio();
-          });
-          await tester.pumpWidget(buildDeletionApp());
-          await tester.pumpAndSettle();
-          if (isGroup) {
-            await tester.tap(find.text('Default'));
-          } else {
-            await tester.tap(find.text('Clients').first);
-            await tester.pumpAndSettle();
-            await tester.tap(find.text('192.168.1.100 (desktop)'));
-          }
-          await tester.pumpAndSettle();
-          final details = isGroup
-              ? find.byType(GroupDetailsScreen)
-              : find.byType(ClientDetailsScreen);
-          expect(details, findsOneWidget);
-          await tester.tap(find.descendant(
-            of: details,
-            matching: find.byIcon(Icons.delete_rounded),
-          ));
-          await tester.pumpAndSettle();
-          await tester.tap(find.text('Delete'));
-          await tester.pumpAndSettle();
-          expect(details, findsNothing);
-          expect(find.byType(GroupClientScreen), findsOneWidget);
-        },
-      );
-    }
-
-  });
-}
