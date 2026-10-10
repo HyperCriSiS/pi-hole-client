@@ -29,6 +29,8 @@ Maintain and improve the unofficial Pi-hole client while upstream activity is li
 
 ## Phase 1 — deterministic UI and diagnostics work
 
+- [x] **P1 — upstream #766:** safeguard server editing after real secure-storage password/token read failures. PR #183 (`c1406910`) distinguishes missing optional keys from read errors, propagates real credential-load failure, locks Edit Save until successful read and exposes retry without deleting drafts. #748 rollback and TOTP policy preserved; full Dart/unsigned Android/CodeQL/Sonar/Codecov/static validation passed. Live device keystore failure not reproduced.
+
 - [x] **P1 — upstream #724:** fixed the stale Group/Client details pane after deleting an item at tablet/two-column width (~1000 px). Upstream fix: [#725](https://github.com/tsutsu3/pi-hole-client/pull/725).
   - [x] Audit deletion ownership in `group_client_screen.dart` and the Group/Client detail screens; former fork code cleared the selected model but conditionally pops only at `width <= ResponsiveConstants.large`, leaving the two-column pushed detail route visible (confirmed and fixed in PR #166).
   - [x] Close pushed detail routes after successful deletion at phone and tablet widths, explicitly mark inline three-column details as embedded, and preserve detail route on failure; PR #166 (`abf57cb2`).

@@ -5,7 +5,7 @@ Updated: 2026-10-10
 ## Current integrated baseline
 
 - Repository: `HyperCriSiS/pi-hole-client`. `main` is the canonical integration branch; use task-specific branches and PRs with exact-HEAD checks.
-- **Latest validated application merge:** #720 Network revalidation PR #178, squash `d610ad8ecf700ef4e79bf072240b3920541c183e` (HEAD `0b8a731a`).
+- **Latest validated application merge:** upstream #766 credential-read safety fix, PR #183 squash `c14069103475160356d7e88be7643958c9da584e`, final feature HEAD `8fc0be0c4df7ca42b8d615d99f2a1ca44473ca1d`.
 - Other #720 completed slices:
   - PR #176 Server Info: `6728a230156ff1f1e30174f68c0599cd6de892da` (HEAD `2d4f1eeb`). Preserves last good server data/capabilities, progress indicator, stale-data warning after failure; initial skeleton/error states unchanged.
   - PR #177 DHCP leases: `2b60914a087ae9b7746bc327b03811626b87d50b` (HEAD `9fa28613`). Successful leases/client IP retained during manual refresh; progress/stale warning; successful-empty tracked separately from initial placeholder; duplicate refresh disabled.
@@ -22,17 +22,17 @@ Updated: 2026-10-10
 - Pinned FTL v6.7 OpenAPI generation and boundary guard restrict remaining handwritten transport to documented `/api/info/ftl`, detailed `/api/network/gateway`, and gravity streaming holds.
 - `sqlite3` deliberately bounded to `>=3.5.2 <3.6.0` until the Flutter baseline permits `meta ^1.19.0`; do not force overrides or relax F-Droid native source-build policy.
 
-## Highest-priority open security gap: upstream #766 (P1)
+## Security update: upstream #766 resolved in fork (P1)
 
-- New upstream commit `b3c940460ba7f25e7ef2fd0328fc91b2ed0a2abe` (2026-10-09) fixes editing server settings when securely stored credentials cannot be read.
-- **Fork still affected:** `SecureStorageService.getValue` has generic missing/read-error failures; `LocalServerRepository.fetchCredentials` transforms real read failures to empty placeholders; edit UI may enable Save after failed load. Existing #748 `secretsLoadSucceeded` rollback guard does not fully prevent saving with empty credentials.
-- **Next autonomous P1 slice:** distinguish legitimately absent secrets from read/decrypt failures, propagate genuine failures; keep edit Save disabled until read success with localized Reload; test storage, repository, edit screen and rollback. Preserve the fork-specific diagnostics redaction and #748 SaveAttempt/TOTP policy; **do not wholesale import upstream #766**.
-- Detailed audited paths and acceptance criteria: `docs/maintenance/upstream-credential-load-2026-10-10.md`.
+- **Completed PR #183:** distinguished legitimately absent secure values from read failures using secret-free typed exceptions; `fetchCredentials` now propagates real token/password read errors, while optional missing values remain valid.
+- Edit Save is disabled before successful credential loading and after read failure; a localized error/explicit retry does not destroy existing draft fields on failure. Success clears the lock. Preserved #748 `secretsLoadSucceeded` rollback safeguard and existing session/TOTP boundaries; no additional authentication flow.
+- Final PR HEAD `8fc0be0c` passed full Dart tests including new repository/UI regressions, CodeQL, Sonar, Codecov, static checks, unsigned Android source build and artifact verification. No affected physical-device keystore failure was reproduced. Detailed history: `docs/maintenance/upstream-credential-load-2026-10-10.md`.
+- Relevant upstream merge cursor: `b3c940460ba7f25e7ef2fd0328fc91b2ed0a2abe` (#766); upstream #767 generated code still held for generator parity, #768 copyright/privacy docs pending independent-fork review.
 - Previous upstream cursor `445424380076d09293ca1a2ce638d6f144e27233`; reviewed new cursor `b3c940460ba7f25e7ef2fd0328fc91b2ed0a2abe`. Upstream #768 policy/copyright only needs independent-fork review; #767 generated-code changes need pinned generator parity.
 
 ## Remaining roadmap and external validation
 
-1. Prioritize upstream #766 credential-load/save fix before further optional visual work.
+1. **Next:** batch remaining #720 Settings revalidation for Sessions, Interfaces, Local DNS into a coherent UI PR with retained loaded content, lightweight explicit-refresh progress and failure/retry regressions. Keep initial loads separate and preserve #748 TOTP boundaries.
 2. Continue #720 loading/revalidation across Sessions, Local DNS, Interfaces and other screens after preserving first-load skeletons, manual cached refresh and nonblocking background behavior. Do not mark #720 globally complete yet.
 3. Then evaluate power-user roadmap: multi-Pi-hole dashboard, cross-server quick actions, saved Log Explorer filters and OpenAPI-spec drift reporting.
 4. Optional separate smoke: `mock_api_server --fail all` / `--fail auth/sessions`, real-server Gravity/proxy diagnostics; lack of reproduction is not resolution.
