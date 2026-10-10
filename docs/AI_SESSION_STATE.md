@@ -5,14 +5,15 @@ Updated: 2026-10-10
 ## Live integrated baseline
 
 - Repository: `HyperCriSiS/pi-hole-client`; canonical integration branch `main`.
-- **Latest application merge: PR #185**, squash `ad1a19411dd7e080d975d13a9f7151ec9ff012e3`, final tested HEAD `89b951552406d5c55be77bf4658e9ad7ea407362`.
+- **Latest application merge: PR #188**, squash `4d3c3bba820a75093cb40e082cfd24253a0c68fc`, final tested HEAD `64a3e9efded34183bc3c923d3f9b62beeee377b3`. Previously completed Settings batch: PR #185 squash `ad1a19411dd7e080d975d13a9f7151ec9ff012e3`.
 - #720 Settings revalidation completed in bounded slices:
   - PR #176 Server Info `6728a230`.
   - PR #177 DHCP leases `2b60914a`.
   - PR #178 Network devices `d610ad8e`.
   - **PR #185 Sessions, Interfaces and Local DNS `ad1a1941`**: retain successful contents (including successful-empty state) through manual refresh and failed revalidation; progress bar and translated stale-data warning; initial skeleton/error states stay; avoid overlapping refreshes. Existing Sessions deletion, Interfaces details, Local DNS host/CNAME and explicit TOTP recovery are preserved. New ViewModel/widget regressions cover failure and retry.
 - All #185 checks passed against **exact HEAD**: full Dart test/analyzer job, Sonar, Codecov, CodeQL, four static analysis jobs, unsigned Android source APK build, and successful `Verify unsigned release artifact` step in workflow run `38069751644` / test run `38069751633`. No live Pi-hole/device smoke claimed.
-- **#720 is not globally complete**: the six identified Server Settings surfaces are done, but other loading/background behavior and UX consistency remain for separate assessment.
+- **#720 additional non-Settings slice: PR #188 Domains.** Prior SWR logic wrongly inferred a cached result from non-empty Domain lists; successfully fetched empty lists became first-load placeholders on refresh and full errors on failure. A successful-load marker now preserves empty-state UI through revalidation and stale errors, resets on server switch, and exposes a localized failure notice. Added controllable repository/ViewModel and widget regressions for successful-empty, pending refresh, error, retry and reset. Final HEAD passed full Dart tests/analyzer, Sonar, Codecov, CodeQL, static analyses, unsigned Android source APK and `Verify unsigned release artifact` (runs 38075491453 and 38075491613). No physical-device smoke.
+- **#720 is not globally complete**: six Server Settings sections and the Domains empty-cache case are covered; other loading/background behavior and UX consistency require targeted assessment.
 
 ## Security and auth boundaries
 
@@ -33,8 +34,8 @@ Updated: 2026-10-10
 
 ## Next autonomous work unit
 
-1. Verify live `main` and any competing PRs before changing code. The immediately completed bounded unit was #185, so do not recreate its three Settings changes.
-2. Audit remaining #720 UX outside these six Settings screens; identify at most one concrete, reproducible, testable scope (e.g. Logs/Groups/Clients), not a blanket loading-style rewrite. Preserve first-load skeleton, manual cached refresh, and nonblocking background paths as distinct cases. If no clear issue, move to the power-user roadmap.
+1. Verify live `main` and any competing PRs before changing code. Completed bounded units: #185 (remaining three Settings screens) and #188 (Domains successful-empty SWR); do not duplicate either.
+2. Audit remaining #720 UX outside the six Settings screens and Domains empty-cache case; identify at most one concrete, reproducible, testable scope (e.g. Home/Logs/Groups/Clients), not a blanket loading-style rewrite. Preserve first-load skeleton, manual cached refresh, and nonblocking background paths as distinct cases. If no clear issue, move to the power-user roadmap.
 3. Evaluate one independent power-user feature in order of validated user value and manageable scope: multi-Pi-hole dashboard, cross-server actions, saved Log Explorer filters, or automated OpenAPI-spec drift report. Keep implementation small, dedicated PR and observable regressions.
 4. Full exact-head Dart/Flutter analyzer, unsigned Android source APK + signature verification, CodeQL, Sonar, Codecov and statics required for application changes. Docs-only PRs use lighter repository-controlled workflow.
 
