@@ -67,7 +67,7 @@ void main() {
 
     test('successful empty cache is retained after refresh failure', () async {
       fakeClientRepository.fetchClientsOverride =
-          () async => const Success<List<ManagedClient>>([]);
+          () async => const Success<List<ManagedClient>, Exception>([]);
       await viewModel.loadClients.runAsync();
       expect(viewModel.clients, isEmpty);
       expect(viewModel.hasSuccessfulLoad, isTrue);

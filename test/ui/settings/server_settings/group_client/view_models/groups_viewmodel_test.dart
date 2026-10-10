@@ -68,7 +68,7 @@ void main() {
 
     test('successful empty cache is retained after refresh failure', () async {
       fakeGroupRepository.fetchGroupsOverride =
-          () async => const Success<List<Group>>([]);
+          () async => const Success<List<Group>, Exception>([]);
       await viewModel.loadGroups.runAsync();
       expect(viewModel.groups, isEmpty);
       expect(viewModel.hasSuccessfulLoad, isTrue);
