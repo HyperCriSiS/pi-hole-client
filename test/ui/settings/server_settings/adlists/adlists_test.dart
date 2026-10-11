@@ -330,6 +330,44 @@ void main() async {
       },
     );
 
+    testWidgets('cached empty allowlist and nonempty blocklist survive failed refresh',
+        (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 2;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await tester.pumpWidget(buildAdlistWidget());
+      await tester.pumpAndSettle();
+      expect(adlistsViewModel.hasSuccessfulLoad, true);
+      expect(find.text('There are no adlists to show here.'), findsOneWidget);
+
+      fakeAdlistRepository.shouldFail = true;
+      try {
+        await adlistsViewModel.loadAdlists.runAsync();
+      } catch (_) {}
+      await tester.pumpAndSettle();
+      expect(adlistsViewModel.hasRevalidationError, true);
+      expect(find.text('There are no adlists to show here.'), findsOneWidget);
+      expect(find.text("Adlists couldn't be loaded"), findsOneWidget);
+      expect(find.byIcon(Icons.warning_amber_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.error), findsNothing);
+
+      await tester.tap(find.text('Blocklist'));
+      await tester.pumpAndSettle();
+      expect(find.text('https://hosts-file.net/ad_servers.txt'), findsOneWidget);
+      expect(find.text("Adlists couldn't be loaded"), findsOneWidget);
+
+      fakeAdlistRepository.shouldFail = false;
+      await adlistsViewModel.loadAdlists.runAsync();
+      await tester.pumpAndSettle();
+      expect(adlistsViewModel.hasRevalidationError, false);
+      expect(find.text("Adlists couldn't be loaded"), findsNothing);
+      expect(find.text('https://hosts-file.net/ad_servers.txt'), findsOneWidget);
+    });
+
     testWidgets('should show blocklist when tapped', (
       WidgetTester tester,
     ) async {
