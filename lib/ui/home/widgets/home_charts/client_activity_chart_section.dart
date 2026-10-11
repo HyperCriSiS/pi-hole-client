@@ -9,6 +9,7 @@ import 'package:pi_hole_client/ui/core/ui/components/section_label.dart';
 import 'package:pi_hole_client/ui/core/ui/helpers/responsive.dart';
 import 'package:pi_hole_client/ui/core/view_models/app_config_viewmodel.dart';
 import 'package:pi_hole_client/ui/core/view_models/status_viewmodel.dart';
+import 'package:pi_hole_client/ui/home/widgets/home_charts/cached_chart_status.dart';
 import 'package:pi_hole_client/ui/home/widgets/home_charts/clients/clients_last_hours_bar.dart';
 import 'package:pi_hole_client/ui/home/widgets/home_charts/clients/clients_last_hours_line.dart';
 import 'package:pi_hole_client/ui/home/widgets/home_charts/skeleton/bar_chart_skeleton.dart';
@@ -49,19 +50,10 @@ class ClientActivityChartSection extends StatelessWidget {
         : <String>[];
 
     Widget child;
-    switch (overTimeDataLoadStatus) {
-      case LoadStatus.error:
-        child = _buildErrorChart(context);
-      case LoadStatus.loading:
-        child = _buildSkeleton(
-          context,
-          appConfigViewModel,
-          visualizationMode,
-          overtimeData,
-          clientsListIps,
-        );
-      case LoadStatus.loaded:
-        child = _hasData(overtimeData)
+    if (overtimeData != null) {
+      child = CachedChartStatus(
+        status: overTimeDataLoadStatus,
+        child: _hasData(overtimeData)
             ? _buildLoadedContent(
                 context,
                 visualizationMode,
@@ -70,7 +62,23 @@ class ClientActivityChartSection extends StatelessWidget {
                 overtimeData,
                 clientsListIps,
               )
-            : _buildNoDataChart(context);
+            : _buildNoDataChart(context),
+      );
+    } else {
+      switch (overTimeDataLoadStatus) {
+        case LoadStatus.error:
+          child = _buildErrorChart(context);
+        case LoadStatus.loading:
+          child = _buildSkeleton(
+            context,
+            appConfigViewModel,
+            visualizationMode,
+            overtimeData,
+            clientsListIps,
+          );
+        case LoadStatus.loaded:
+          child = _buildNoDataChart(context);
+      }
     }
 
     return FractionallySizedBox(

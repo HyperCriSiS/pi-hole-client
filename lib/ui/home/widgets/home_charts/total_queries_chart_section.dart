@@ -5,6 +5,7 @@ import 'package:pi_hole_client/ui/core/l10n/generated/app_localizations.dart';
 import 'package:pi_hole_client/ui/core/ui/components/error_data_chart.dart';
 import 'package:pi_hole_client/ui/core/ui/helpers/responsive.dart';
 import 'package:pi_hole_client/ui/core/view_models/status_viewmodel.dart';
+import 'package:pi_hole_client/ui/home/widgets/home_charts/cached_chart_status.dart';
 import 'package:pi_hole_client/ui/home/widgets/home_charts/queries/queries_content.dart';
 import 'package:pi_hole_client/ui/home/widgets/home_charts/queries/queries_skeleton.dart';
 import 'package:pi_hole_client/ui/statistics/widgets/no_data_chart.dart';
@@ -26,19 +27,28 @@ class TotalQueriesChartSection extends StatelessWidget {
     );
 
     Widget child;
-    switch (overTimeDataLoadStatus) {
-      case LoadStatus.error:
-        child = ErrorDataChart(
-          topLabel: AppLocalizations.of(context)!.totalQueries24,
-        );
-      case LoadStatus.loading:
-        child = const QueriesSkeleton();
-      case LoadStatus.loaded:
-        child = _hasData(overtimeData)
+    if (overtimeData != null) {
+      child = CachedChartStatus(
+        status: overTimeDataLoadStatus,
+        child: _hasData(overtimeData)
             ? const QueriesContent()
             : NoDataChart(
                 topLabel: AppLocalizations.of(context)!.totalQueries24,
-              );
+              ),
+      );
+    } else {
+      switch (overTimeDataLoadStatus) {
+        case LoadStatus.error:
+          child = ErrorDataChart(
+            topLabel: AppLocalizations.of(context)!.totalQueries24,
+          );
+        case LoadStatus.loading:
+          child = const QueriesSkeleton();
+        case LoadStatus.loaded:
+          child = NoDataChart(
+            topLabel: AppLocalizations.of(context)!.totalQueries24,
+          );
+      }
     }
 
     return FractionallySizedBox(

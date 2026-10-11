@@ -61,6 +61,7 @@ void main() async {
         tester.view.resetDevicePixelRatio();
       });
 
+      statusViewModel.overtimeData = null;
       statusViewModel.overtimeDataLoading = LoadStatus.loading;
 
       await tester.pumpWidget(
@@ -94,6 +95,7 @@ void main() async {
         tester.view.resetDevicePixelRatio();
       });
 
+      statusViewModel.overtimeData = null;
       statusViewModel.overtimeDataLoading = LoadStatus.loading;
 
       await tester.pumpWidget(
@@ -125,6 +127,7 @@ void main() async {
         tester.view.resetDevicePixelRatio();
       });
 
+      statusViewModel.overtimeData = null;
       statusViewModel.overtimeDataLoading = LoadStatus.loading;
 
       await tester.pumpWidget(
@@ -155,6 +158,7 @@ void main() async {
         tester.view.resetDevicePixelRatio();
       });
 
+      statusViewModel.overtimeData = null;
       statusViewModel.overtimeDataLoading = LoadStatus.error;
 
       await tester.pumpWidget(
@@ -170,6 +174,62 @@ void main() async {
       expect(find.byType(HomeCharts), findsOneWidget);
       await tester.pump();
       expect(find.text('Charts could not be loaded'), findsWidgets);
+    });
+
+    testWidgets('refresh keeps cached charts visible with progress', (
+      WidgetTester tester,
+    ) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      statusViewModel.overtimeDataLoading = LoadStatus.loading;
+      await tester.pumpWidget(
+        buildTestApp(
+          const HomeCharts(),
+          appConfigViewModel: appConfigViewModel,
+          serversViewModel: serversViewModel,
+          statusViewModel: statusViewModel,
+          logsViewModel: logsViewModel,
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(QueriesLastHoursLine), findsOneWidget);
+      expect(find.byType(ClientsLastHoursLine), findsOneWidget);
+      expect(find.byType(LineChartSkeleton), findsNothing);
+      expect(find.byType(LinearProgressIndicator), findsNWidgets(2));
+    });
+
+    testWidgets('failed refresh preserves cached charts and warns', (
+      WidgetTester tester,
+    ) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      statusViewModel.overtimeDataLoading = LoadStatus.error;
+      await tester.pumpWidget(
+        buildTestApp(
+          const HomeCharts(),
+          appConfigViewModel: appConfigViewModel,
+          serversViewModel: serversViewModel,
+          statusViewModel: statusViewModel,
+          logsViewModel: logsViewModel,
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(QueriesLastHoursLine), findsOneWidget);
+      expect(find.byType(ClientsLastHoursLine), findsOneWidget);
+      expect(find.text('Charts could not be loaded'), findsNWidgets(2));
+      expect(find.byIcon(Icons.warning_amber_rounded), findsNWidgets(2));
     });
 
     testWidgets(
@@ -1735,6 +1795,7 @@ void main() async {
           tester.view.resetDevicePixelRatio();
         });
 
+        statusViewModel.overtimeData = null;
         statusViewModel.overtimeDataLoading = LoadStatus.loading;
 
         // Start with line mode (default)
