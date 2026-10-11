@@ -40,7 +40,6 @@ class _LogsFiltersModalState extends State<LogsFiltersModal> {
 
   Future<void> _savePreset(LogsViewModel vm) async {
     final labels = AppLocalizations.of(context)!;
-    final controller = TextEditingController();
     String name = '';
     final chosen = await showDialog<String>(
       context: context,
@@ -49,7 +48,6 @@ class _LogsFiltersModalState extends State<LogsFiltersModal> {
         builder: (dialogContext, update) => AlertDialog(
           title: Text(labels.saveFilter),
           content: TextField(
-            controller: controller,
             autofocus: true,
             maxLength: 64,
             decoration: InputDecoration(labelText: labels.filterName),
@@ -70,7 +68,6 @@ class _LogsFiltersModalState extends State<LogsFiltersModal> {
         ),
       ),
     );
-    controller.dispose();
     if (!mounted || chosen == null) return;
     try {
       await vm.saveCurrentFilterPreset(chosen);
@@ -106,29 +103,33 @@ class _LogsFiltersModalState extends State<LogsFiltersModal> {
             width: 380,
             child: presets.isEmpty
                 ? Text(labels.noSavedFilters)
-                : ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: presets.length,
-                    itemBuilder: (context, index) {
-                      final preset = presets[index];
-                      return ListTile(
-                        title: Text(preset.name),
-                        onTap: () => Navigator.pop(dialogContext, preset),
-                        trailing: IconButton(
-                          tooltip: labels.delete,
-                          icon: const Icon(Icons.delete_outline),
-                          onPressed: () async {
-                            try {
-                              await vm.deleteFilterPreset(preset.name);
-                              if (!dialogContext.mounted) return;
-                              update(() => presets.removeAt(index));
-                            } catch (_) {
-                              _showPresetError();
-                            }
-                          },
-                        ),
-                      );
-                    },
+                : ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 420),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          for (final preset in presets)
+                            ListTile(
+                              title: Text(preset.name),
+                              onTap: () => Navigator.pop(dialogContext, preset),
+                              trailing: IconButton(
+                                tooltip: labels.delete,
+                                icon: const Icon(Icons.delete_outline),
+                                onPressed: () async {
+                                  try {
+                                    await vm.deleteFilterPreset(preset.name);
+                                    if (!dialogContext.mounted) return;
+                                    update(() => presets.remove(preset));
+                                  } catch (_) {
+                                    _showPresetError();
+                                  }
+                                },
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
                   ),
           ),
           actions: [
