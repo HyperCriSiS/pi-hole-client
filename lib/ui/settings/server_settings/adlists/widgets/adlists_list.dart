@@ -256,6 +256,10 @@ class _AdlistsListState extends State<AdlistsList> {
             ),
           ),
           loadStatus: viewModel.loadingStatus,
+          isRevalidating: viewModel.isRevalidating,
+          revalidationErrorMessage: viewModel.hasRevalidationError
+              ? AppLocalizations.of(context)!.adlistsNotLoaded
+              : null,
           onRefresh: () => refreshWithTotpRecovery(
             context,
             viewModel.loadAdlists.runAsync,

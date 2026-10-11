@@ -330,6 +330,46 @@ void main() async {
       },
     );
 
+    testWidgets(
+      'cached empty allowlist and nonempty blocklist remain after failure',
+      (WidgetTester tester) async {
+        tester.view.physicalSize = const Size(1080, 2400);
+        tester.view.devicePixelRatio = 2;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+
+        // Let the widget perform its initial successful load, then fail a
+        // subsequent refresh. Avoid awaiting command_it outside the widget
+        // test's fake-async pump scheduler (which deadlocks the test).
+        await tester.pumpWidget(buildAdlistWidget());
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
+        expect(adlistsViewModel.hasSuccessfulLoad, true);
+        fakeAdlistRepository.shouldFail = true;
+        adlistsViewModel.loadAdlists.run();
+
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
+
+        expect(adlistsViewModel.hasRevalidationError, true);
+        expect(find.text('There are no adlists to show here.'), findsOneWidget);
+        expect(find.text("Adlists couldn't be loaded"), findsOneWidget);
+        expect(find.byIcon(Icons.warning_amber_rounded), findsOneWidget);
+        expect(find.byIcon(Icons.error), findsNothing);
+
+        expect(adlistsViewModel.filteredBlacklistAdlists, hasLength(1));
+        await tester.tap(find.text('Blocklist'));
+        await tester.pumpAndSettle();
+        expect(
+          find.text('https://hosts-file.net/ad_servers.txt'),
+          findsOneWidget,
+        );
+        expect(find.text("Adlists couldn't be loaded"), findsOneWidget);
+      },
+    );
+
     testWidgets('should show blocklist when tapped', (
       WidgetTester tester,
     ) async {

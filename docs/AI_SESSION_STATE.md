@@ -1,6 +1,6 @@
 # AI Session State
 
-Updated: 2026-10-11 (Statistics stale-while-revalidate correction integrated)
+Updated: 2026-10-11 (#720 Adlists stale-while-revalidate work in validation)
 
 ## Integrated baseline
 
@@ -36,7 +36,8 @@ Updated: 2026-10-11 (Statistics stale-while-revalidate correction integrated)
 
 ## Current focused change
 
-- Statistics #720 refresh behavior: independently audited mobile Queries/Servers, Domains, Clients and v6 DNS tabs, plus desktop multi-column layout. Previously all switched to full-screen progress/error whenever `StatusViewModel.getStatusLoading` changed, even with usable `getRealtimeStatus` or `getFtlDnsMetrics` cache. Focused fix retains actual cached content, adds unobtrusive warning/progress, and preserves the original first-load UI when no real cache exists. Tests cover cached mobile, cached v6 DNS and desktop loading/error plus existing first-load expectations. Merged in PR #208 at exact validated feature HEAD `e17b45d967b10368db18f0b67d2a390913515098`; all checks passed including unsigned Android artifact verification. Physical device tests pending.
+- Adlists v5/v6 server settings: prior `AdlistsViewModel.loadingStatus` always replaced loaded data on refresh and errors. PR underway adds successful-cache sentinel including the empty allowlist/blocklist case; existing `CustomTabContentList` nonblocking indicator retains cached content and warning. First load still shows progress/error. Three ViewModel regressions and widget regression verify pending refresh, failed refresh and successful recovery. Repository remains server-scoped via createAdlistScreen(bundle); no new auth/TOTP or transport changes. Exact-head CI and device smoke pending. Do not mark #720 globally complete.
+
 
 ## Next autonomous work unit
 

@@ -46,6 +46,9 @@ class AdlistsViewModel extends ChangeNotifier {
   late final Command<Adlist, void> updateAdlist;
 
   // --- State ---
+  // A successful empty response is also a usable snapshot.
+  // This ViewModel is created for one server-scoped repository.
+  bool _hasSuccessfulLoad = false;
   List<Adlist> _whitelistAdlists = [];
   List<Adlist> _blacklistAdlists = [];
   List<Adlist> _filteredWhitelistAdlists = [];
@@ -65,10 +68,19 @@ class AdlistsViewModel extends ChangeNotifier {
   bool get searchMode => _searchMode;
   int? get groupFilter => _groupFilter;
 
+  bool get hasSuccessfulLoad => _hasSuccessfulLoad;
+  bool get isRevalidating =>
+      _hasSuccessfulLoad && loadAdlists.isRunning.value;
+  bool get hasRevalidationError =>
+      _hasSuccessfulLoad &&
+      !loadAdlists.isRunning.value &&
+      loadAdlists.errors.value != null;
+
   LoadStatus get loadingStatus {
-    if (loadAdlists.isRunning.value) return LoadStatus.loading;
+    // A previously successful (including empty) response remains usable.
+    if (_hasSuccessfulLoad) return LoadStatus.loaded;
     if (loadAdlists.errors.value != null) return LoadStatus.error;
-    return LoadStatus.loaded;
+    return LoadStatus.loading;
   }
 
   // --- Command implementations ---
@@ -76,13 +88,14 @@ class AdlistsViewModel extends ChangeNotifier {
     final result = await _adListRepository.fetchAdlists();
     switch (result) {
       case Success():
-        final adlists = result.getOrNull();
+        final adlists = result.getOrThrow();
         _whitelistAdlists = adlists
             .where((a) => a.type == ListType.allow)
             .toList();
         _blacklistAdlists = adlists
             .where((a) => a.type == ListType.block)
             .toList();
+        _hasSuccessfulLoad = true;
         _applyFilters();
         notifyListeners();
       case Failure():
