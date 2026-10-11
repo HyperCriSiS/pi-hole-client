@@ -28,6 +28,10 @@ Updated: 2026-10-11 (saved Query Log filters integrated and verified)
 - Device checks still pending: #442 Android 16 PopupMenu, #636 Android 17 self-signed TLS, #501 density, #293 secure-storage migration, #686 IME, #741 Android 17 Impeller/Vulkan. Optional failed API smoke pending. No physical-device validation claimed.
 - Upstream triage cursor `b3c940460ba7f25e7ef2fd0328fc91b2ed0a2abe`; #767 generated-code parity and #768 privacy/copyright review pending.
 
+## Active bounded work unit
+
+- Manual read-only multi-server overview PR pending: Servers screen action opens a modal with one card for each configured server. Opening has **zero API requests**; refresh individually or all triggers sequential reads with v5 realtime summary and v6 metrics summary; errors remain local and sanitized, without changing the selected server or invoking the interactive TOTP flow. Stats are independent snapshots and must not be aggregated across potentially different server time windows. Tests cover no network before taps, one-server failure, per-server refresh, duplicate suppression, disposal, and widget state. CI status must be checked against final exact HEAD; no physical device validation.
+
 ## Next autonomous work unit
 
 1. Recheck live `main`, active PRs and targeted CI. Do not repeat merged #190–#200 or this checkpoint.

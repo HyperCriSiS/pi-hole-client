@@ -3,12 +3,15 @@ import 'dart:io';
 import 'package:expandable/expandable.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:pi_hole_client/data/repositories/api/interfaces/repository_bundle.dart';
 import 'package:pi_hole_client/domain/model/server/server.dart';
 import 'package:pi_hole_client/ui/core/l10n/generated/app_localizations.dart';
 import 'package:pi_hole_client/ui/core/ui/helpers/responsive.dart';
 import 'package:pi_hole_client/ui/core/view_models/app_config_viewmodel.dart';
 import 'package:pi_hole_client/ui/core/view_models/servers_viewmodel.dart';
+import 'package:pi_hole_client/ui/servers/view_models/multi_server_overview_controller.dart';
 import 'package:pi_hole_client/ui/servers/widgets/add_server_fullscreen.dart';
+import 'package:pi_hole_client/ui/servers/widgets/multi_server_overview_dialog.dart';
 import 'package:pi_hole_client/ui/servers/widgets/servers_list.dart';
 import 'package:provider/provider.dart';
 
@@ -116,9 +119,37 @@ class _ServersScreenState extends State<ServersScreen> {
       });
     }
 
+    void openOverview() {
+      // Capture the selected bundle without changing the selected server or its
+      // status ViewModel. The dialog triggers no requests until explicit taps.
+      final selectedBundle = context.read<RepositoryBundle?>();
+      final createBundle = context.read<CreateRepositoryBundle>();
+      showDialog<void>(
+        context: context,
+        useRootNavigator: false,
+        builder: (_) => MultiServerOverviewDialog(
+          servers: List<Server>.of(serversList),
+          reader: (server) => readServerOverview(
+            server,
+            createBundle: createBundle,
+            selectedBundle: selectedBundle,
+          ),
+        ),
+      );
+    }
+
     return PopScope(
       child: Scaffold(
-        appBar: AppBar(title: Text(AppLocalizations.of(context)!.servers)),
+        appBar: AppBar(
+          title: Text(AppLocalizations.of(context)!.servers),
+          actions: [
+            IconButton(
+              tooltip: AppLocalizations.of(context)!.multiServerOverview,
+              icon: const Icon(Icons.dashboard_outlined),
+              onPressed: openOverview,
+            ),
+          ],
+        ),
         body: SafeArea(
           child: Stack(
             children: [
