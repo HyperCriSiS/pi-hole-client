@@ -44,7 +44,7 @@ class DatabaseService {
   /// Returns:
   /// - [Success] containing the opened [Database] instance if successful.
   /// - [Failure] containing an [Exception] if an error occurs during opening.
-  Future<Result<Database>> open({int? latestVersion = 10}) async {
+  Future<Result<Database>> open({int? latestVersion = 11}) async {
     try {
       _db = await openDatabase(
         _path,
@@ -258,6 +258,17 @@ class DatabaseService {
     await db.execute('PRAGMA foreign_keys = ON');
   }
 
+  static const _savedLogFiltersSchema = '''
+    CREATE TABLE saved_log_filters (
+      server_address TEXT NOT NULL,
+      api_version TEXT NOT NULL,
+      name TEXT NOT NULL COLLATE NOCASE,
+      filters_json TEXT NOT NULL,
+      PRIMARY KEY (server_address, api_version, name),
+      FOREIGN KEY (server_address) REFERENCES servers(address) ON DELETE CASCADE
+    )
+  ''';
+
   Future<void> _onCreate(Database db, int version) async {
     await db.execute('''
       CREATE TABLE servers (
@@ -344,6 +355,8 @@ class DatabaseService {
       )
     ''');
 
+    await db.execute(_savedLogFiltersSchema);
+
     logger.d('Database created');
   }
 
@@ -373,6 +386,8 @@ class DatabaseService {
         await _upgradeToV9(db);
       case 10:
         await _upgradeToV10(db);
+      case 11:
+        await db.execute(_savedLogFiltersSchema);
       default:
         logger.w('Database upgrade to version $version is not handled.');
     }

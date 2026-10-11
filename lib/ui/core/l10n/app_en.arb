@@ -754,5 +754,9 @@
   "chipTooltipRamUsage": "RAM usage",
   "chipTooltipCpuTemperature": "CPU temperature",
   "chipTooltipSystemUptime": "System uptime",
-  "refreshFailedShowingPrevious": "Refresh failed. The last successfully loaded data remains visible."
+  "refreshFailedShowingPrevious": "Refresh failed. The last successfully loaded data remains visible.",
+  "saveFilter": "Save filter",
+  "savedFilters": "Saved filters",
+  "filterName": "Filter name",
+  "noSavedFilters": "No saved filters"
 }

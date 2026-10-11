@@ -14,6 +14,7 @@ import 'package:pi_hole_client/config/dependencies.dart';
 import 'package:pi_hole_client/data/repositories/api/v6/v6_session_cache_store.dart';
 import 'package:pi_hole_client/data/repositories/local/app_config_repository.dart';
 import 'package:pi_hole_client/data/repositories/local/gravity_repository.dart';
+import 'package:pi_hole_client/data/repositories/local/saved_log_filters_repository.dart';
 import 'package:pi_hole_client/data/repositories/local/interfaces/app_config_repository.dart';
 import 'package:pi_hole_client/data/repositories/local/server_repository.dart';
 import 'package:pi_hole_client/data/services/local/database_service.dart';
@@ -212,7 +213,9 @@ Future<Widget> bootstrapApp({
     appLogService: appLogService,
   );
   final statusViewModel = StatusViewModel(appLogService: appLogService);
-  final logsViewModel = LogsViewModel();
+  final logsViewModel = LogsViewModel(
+    savedLogFiltersRepository: LocalSavedLogFiltersRepository(dbService),
+  );
   final domainsViewModel = DomainsViewModel();
   final gravityUpdateViewModel = GravityUpdateViewModel(
     repository: gravityRepository,

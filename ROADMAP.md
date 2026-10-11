@@ -174,6 +174,7 @@ Maintain and improve the unofficial Pi-hole client while upstream activity is li
   - [ ] Manual refresh with existing data: keep content visible and show lightweight refresh progress.
   - [ ] Background refresh: avoid blocking the screen unless current data is unusable.
 - [ ] Power-user roadmap after the architecture work: evaluate a multi-Pi-hole dashboard, cross-server quick actions, saved Log Explorer filters and automatic OpenAPI-spec drift reporting for the remaining #639 handwritten holds.
+  - [x] Saved Query Log filter presets: store per-server and API-version named status/client/domain/exact-time snapshots in local SQLite with cascade cleanup on server deletion; expose save/load/delete in translated Logs Filters modal and reject missing or obsolete status values. Search text/sort order remain independent.
   - [x] Provide a read-only, scheduled and manually runnable FTL OpenAPI contract drift report against pinned v6.7; list endpoint/schema changes and inspect the three handwritten compatibility holds without changing generator outputs. Deterministic offline regressions and separate artifact/report check.
 
 ## Validation and completion criteria

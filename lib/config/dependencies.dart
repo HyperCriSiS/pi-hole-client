@@ -132,6 +132,7 @@ List<SingleChildWidget> createProviders({
           metricsRepository: bundle?.metrics,
           domainRepository: bundle?.domain,
           apiVersion: bundle?.apiVersion,
+          selectedServerAddress: bundle?.serverAddress,
           topClientNames: statusVM.topClientNames,
           onRefreshClients: statusVM.refreshOnce,
         ),
