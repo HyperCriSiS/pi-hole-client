@@ -340,9 +340,6 @@ void main() async {
           tester.view.resetDevicePixelRatio();
         });
 
-        // Arrange the successful snapshot outside the widget lifecycle.
-        // The screen's own initial read then fails, exercising stale-data UI
-        // without concurrent test-triggered Command executions.
         // Let the widget perform its initial successful load, then fail a
         // subsequent refresh. Avoid awaiting command_it outside the widget
         // test's fake-async pump scheduler (which deadlocks the test).
@@ -362,8 +359,9 @@ void main() async {
         expect(find.byIcon(Icons.warning_amber_rounded), findsOneWidget);
         expect(find.byIcon(Icons.error), findsNothing);
 
+        expect(adlistsViewModel.filteredBlacklistAdlists, hasLength(1));
         await tester.tap(find.text('Blocklist'));
-        await tester.pump(const Duration(milliseconds: 300));
+        await tester.pumpAndSettle();
         expect(
           find.text('https://hosts-file.net/ad_servers.txt'),
           findsOneWidget,
