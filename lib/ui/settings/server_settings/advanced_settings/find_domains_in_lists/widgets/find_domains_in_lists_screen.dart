@@ -82,14 +82,16 @@ class _FindDomainsInListsScreenState extends State<FindDomainsInListsScreen> {
             ),
           ),
           const SizedBox(height: 24),
-          if (viewModel.isSearching)
+          if (viewModel.isSearching && !viewModel.hasReusableResults)
             const Center(
               child: Padding(
                 padding: EdgeInsets.all(16),
                 child: CircularProgressIndicator(),
               ),
             )
-          else
+          else ...[
+            if (viewModel.isSearching && viewModel.hasReusableResults)
+              const LinearProgressIndicator(minHeight: 2),
             ResultsSection(
               errorMessage: viewModel.errorMessage,
               hasSearched: viewModel.hasSearched,
@@ -112,6 +114,7 @@ class _FindDomainsInListsScreenState extends State<FindDomainsInListsScreen> {
                 appConfigViewModel: appConfigViewModel,
               ),
             ),
+          ],
         ],
       ),
     );

@@ -33,9 +33,20 @@ class ResultsSection extends StatelessWidget {
   final ValueChanged<Domain> onDomainTap;
   final ValueChanged<Adlist> onAdlistTap;
 
+  Widget _cachedError(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 8),
+    child: Row(
+      children: [
+        Icon(Icons.warning_amber_rounded, color: Theme.of(context).colorScheme.error),
+        const SizedBox(width: 8),
+        Expanded(child: Text(errorMessage!)),
+      ],
+    ),
+  );
+
   @override
   Widget build(BuildContext context) {
-    if (errorMessage != null) {
+    if (errorMessage != null && meta == null) {
       return ErrorMessage(message: errorMessage!);
     }
 
@@ -44,17 +55,23 @@ class ResultsSection extends StatelessWidget {
     }
 
     if (meta == null || (domainResults.isEmpty && adlistResults.isEmpty)) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Text(AppLocalizations.of(context)!.noResultsFound),
-        ),
+      return Column(
+        children: [
+          if (errorMessage != null) _cachedError(context),
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(AppLocalizations.of(context)!.noResultsFound),
+            ),
+          ),
+        ],
       );
     }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (errorMessage != null) _cachedError(context),
         SummarySection(meta: meta!),
         const SizedBox(height: 16),
         if (domainResults.isNotEmpty) ...[
