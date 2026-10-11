@@ -1796,7 +1796,7 @@ void main() async {
         });
 
         statusViewModel.overtimeData = null;
-      statusViewModel.overtimeDataLoading = LoadStatus.loading;
+        statusViewModel.overtimeDataLoading = LoadStatus.loading;
 
         // Start with line mode (default)
         await tester.pumpWidget(
