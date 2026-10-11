@@ -1,9 +1,32 @@
+import 'dart:async';
+
 import 'package:command_it/command_it.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pi_hole_client/domain/model/enums.dart';
+import 'package:pi_hole_client/domain/model/list/adlist.dart';
 import 'package:pi_hole_client/ui/settings/server_settings/adlists/view_models/adlists_viewmodel.dart';
+import 'package:result_dart/result_dart.dart';
 
 import '../../../../../../testing/fakes/repositories/api/fake_adlist_repository.dart';
+
+class _ControllableAdlistRepository extends FakeAdlistRepository {
+  Completer<Result<List<Adlist>>>? nextFetch;
+  bool returnEmpty = false;
+
+  @override
+  Future<Result<List<Adlist>>> fetchAdlists({
+    String? adlist,
+    ListType? type,
+  }) {
+    final queued = nextFetch;
+    nextFetch = null;
+    if (queued != null) return queued.future;
+    if (returnEmpty && !shouldFail) {
+      return Future.value(const Success(<Adlist>[]));
+    }
+    return super.fetchAdlists(adlist: adlist, type: type);
+  }
+}
 
 void main() {
   group('AdlistsViewModel', () {
@@ -27,7 +50,8 @@ void main() {
     });
 
     test('initial values are correct', () {
-      expect(viewModel.loadingStatus, LoadStatus.loaded);
+      expect(viewModel.loadingStatus, LoadStatus.loading);
+      expect(viewModel.hasSuccessfulLoad, false);
       expect(viewModel.whitelistAdlists, []);
       expect(viewModel.blacklistAdlists, []);
       expect(viewModel.filteredWhitelistAdlists, []);
@@ -57,6 +81,7 @@ void main() {
       expect(viewModel.whitelistAdlists.length, 1);
       expect(viewModel.blacklistAdlists.length, 2);
       expect(viewModel.loadingStatus, LoadStatus.loaded);
+      expect(viewModel.hasSuccessfulLoad, true);
       expect(listenerCalled, true);
     });
 
@@ -67,6 +92,70 @@ void main() {
       } catch (_) {}
       expect(viewModel.loadingStatus, LoadStatus.error);
       expect(listenerCalled, true);
+    });
+
+
+    test('revalidation retains existing lists while pending', () async {
+      final repository = _ControllableAdlistRepository();
+      final vm = AdlistsViewModel(adListRepository: repository);
+      addTearDown(vm.dispose);
+      await vm.loadAdlists.runAsync();
+      final oldItems = List<Adlist>.of(vm.blacklistAdlists);
+      final gate = Completer<Result<List<Adlist>>>();
+      repository.nextFetch = gate;
+
+      final pending = vm.loadAdlists.runAsync();
+      expect(vm.hasSuccessfulLoad, true);
+      expect(vm.loadingStatus, LoadStatus.loaded);
+      expect(vm.isRevalidating, true);
+      expect(vm.hasRevalidationError, false);
+      expect(vm.blacklistAdlists, oldItems);
+
+      gate.complete(Success(oldItems));
+      await pending;
+      expect(vm.isRevalidating, false);
+      expect(vm.loadingStatus, LoadStatus.loaded);
+    });
+
+    test('failed revalidation preserves cached lists and retry clears warning',
+        () async {
+      final repository = _ControllableAdlistRepository();
+      final vm = AdlistsViewModel(adListRepository: repository);
+      addTearDown(vm.dispose);
+      await vm.loadAdlists.runAsync();
+      final old = List<Adlist>.of(vm.blacklistAdlists);
+
+      repository.shouldFail = true;
+      try {
+        await vm.loadAdlists.runAsync();
+      } catch (_) {}
+      expect(vm.loadingStatus, LoadStatus.loaded);
+      expect(vm.hasRevalidationError, true);
+      expect(vm.blacklistAdlists, old);
+
+      repository.shouldFail = false;
+      await vm.loadAdlists.runAsync();
+      expect(vm.hasRevalidationError, false);
+      expect(vm.blacklistAdlists, old);
+    });
+
+    test('successful empty response remains a cache after a failed refresh',
+        () async {
+      final repository = _ControllableAdlistRepository()..returnEmpty = true;
+      final vm = AdlistsViewModel(adListRepository: repository);
+      addTearDown(vm.dispose);
+      await vm.loadAdlists.runAsync();
+      expect(vm.hasSuccessfulLoad, true);
+      expect(vm.whitelistAdlists, isEmpty);
+      expect(vm.blacklistAdlists, isEmpty);
+      repository.shouldFail = true;
+      try {
+        await vm.loadAdlists.runAsync();
+      } catch (_) {}
+      expect(vm.loadingStatus, LoadStatus.loaded);
+      expect(vm.hasRevalidationError, true);
+      expect(vm.whitelistAdlists, isEmpty);
+      expect(vm.blacklistAdlists, isEmpty);
     });
 
     test('onSearch filters adlists based on search term', () async {
