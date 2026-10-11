@@ -82,29 +82,27 @@ jobs:
           set -euo pipefail
           source tools/openapi/versions.env
           UPSTREAM_COMMIT="$(cat "$RUNNER_TEMP/upstream-commit")"
+          mkdir -p reports
           python tools/openapi/report_spec_drift.py \
             --baseline tools/openapi/spec/bundled.yaml \
             --upstream "$RUNNER_TEMP/upstream-bundled.yaml" \
             --pinned-revision "$FTL_COMMIT" \
             --upstream-revision "$UPSTREAM_COMMIT" \
-            --report-json "$RUNNER_TEMP/ftl-contract-drift.json" \
-            --report-markdown "$RUNNER_TEMP/ftl-contract-drift.md" \
+            --report-json reports/ftl-contract-drift.json \
+            --report-markdown reports/ftl-contract-drift.md \
             --fail-on-drift
       - name: Publish human-readable job summary
         if: always()
         shell: bash
         run: |
-          if [ -f "$RUNNER_TEMP/ftl-contract-drift.md" ]; then
-            cat "$RUNNER_TEMP/ftl-contract-drift.md" >> "$GITHUB_STEP_SUMMARY"
+          if [ -f reports/ftl-contract-drift.md ]; then
+            cat reports/ftl-contract-drift.md >> "$GITHUB_STEP_SUMMARY"
           fi
       - name: Retain both reports for review
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: ftl-openapi-contract-drift
-          path: |
-            ~/not-used-file-pattern
-            \${{ runner.temp }}/ftl-contract-drift.md
-            \${{ runner.temp }}/ftl-contract-drift.json
+          path: reports/
           if-no-files-found: warn
           retention-days: 30
