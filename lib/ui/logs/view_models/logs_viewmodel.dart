@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:pi_hole_client/data/model/v6/metrics/query_filter.dart';
+import 'package:pi_hole_client/data/model/local/saved_log_filter_preset.dart';
+import 'package:pi_hole_client/data/repositories/local/saved_log_filters_repository.dart';
 import 'package:pi_hole_client/data/repositories/api/interfaces/domain_repository.dart';
 import 'package:pi_hole_client/data/repositories/api/interfaces/metrics_repository.dart';
 import 'package:pi_hole_client/domain/model/domain/domain.dart';
@@ -47,10 +49,16 @@ class LogsViewModel extends ChangeNotifier {
   LogsViewModel({
     PaginationServiceFactory? paginationServiceFactory,
     LiveLogsServiceFactory? liveLogsServiceFactory,
-  }) : _paginationServiceFactory =
+    SavedLogFiltersRepository? savedLogFiltersRepository,
+  }) : _savedLogFiltersRepository = savedLogFiltersRepository,
+       _paginationServiceFactory =
            paginationServiceFactory ?? _defaultPaginationFactory,
        _liveLogsServiceFactory =
            liveLogsServiceFactory ?? _defaultLiveLogsFactory;
+
+  final SavedLogFiltersRepository? _savedLogFiltersRepository;
+  String? _selectedServerAddress;
+  String? get selectedServerAddress => _selectedServerAddress;
 
   final PaginationServiceFactory _paginationServiceFactory;
   final LiveLogsServiceFactory _liveLogsServiceFactory;
@@ -350,6 +358,110 @@ class LogsViewModel extends ChangeNotifier {
         hasDomainFilter;
   }
 
+  /// Save a named snapshot of the filter controls in the Filters modal.
+  ///
+  /// Search text and sort order are intentionally not part of these presets.
+  /// Presets are isolated by server address and API version.
+  Future<void> saveCurrentFilterPreset(String name) async {
+    final repository = _savedLogFiltersRepository;
+    final server = _selectedServerAddress;
+    final cleanName = name.trim();
+    if (repository == null || server == null || server.isEmpty) {
+      throw StateError('Saved filters are not available');
+    }
+    if (cleanName.isEmpty || cleanName.length > 64) {
+      throw const FormatException('Filter name must contain 1–64 characters');
+    }
+    if (statusSelected.isEmpty) {
+      throw const FormatException('Cannot save an empty status selection');
+    }
+    final statuses = _apiVersion == SupportedApiVersions.v6
+        ? queryStatusesV6
+        : queryStatusesV5;
+    final keys = [
+      for (final status in statuses)
+        if (statusSelected.contains(status.index) && status.isShown) status.key,
+    ];
+    if (keys.length != statusSelected.toSet().length) {
+      throw const FormatException('Unknown status in filter');
+    }
+    final hasClientSubset = selectedClients.isNotEmpty &&
+        (totalClients.isEmpty || selectedClients.length < totalClients.length);
+    final preset = SavedLogFilterPreset(
+      name: cleanName,
+      apiVersion: _apiVersion,
+      statusKeys: keys,
+      requestStatus: requestStatus.name,
+      selectedClients: hasClientSubset ? List.of(selectedClients) : null,
+      domain: selectedDomain,
+      startTime: startTime,
+      endTime: endTime,
+    );
+    await repository.save(server, preset);
+  }
+
+  /// List only presets created for the currently selected server and API version.
+  Future<List<SavedLogFilterPreset>> loadFilterPresets() async {
+    final repository = _savedLogFiltersRepository;
+    final server = _selectedServerAddress;
+    if (repository == null || server == null || server.isEmpty) {
+      return [];
+    }
+    return repository.list(server, _apiVersion);
+  }
+
+  Future<void> deleteFilterPreset(String name) async {
+    final repository = _savedLogFiltersRepository;
+    final server = _selectedServerAddress;
+    if (repository == null || server == null || server.isEmpty) {
+      throw StateError('Saved filters are not available');
+    }
+    await repository.delete(server, _apiVersion, name);
+  }
+
+  /// Apply one saved snapshot and reissue the existing version-aware query.
+  ///
+  /// Reject mismatched API versions or obsolete status keys rather than
+  /// silently broadening a saved security/diagnostics filter.
+  Future<void> applyFilterPreset(SavedLogFilterPreset preset) async {
+    if (_selectedServerAddress == null || preset.apiVersion != _apiVersion) {
+      throw StateError('Preset belongs to a different API version or server');
+    }
+    final statuses = _apiVersion == SupportedApiVersions.v6
+        ? queryStatusesV6
+        : queryStatusesV5;
+    final validStatuses = statuses.where((s) => s.isShown).toList();
+    final selection = [
+      for (final key in preset.statusKeys)
+        ...validStatuses.where((s) => s.key == key).map((s) => s.index),
+    ];
+    if (selection.isEmpty || selection.toSet().length != preset.statusKeys.length) {
+      throw const FormatException('Saved status filter is no longer supported');
+    }
+    if (preset.startTime != null && preset.endTime != null &&
+        preset.startTime!.isAfter(preset.endTime!)) {
+      throw const FormatException('Saved time range is invalid');
+    }
+    final presetStatus = RequestStatus.values.where(
+      (value) => value.name == preset.requestStatus,
+    );
+    if (presetStatus.isEmpty) {
+      throw const FormatException('Saved request category is invalid');
+    }
+    _filters.resetFilters();
+    _filters.setRequestStatus(presetStatus.single);
+    _filters.setStatusSelected(selection);
+    _filters.setSelectedClients(preset.selectedClients ?? List.of(totalClients));
+    _filters.setSelectedDomain(preset.domain);
+    if (preset.startTime != null) _filters.setStartTime(preset.startTime!);
+    if (preset.endTime != null) _filters.setEndTime(preset.endTime!);
+    _recomputeLogsListDisplay();
+    notifyListeners();
+    if (_screenActive && _paginationService != null) {
+      await applyFilterAndLoad(inStartTime: startTime, inEndTime: endTime);
+    }
+  }
+
   // ------------------------------------------
   // Provider update (called by ChangeNotifierProxyProvider)
   // ------------------------------------------
@@ -371,11 +483,14 @@ class LogsViewModel extends ChangeNotifier {
     MetricsRepository? metricsRepository,
     DomainRepository? domainRepository,
     String? apiVersion,
+    String? selectedServerAddress,
     List<String>? topClientNames,
     VoidCallback? onRefreshClients,
   }) {
     // Wire up the callback that triggers a client-list refresh from StatusViewModel.
     _onRefreshClients = onRefreshClients;
+    final serverAddressChanged = selectedServerAddress != _selectedServerAddress;
+    _selectedServerAddress = selectedServerAddress;
 
     // Propagate the latest client list derived from StatusViewModel.
     if (topClientNames != null && topClientNames.isNotEmpty) {
@@ -401,7 +516,7 @@ class LogsViewModel extends ChangeNotifier {
 
     // Also reset the filter delegate on server switch so stale client/domain
     // selections from the previous server don't bleed into the new one.
-    if (repositoryChanged) {
+    if (repositoryChanged || serverAddressChanged) {
       _serverEpoch++;
       _filters = version == SupportedApiVersions.v6 ? FiltersV6() : FiltersV5();
 
