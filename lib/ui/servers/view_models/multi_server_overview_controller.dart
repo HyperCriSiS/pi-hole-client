@@ -99,7 +99,7 @@ Future<ServerOverviewMetrics> readServerOverview(
       selectedBundle.allowUntrustedCert == server.allowUntrustedCert &&
       selectedBundle.ignoreCertificateErrors == server.ignoreCertificateErrors &&
       selectedBundle.pinnedCertificateSha256 == server.pinnedCertificateSha256;
-  final bundle = reuse ? selectedBundle! : createBundle(server: server);
+  final bundle = reuse ? selectedBundle : createBundle(server: server);
   switch (server.apiVersion) {
     case SupportedApiVersions.v5:
       final value = (await bundle.realtimeStatus.fetchRealtimeStatus()).getOrThrow().summary;

@@ -30,7 +30,9 @@ void main() {
       servers: const [serverA, serverB],
       reader: (server) async {
         calls.add(server.address);
-        if (server == serverA) throw StateError('confidential authentication error');
+        if (server == serverA) {
+          throw StateError('confidential authentication error');
+        }
         return metrics;
       },
     );
