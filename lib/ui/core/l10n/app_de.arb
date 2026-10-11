@@ -754,5 +754,9 @@
   "chipTooltipRamUsage": "RAM-Auslastung",
   "chipTooltipCpuTemperature": "CPU-Temperatur",
   "chipTooltipSystemUptime": "Systemlaufzeit",
-  "refreshFailedShowingPrevious": "Aktualisierung fehlgeschlagen. Die zuletzt geladenen Daten bleiben sichtbar."
+  "refreshFailedShowingPrevious": "Aktualisierung fehlgeschlagen. Die zuletzt geladenen Daten bleiben sichtbar.",
+  "saveFilter": "Filter speichern",
+  "savedFilters": "Gespeicherte Filter",
+  "filterName": "Filtername",
+  "noSavedFilters": "Keine gespeicherten Filter"
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pi_hole_client/domain/model/enums.dart';
+import 'package:pi_hole_client/data/model/local/saved_log_filter_preset.dart';
 import 'package:pi_hole_client/ui/core/l10n/generated/app_localizations.dart';
 import 'package:pi_hole_client/ui/core/ui/helpers/formats.dart';
 import 'package:pi_hole_client/ui/core/ui/helpers/responsive.dart';
@@ -29,6 +30,123 @@ class LogsFiltersModal extends StatefulWidget {
 
 class _LogsFiltersModalState extends State<LogsFiltersModal> {
   String? timeError;
+
+  void _showPresetError() {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(AppLocalizations.of(context)!.error)),
+    );
+  }
+
+  Future<void> _savePreset(LogsViewModel vm) async {
+    final labels = AppLocalizations.of(context)!;
+    final controller = TextEditingController();
+    String name = '';
+    final chosen = await showDialog<String>(
+      context: context,
+      useRootNavigator: false,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, update) => AlertDialog(
+          title: Text(labels.saveFilter),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            maxLength: 64,
+            decoration: InputDecoration(labelText: labels.filterName),
+            onChanged: (text) => update(() => name = text.trim()),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(labels.cancel),
+            ),
+            TextButton(
+              onPressed: name.isEmpty
+                  ? null
+                  : () => Navigator.pop(dialogContext, name),
+              child: Text(labels.save),
+            ),
+          ],
+        ),
+      ),
+    );
+    controller.dispose();
+    if (!mounted || chosen == null) return;
+    try {
+      await vm.saveCurrentFilterPreset(chosen);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(labels.saved)),
+      );
+    } catch (_) {
+      _showPresetError();
+    }
+  }
+
+  Future<void> _choosePreset(LogsViewModel vm) async {
+    final labels = AppLocalizations.of(context)!;
+    List<SavedLogFilterPreset> presets;
+    try {
+      presets = await vm.loadFilterPresets();
+    } catch (_) {
+      _showPresetError();
+      return;
+    }
+    if (!mounted) return;
+
+    final chosen = await showDialog<SavedLogFilterPreset>(
+      context: context,
+      useRootNavigator: false,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, update) => AlertDialog(
+          title: Text(labels.savedFilters),
+          content: SizedBox(
+            width: 380,
+            child: presets.isEmpty
+                ? Text(labels.noSavedFilters)
+                : ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: presets.length,
+                    itemBuilder: (context, index) {
+                      final preset = presets[index];
+                      return ListTile(
+                        title: Text(preset.name),
+                        onTap: () => Navigator.pop(dialogContext, preset),
+                        trailing: IconButton(
+                          tooltip: labels.delete,
+                          icon: const Icon(Icons.delete_outline),
+                          onPressed: () async {
+                            try {
+                              await vm.deleteFilterPreset(preset.name);
+                              if (!dialogContext.mounted) return;
+                              update(() => presets.removeAt(index));
+                            } catch (_) {
+                              _showPresetError();
+                            }
+                          },
+                        ),
+                      );
+                    },
+                  ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(labels.close),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (!mounted || chosen == null) return;
+    try {
+      await vm.applyFilterPreset(chosen);
+      if (mounted) Navigator.maybePop(context);
+    } catch (_) {
+      _showPresetError();
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -547,9 +665,24 @@ class _LogsFiltersModalState extends State<LogsFiltersModal> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  TextButton(
-                    onPressed: resetFilters,
-                    child: Text(AppLocalizations.of(context)!.reset),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        tooltip: AppLocalizations.of(context)!.saveFilter,
+                        onPressed: () => _savePreset(logsViewModel),
+                        icon: const Icon(Icons.bookmark_add_outlined),
+                      ),
+                      IconButton(
+                        tooltip: AppLocalizations.of(context)!.savedFilters,
+                        onPressed: () => _choosePreset(logsViewModel),
+                        icon: const Icon(Icons.bookmarks_outlined),
+                      ),
+                      TextButton(
+                        onPressed: resetFilters,
+                        child: Text(AppLocalizations.of(context)!.reset),
+                      ),
+                    ],
                   ),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,

@@ -755,5 +755,9 @@
   "chipTooltipRamUsage": "Uso de RAM",
   "chipTooltipCpuTemperature": "Temperatura de CPU",
   "chipTooltipSystemUptime": "Tiempo de actividad del sistema",
-  "refreshFailedShowingPrevious": "La actualización falló. Los últimos datos cargados correctamente siguen visibles."
+  "refreshFailedShowingPrevious": "La actualización falló. Los últimos datos cargados correctamente siguen visibles.",
+  "saveFilter": "Guardar filtro",
+  "savedFilters": "Filtros guardados",
+  "filterName": "Nombre del filtro",
+  "noSavedFilters": "No hay filtros guardados"
 }
