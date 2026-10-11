@@ -351,6 +351,9 @@ void main() async {
         statusViewModel.statusLoading = LoadStatus.error;
         await tester.pumpWidget(buildAppWithRouter());
         await tester.pump();
+        // The fourth TabBar entry may be outside the horizontal viewport.
+        await tester.ensureVisible(find.text('DNS'));
+        await tester.pumpAndSettle();
         await tester.tap(find.text('DNS'));
         await tester.pumpAndSettle();
         expect(find.text('DNS cache metrics'), findsOneWidget);
