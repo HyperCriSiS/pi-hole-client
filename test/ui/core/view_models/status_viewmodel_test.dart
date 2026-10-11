@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pi_hole_client/domain/model/enums.dart';
+import 'package:pi_hole_client/domain/model/realtime_status/realtime_status.dart';
+import 'package:result_dart/result_dart.dart';
 import 'package:pi_hole_client/ui/core/view_models/status_viewmodel.dart';
 import 'package:pi_hole_client/utils/exceptions.dart';
 
@@ -7,6 +11,18 @@ import '../../../../testing/fakes/repositories/api/fake_dns_repository.dart';
 import '../../../../testing/fakes/repositories/api/fake_ftl_repository.dart';
 import '../../../../testing/fakes/repositories/api/fake_metrics_repository.dart';
 import '../../../../testing/fakes/repositories/api/fake_realtime_status_repository.dart';
+
+/// Holds the realtime response while the independently fetched overtime data
+/// is allowed to finish, so the notification order is deterministic.
+class _GatedRealtimeStatusRepository extends FakeRealTimeStatusRepository {
+  final Completer<void> release = Completer<void>();
+
+  @override
+  Future<Result<RealtimeStatus>> fetchRealtimeStatus() async {
+    await release.future;
+    return super.fetchRealtimeStatus();
+  }
+}
 
 /// Configures [vm] with fake repositories and an optional server address.
 void _setup(
@@ -215,6 +231,71 @@ void main() {
         expect(vm.getServerStatus, LoadStatus.loading);
         final ok = await vm.refreshOnce();
         expect(ok, isFalse);
+        expect(vm.getServerStatus, LoadStatus.error);
+      },
+    );
+
+    test(
+      'realtime failure stays errored when overtime succeeds afterward',
+      () async {
+        vm = StatusViewModel();
+        final failingRealtime = FakeRealTimeStatusRepository()
+          ..shouldFail = true;
+        _setup(vm, realtimeStatusRepository: failingRealtime);
+
+        final ok = await vm.refreshOnce();
+
+        expect(ok, isFalse);
+        expect(vm.getRealtimeStatus, isNull);
+        expect(vm.getStatusLoading, LoadStatus.error);
+        expect(vm.getOvertimeDataLoadStatus, LoadStatus.loaded);
+        expect(vm.getOvertimeData, isNotNull);
+        expect(vm.getServerStatus, LoadStatus.error);
+      },
+    );
+
+    test(
+      'overtime completion never declares pending realtime data loaded',
+      () async {
+        vm = StatusViewModel();
+        final pendingRealtime = _GatedRealtimeStatusRepository();
+        _setup(vm, realtimeStatusRepository: pendingRealtime);
+
+        final overtimeFinished = Completer<void>();
+        vm.addListener(() {
+          if (vm.getOvertimeDataLoadStatus == LoadStatus.loaded &&
+              !overtimeFinished.isCompleted) {
+            overtimeFinished.complete();
+          }
+        });
+
+        final refresh = vm.refreshOnce();
+        await overtimeFinished.future.timeout(const Duration(seconds: 3));
+
+        expect(vm.getStatusLoading, LoadStatus.loading);
+        expect(vm.getRealtimeStatus, isNull);
+        expect(vm.getOvertimeData, isNotNull);
+
+        pendingRealtime.release.complete();
+        expect(await refresh, isTrue);
+        expect(vm.getStatusLoading, LoadStatus.loaded);
+        expect(vm.getServerStatus, LoadStatus.loaded);
+      },
+    );
+
+    test(
+      'overtime failure does not downgrade successfully loaded realtime data',
+      () async {
+        vm = StatusViewModel();
+        final failingOvertime = FakeMetricsRepository()..shouldFail = true;
+        _setup(vm, metricsRepository: failingOvertime);
+
+        final ok = await vm.refreshOnce();
+
+        expect(ok, isFalse);
+        expect(vm.getRealtimeStatus, isNotNull);
+        expect(vm.getStatusLoading, LoadStatus.loaded);
+        expect(vm.getOvertimeDataLoadStatus, LoadStatus.error);
         expect(vm.getServerStatus, LoadStatus.error);
       },
     );

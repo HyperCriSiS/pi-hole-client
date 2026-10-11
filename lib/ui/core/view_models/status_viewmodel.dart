@@ -484,7 +484,8 @@ class StatusViewModel with ChangeNotifier {
       (overTime) {
         _overtimeData = overTime;
         _overtimeDataLoading = LoadStatus.loaded;
-        _statusLoading = LoadStatus.loaded;
+        // Overtime does not establish realtime status health. The realtime
+        // request independently owns _statusLoading (including its errors).
         notifyListeners();
         return true;
       },
