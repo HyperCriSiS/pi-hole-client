@@ -14,6 +14,7 @@ import 'package:pi_hole_client/ui/statistics/widgets/animated_percent_indicator.
 import 'package:pi_hole_client/ui/statistics/widgets/custom_pie_chart.dart';
 import 'package:pi_hole_client/ui/statistics/widgets/no_data_chart.dart';
 import 'package:pi_hole_client/ui/statistics/widgets/pie_chart_legend.dart';
+import 'package:pi_hole_client/ui/statistics/widgets/statistics_revalidation_status.dart';
 import 'package:provider/provider.dart';
 
 class StatisticsList extends StatelessWidget {
@@ -34,6 +35,12 @@ class StatisticsList extends StatelessWidget {
   Widget build(BuildContext context) {
     final loadStatus = context.select<StatusViewModel, LoadStatus>(
       (vm) => vm.getStatusLoading,
+    );
+
+    // Existing data remains visible during refresh/failure. First load still
+    // uses the full loading/error screen until this section has real data.
+    final hasCachedData = context.select<StatusViewModel, bool>(
+      (vm) => vm.getRealtimeStatus != null,
     );
 
     return CustomTabContent(
@@ -57,6 +64,8 @@ class StatisticsList extends StatelessWidget {
         ),
       ),
       contentGenerator: () => [
+        if (hasCachedData)
+          StatisticsRevalidationStatus(status: loadStatus),
         StatisticsListContent(type: type, countLabel: countLabel),
       ],
       errorGenerator: () => SizedBox(
@@ -66,7 +75,7 @@ class StatisticsList extends StatelessWidget {
           message: AppLocalizations.of(context)!.statsNotLoaded,
         ),
       ),
-      loadStatus: loadStatus,
+      loadStatus: hasCachedData ? LoadStatus.loaded : loadStatus,
       onRefresh: onRefresh,
       controller: controller,
     );

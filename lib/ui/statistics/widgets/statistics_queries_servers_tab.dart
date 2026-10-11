@@ -12,6 +12,7 @@ import 'package:pi_hole_client/ui/core/view_models/status_viewmodel.dart';
 import 'package:pi_hole_client/ui/statistics/widgets/custom_pie_chart.dart';
 import 'package:pi_hole_client/ui/statistics/widgets/no_data_chart.dart';
 import 'package:pi_hole_client/ui/statistics/widgets/pie_chart_legend.dart';
+import 'package:pi_hole_client/ui/statistics/widgets/statistics_revalidation_status.dart';
 import 'package:provider/provider.dart';
 
 class QueriesServersTab extends StatelessWidget {
@@ -28,6 +29,12 @@ class QueriesServersTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final statusLoading = context.select<StatusViewModel, LoadStatus>(
       (vm) => vm.getStatusLoading,
+    );
+
+    // Existing data remains visible during refresh/failure. First load still
+    // uses the full loading/error screen until this section has real data.
+    final hasCachedData = context.select<StatusViewModel, bool>(
+      (vm) => vm.getRealtimeStatus != null,
     );
 
     return CustomTabContent(
@@ -50,7 +57,10 @@ class QueriesServersTab extends StatelessWidget {
           ],
         ),
       ),
-      contentGenerator: () => [const QueriesServersTabContent()],
+      contentGenerator: () => [
+        if (hasCachedData)
+          StatisticsRevalidationStatus(status: statusLoading),
+        const QueriesServersTabContent(),],
       errorGenerator: () => SizedBox(
         width: double.maxFinite,
         height: 300,
@@ -58,7 +68,7 @@ class QueriesServersTab extends StatelessWidget {
           message: AppLocalizations.of(context)!.statsNotLoaded,
         ),
       ),
-      loadStatus: statusLoading,
+      loadStatus: hasCachedData ? LoadStatus.loaded : statusLoading,
       onRefresh: onRefresh,
       controller: controller,
     );
