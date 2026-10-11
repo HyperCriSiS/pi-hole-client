@@ -40,6 +40,10 @@ Updated: 2026-10-11 (#720 Adlists cache-preserving refresh merged and CI-verifie
 - #720 Adlists v5/v6 server-settings cache-preserving revalidation integrated through PR #210; exact-head CI and unsigned Android artifact gate passed. No changes to API transport, authentication/TOTP, SQLite or selected-server ownership. PR #210 is not proof of physical-device behavior or global #720 completion.
 
 
+## Current focused work unit
+
+- #720 Find Domains in Lists: only the same `(domain, partial, limit)` search may display a successful snapshot during an explicit repeat search or failed repeat search. New search parameters clear previous results before querying; first-load/new-query progress/errors remain blocking to prevent false associations. Cached empty matches remain valid. UI uses a slim progress indicator and inline warning, ViewModel tests enforce identity/isolation, widget regression checks same-query failure and new-query error. No session/transport changes. Feature PR and exact-head full CI pending; do not claim merged until verified.
+
 ## Next autonomous work unit
 
 1. Recheck live `main`, active PRs and targeted CI. Do not repeat merged #190–#200 or this checkpoint.
