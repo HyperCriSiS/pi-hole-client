@@ -343,12 +343,17 @@ void main() async {
         // Arrange the successful snapshot outside the widget lifecycle.
         // The screen's own initial read then fails, exercising stale-data UI
         // without concurrent test-triggered Command executions.
-        await adlistsViewModel.loadAdlists.runAsync();
+        // Let the widget perform its initial successful load, then fail a
+        // subsequent refresh. Avoid awaiting command_it outside the widget
+        // test's fake-async pump scheduler (which deadlocks the test).
+        await tester.pumpWidget(buildAdlistWidget());
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
         expect(adlistsViewModel.hasSuccessfulLoad, true);
         fakeAdlistRepository.shouldFail = true;
+        adlistsViewModel.loadAdlists.run();
 
-        await tester.pumpWidget(buildAdlistWidget());
-        await tester.pump(const Duration(milliseconds: 100));
+        await tester.pump();
         await tester.pump(const Duration(milliseconds: 100));
 
         expect(adlistsViewModel.hasRevalidationError, true);
