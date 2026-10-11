@@ -3,10 +3,10 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:pi_hole_client/data/model/v6/metrics/query_filter.dart';
 import 'package:pi_hole_client/data/model/local/saved_log_filter_preset.dart';
-import 'package:pi_hole_client/data/repositories/local/saved_log_filters_repository.dart';
+import 'package:pi_hole_client/data/model/v6/metrics/query_filter.dart';
 import 'package:pi_hole_client/data/repositories/api/interfaces/domain_repository.dart';
+import 'package:pi_hole_client/data/repositories/local/saved_log_filters_repository.dart';
 import 'package:pi_hole_client/data/repositories/api/interfaces/metrics_repository.dart';
 import 'package:pi_hole_client/domain/model/domain/domain.dart';
 import 'package:pi_hole_client/domain/model/enum_converters.dart';

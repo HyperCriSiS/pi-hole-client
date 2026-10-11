@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:pi_hole_client/domain/model/enums.dart';
 import 'package:pi_hole_client/data/model/local/saved_log_filter_preset.dart';
+import 'package:pi_hole_client/domain/model/enums.dart';
 import 'package:pi_hole_client/ui/core/l10n/generated/app_localizations.dart';
 import 'package:pi_hole_client/ui/core/ui/helpers/formats.dart';
 import 'package:pi_hole_client/ui/core/ui/helpers/responsive.dart';
@@ -84,7 +84,7 @@ class _LogsFiltersModalState extends State<LogsFiltersModal> {
     final labels = AppLocalizations.of(context)!;
     final ownerAddress = vm.selectedServerAddress;
     final ownerApi = vm.apiVersion;
-    List<SavedLogFilterPreset> presets;
+    late List<SavedLogFilterPreset> presets;
     try {
       presets = await vm.loadFilterPresets();
     } catch (_) {
@@ -148,7 +148,7 @@ class _LogsFiltersModalState extends State<LogsFiltersModal> {
     }
     try {
       await vm.applyFilterPreset(chosen);
-      if (mounted) Navigator.maybePop(context);
+      if (mounted) await Navigator.maybePop(context);
     } catch (_) {
       _showPresetError();
     }

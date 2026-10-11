@@ -389,6 +389,7 @@ class FakeLogsViewModel extends LogsViewModel {
     MetricsRepository? metricsRepository,
     DomainRepository? domainRepository,
     String? apiVersion,
+    String? selectedServerAddress,
     List<String>? topClientNames,
     VoidCallback? onRefreshClients,
   }) {}
