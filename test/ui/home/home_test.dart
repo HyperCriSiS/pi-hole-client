@@ -213,6 +213,8 @@ void main() async {
         tester.view.resetDevicePixelRatio();
       });
 
+      // This is a first-load failure, not a refresh of cached metrics.
+      statusViewModel.realtimeStatus = null;
       statusViewModel.statusLoading = LoadStatus.error;
 
       await tester.pumpWidget(

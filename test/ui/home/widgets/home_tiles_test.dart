@@ -99,6 +99,30 @@ void main() async {
       );
     });
 
+    testWidgets('failed refresh keeps cached metric values and warning icons', (
+      tester,
+    ) async {
+      final cached = fixture.kRepoFetchRealTimeStatus;
+      statusViewModel
+        ..realtimeStatus = cached
+        ..statusLoading = LoadStatus.error;
+
+      await tester.pumpWidget(
+        buildTestApp(
+          const HomeTiles(width: 1080),
+          statusViewModel: statusViewModel,
+        ),
+      );
+
+      expect(_skeletonEnabled(tester), isFalse);
+      expect(find.byIcon(Icons.warning_amber_rounded), findsNWidgets(4));
+      expect(
+        find.text(intFormat(cached.summary.dnsQueriesToday, Platform.localeName)),
+        findsOneWidget,
+      );
+      expect(find.text('—'), findsNothing);
+    });
+
     testWidgets('first-load failure retains the existing error indication', (
       tester,
     ) async {

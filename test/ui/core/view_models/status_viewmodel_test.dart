@@ -481,6 +481,110 @@ void main() {
     });
   });
 
+  group('StatusViewModel – independent background timer results', () {
+    late StatusViewModel vm;
+
+    setUp(() => vm = StatusViewModel());
+    tearDown(() => vm.dispose());
+
+    test('overtime success cannot report a pending or failed realtime connection as loaded', () async {
+      final gated = _GatedRealtimeStatusRepository()..shouldFail = true;
+      final overtimeReady = Completer<void>();
+      _setup(vm, realtimeStatusRepository: gated);
+      vm.addListener(() {
+        if (vm.getOvertimeDataLoadStatus == LoadStatus.loaded &&
+            !overtimeReady.isCompleted) {
+          overtimeReady.complete();
+        }
+      });
+
+      vm.startAutoRefresh();
+      await overtimeReady.future.timeout(const Duration(seconds: 3));
+      final serverWhileRealtimePending = vm.getServerStatus;
+      gated.release.complete();
+
+      // A failing realtime endpoint must remain authoritative even when
+      // independently fetched history was already successful.
+      final realtimeFailed = Completer<void>();
+      vm.addListener(() {
+        if (vm.getStatusLoading == LoadStatus.error &&
+            !realtimeFailed.isCompleted) {
+          realtimeFailed.complete();
+        }
+      });
+      // The gated continuation may already have completed by the time we
+      // attach the listener, so inspect the state first.
+      if (vm.getStatusLoading != LoadStatus.error) {
+        await realtimeFailed.future.timeout(const Duration(seconds: 3));
+      }
+      expect(serverWhileRealtimePending, LoadStatus.loading);
+      expect(vm.getServerStatus, LoadStatus.error);
+      expect(vm.getStatusLoading, LoadStatus.error);
+      expect(vm.getOvertimeDataLoadStatus, LoadStatus.loaded);
+      expect(vm.getOvertimeData, isNotNull);
+    });
+
+    test('a later realtime failure marks cached values stale without dropping them', () async {
+      final realtimeRepo = FakeRealTimeStatusRepository();
+      _setup(vm, realtimeStatusRepository: realtimeRepo);
+      expect(await vm.refreshOnce(), isTrue);
+      final previous = vm.getRealtimeStatus;
+      realtimeRepo.shouldFail = true;
+      final errorReady = Completer<void>();
+      vm.addListener(() {
+        if (vm.getStatusLoading == LoadStatus.error &&
+            !errorReady.isCompleted) {
+          errorReady.complete();
+        }
+      });
+
+      vm.startAutoRefresh(showLoadingIndicator: false);
+      await errorReady.future.timeout(const Duration(seconds: 3));
+
+      expect(vm.getServerStatus, LoadStatus.error);
+      expect(vm.getStatusLoading, LoadStatus.error);
+      expect(vm.getRealtimeStatus, same(previous));
+    });
+
+    test('overtime failure warns while retaining cached charts and realtime connection', () async {
+      final metricsRepo = FakeMetricsRepository();
+      _setup(vm, metricsRepository: metricsRepo);
+      expect(await vm.refreshOnce(), isTrue);
+      final previous = vm.getOvertimeData;
+      metricsRepo.shouldFail = true;
+      final overtimeFailed = Completer<void>();
+      vm.addListener(() {
+        if (vm.getOvertimeDataLoadStatus == LoadStatus.error &&
+            !overtimeFailed.isCompleted) {
+          overtimeFailed.complete();
+        }
+      });
+
+      vm.startAutoRefresh(showLoadingIndicator: false);
+      await overtimeFailed.future.timeout(const Duration(seconds: 3));
+
+      expect(vm.getOvertimeData, same(previous));
+      expect(vm.getOvertimeDataLoadStatus, LoadStatus.error);
+      expect(vm.getServerStatus, LoadStatus.loaded);
+      expect(vm.getStatusLoading, LoadStatus.loaded);
+
+      metricsRepo.shouldFail = false;
+      vm.stopAutoRefresh(showLoadingIndicator: false);
+      final recovered = Completer<void>();
+      vm.addListener(() {
+        if (vm.getOvertimeDataLoadStatus == LoadStatus.loaded &&
+            !recovered.isCompleted) {
+          recovered.complete();
+        }
+      });
+      vm.startAutoRefresh(showLoadingIndicator: false);
+      await recovered.future.timeout(const Duration(seconds: 3));
+
+      expect(vm.getOvertimeDataLoadStatus, LoadStatus.loaded);
+      expect(vm.getServerStatus, LoadStatus.loaded);
+    });
+  });
+
   // ---------------------------------------------------------------------------
   // setServerStatus() — resets stale error state before widget-tap navigation
   // ---------------------------------------------------------------------------

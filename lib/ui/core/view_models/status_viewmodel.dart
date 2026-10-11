@@ -615,16 +615,16 @@ class StatusViewModel with ChangeNotifier {
           if (_handleFatalConnectionError(error, selectedUrlBefore)) return;
           if (selectedUrlBefore == _selectedServerAddress) {
             var changed = false;
-            if (_serverStatus == LoadStatus.loaded) {
+            // Only realtime status owns connection health. Even the first
+            // failed tick must leave an observable error, and failures after
+            // a previous success must not masquerade as fresh metrics.
+            if (_serverStatus != LoadStatus.error) {
               _recordConnectionFailure('Auto-refresh status request', error);
-              logger.w(
-                'Server disconnected: $error. '
-                '$_selectedServerAlias ($_selectedServerAddress)',
-              );
+              logger.w('Realtime status refresh failed: ${error.runtimeType}');
               _serverStatus = LoadStatus.error;
               changed = true;
             }
-            if (_statusLoading == LoadStatus.loading) {
+            if (_statusLoading != LoadStatus.error) {
               _statusLoading = LoadStatus.error;
               changed = true;
             }
@@ -691,27 +691,19 @@ class StatusViewModel with ChangeNotifier {
         (overTime) {
           _overtimeData = overTime;
           _overtimeDataLoading = LoadStatus.loaded;
-          if (_serverStatus != LoadStatus.loaded) {
-            _serverStatus = LoadStatus.loaded;
-          }
+          // Historical data can succeed when realtime status is unavailable;
+          // it must never override the realtime-owned connection state.
           notifyListeners();
         },
         (error) {
-          if (selectedUrlBefore == _selectedServerAddress) {
-            var changed = false;
-            if (_serverStatus == LoadStatus.loaded) {
-              logger.w(
-                'Server disconnected: $error. '
-                '$_selectedServerAlias ($_selectedServerAddress)',
-              );
-              _serverStatus = LoadStatus.error;
-              changed = true;
-            }
-            if (_overtimeDataLoading == LoadStatus.loading) {
-              _overtimeDataLoading = LoadStatus.error;
-              changed = true;
-            }
-            if (changed) notifyListeners();
+          if (selectedUrlBefore == _selectedServerAddress &&
+              _overtimeDataLoading != LoadStatus.error) {
+            // The chart already retains cached data. Mark it stale even after
+            // a prior loaded state, but do not mark the server disconnected:
+            // the independent realtime request owns that status.
+            logger.w('Overtime data refresh failed: ${error.runtimeType}');
+            _overtimeDataLoading = LoadStatus.error;
+            notifyListeners();
           }
         },
       );
