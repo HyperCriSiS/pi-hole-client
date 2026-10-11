@@ -588,7 +588,7 @@ void main() {
   // ---------------------------------------------------------------------------
   // setServerStatus() — resets stale error state before widget-tap navigation
   // ---------------------------------------------------------------------------
-group('StatusViewModel – setServerStatus resets stale error state', () {
+  group('StatusViewModel – setServerStatus resets stale error state', () {
     late StatusViewModel vm;
     late List<LoadStatus> statusHistory;
 
