@@ -760,5 +760,12 @@
   "saveFilter": "フィルターを保存",
   "savedFilters": "保存済みフィルター",
   "filterName": "フィルター名",
-  "noSavedFilters": "保存済みフィルターはありません"
+  "noSavedFilters": "保存済みフィルターはありません",
+  "multiServerOverview": "複数サーバーの概要",
+  "multiServerOverviewManual": "読み取り専用です。手動更新のみで、バックグラウンド取得は行いません。",
+  "multiServerRefreshAll": "すべて更新",
+  "multiServerNotRequested": "未取得",
+  "multiServerLastFetched": "前回の手動取得に成功",
+  "multiServerFetchFailed": "統計を取得できません。他のサーバーには影響しません。",
+  "multiServerBlockedPercent": "ブロック率"
 }

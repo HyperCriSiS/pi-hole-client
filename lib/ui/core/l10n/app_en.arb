@@ -758,5 +758,12 @@
   "saveFilter": "Save filter",
   "savedFilters": "Saved filters",
   "filterName": "Filter name",
-  "noSavedFilters": "No saved filters"
+  "noSavedFilters": "No saved filters",
+  "multiServerOverview": "Multi-server overview",
+  "multiServerOverviewManual": "Read-only snapshots. Refresh manually; no background polling.",
+  "multiServerRefreshAll": "Refresh all servers",
+  "multiServerNotRequested": "Not queried yet",
+  "multiServerLastFetched": "Last manual read succeeded",
+  "multiServerFetchFailed": "Could not retrieve statistics. Other servers are unaffected.",
+  "multiServerBlockedPercent": "Blocked"
 }

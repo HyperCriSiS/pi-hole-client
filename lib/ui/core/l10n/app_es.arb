@@ -759,5 +759,12 @@
   "saveFilter": "Guardar filtro",
   "savedFilters": "Filtros guardados",
   "filterName": "Nombre del filtro",
-  "noSavedFilters": "No hay filtros guardados"
+  "noSavedFilters": "No hay filtros guardados",
+  "multiServerOverview": "Resumen de varios servidores",
+  "multiServerOverviewManual": "Datos de solo lectura. Actualización manual, sin consultas en segundo plano.",
+  "multiServerRefreshAll": "Actualizar todos",
+  "multiServerNotRequested": "Sin consultar",
+  "multiServerLastFetched": "Última consulta manual correcta",
+  "multiServerFetchFailed": "No se pueden cargar estadísticas. Los demás servidores no se ven afectados.",
+  "multiServerBlockedPercent": "Bloqueado"
 }
