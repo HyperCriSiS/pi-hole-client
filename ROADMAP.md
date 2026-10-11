@@ -170,6 +170,7 @@ Maintain and improve the unofficial Pi-hole client while upstream activity is li
   - [x] One-shot Home realtime status is no longer marked loaded by an independent overtime success; failure/pending ordering and independent overtime failure covered by ViewModel tests (#197).
   - [x] Home query/client charts keep cached overtime datasets visible during refresh and failure with nonblocking progress/warning; first-load skeleton/error stays reserved for missing data (#198).
   - [x] Background realtime timer exclusively owns server connectivity; overtime success/failure updates only charts, both timers flag stale cache after errors, and Home KPI values stay visible with warning (#200).
+  - [x] Statistics mobile tabs and desktop columns preserve cached realtime/DNS charts through manual/background refresh and failure with lightweight progress/error status, while keeping first-load loading/error screens if no real data exists. Regression coverage on mobile and desktop in the focused statistics-SWR PR.
   - [ ] Initial load: skeleton or dedicated loading state where structural placeholders are useful.
   - [ ] Manual refresh with existing data: keep content visible and show lightweight refresh progress.
   - [ ] Background refresh: avoid blocking the screen unless current data is unusable.

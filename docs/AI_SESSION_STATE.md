@@ -33,6 +33,10 @@ Updated: 2026-10-11 (manual multi-server overview integrated and verified)
 
 - Manual read-only multi-server overview **PR #206 merged and validated**: Servers screen action opens a modal with one card for each configured server. Opening has **zero API requests**; refresh individually or all triggers sequential reads with v5 realtime summary and v6 metrics summary; errors remain local and sanitized, without changing the selected server or invoking the interactive TOTP flow. Stats are independent snapshots and must not be aggregated across potentially different server time windows. Tests cover no network before taps, one-server failure, per-server refresh, duplicate suppression, disposal, and widget state. Exact final feature HEAD `0a28bb4dc981e08cc2b28df091d66d04b53caae7` passed all required checks before squash merge. No physical device validation.
 
+## Current focused change
+
+- Statistics #720 refresh behavior: independently audited mobile Queries/Servers, Domains, Clients and v6 DNS tabs, plus desktop multi-column layout. Previously all switched to full-screen progress/error whenever `StatusViewModel.getStatusLoading` changed, even with usable `getRealtimeStatus` or `getFtlDnsMetrics` cache. Focused fix retains actual cached content, adds unobtrusive warning/progress, and preserves the original first-load UI when no real cache exists. Tests cover cached mobile, cached v6 DNS and desktop loading/error plus existing first-load expectations. This is code pending final exact-head CI and PR integration; do not claim it merged until verified.
+
 ## Next autonomous work unit
 
 1. Recheck live `main`, active PRs and targeted CI. Do not repeat merged #190–#200 or this checkpoint.
