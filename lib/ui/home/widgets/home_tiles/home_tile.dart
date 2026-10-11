@@ -47,6 +47,9 @@ class HomeTileItem extends StatelessWidget {
     final loadStatus = context.select<StatusViewModel, LoadStatus>(
       (provider) => provider.getStatusLoading,
     );
+    final hasCachedValue = context.select<StatusViewModel, bool>(
+      (provider) => provider.getRealtimeStatus != null,
+    );
 
     return FractionallySizedBox(
       widthFactor: width > ResponsiveConstants.medium ? 0.25 : 0.5,
@@ -99,6 +102,7 @@ class HomeTileItem extends StatelessWidget {
                               ),
                               _ValueSection(
                                 loadStatus: loadStatus,
+                                hasCachedValue: hasCachedValue,
                                 valueSelector: valueSelector,
                               ),
                             ],
@@ -119,8 +123,9 @@ class HomeTileItem extends StatelessWidget {
 
 /// A widget that displays a value or an error indicator based on the [loadStatus].
 ///
-/// If [loadStatus] is [LoadStatus.error], it shows a warning icon and an error message.
-/// Otherwise, it displays the value returned by [valueSelector].
+/// If [loadStatus] is [LoadStatus.error], show the error message only
+/// when no successful snapshot exists. Otherwise preserve the cached value
+/// alongside a nonblocking warning that the refresh failed.
 ///
 /// The [valueSelector] is a function that takes the current [BuildContext] and returns
 /// a string to be displayed.
@@ -133,14 +138,19 @@ class HomeTileItem extends StatelessWidget {
 /// )
 /// ```
 class _ValueSection extends StatelessWidget {
-  const _ValueSection({required this.loadStatus, required this.valueSelector});
+  const _ValueSection({
+    required this.loadStatus,
+    required this.hasCachedValue,
+    required this.valueSelector,
+  });
 
   final LoadStatus loadStatus;
+  final bool hasCachedValue;
   final String Function(BuildContext context) valueSelector;
 
   @override
   Widget build(BuildContext context) {
-    if (loadStatus == LoadStatus.error) {
+    if (loadStatus == LoadStatus.error && !hasCachedValue) {
       return Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
@@ -164,14 +174,33 @@ class _ValueSection extends StatelessWidget {
     }
 
     final value = valueSelector(context);
-
-    return Text(
+    final valueText = Text(
       value,
+      overflow: TextOverflow.ellipsis,
       style: const TextStyle(
         color: Colors.white,
         fontSize: 24,
         fontWeight: FontWeight.w500,
       ),
+    );
+
+    if (loadStatus != LoadStatus.error) return valueText;
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Flexible(child: valueText),
+        const SizedBox(width: 4),
+        Tooltip(
+          message: AppLocalizations.of(context)!.error,
+          child: const Icon(
+            Icons.warning_amber_rounded,
+            size: 20,
+            color: Colors.white,
+          ),
+        ),
+      ],
     );
   }
 }
