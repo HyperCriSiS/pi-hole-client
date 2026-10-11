@@ -85,6 +85,8 @@ class _LogsFiltersModalState extends State<LogsFiltersModal> {
 
   Future<void> _choosePreset(LogsViewModel vm) async {
     final labels = AppLocalizations.of(context)!;
+    final ownerAddress = vm.selectedServerAddress;
+    final ownerApi = vm.apiVersion;
     List<SavedLogFilterPreset> presets;
     try {
       presets = await vm.loadFilterPresets();
@@ -139,6 +141,10 @@ class _LogsFiltersModalState extends State<LogsFiltersModal> {
       ),
     );
     if (!mounted || chosen == null) return;
+    if (ownerAddress != vm.selectedServerAddress || ownerApi != vm.apiVersion) {
+      _showPresetError();
+      return;
+    }
     try {
       await vm.applyFilterPreset(chosen);
       if (mounted) Navigator.maybePop(context);
