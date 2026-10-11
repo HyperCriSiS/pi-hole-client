@@ -6,6 +6,7 @@ import 'package:pi_hole_client/data/repositories/api/interfaces/repository_bundl
 import 'package:pi_hole_client/domain/model/server/server.dart';
 import 'package:pi_hole_client/routing/route_extra.dart';
 import 'package:pi_hole_client/routing/routes.dart';
+import 'package:pi_hole_client/ui/core/ui/components/error_message.dart';
 import 'package:pi_hole_client/ui/core/view_models/servers_viewmodel.dart';
 import 'package:pi_hole_client/ui/settings/server_settings/adlists/view_models/adlists_viewmodel.dart';
 import 'package:pi_hole_client/ui/settings/server_settings/adlists/widgets/adlist_details_screen.dart';
@@ -174,6 +175,32 @@ void main() async {
       // FakeAdlistRepository.searchLists returns 1 gravityMatch
       expect(find.text('Summary'), findsOneWidget);
       expect(find.text('List-level lists'), findsOneWidget);
+    });
+
+    testWidgets('identical search failure keeps summary with inline warning', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(buildWidget());
+      await tester.pump();
+      await tester.enterText(find.byType(TextField).first, 'example.com');
+      await tester.tap(find.text('Search').last);
+      await tester.pumpAndSettle();
+      expect(find.text('Summary'), findsOneWidget);
+
+      fakeAdlistRepository.shouldFail = true;
+      await tester.tap(find.text('Search').last);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Summary'), findsOneWidget);
+      expect(find.byIcon(Icons.warning_amber_rounded), findsOneWidget);
+      expect(find.byType(ErrorMessage), findsNothing);
+
+      // A different domain must never inherit the earlier search results.
+      await tester.enterText(find.byType(TextField).first, 'different.example');
+      await tester.tap(find.text('Search').last);
+      await tester.pumpAndSettle();
+      expect(find.text('Summary'), findsNothing);
+      expect(find.byType(ErrorMessage), findsOneWidget);
     });
 
     testWidgets('navigates to AdlistDetailsScreen when tapping adlist result', (

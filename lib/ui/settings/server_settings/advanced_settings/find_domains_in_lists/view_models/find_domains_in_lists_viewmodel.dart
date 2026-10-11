@@ -41,6 +41,8 @@ class FindDomainsInListsViewModel extends ChangeNotifier {
   List<GravityMatch> _gravityMatches = [];
   bool _hasSearched = false;
   String? _errorMessage;
+  // Only results for exactly these successful search parameters can be reused.
+  ({String domain, bool partial, int limit})? _lastSuccessfulQuery;
 
   // --- Getters ---
   ListSearchResult? get searchResult => _searchResult;
@@ -50,6 +52,8 @@ class FindDomainsInListsViewModel extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
 
   bool get isSearching => searchLists.isRunning.value;
+  bool get hasReusableResults =>
+      _searchResult != null && _lastSuccessfulQuery != null;
 
   // --- Command implementations ---
   Future<void> _searchLists(
@@ -57,6 +61,13 @@ class FindDomainsInListsViewModel extends ChangeNotifier {
   ) async {
     _errorMessage = null;
     _hasSearched = true;
+    if (_lastSuccessfulQuery != params) {
+      // Never show an earlier domain/partial/limit result for a new query.
+      _lastSuccessfulQuery = null;
+      _searchResult = null;
+      _domainResults = [];
+      _gravityMatches = [];
+    }
     notifyListeners();
 
     final result = await _adListRepository.searchLists(
@@ -68,6 +79,7 @@ class FindDomainsInListsViewModel extends ChangeNotifier {
       case Success():
         final data = result.getOrNull();
         _searchResult = data;
+        _lastSuccessfulQuery = params;
         _domainResults = data.domains;
         _gravityMatches = data.gravityMatches;
         notifyListeners();
@@ -78,9 +90,13 @@ class FindDomainsInListsViewModel extends ChangeNotifier {
 
   void setSearchError(String message) {
     _errorMessage = message;
-    _searchResult = null;
-    _domainResults = [];
-    _gravityMatches = [];
+    // An identical search may retain a successful snapshot, including empty
+    // results. Different search parameters cleared that snapshot on submit.
+    if (!hasReusableResults) {
+      _searchResult = null;
+      _domainResults = [];
+      _gravityMatches = [];
+    }
     notifyListeners();
   }
 

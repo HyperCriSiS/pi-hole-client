@@ -1,12 +1,34 @@
+import 'dart:async';
+
 import 'package:command_it/command_it.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pi_hole_client/domain/model/domain/domain.dart';
 import 'package:pi_hole_client/domain/model/enums.dart';
 import 'package:pi_hole_client/domain/model/list/adlist.dart';
+import 'package:pi_hole_client/domain/model/list/list_search_result.dart';
 import 'package:pi_hole_client/ui/settings/server_settings/advanced_settings/find_domains_in_lists/view_models/find_domains_in_lists_viewmodel.dart';
+import 'package:result_dart/result_dart.dart';
 
 import '../../../../../../../testing/fakes/repositories/api/fake_adlist_repository.dart';
 import '../../../../../../../testing/fakes/repositories/api/fake_domain_repository.dart';
+
+class _ControlledSearchRepository extends FakeAdlistRepository {
+  Completer<Result<ListSearchResult>>? nextSearch;
+  ListSearchResult? canned;
+
+  @override
+  Future<Result<ListSearchResult>> searchLists({
+    required String domain,
+    bool? partial,
+    int? limit,
+  }) {
+    final pending = nextSearch;
+    nextSearch = null;
+    if (pending != null) return pending.future;
+    if (canned != null && !shouldFail) return Future.value(Success(canned!));
+    return super.searchLists(domain: domain, partial: partial, limit: limit);
+  }
+}
 
 void main() {
   group('FindDomainsInListsViewModel', () {
@@ -75,7 +97,7 @@ void main() {
       expect(listenerCalled, true);
     });
 
-    test('setSearchError sets error and clears results', () async {
+    test('setSearchError preserves matching successful result', () async {
       await viewModel.searchLists.runAsync((
         domain: 'example.com',
         partial: true,
@@ -86,10 +108,111 @@ void main() {
       viewModel.setSearchError('Something went wrong');
 
       expect(viewModel.errorMessage, 'Something went wrong');
-      expect(viewModel.searchResult, isNull);
-      expect(viewModel.domainResults, isEmpty);
-      expect(viewModel.gravityMatches, isEmpty);
+      expect(viewModel.searchResult, isNotNull);
+      expect(viewModel.hasReusableResults, true);
+      expect(viewModel.gravityMatches, hasLength(1));
       expect(listenerCalled, true);
+    });
+
+
+    test('identical search keeps snapshot pending, after error and retry', () async {
+      final repo = _ControlledSearchRepository();
+      final vm = FindDomainsInListsViewModel(
+        adListRepository: repo,
+        domainRepository: fakeDomainRepository,
+      );
+      addTearDown(vm.dispose);
+      const request = (domain: 'example.com', partial: true, limit: 20);
+      await vm.searchLists.runAsync(request);
+      final original = vm.searchResult;
+      final pending = Completer<Result<ListSearchResult>>();
+      repo.nextSearch = pending;
+
+      final operation = vm.searchLists.runAsync(request);
+      // command_it schedules its async body after the running flag changes.
+      await Future<void>.delayed(Duration.zero);
+      expect(vm.isSearching, true);
+      expect(vm.hasReusableResults, true);
+      expect(vm.searchResult, original);
+      expect(vm.gravityMatches, hasLength(1));
+
+      pending.complete(Failure(Exception('offline')));
+      try {
+        await operation;
+      } catch (_) {}
+      vm.setSearchError('Cannot refresh');
+      expect(vm.errorMessage, 'Cannot refresh');
+      expect(vm.searchResult, original);
+      expect(vm.gravityMatches, hasLength(1));
+
+      await vm.searchLists.runAsync(request);
+      expect(vm.errorMessage, isNull);
+      expect(vm.hasReusableResults, true);
+      expect(vm.searchResult, isNotNull);
+    });
+
+    test('new domain, partial flag or limit never show previous results', () async {
+      const initial = (domain: 'example.com', partial: true, limit: 20);
+      for (final newRequest in [
+        (domain: 'other.com', partial: true, limit: 20),
+        (domain: 'example.com', partial: false, limit: 20),
+        (domain: 'example.com', partial: true, limit: 5),
+      ]) {
+        final repo = _ControlledSearchRepository();
+        final vm = FindDomainsInListsViewModel(
+          adListRepository: repo,
+          domainRepository: fakeDomainRepository,
+        );
+        addTearDown(vm.dispose);
+        await vm.searchLists.runAsync(initial);
+        final pending = Completer<Result<ListSearchResult>>();
+        repo.nextSearch = pending;
+
+        expect(newRequest, isNot(initial));
+        final operation = vm.searchLists.runAsync(newRequest);
+        // Wait for the Command body to clear the old query's cache.
+        await Future<void>.delayed(Duration.zero);
+        expect(vm.isSearching, true);
+        expect(vm.hasReusableResults, false);
+        expect(vm.searchResult, isNull);
+        expect(vm.gravityMatches, isEmpty);
+        pending.complete(Failure(Exception('new search failed')));
+        try {
+          await operation;
+        } catch (_) {}
+        vm.setSearchError('No response');
+        expect(vm.searchResult, isNull);
+        expect(vm.errorMessage, 'No response');
+      }
+    });
+
+    test('successful empty result remains valid cache for identical search', () async {
+      final repo = _ControlledSearchRepository()
+        ..canned = const ListSearchResult(
+          domains: [],
+          gravityMatches: [],
+          meta: ListSearchMeta(
+            domainsExact: 0, domainsRegex: 0,
+            gravityAllow: 0, gravityBlock: 0, total: 0,
+          ),
+        );
+      final vm = FindDomainsInListsViewModel(
+        adListRepository: repo,
+        domainRepository: fakeDomainRepository,
+      );
+      addTearDown(vm.dispose);
+      const request = (domain: 'empty.example', partial: false, limit: 10);
+      await vm.searchLists.runAsync(request);
+      expect(vm.hasReusableResults, true);
+      expect(vm.searchResult?.meta.total, 0);
+      repo.shouldFail = true;
+      try {
+        await vm.searchLists.runAsync(request);
+      } catch (_) {}
+      vm.setSearchError('No response');
+      expect(vm.hasReusableResults, true);
+      expect(vm.searchResult?.meta.total, 0);
+      expect(vm.gravityMatches, isEmpty);
     });
 
     test('deleteDomain removes domain from results', () async {
