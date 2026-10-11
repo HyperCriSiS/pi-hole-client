@@ -10,6 +10,7 @@ import 'package:pi_hole_client/ui/core/view_models/status_viewmodel.dart';
 import 'package:pi_hole_client/ui/statistics/widgets/dns_tab.dart';
 import 'package:pi_hole_client/ui/statistics/widgets/statistics_list.dart';
 import 'package:pi_hole_client/ui/statistics/widgets/statistics_queries_servers_tab.dart';
+import 'package:pi_hole_client/ui/statistics/widgets/statistics_revalidation_status.dart';
 import 'package:provider/provider.dart';
 
 class StatisticsTripleColumn extends StatefulWidget {
@@ -38,6 +39,12 @@ class _StatisticsTripleColumnState extends State<StatisticsTripleColumn> {
           (vm) => vm.selectedServer?.apiVersion,
         ) ??
         SupportedApiVersions.v5;
+
+    final hasCachedData = context.select<StatusViewModel, bool>(
+      (vm) => vm.getRealtimeStatus != null ||
+          (apiVersion == SupportedApiVersions.v6 &&
+              vm.getFtlDnsMetrics != null),
+    );
 
     final columns = <Widget>[
       _buildColumn(
@@ -75,89 +82,92 @@ class _StatisticsTripleColumnState extends State<StatisticsTripleColumn> {
       );
     }
 
-    Widget body;
-    switch (statusLoading) {
-      case LoadStatus.loading:
-        body = Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const CircularProgressIndicator(),
-              const SizedBox(height: 20),
-              Text(
-                AppLocalizations.of(context)!.loadingStats,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontSize: 20,
-                ),
-              ),
-            ],
-          ),
-        );
-
-      case LoadStatus.loaded:
-        body = Stack(
+    // A previously successful snapshot is usable even when its revalidation
+    // is pending or fails. Only the first request can replace the page.
+    final Widget body;
+    if (!hasCachedData && statusLoading == LoadStatus.loading) {
+      body = Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            ScrollConfiguration(
-              behavior: const MaterialScrollBehavior().copyWith(
-                dragDevices: {PointerDeviceKind.touch, PointerDeviceKind.mouse},
-              ),
-              child: Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: apiVersion == SupportedApiVersions.v6 ? 32 : 0,
-                ),
-                child: PageView.builder(
-                  controller: _controller,
-                  physics: const PageScrollPhysics(),
-                  padEnds: false,
-                  itemCount: columns.length,
-                  itemBuilder: (context, index) {
-                    return columns[index];
-                  },
-                ),
+            const CircularProgressIndicator(),
+            const SizedBox(height: 20),
+            Text(
+              AppLocalizations.of(context)!.loadingStats,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontSize: 20,
               ),
             ),
-            if (apiVersion == SupportedApiVersions.v6)
-              Positioned(
-                left: 0,
-                top: 0,
-                bottom: 0,
-                child: Container(
-                  alignment: Alignment.center,
-                  child: Icon(
-                    Icons.chevron_left,
-                    size: 32,
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-                  ),
-                ),
-              ),
-            if (apiVersion == SupportedApiVersions.v6)
-              Positioned(
-                right: 0,
-                top: 0,
-                bottom: 0,
-                child: Container(
-                  alignment: Alignment.center,
-                  child: Icon(
-                    Icons.chevron_right,
-                    size: 32,
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-                  ),
-                ),
-              ),
           ],
-        );
-
-      case LoadStatus.error:
-        body = Center(
-          child: ErrorMessage(
-            message: AppLocalizations.of(context)!.statsNotLoaded,
+        ),
+      );
+    } else if (!hasCachedData && statusLoading == LoadStatus.error) {
+      body = Center(
+        child: ErrorMessage(
+          message: AppLocalizations.of(context)!.statsNotLoaded,
+        ),
+      );
+    } else {
+      body = Column(
+        children: [
+          if (hasCachedData)
+            StatisticsRevalidationStatus(status: statusLoading),
+          Expanded(
+            child: Stack(
+              children: [
+                ScrollConfiguration(
+                  behavior: const MaterialScrollBehavior().copyWith(
+                    dragDevices: {PointerDeviceKind.touch, PointerDeviceKind.mouse},
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: apiVersion == SupportedApiVersions.v6 ? 32 : 0,
+                    ),
+                    child: PageView.builder(
+                      controller: _controller,
+                      physics: const PageScrollPhysics(),
+                      padEnds: false,
+                      itemCount: columns.length,
+                      itemBuilder: (context, index) => columns[index],
+                    ),
+                  ),
+                ),
+                if (apiVersion == SupportedApiVersions.v6)
+                  Positioned(
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    child: Container(
+                      alignment: Alignment.center,
+                      child: Icon(
+                        Icons.chevron_left,
+                        size: 32,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant
+                            .withValues(alpha: 0.5),
+                      ),
+                    ),
+                  ),
+                if (apiVersion == SupportedApiVersions.v6)
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    bottom: 0,
+                    child: Container(
+                      alignment: Alignment.center,
+                      child: Icon(
+                        Icons.chevron_right,
+                        size: 32,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant
+                            .withValues(alpha: 0.5),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
-        );
+        ],
+      );
     }
 
     return Scaffold(
