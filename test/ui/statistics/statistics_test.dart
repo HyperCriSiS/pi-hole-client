@@ -164,6 +164,9 @@ void main() async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 2.0;
 
+      // No successful snapshot yet: preserve the original first-load UI.
+      statusViewModel.realtimeStatus = null;
+      statusViewModel.ftlDnsMetrics = null;
       statusViewModel.statusLoading = LoadStatus.loading;
 
       addTearDown(() {
@@ -189,6 +192,9 @@ void main() async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 2.0;
 
+      // No successful snapshot yet: preserve the original first-load UI.
+      statusViewModel.realtimeStatus = null;
+      statusViewModel.ftlDnsMetrics = null;
       statusViewModel.statusLoading = LoadStatus.error;
 
       addTearDown(() {
@@ -293,6 +299,105 @@ void main() async {
       expect(find.byType(PieChart), findsNothing);
     });
 
+    testWidgets(
+      'cached mobile statistics stay visible while refresh is loading',
+      (WidgetTester tester) async {
+        tester.view.physicalSize = const Size(1080, 2400);
+        tester.view.devicePixelRatio = 2;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+        statusViewModel.statusLoading = LoadStatus.loading;
+        await tester.pumpWidget(buildAppWithRouter());
+        await tester.pump();
+        expect(find.text('Query types'), findsOneWidget);
+        expect(find.text('Upstream servers'), findsOneWidget);
+        expect(find.byType(LinearProgressIndicator), findsOneWidget);
+        expect(find.text('Loading stats...'), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'cached mobile domains survive failed refresh with warning',
+      (WidgetTester tester) async {
+        tester.view.physicalSize = const Size(1080, 2400);
+        tester.view.devicePixelRatio = 2;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+        statusViewModel.statusLoading = LoadStatus.error;
+        await tester.pumpWidget(buildAppWithRouter());
+        await tester.pump();
+        await tester.tap(find.text('Domains'));
+        await tester.pumpAndSettle();
+        expect(find.byType(StatisticsListContent), findsOneWidget);
+        expect(find.text('Top permitted domains'), findsOneWidget);
+        expect(find.text('Stats could not be loaded'), findsOneWidget);
+        expect(find.byIcon(Icons.warning_amber_rounded), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'cached v6 DNS tab retains metrics when revalidation fails',
+      (WidgetTester tester) async {
+        tester.view.physicalSize = const Size(1080, 2400);
+        tester.view.devicePixelRatio = 2;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+        statusViewModel.statusLoading = LoadStatus.error;
+        await tester.pumpWidget(buildAppWithRouter());
+        await tester.pump();
+        // The fourth TabBar entry may be outside the horizontal viewport.
+        await tester.ensureVisible(find.text('DNS'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('DNS'));
+        await tester.pumpAndSettle();
+        expect(find.text('DNS cache metrics'), findsOneWidget);
+        expect(find.text('DNS reply metrics'), findsOneWidget);
+        expect(find.text('Stats could not be loaded'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'cached desktop statistics persist during revalidation loading',
+      (WidgetTester tester) async {
+        tester.view.physicalSize = const Size(2400, 1080);
+        tester.view.devicePixelRatio = 1.5;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+        statusViewModel.statusLoading = LoadStatus.loading;
+        await tester.pumpWidget(buildAppWithRouter());
+        expect(find.text('Queries & servers'), findsWidgets);
+        expect(find.text('Top permitted domains'), findsWidgets);
+        expect(find.byType(LinearProgressIndicator), findsOneWidget);
+        expect(find.text('Loading stats...'), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'cached desktop statistics persist after revalidation failure',
+      (WidgetTester tester) async {
+        tester.view.physicalSize = const Size(2400, 1080);
+        tester.view.devicePixelRatio = 1.5;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+        statusViewModel.statusLoading = LoadStatus.error;
+        await tester.pumpWidget(buildAppWithRouter());
+        expect(find.text('Queries & servers'), findsWidgets);
+        expect(find.text('Top permitted domains'), findsWidgets);
+        expect(find.text('Stats could not be loaded'), findsOneWidget);
+        expect(find.byIcon(Icons.warning_amber_rounded), findsOneWidget);
+      },
+    );
+
     testWidgets('should show triple column statistics screen (loaded)', (
       WidgetTester tester,
     ) async {
@@ -349,6 +454,9 @@ void main() async {
       tester.view.physicalSize = const Size(2400, 1080);
       tester.view.devicePixelRatio = 1.5;
 
+      // No successful snapshot yet: preserve the original first-load UI.
+      statusViewModel.realtimeStatus = null;
+      statusViewModel.ftlDnsMetrics = null;
       statusViewModel.statusLoading = LoadStatus.error;
 
       addTearDown(() {
@@ -372,6 +480,9 @@ void main() async {
       tester.view.physicalSize = const Size(2400, 1080);
       tester.view.devicePixelRatio = 1.5;
 
+      // No successful snapshot yet: preserve the original first-load UI.
+      statusViewModel.realtimeStatus = null;
+      statusViewModel.ftlDnsMetrics = null;
       statusViewModel.statusLoading = LoadStatus.loading;
 
       addTearDown(() {
