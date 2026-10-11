@@ -1,0 +1,108 @@
+name: FTL OpenAPI contract drift
+
+on:
+  pull_request:
+    paths:
+      - 'tools/openapi/report_spec_drift.py'
+      - 'tools/openapi/tests/**'
+      - '.github/workflows/ftl-openapi-drift.yml'
+  workflow_dispatch:
+  schedule:
+    - cron: '13 5 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  offline-tests:
+    name: Contract diff tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install pinned YAML parser
+        run: python -m pip install PyYAML==6.0.3
+      - name: Run local contract regression tests
+        run: python -m unittest discover -s tools/openapi/tests -p 'test_*.py' -v
+      - name: Assert pinned FTL bundle parses without self-drift
+        run: |
+          python tools/openapi/report_spec_drift.py \
+            --baseline tools/openapi/spec/bundled.yaml \
+            --upstream tools/openapi/spec/bundled.yaml \
+            --pinned-revision pinned --upstream-revision pinned \
+            --report-json "$RUNNER_TEMP/self-check.json" \
+            --report-markdown "$RUNNER_TEMP/self-check.md" --fail-on-drift
+
+  upstream-report:
+    name: Compare pinned FTL with upstream master
+    if: github.event_name != 'pull_request'
+    needs: offline-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install pinned YAML parser
+        run: python -m pip install PyYAML==6.0.3
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10.30.1
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Fetch only upstream FTL OpenAPI source
+        shell: bash
+        run: |
+          set -euo pipefail
+          TEMP_DIR="$RUNNER_TEMP/ftl-spec"
+          git init -q "$TEMP_DIR"
+          git -C "$TEMP_DIR" remote add origin https://github.com/pi-hole/FTL.git
+          git -C "$TEMP_DIR" sparse-checkout init --cone
+          git -C "$TEMP_DIR" sparse-checkout set src/api/docs/content/specs
+          git -C "$TEMP_DIR" fetch --depth 1 origin master
+          git -C "$TEMP_DIR" checkout -q --detach FETCH_HEAD
+          git -C "$TEMP_DIR" rev-parse HEAD > "$RUNNER_TEMP/upstream-commit"
+          test -s "$TEMP_DIR/src/api/docs/content/specs/main.yaml"
+      - name: Bundle newer upstream spec with existing pinned Redocly version
+        shell: bash
+        run: |
+          set -euo pipefail
+          source tools/openapi/versions.env
+          pnpm --package="@redocly/cli@$REDOCLY_CLI_VERSION" dlx redocly bundle \
+            "$RUNNER_TEMP/ftl-spec/src/api/docs/content/specs/main.yaml" \
+            -o "$RUNNER_TEMP/upstream-bundled.yaml"
+      - name: Write contract diff report
+        shell: bash
+        run: |
+          set -euo pipefail
+          source tools/openapi/versions.env
+          UPSTREAM_COMMIT="$(cat "$RUNNER_TEMP/upstream-commit")"
+          mkdir -p reports
+          python tools/openapi/report_spec_drift.py \
+            --baseline tools/openapi/spec/bundled.yaml \
+            --upstream "$RUNNER_TEMP/upstream-bundled.yaml" \
+            --pinned-revision "$FTL_COMMIT" \
+            --upstream-revision "$UPSTREAM_COMMIT" \
+            --report-json reports/ftl-contract-drift.json \
+            --report-markdown reports/ftl-contract-drift.md \
+            --fail-on-drift
+      - name: Publish human-readable job summary
+        if: always()
+        shell: bash
+        run: |
+          if [ -f reports/ftl-contract-drift.md ]; then
+            cat reports/ftl-contract-drift.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Retain both reports for review
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ftl-openapi-contract-drift
+          path: reports/
+          if-no-files-found: warn
+          retention-days: 30
