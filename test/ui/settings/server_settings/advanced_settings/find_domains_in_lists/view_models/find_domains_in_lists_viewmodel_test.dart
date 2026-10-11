@@ -129,6 +129,8 @@ void main() {
       repo.nextSearch = pending;
 
       final operation = vm.searchLists.runAsync(request);
+      // command_it schedules its async body after the running flag changes.
+      await Future<void>.delayed(Duration.zero);
       expect(vm.isSearching, true);
       expect(vm.hasReusableResults, true);
       expect(vm.searchResult, original);
@@ -166,7 +168,10 @@ void main() {
         final pending = Completer<Result<ListSearchResult>>();
         repo.nextSearch = pending;
 
+        expect(newRequest, isNot(initial));
         final operation = vm.searchLists.runAsync(newRequest);
+        // Wait for the Command body to clear the old query's cache.
+        await Future<void>.delayed(Duration.zero);
         expect(vm.isSearching, true);
         expect(vm.hasReusableResults, false);
         expect(vm.searchResult, isNull);
