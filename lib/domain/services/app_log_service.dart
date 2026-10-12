@@ -83,7 +83,8 @@ String redactSensitiveText(String input) {
     // marker is not valid JSON. For key=value diagnostics, keep the existing
     // unquoted marker format.
     final jsonKey = prefix.startsWith('"') && prefix.trimRight().endsWith(':');
-    return jsonKey ? '
+    return jsonKey ? '${prefix}"<redacted>"' : '${prefix}<redacted>';
+  });
 
   // Cover request headers and exceptions which only contain a bare bearer
   // scheme, rather than a named Authorization header.
