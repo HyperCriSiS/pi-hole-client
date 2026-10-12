@@ -85,7 +85,7 @@ void main() {
     expect(calls, [serverA.address]);
   });
 
-  test('timestamps are per-server, set only on success and cleared on failure', () async {
+  test('timestamps are per-server and remain tied to successful snapshots', () async {
     var failA = true;
     var failB = false;
     var successfulReads = 0;
@@ -125,12 +125,65 @@ void main() {
     failB = true;
     await controller.refreshOne(serverB);
     expect(controller.entryFor(serverB).state, ServerOverviewLoadState.failed);
-    expect(controller.entryFor(serverB).updatedAt, isNull);
-    expect(controller.entryFor(serverB).metrics, isNull);
+    expect(
+      controller.entryFor(serverB).updatedAt,
+      DateTime.utc(2026, 10, 12, 10),
+    );
+    expect(controller.entryFor(serverB).metrics, same(metrics));
     expect(
       controller.entryFor(serverA).updatedAt,
       DateTime.utc(2026, 10, 12, 10, 1),
     );
+  });
+
+
+  test('manual refresh retains real cache during pending, failure and recovery', () async {
+    final gate = Completer<ServerOverviewMetrics>();
+    const replacement = ServerOverviewMetrics(
+      queries: 300, blocked: 60, blockedPercentage: 20,
+    );
+    var reads = 0;
+    var clock = 0;
+    final controller = MultiServerOverviewController(
+      servers: const [serverA, serverB],
+      reader: (_) {
+        reads++;
+        if (reads == 1) return Future.value(metrics);
+        if (reads == 2) return gate.future;
+        return Future.value(replacement);
+      },
+      now: () => DateTime.utc(2026, 10, 12, 12, clock++),
+    );
+    addTearDown(controller.dispose);
+
+    await controller.refreshOne(serverA);
+    final captured = controller.entryFor(serverA).updatedAt;
+    expect(captured, DateTime.utc(2026, 10, 12, 12));
+    expect(controller.entryFor(serverA).metrics, same(metrics));
+
+    final pending = controller.refreshOne(serverA);
+    expect(controller.busy, isTrue);
+    expect(controller.entryFor(serverA).state, ServerOverviewLoadState.loading);
+    expect(controller.entryFor(serverA).metrics, same(metrics));
+    expect(controller.entryFor(serverA).updatedAt, captured);
+    expect(controller.entryFor(serverB).state, ServerOverviewLoadState.notRequested);
+
+    gate.completeError(StateError('private session diagnostic'));
+    await pending;
+    expect(controller.busy, isFalse);
+    expect(controller.entryFor(serverA).state, ServerOverviewLoadState.failed);
+    expect(controller.entryFor(serverA).metrics, same(metrics));
+    expect(controller.entryFor(serverA).updatedAt, captured);
+
+    await controller.refreshOne(serverA);
+    expect(controller.entryFor(serverA).state, ServerOverviewLoadState.loaded);
+    expect(controller.entryFor(serverA).metrics, same(replacement));
+    expect(
+      controller.entryFor(serverA).updatedAt,
+      DateTime.utc(2026, 10, 12, 12, 1),
+    );
+    expect(controller.entryFor(serverB).state, ServerOverviewLoadState.notRequested);
+    expect(reads, 3);
   });
 
   test('manual per-server refresh does not query other servers', () async {

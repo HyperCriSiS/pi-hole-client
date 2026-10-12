@@ -140,8 +140,9 @@ class _OverviewTile extends StatelessWidget {
               padding: const EdgeInsets.only(top: 6),
               child: Text(status, style: Theme.of(context).textTheme.bodySmall),
             ),
-            if (entry.state == ServerOverviewLoadState.loaded &&
-                updatedAt != null)
+            // A dated, successful snapshot remains visible while a newer
+            // manual read is loading or has failed; status is shown above.
+            if (metrics != null && updatedAt != null)
               Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(
@@ -155,7 +156,7 @@ class _OverviewTile extends StatelessWidget {
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ),
-            if (metrics != null && entry.state == ServerOverviewLoadState.loaded)
+            if (metrics != null)
               Padding(
                 padding: const EdgeInsets.only(top: 8),
                 child: Wrap(

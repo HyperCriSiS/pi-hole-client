@@ -68,7 +68,14 @@ class MultiServerOverviewController extends ChangeNotifier {
   }
 
   Future<void> _readOne(Server server) async {
-    _entries[server.address] = const ServerOverviewEntry(state: ServerOverviewLoadState.loading);
+    // Preserve only genuine successful snapshots while a manual revalidation
+    // is pending. A failed first read still has no metrics or capture time.
+    final previous = _entries[server.address];
+    _entries[server.address] = ServerOverviewEntry(
+      state: ServerOverviewLoadState.loading,
+      metrics: previous?.metrics,
+      updatedAt: previous?.updatedAt,
+    );
     if (!_disposed) notifyListeners();
     try {
       final metrics = await _reader(server);
@@ -82,7 +89,13 @@ class MultiServerOverviewController extends ChangeNotifier {
     } catch (_) {
       // Do not expose authentication errors, SIDs or raw response content in UI.
       if (_disposed) return;
-      _entries[server.address] = const ServerOverviewEntry(state: ServerOverviewLoadState.failed);
+      // An older success is still useful, but the failed status explicitly
+      // indicates that it was not refreshed. Never fabricate a timestamp.
+      _entries[server.address] = ServerOverviewEntry(
+        state: ServerOverviewLoadState.failed,
+        metrics: previous?.metrics,
+        updatedAt: previous?.updatedAt,
+      );
     }
     if (!_disposed) notifyListeners();
   }
