@@ -1,6 +1,6 @@
 # AI Session State
 
-Updated: 2026-10-13 (Gravity progress ordering and completion race fix candidate)
+Updated: 2026-10-13 (PR #226 ordered Gravity persistence integrated and CI validated)
 
 ## Integrated baseline
 
@@ -85,9 +85,9 @@ Updated: 2026-10-13 (Gravity progress ordering and completion race fix candidate
 - Previously, README-only PR #223 accidentally triggered the full Dart/Flutter test suite and unsigned Android source APK because the root `README.md` was absent from `paths-ignore` in `.github/workflows/test.yaml` and `test-release.yaml`. Add that exact root file to both `push` and `pull_request` exclusions. Include README and the new stdlib routing regression test in `.github/workflows/test-deploy-docs.yaml` `pull_request.paths`, giving README-only changes a lightweight validation without deploying an unchanged Pages site. Existing app/source/workflow changes (and mixed README+app changes) must continue to trigger full gates; tests for PR and push filters, mixed source changes, test-only changes and docs-only routing are in `tools/ci/test_workflow_path_filters.py`.
 - Integrated as fork PR #224, squash `ba4c6ee6902248b8af2da9284596ac2d4d6dcca5`, validated final feature HEAD `4839a53de35501559eca47c70d06604eb53b6258`. All 15 exact-head CI checks passed or were intentionally skipped: full Flutter tests/analyzer, Sonar, Codecov, CodeQL/static, docs website and stdlib routing regressions, unsigned Android release APK with successful `Verify unsigned release artifact`. No app runtime, release signing, credentials, API, dependencies or Pages publishing behavior changed. A subsequent README-only PR can empirically verify GitHub's skip routing; this PR's workflow-file changes intentionally triggered the full suite.
 
-## Current bounded Gravity progress-ordering work unit
+## Integrated Gravity progress-ordering work unit
 
-- Follow-up after integrated PR #221: the `GravityUpdateService` stream uses async callbacks in `Stream.listen`, which Dart does not await. With fast progress frames and slow local SQLite inserts, multiple log writes can overlap and `onDone` can publish success before the final persisted progress frame. A terminal failure may likewise overtake the in-flight progress write. Queue per-stream event work and await the queue in the terminal `onDone`; the existing generation cancellation checks remain in force. Deterministic gated-repository regressions prove ordered progress persistence before success and terminal errors after pending progress, without live Pi-hole access. No changes to auth/TOTP, server selection, networking, schemas or background polling. Full exact-head Flutter/analyzer and unsigned Android artifact checks required before integration.
+- Follow-up after integrated PR #221: the `GravityUpdateService` stream uses async callbacks in `Stream.listen`, which Dart does not await. With fast progress frames and slow local SQLite inserts, multiple log writes can overlap and `onDone` can publish success before the final persisted progress frame. A terminal failure may likewise overtake the in-flight progress write. Queue per-stream event work and await the queue in the terminal `onDone`; the existing generation cancellation checks remain in force. Deterministic gated-repository regressions prove ordered progress persistence before success and terminal errors after pending progress, without live Pi-hole access. No changes to auth/TOTP, server selection, networking, schemas or background polling. Integrated via PR #226, squash `ee6d38d58567dada625fee531f143c8a1833b0a3`, exact validated feature HEAD `2112428f3fcfa209405b81c4a6e3230ab55bf6c5`. All 15 applicable checks passed or were intentionally skipped: full Flutter/analyzer, Sonar, Codecov, CodeQL, four static analyses, docs build, unsigned Android source APK and `Verify unsigned release artifact`. No physical-device/live Pi-hole smoke claimed.
 
 ## Next autonomous work unit
 
