@@ -38,6 +38,9 @@ class GravityUpdateViewModel with ChangeNotifier {
   DateTime? _startedAt;
   DateTime? _completedAt;
   bool _loaded = false;
+  // Invalidates pending loads, removals and stream callbacks on reset/switch.
+  int _generation = 0;
+  bool _disposed = false;
 
   // --- Commands ---
   late final Command<int, void> removeMessage;
@@ -108,11 +111,14 @@ class GravityUpdateViewModel with ChangeNotifier {
 
   /// Removes an info message by [id] from both the API and local database.
   Future<void> _removeMessage(int id) async {
-    if (_service == null) {
+    final service = _service;
+    if (service == null) {
       throw Exception('Service is null. removeMessage() cannot be performed.');
     }
+    final generation = _generation;
     final address = _serverAddress ?? '';
-    final result = await _service!.removeMessage(address, id);
+    final result = await service.removeMessage(address, id);
+    if (_disposed || generation != _generation) return;
     if (!result) {
       throw Exception('Failed to remove message $id');
     }
@@ -127,13 +133,17 @@ class GravityUpdateViewModel with ChangeNotifier {
   /// operation. Loading state is managed directly via [_loaded] and
   /// [GravityStatus].
   Future<void> load() async {
-    if (_service == null) {
+    final service = _service;
+    if (service == null) {
       logger.d('Service is null. load() cannot be performed.');
       return;
     }
-    if (_loaded) return;
+    if (_loaded || _disposed) return;
+    final generation = _generation;
     final address = _serverAddress ?? '';
-    final snapshot = await _service!.loadGravityData(address);
+    final snapshot = await service.loadGravityData(address);
+    // A different server, reset, start or dispose may have happened meanwhile.
+    if (_disposed || generation != _generation) return;
     _messages = snapshot.messages.toList();
     _logs = snapshot.logs.toList();
     _streamHint = null; // Not persisted: failures from previous runs are unknown.
@@ -160,11 +170,16 @@ class GravityUpdateViewModel with ChangeNotifier {
   /// notifications and reduce the operation to a single completion event,
   /// breaking the streaming UI.
   Future<void> start() async {
-    if (_service == null) {
-      logger.d('Service is null. start() cannot be performed.');
+    final service = _service;
+    if (service == null || _disposed) {
+      logger.d('Service is null or disposed. start() cannot be performed.');
       return;
     }
 
+    // Invalidate a still-pending persisted snapshot read before resetting the
+    // visible state for this explicitly started update.
+    final generation = ++_generation;
+    bool isCurrent() => !_disposed && generation == _generation;
     final address = _serverAddress ?? '';
 
     // Reset the state before starting the update
@@ -176,29 +191,35 @@ class GravityUpdateViewModel with ChangeNotifier {
     _status = GravityStatus.running;
     notifyListeners();
 
-    await _service!.startUpdate(
+    await service.startUpdate(
       address: address,
       onStarted: (startTime) {
+        if (!isCurrent()) return;
         _startedAt = startTime;
         notifyListeners();
       },
       onStatusChanged: (status) {
+        if (!isCurrent()) return;
         _status = status;
         notifyListeners();
       },
       onCompleted: (completeTime) {
+        if (!isCurrent()) return;
         _completedAt = completeTime;
         notifyListeners();
       },
       onLogsUpdated: (logs) {
+        if (!isCurrent()) return;
         _logs = logs;
         notifyListeners();
       },
       onMessagesUpdated: (messages) {
+        if (!isCurrent()) return;
         _messages = messages;
         notifyListeners();
       },
       onStreamHint: (hint) {
+        if (!isCurrent()) return;
         _streamHint = hint;
         notifyListeners();
       },
@@ -207,10 +228,10 @@ class GravityUpdateViewModel with ChangeNotifier {
 
   /// Resets all state to idle and cancels any active update.
   void reset() {
-    if (_service == null) {
-      logger.d('Service is null. reset() cannot be performed.');
-      return;
-    }
+    // Clear the visible server state even when no repositories are available.
+    // Otherwise switching to an unavailable server exposes previous data.
+    ++_generation;
+    _service?.cancelUpdate();
     _messages.clear();
     _logs.clear();
     _streamHint = null;
@@ -218,12 +239,14 @@ class GravityUpdateViewModel with ChangeNotifier {
     _startedAt = null;
     _completedAt = null;
     _loaded = false;
-    _service!.cancelUpdate();
     notifyListeners();
   }
 
   @override
   void dispose() {
+    _disposed = true;
+    ++_generation;
+    _service?.cancelUpdate();
     removeMessage.removeListener(notifyListeners);
     removeMessage.errors.removeListener(notifyListeners);
     removeMessage.dispose();

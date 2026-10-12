@@ -186,6 +186,8 @@ Maintain and improve the unofficial Pi-hole client while upstream activity is li
   - [x] Saved Query Log filter presets: store per-server and API-version named status/client/domain/exact-time snapshots in local SQLite with cascade cleanup on server deletion; expose save/load/delete in translated Logs Filters modal and reject missing or obsolete status values. Search text/sort order remain independent.
   - [x] Provide a read-only, scheduled and manually runnable FTL OpenAPI contract drift report against pinned v6.7; list endpoint/schema changes and inspect the three handwritten compatibility holds without changing generator outputs. Deterministic offline regressions and separate artifact/report check.
 
+- [x] Gravity server-scope async isolation: invalidated persisted-load responses and streaming callbacks cannot repopulate another server's UI after switch/reset/dispose; unbinding repositories clears the old snapshot; cancelling during initial persisted setup prevents the abandoned Gravity network stream from starting. Deterministic ViewModel/service regression tests cover the delayed completion and unavailable service cases. No new polling or auth calls; exact-HEAD CI required before considering integrated.
+
 ## Validation and completion criteria
 
 - [ ] Keep regression tests/builds green for each deterministic change.

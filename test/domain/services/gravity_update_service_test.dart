@@ -35,11 +35,12 @@ class _FakeGravityRepository implements GravityRepository {
   GravitySnapshot? snapshotToReturn;
   bool fetchGravityDataShouldFail = false;
   bool deleteGravityMessageShouldFail = false;
+  Completer<Result<int>>? pendingDelete;
 
   @override
   Future<Result<int>> deleteGravityData(String address) async {
     deleteGravityDataCalls++;
-    return const Success(1);
+    return pendingDelete?.future ?? const Success(1);
   }
 
   @override
@@ -121,9 +122,13 @@ class _FakeActionsRepository implements ActionsRepository {
   _FakeActionsRepository(this._stream);
 
   final Stream<Result<List<String>>> _stream;
+  int updateGravityCalls = 0;
 
   @override
-  Stream<Result<List<String>>> updateGravity() => _stream;
+  Stream<Result<List<String>>> updateGravity() {
+    updateGravityCalls++;
+    return _stream;
+  }
 
   @override
   Future<Result<Unit>> flushArp() => throw UnimplementedError();
@@ -532,6 +537,34 @@ void main() {
   // -------------------------------------------------------------------------
 
   group('GravityUpdateService – cancelUpdate', () {
+    test('cancel before persisted setup completes never launches a stream', () async {
+      final repo = _FakeGravityRepository()
+        ..pendingDelete = Completer<Result<int>>();
+      final actions = _FakeActionsRepository(const Stream.empty());
+      final service = GravityUpdateService(
+        repository: repo,
+        actionsRepository: actions,
+        ftlRepository: _FakeFtlRepository(),
+      );
+      var notifications = 0;
+      final pending = service.startUpdate(
+        address: 'http://old-server',
+        onLogsUpdated: (_) => notifications++,
+        onStatusChanged: (_) => notifications++,
+        onStarted: (_) => notifications++,
+        onCompleted: (_) => notifications++,
+        onMessagesUpdated: (_) => notifications++,
+      );
+      expect(repo.deleteGravityDataCalls, 1);
+      service.cancelUpdate();
+      repo.pendingDelete!.complete(const Success(1));
+      await pending;
+
+      expect(repo.upsertGravityUpdateCalls, 0);
+      expect(actions.updateGravityCalls, 0);
+      expect(notifications, 0);
+    });
+
     test('cancelling stops delivery of subsequent stream events', () async {
       final controller = StreamController<Result<List<String>>>();
       final service = _buildService(stream: controller.stream);
