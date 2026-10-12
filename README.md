@@ -97,7 +97,7 @@ Easily view statistics, enable or disable the server, access logs, and much more
 
 ## 🔑 Privacy policy
 
-Check the privacy policy [here](https://github.com/tsutsu3/pi-hole-client/wiki/Privacy-policy).
+Read the [privacy policy](website/docs/help/privacy.mdx) maintained in this repository.
 
 ## 📜 Disclaimer
 

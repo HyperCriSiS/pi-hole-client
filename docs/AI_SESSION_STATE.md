@@ -1,6 +1,6 @@
 # AI Session State
 
-Updated: 2026-10-12 (PR #221 Gravity isolation and PR #220 Query Logs refresh integrated)
+Updated: 2026-10-12 (upstream #767/#768 selective triage and README privacy navigation)
 
 ## Integrated baseline
 
@@ -35,7 +35,7 @@ Updated: 2026-10-12 (PR #221 Gravity isolation and PR #220 Query Logs refresh in
 - Generated Pi-hole FTL v6.7 client pinned; remaining narrow handwritten compatibility paths intentionally guarded. `sqlite3 >=3.5.2 <3.6.0` due to Flutter 3.44.1 resolver constraints; no overrides.
 - Fork identity / Android ID / F-Droid publication **on hold by user decision** pending upstream collaboration. Optional identity tools archived in PR #181. Source APK build remains unsigned and validated.
 - Device checks still pending: #442 Android 16 PopupMenu, #636 Android 17 self-signed TLS, #501 density, #293 secure-storage migration, #686 IME, #741 Android 17 Impeller/Vulkan. Optional failed API smoke pending. No physical-device validation claimed.
-- Upstream triage cursor `b3c940460ba7f25e7ef2fd0328fc91b2ed0a2abe`; #767 generated-code parity and #768 privacy/copyright review pending.
+- Previous upstream issue-audit cursor: `b3c940460ba7f25e7ef2fd0328fc91b2ed0a2abe`. Merged upstream PRs #767 (generator-only incompatibility hold) and #768 (selective fork privacy-link correction; LICENSE/NOTICE unchanged) were reviewed on 2026-10-12; see `UPSTREAM_TRIAGE.md`. The remaining general upstream issue audit is separate.
 
 ## Active bounded work unit
 
@@ -74,9 +74,15 @@ Updated: 2026-10-12 (PR #221 Gravity isolation and PR #220 Query Logs refresh in
 
 - A pending local Gravity snapshot load could publish old-server logs/messages after `update()` bound another server; `reset()` returned early if services were absent, retaining stale data. New per-ViewModel generation invalidates outdated snapshot completions, message deletions and stream callbacks after server switch/reset/start/dispose; reset clears state even if no repository is bound. Service-side cancellation generation also guards the initial persistence awaits so an abandoned update cannot launch a stream afterward, and prevents late completion callbacks. Added deterministic deferred local fetch and delayed-delete service tests. No changes to auth/TOTP, Pi-hole API shape, database schema, server ownership, background polling or UI strings. Integrated via PR #221 (`96efc5eb1cca7006cb81a16ee28f012d13ae5dd7`) after exact-HEAD Flutter/analyzer, Sonar, Codecov, CodeQL/static, docs and verified unsigned Android artifact; physical-device smoke remains outstanding.
 
+## Bounded upstream #767/#768 triage
+
+- Upstream #767 (merged 2026-10-10) changes 71 generated Freezed/Mockito files. Source/model APIs were not changed in that PR. Its pinned `freezed 4.0.2`, `mockito 5.8.1`, `build_runner 2.16.1` versions differ from the fork's `3.2.5`/`5.6.4`/`2.15.1` and the newer generator versions are not supported by the fork's locked Flutter 3.44.1/Dart 3.12.1 constraints. No manual/generated upstream imports; normal CI regenerates under the fork lockfile.
+- Upstream #768 (merged 2026-10-09) moves README privacy navigation and modifies LICENSE/NOTICE notices. README now links to this fork's own existing `website/docs/help/privacy.mdx` rather than an outdated upstream wiki or an assumed hosted site. Copyright/notice metadata is **unchanged**; any future updates require attribution/legal review and are separate from this navigation fix. The privacy policy itself is unchanged, and no telemetry, runtime, identity or distribution behavior is changed.
+- This is README/Markdown-only; docs and static CI on the final head are sufficient. No Android build, Dart test or device smoke is claimed for this unit.
+
 ## Next autonomous work unit
 
-1. Recheck live `main`, active PRs and targeted CI. Do not repeat merged #190–#200 or this checkpoint.
+1. Recheck live `main`, active PRs and targeted CI. Upstream #767/#768 have been selectively triaged; do not import incompatible generated code or revisit unchanged LICENSE/NOTICE without legal review.
 2. Statistics (#208), Adlists (#210) and Find Domains searches (#212) now join covered #720 slices. Review any *specific reproducible* first-load/manual-refresh/background inconsistency outside validated Settings, Domains, Groups/Clients, Adlists, Logs, Home, Statistics and matching-query Find Domains. Keep first-load behavior and different-query isolation; do not claim global #720 completion without evidence. Avoid speculative global timer rewrites. Avoid global timer rewrites and preserve cache/server-switch/auth separation. Mark #720 complete only when remaining scope is demonstrably covered; device-dependent items remain explicitly pending.
 3. Manual read-only multi-server overview (#206), per-server timestamps (#214) and cache-preserving manual refresh (#218) are merged. Next: validate this dashboard and prior saved-filter work on actual v5/v6 devices with stored auth and a TOTP-enabled instance when available. Keep interactive authentication strictly user-triggered, preserve selected-server state, and never infer availability from an unsuccessful statistics read. Treat periodic polling, cross-server write actions and metrics aggregation as separately designed future slices, not part of the current implementation.
 4. Continue exact-head Dart/analyzer, source APK + unsigned verification, CodeQL, Sonar, Codecov and static checks for code changes. For docs-only use lightweight checks. All merges must be squash after green CI.
