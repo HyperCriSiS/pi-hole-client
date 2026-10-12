@@ -763,6 +763,7 @@
   "multiServerOverviewManual": "Schreibgeschützte Momentaufnahme. Nur manuelle Aktualisierung.",
   "multiServerRefreshAll": "Alle Server aktualisieren",
   "multiServerNotRequested": "Noch nicht abgefragt",
+  "multiServerSnapshotAt": "Momentaufnahme vom",
   "multiServerLastFetched": "Letzte manuelle Abfrage erfolgreich",
   "multiServerFetchFailed": "Statistik nicht abrufbar. Andere Server sind nicht betroffen.",
   "multiServerBlockedPercent": "Blockiert"

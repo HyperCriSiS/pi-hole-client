@@ -764,6 +764,7 @@
   "multiServerOverviewManual": "Datos de solo lectura. Actualización manual, sin consultas en segundo plano.",
   "multiServerRefreshAll": "Actualizar todos",
   "multiServerNotRequested": "Sin consultar",
+  "multiServerSnapshotAt": "Datos obtenidos",
   "multiServerLastFetched": "Última consulta manual correcta",
   "multiServerFetchFailed": "No se pueden cargar estadísticas. Los demás servidores no se ven afectados.",
   "multiServerBlockedPercent": "Bloqueado"

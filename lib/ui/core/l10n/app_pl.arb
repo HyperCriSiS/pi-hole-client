@@ -763,6 +763,7 @@
   "multiServerOverviewManual": "Dane tylko do odczytu. Odświeżanie ręczne, bez pobierania w tle.",
   "multiServerRefreshAll": "Odśwież wszystkie",
   "multiServerNotRequested": "Jeszcze nie pobrano",
+  "multiServerSnapshotAt": "Dane pobrano",
   "multiServerLastFetched": "Ostatni ręczny odczyt udany",
   "multiServerFetchFailed": "Nie udało się pobrać statystyk. Inne serwery działają niezależnie.",
   "multiServerBlockedPercent": "Zablokowano"

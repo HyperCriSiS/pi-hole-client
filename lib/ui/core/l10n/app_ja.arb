@@ -765,6 +765,7 @@
   "multiServerOverviewManual": "読み取り専用です。手動更新のみで、バックグラウンド取得は行いません。",
   "multiServerRefreshAll": "すべて更新",
   "multiServerNotRequested": "未取得",
+  "multiServerSnapshotAt": "取得日時",
   "multiServerLastFetched": "前回の手動取得に成功",
   "multiServerFetchFailed": "統計を取得できません。他のサーバーには影響しません。",
   "multiServerBlockedPercent": "ブロック率"
