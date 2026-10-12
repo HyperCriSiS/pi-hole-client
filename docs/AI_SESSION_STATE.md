@@ -1,6 +1,6 @@
 # AI Session State
 
-Updated: 2026-10-13 (README-only CI path-filter optimization candidate)
+Updated: 2026-10-13 (PR #224 README-only CI routing integrated and validated)
 
 ## Integrated baseline
 
@@ -80,10 +80,10 @@ Updated: 2026-10-13 (README-only CI path-filter optimization candidate)
 - Upstream #768 (merged 2026-10-09) moves README privacy navigation and modifies LICENSE/NOTICE notices. README now links to this fork's own existing `website/docs/help/privacy.mdx` rather than an outdated upstream wiki or an assumed hosted site. Copyright/notice metadata is **unchanged**; any future updates require attribution/legal review and are separate from this navigation fix. The privacy policy itself is unchanged, and no telemetry, runtime, identity or distribution behavior is changed.
 - This is README/Markdown-only; docs and static CI on the final head are sufficient. No Android build, Dart test or device smoke is claimed for this unit.
 
-## Current bounded CI efficiency follow-up
+## Integrated README-only CI efficiency fix
 
 - Previously, README-only PR #223 accidentally triggered the full Dart/Flutter test suite and unsigned Android source APK because the root `README.md` was absent from `paths-ignore` in `.github/workflows/test.yaml` and `test-release.yaml`. Add that exact root file to both `push` and `pull_request` exclusions. Include README and the new stdlib routing regression test in `.github/workflows/test-deploy-docs.yaml` `pull_request.paths`, giving README-only changes a lightweight validation without deploying an unchanged Pages site. Existing app/source/workflow changes (and mixed README+app changes) must continue to trigger full gates; tests for PR and push filters, mixed source changes, test-only changes and docs-only routing are in `tools/ci/test_workflow_path_filters.py`.
-- No app runtime, release signing, credentials, API, dependencies, or deployment publishing behavior is touched. Exact-HEAD CI remains mandatory for this workflow-file change; do not claim future skip behavior experimentally verified until a subsequent README-only PR confirms it.
+- Integrated as fork PR #224, squash `ba4c6ee6902248b8af2da9284596ac2d4d6dcca5`, validated final feature HEAD `4839a53de35501559eca47c70d06604eb53b6258`. All 15 exact-head CI checks passed or were intentionally skipped: full Flutter tests/analyzer, Sonar, Codecov, CodeQL/static, docs website and stdlib routing regressions, unsigned Android release APK with successful `Verify unsigned release artifact`. No app runtime, release signing, credentials, API, dependencies or Pages publishing behavior changed. A subsequent README-only PR can empirically verify GitHub's skip routing; this PR's workflow-file changes intentionally triggered the full suite.
 
 ## Next autonomous work unit
 
