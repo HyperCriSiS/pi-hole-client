@@ -1,6 +1,6 @@
 # AI Session State
 
-Updated: 2026-10-12 (upstream #767/#768 selective triage and README privacy navigation)
+Updated: 2026-10-13 (README-only CI path-filter optimization candidate)
 
 ## Integrated baseline
 
@@ -79,6 +79,11 @@ Updated: 2026-10-12 (upstream #767/#768 selective triage and README privacy navi
 - Upstream #767 (merged 2026-10-10) changes 71 generated Freezed/Mockito files. Source/model APIs were not changed in that PR. Its pinned `freezed 4.0.2`, `mockito 5.8.1`, `build_runner 2.16.1` versions differ from the fork's `3.2.5`/`5.6.4`/`2.15.1` and the newer generator versions are not supported by the fork's locked Flutter 3.44.1/Dart 3.12.1 constraints. No manual/generated upstream imports; normal CI regenerates under the fork lockfile.
 - Upstream #768 (merged 2026-10-09) moves README privacy navigation and modifies LICENSE/NOTICE notices. README now links to this fork's own existing `website/docs/help/privacy.mdx` rather than an outdated upstream wiki or an assumed hosted site. Copyright/notice metadata is **unchanged**; any future updates require attribution/legal review and are separate from this navigation fix. The privacy policy itself is unchanged, and no telemetry, runtime, identity or distribution behavior is changed.
 - This is README/Markdown-only; docs and static CI on the final head are sufficient. No Android build, Dart test or device smoke is claimed for this unit.
+
+## Current bounded CI efficiency follow-up
+
+- Previously, README-only PR #223 accidentally triggered the full Dart/Flutter test suite and unsigned Android source APK because the root `README.md` was absent from `paths-ignore` in `.github/workflows/test.yaml` and `test-release.yaml`. Add that exact root file to both `push` and `pull_request` exclusions. Include README and the new stdlib routing regression test in `.github/workflows/test-deploy-docs.yaml` `pull_request.paths`, giving README-only changes a lightweight validation without deploying an unchanged Pages site. Existing app/source/workflow changes (and mixed README+app changes) must continue to trigger full gates; tests for PR and push filters, mixed source changes, test-only changes and docs-only routing are in `tools/ci/test_workflow_path_filters.py`.
+- No app runtime, release signing, credentials, API, dependencies, or deployment publishing behavior is touched. Exact-HEAD CI remains mandatory for this workflow-file change; do not claim future skip behavior experimentally verified until a subsequent README-only PR confirms it.
 
 ## Next autonomous work unit
 

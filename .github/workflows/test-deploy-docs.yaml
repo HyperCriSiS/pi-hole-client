@@ -7,6 +7,8 @@ on:
     paths:
       - 'website/**'
       - 'docs/**'
+      - 'README.md'
+      - 'tools/ci/test_workflow_path_filters.py'
       - '.github/workflows/deploy-docs.yaml'
       - '.github/workflows/test-deploy-docs.yaml'
 
@@ -28,6 +30,10 @@ jobs:
         working-directory: website
     steps:
       - uses: actions/checkout@v7
+
+      - name: Verify README and source-code workflow routing
+        working-directory: .
+        run: python3 -m unittest discover -s tools/ci -p 'test_workflow_path_filters.py'
 
       - name: Install pnpm
         uses: pnpm/action-setup@v6
