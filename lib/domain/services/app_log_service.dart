@@ -60,9 +60,10 @@ String redactSensitiveText(String input) {
   var output = input;
 
   // Consume the *entire* quoted value, including whitespace and escaped
-  // quotes. The closing quote must match the opening quote.
+  // quotes. The closing quote must match the opening quote. JSON-serialized
+  // HTTP headers must also be redacted even when their keys are quoted.
   final quotedSecret = RegExp(
-    r'''((?:"|')?\b(?:password|passwd|token|access[_-]?token|refresh[_-]?token|auth[_-]?token|sid|session[_-]?id|totp|api[_-]?key|client[_-]?secret)(?:"|')?\s*[:=]\s*)(["'])(?:\\.|(?!\2)[^\\])*\2''',
+    r'''((?:"|')?\b(?:password|passwd|token|access[_-]?token|refresh[_-]?token|auth[_-]?token|api[_-]?token|id[_-]?token|sid|session[_-]?id|totp|api[_-]?key|x[_-]?api[_-]?key|client[_-]?secret|private[_-]?key|authorization|proxy[_-]?authorization|set[_-]?cookie|cookie)(?:"|')?\s*[:=]\s*)(["'])(?:\\.|(?!\2)[^\\])*\2''',
     caseSensitive: false,
   );
   output = output.replaceAllMapped(
@@ -74,7 +75,7 @@ String redactSensitiveText(String input) {
   // Numeric and unquoted values, including query parameters, must also be
   // redacted. Exclude quotes to preserve already-redacted JSON structure.
   final plainSecret = RegExp(
-    r'''((?:"|')?\b(?:password|passwd|token|access[_-]?token|refresh[_-]?token|auth[_-]?token|sid|session[_-]?id|totp|api[_-]?key|client[_-]?secret)(?:"|')?\s*[:=]\s*)([^"'\s,;}&\]]+)''',
+    r'''((?:"|')?\b(?:password|passwd|token|access[_-]?token|refresh[_-]?token|auth[_-]?token|api[_-]?token|id[_-]?token|sid|session[_-]?id|totp|api[_-]?key|x[_-]?api[_-]?key|client[_-]?secret|private[_-]?key|authorization|proxy[_-]?authorization|set[_-]?cookie|cookie)(?:"|')?\s*[:=]\s*)([^"'\s,;}&\]]+)''',
     caseSensitive: false,
   );
   output = output.replaceAllMapped(plainSecret, (match) {
