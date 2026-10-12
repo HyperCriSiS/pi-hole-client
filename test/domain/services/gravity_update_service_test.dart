@@ -36,6 +36,8 @@ class _FakeGravityRepository implements GravityRepository {
   bool fetchGravityDataShouldFail = false;
   bool deleteGravityMessageShouldFail = false;
   Completer<Result<int>>? pendingDelete;
+  Completer<Result<int>>? pendingLogInsert;
+  final insertedLogBatches = <List<String>>[];
 
   @override
   Future<Result<int>> deleteGravityData(String address) async {
@@ -60,7 +62,8 @@ class _FakeGravityRepository implements GravityRepository {
     List<({int line, String message, DateTime timestamp})> entries,
   ) async {
     insertGravityLogsCalls++;
-    return Success(entries.length);
+    insertedLogBatches.add(entries.map((entry) => entry.message).toList());
+    return pendingLogInsert?.future ?? Success(entries.length);
   }
 
   @override
@@ -274,6 +277,92 @@ void main() {
 
       service.cancelUpdate();
       await controller.close();
+    });
+
+
+    test('waits for ordered progress persistence before reporting success', () async {
+      final repo = _FakeGravityRepository()
+        ..pendingLogInsert = Completer<Result<int>>();
+      final controller = StreamController<Result<List<String>>>();
+      final service = _buildService(stream: controller.stream, gravityRepo: repo);
+      final completed = Completer<void>();
+      final receivedLogs = <List<String>>[];
+      final statuses = <GravityStatus>[];
+
+      await service.startUpdate(
+        address: 'pi.hole',
+        onLogsUpdated: (lines) => receivedLogs.add(List.of(lines)),
+        onStatusChanged: statuses.add,
+        onStarted: (_) {},
+        onCompleted: (_) => completed.complete(),
+        onMessagesUpdated: (_) {},
+      );
+
+      controller.add(const Success(['first']));
+      controller.add(const Success(['second']));
+      await controller.close();
+      await pumpEventQueue();
+
+      // Only the first asynchronous insert can begin before its completion.
+      expect(repo.insertGravityLogsCalls, 1);
+      expect(repo.insertedLogBatches, [
+        ['first'],
+      ]);
+      expect(repo.upsertGravityUpdateCalls, 1);
+      expect(receivedLogs, isEmpty);
+      expect(statuses, [GravityStatus.running]);
+      expect(completed.isCompleted, isFalse);
+
+      repo.pendingLogInsert!.complete(const Success(1));
+      await completed.future.timeout(const Duration(seconds: 3));
+
+      expect(repo.insertGravityLogsCalls, 2);
+      expect(repo.insertedLogBatches, [
+        ['first'],
+        ['second'],
+      ]);
+      expect(receivedLogs, [
+        ['first'],
+        ['first', 'second'],
+      ]);
+      expect(statuses, [GravityStatus.running, GravityStatus.success]);
+      expect(repo.upsertGravityUpdateCalls, 2);
+    });
+
+    test('queued failure cannot complete ahead of a pending progress write', () async {
+      final repo = _FakeGravityRepository()
+        ..pendingLogInsert = Completer<Result<int>>();
+      final controller = StreamController<Result<List<String>>>();
+      final service = _buildService(stream: controller.stream, gravityRepo: repo);
+      final events = <String>[];
+      final completed = Completer<void>();
+
+      await service.startUpdate(
+        address: 'pi.hole',
+        onLogsUpdated: (_) => events.add('logs'),
+        onStatusChanged: (status) => events.add(status.name),
+        onStarted: (_) {},
+        onCompleted: (_) {
+          events.add('completed');
+          completed.complete();
+        },
+        onMessagesUpdated: (_) {},
+      );
+
+      controller.add(const Success(['progress']));
+      controller.add(Failure(HttpStatusCodeException(504, 'timeout')));
+      await controller.close();
+      await pumpEventQueue();
+
+      expect(events, ['running']);
+      expect(repo.upsertGravityUpdateCalls, 1);
+      expect(completed.isCompleted, isFalse);
+
+      repo.pendingLogInsert!.complete(const Success(1));
+      await completed.future.timeout(const Duration(seconds: 3));
+
+      expect(events, ['running', 'logs', 'error', 'completed']);
+      expect(repo.upsertGravityUpdateCalls, 2);
     });
 
     test(

@@ -67,13 +67,23 @@ class GravityUpdateService {
     onStarted(startedAt);
     onStatusChanged(status);
 
+    // Stream.listen does not await async onData callbacks. Serialize every
+    // event so fast progress chunks cannot overtake their database writes,
+    // and terminal completion cannot be published before all writes settle.
+    Future<void> pendingEvents = Future<void>.value();
+    void enqueue(Future<void> Function() process) {
+      pendingEvents = pendingEvents.then((_) async {
+        if (!isCurrent() || status == GravityStatus.error) return;
+        await process();
+      });
+    }
+
     // Start the gravity update process
     final stream = _actionsRepository.updateGravity();
 
     _subscription = stream.listen(
-      (result) async {
-        if (!isCurrent()) return;
-        await result.fold(
+      (result) {
+        enqueue(() => result.fold(
           (data) async {
             if (data.isNotEmpty) {
               final baseIndex = logs.length;
@@ -108,26 +118,28 @@ class GravityUpdateService {
             onCompleted(completedAt!);
             await _subscription?.cancel();
           },
-        );
+        ));
       },
-      onError: (error) async {
-        if (!isCurrent()) return;
-        onStreamHint?.call(
-          diagnoseGravityStreamFailure(error, hasProgress: logs.isNotEmpty),
-        );
-        status = GravityStatus.error;
-        completedAt = DateTime.now();
-        await _repository.upsertGravityUpdate(
-          address,
-          startedAt,
-          completedAt!,
-          status,
-        );
-        if (!isCurrent()) return;
-        onStatusChanged(status);
-        onCompleted(completedAt!);
+      onError: (error) {
+        enqueue(() async {
+          onStreamHint?.call(
+            diagnoseGravityStreamFailure(error, hasProgress: logs.isNotEmpty),
+          );
+          status = GravityStatus.error;
+          completedAt = DateTime.now();
+          await _repository.upsertGravityUpdate(
+            address,
+            startedAt,
+            completedAt!,
+            status,
+          );
+          if (!isCurrent()) return;
+          onStatusChanged(status);
+          onCompleted(completedAt!);
+        });
       },
       onDone: () async {
+        await pendingEvents;
         if (!isCurrent() || status == GravityStatus.error) return;
 
         status = GravityStatus.success;
