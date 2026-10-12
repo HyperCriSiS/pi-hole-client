@@ -121,7 +121,10 @@ void main() async {
           dateTime: DateTime.utc(2026, 10, 12),
           message: 'Connection failed password="two word password"',
           resBody: '{"access_token":"very private token",'
-              '"sid":"session with spaces"}',
+              '"sid":"session with spaces",'
+              '"Authorization":"Basic private-basic-token",'
+              '"Cookie":"sid=private-cookie-value",'
+              '"apiToken":"private-api-token"}',
         ),
       );
       await tester.pumpWidget(
@@ -142,10 +145,18 @@ void main() async {
       expect(exportedLog['message'], contains('password="<redacted>"'));
       expect(exportedLog['resBody'], contains('"access_token":"<redacted>"'));
       expect(exportedLog['resBody'], contains('"sid":"<redacted>"'));
+      final exportedBody = jsonDecode(exportedLog['resBody'] as String)
+          as Map<String, dynamic>;
+      expect(exportedBody['Authorization'], '<redacted>');
+      expect(exportedBody['Cookie'], '<redacted>');
+      expect(exportedBody['apiToken'], '<redacted>');
       for (final secret in [
         'two word password',
         'very private token',
         'session with spaces',
+        'private-basic-token',
+        'private-cookie-value',
+        'private-api-token',
       ]) {
         expect(payload['text'], isNot(contains(secret)));
       }
@@ -158,6 +169,9 @@ void main() async {
       await tester.pumpAndSettle();
       expect(find.textContaining('very private token'), findsNothing);
       expect(find.textContaining('session with spaces'), findsNothing);
+      expect(find.textContaining('private-basic-token'), findsNothing);
+      expect(find.textContaining('private-cookie-value'), findsNothing);
+      expect(find.textContaining('private-api-token'), findsNothing);
       expect(find.textContaining('<redacted>'), findsWidgets);
     });
 
