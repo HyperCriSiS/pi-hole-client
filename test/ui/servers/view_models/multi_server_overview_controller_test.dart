@@ -85,6 +85,54 @@ void main() {
     expect(calls, [serverA.address]);
   });
 
+  test('timestamps are per-server, set only on success and cleared on failure', () async {
+    var failA = true;
+    var failB = false;
+    var successfulReads = 0;
+    final controller = MultiServerOverviewController(
+      servers: const [serverA, serverB],
+      reader: (server) async {
+        if ((server == serverA && failA) || (server == serverB && failB)) {
+          throw StateError('authentication token must not appear in the UI');
+        }
+        return metrics;
+      },
+      now: () => DateTime.utc(2026, 10, 12, 10, successfulReads++),
+    );
+    addTearDown(controller.dispose);
+
+    expect(controller.entryFor(serverA).updatedAt, isNull);
+    expect(controller.entryFor(serverB).updatedAt, isNull);
+    await controller.refreshAll();
+    expect(controller.entryFor(serverA).updatedAt, isNull);
+    expect(
+      controller.entryFor(serverB).updatedAt,
+      DateTime.utc(2026, 10, 12, 10),
+    );
+
+    failA = false;
+    await controller.refreshOne(serverA);
+    expect(
+      controller.entryFor(serverA).updatedAt,
+      DateTime.utc(2026, 10, 12, 10, 1),
+    );
+    // A refresh of another server does not change this successful snapshot.
+    expect(
+      controller.entryFor(serverB).updatedAt,
+      DateTime.utc(2026, 10, 12, 10),
+    );
+
+    failB = true;
+    await controller.refreshOne(serverB);
+    expect(controller.entryFor(serverB).state, ServerOverviewLoadState.failed);
+    expect(controller.entryFor(serverB).updatedAt, isNull);
+    expect(controller.entryFor(serverB).metrics, isNull);
+    expect(
+      controller.entryFor(serverA).updatedAt,
+      DateTime.utc(2026, 10, 12, 10, 1),
+    );
+  });
+
   test('manual per-server refresh does not query other servers', () async {
     final calls = <String>[];
     final controller = MultiServerOverviewController(

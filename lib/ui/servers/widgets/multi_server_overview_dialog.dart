@@ -102,6 +102,8 @@ class _OverviewTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     final metrics = entry.metrics;
+    final updatedAt = entry.updatedAt?.toLocal();
+    final materialLoc = MaterialLocalizations.of(context);
     final status = switch (entry.state) {
       ServerOverviewLoadState.notRequested => loc.multiServerNotRequested,
       ServerOverviewLoadState.loading => loc.loading,
@@ -138,6 +140,21 @@ class _OverviewTile extends StatelessWidget {
               padding: const EdgeInsets.only(top: 6),
               child: Text(status, style: Theme.of(context).textTheme.bodySmall),
             ),
+            if (entry.state == ServerOverviewLoadState.loaded &&
+                updatedAt != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  '${loc.multiServerSnapshotAt}: '
+                  '${materialLoc.formatMediumDate(updatedAt)} '
+                  '${materialLoc.formatTimeOfDay(
+                    TimeOfDay.fromDateTime(updatedAt),
+                    alwaysUse24HourFormat:
+                        MediaQuery.alwaysUse24HourFormatOf(context),
+                  )}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ),
             if (metrics != null && entry.state == ServerOverviewLoadState.loaded)
               Padding(
                 padding: const EdgeInsets.only(top: 8),

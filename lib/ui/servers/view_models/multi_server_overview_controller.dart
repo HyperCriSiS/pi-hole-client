@@ -23,10 +23,16 @@ class ServerOverviewEntry {
 
 /// User-initiated, sequential reads. No timer, server switching or write API.
 class MultiServerOverviewController extends ChangeNotifier {
-  MultiServerOverviewController({required List<Server> servers, required ServerOverviewReader reader})
-      : servers = List.unmodifiable(servers), _reader = reader;
+  MultiServerOverviewController({
+    required List<Server> servers,
+    required ServerOverviewReader reader,
+    DateTime Function()? now,
+  }) : servers = List.unmodifiable(servers),
+       _reader = reader,
+       _now = now ?? DateTime.now;
   final List<Server> servers;
   final ServerOverviewReader _reader;
+  final DateTime Function() _now;
   final Map<String, ServerOverviewEntry> _entries = {};
   bool _busy = false;
   bool _disposed = false;
@@ -68,7 +74,10 @@ class MultiServerOverviewController extends ChangeNotifier {
       final metrics = await _reader(server);
       if (_disposed) return;
       _entries[server.address] = ServerOverviewEntry(
-        state: ServerOverviewLoadState.loaded, metrics: metrics, updatedAt: DateTime.now(),
+        state: ServerOverviewLoadState.loaded,
+        metrics: metrics,
+        // Captured at completion of this server's read, not batch start.
+        updatedAt: _now(),
       );
     } catch (_) {
       // Do not expose authentication errors, SIDs or raw response content in UI.
