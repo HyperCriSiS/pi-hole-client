@@ -1,6 +1,6 @@
 # AI Session State
 
-Updated: 2026-10-12 (manual multi-server snapshot freshness merged and validated)
+Updated: 2026-10-12 (multi-server manual snapshot revalidation follow-up)
 
 ## Integrated baseline
 
@@ -57,6 +57,10 @@ Updated: 2026-10-12 (manual multi-server snapshot freshness merged and validated
 ## Current bounded App Log privacy follow-up
 
 - After PR #216, CamelCase `accessToken`/`refreshToken`/`clientSecret` names were already covered by the case-insensitive optional-separator matchers. The remaining gap was JSON-serialized HTTP header keys (`Authorization`, `proxyAuthorization`, `Cookie`, `setCookie`, `X-API-Key`) whose quoted key syntax bypassed the plain-text header matcher, together with `apiToken`, `idToken` and private-key aliases. Extend both quoted/unquoted key patterns, preserve valid JSON for string/numeric/boolean values, retain unrelated metadata, and verify stored AppLogs, clipboard export and detail UI. This is defense in depth, not arbitrary-secret detection. No auth/session/API changes; real-device checks remain outstanding.
+
+## Current bounded manual snapshot revalidation
+
+- The read-only multi-server overview preserves each server's genuine last-success counts and capture timestamp while a user-triggered read is pending or fails. Existing loading/failure labels remain prominent, so these values are dated snapshots, **not current/live metrics**. First-read failures and never-queried servers have no metrics or timestamp. Successful retries replace the snapshot and capture time; no authentication, network transport, selection, storage, background polling or write behavior changed. Targeted controller/widget regressions cover pending/failure/recovery and independent first-load failure. CI/merge evidence belongs to the corresponding feature PR; no physical-device/v5-v6 smoke is claimed.
 
 ## Next autonomous work unit
 

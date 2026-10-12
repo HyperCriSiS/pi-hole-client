@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -58,4 +60,66 @@ void main() {
     expect(find.textContaining('secret'), findsNothing);
     expect(find.text('Could not retrieve statistics. Other servers are unaffected.'), findsOneWidget);
   });
+
+  testWidgets('stale snapshot stays dated and visible on refresh failure', (tester) async {
+    tester.view.physicalSize = const Size(1000, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    final gate = Completer<ServerOverviewMetrics>();
+    var reads = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('en'),
+        supportedLocales: const [Locale('en')],
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        home: Scaffold(
+          body: MultiServerOverviewDialog(
+            servers: const [
+              Server(address: 'http://a', alias: 'Pi A', apiVersion: 'v5'),
+            ],
+            reader: (_) {
+              reads++;
+              if (reads == 1) {
+                return Future.value(const ServerOverviewMetrics(
+                  queries: 150, blocked: 30, blockedPercentage: 20,
+                ));
+              }
+              return gate.future;
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Total queries: 150'), findsNothing);
+    await tester.tap(find.text('Refresh all servers'));
+    await tester.pumpAndSettle();
+    expect(find.text('Total queries: 150'), findsOneWidget);
+    expect(find.textContaining('Snapshot captured:'), findsOneWidget);
+
+    await tester.tap(find.text('Refresh all servers'));
+    await tester.pump();
+    expect(find.text('Total queries: 150'), findsOneWidget);
+    expect(find.textContaining('Snapshot captured:'), findsOneWidget);
+
+    gate.completeError(StateError('private SID must not be shown'));
+    await tester.pumpAndSettle();
+    expect(find.text('Total queries: 150'), findsOneWidget);
+    expect(find.textContaining('Snapshot captured:'), findsOneWidget);
+    expect(
+      find.text('Could not retrieve statistics. Other servers are unaffected.'),
+      findsOneWidget,
+    );
+    expect(find.textContaining('private SID'), findsNothing);
+    expect(reads, 2);
+  });
+
 }
