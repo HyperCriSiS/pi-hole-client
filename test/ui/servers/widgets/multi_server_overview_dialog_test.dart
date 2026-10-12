@@ -45,12 +45,16 @@ void main() {
     await tester.pumpAndSettle();
     expect(calls, 0);
     expect(find.text('Not queried yet'), findsNWidgets(2));
+    expect(find.textContaining('Snapshot captured:'), findsNothing);
     await tester.tap(find.text('Refresh all servers'));
     await tester.pumpAndSettle();
     expect(calls, 2);
     expect(find.text('Pi A'), findsOneWidget);
     expect(find.text('Pi B'), findsOneWidget);
     expect(find.text('Total queries: 150'), findsOneWidget);
+    // Only the successful server has a dated snapshot. The failure card must
+    // never imply that its previous content is current.
+    expect(find.textContaining('Snapshot captured:'), findsOneWidget);
     expect(find.textContaining('secret'), findsNothing);
     expect(find.text('Could not retrieve statistics. Other servers are unaffected.'), findsOneWidget);
   });

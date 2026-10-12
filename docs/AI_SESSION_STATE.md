@@ -45,6 +45,10 @@ Updated: 2026-10-12 (#720 Find Domains revalidation merged and CI-verified)
 
 - #720 Find Domains in Lists: only a repeat of identical `(domain, partial, limit)` parameters may reuse prior results during pending/failed revalidation. New query parameters reset prior results before contacting API; first-search/new-query errors remain explicit; successful empty data remains a valid snapshot. Merged through PR #212 on validated HEAD `1e4ef434568e37f79b42c8b08a9a5eff0683b4c0`; full exact-head tests, analyzer, Sonar, Codecov, CodeQL, static/docs and verified unsigned Android artifact passed. Physical device smoke pending.
 
+## Current bounded power-user slice
+
+- Multi-server overview: the underlying controller already tracked a timestamp for each successful manual read but the dialog never displayed it. Show the capture date and time in device-local format per successfully refreshed server, no timestamp for failed/not requested states, and clear prior timestamps on a failed refresh to avoid misleading stale values. A clock seam enables deterministic per-server refresh/failure tests; widget tests verify that exactly one successful card displays a capture time when the other fails. No changes to API, auth/TOTP, polling, server selection or cross-server totals. This slice requires exact-head CI and PR integration; physical-device checks remain outstanding.
+
 ## Next autonomous work unit
 
 1. Recheck live `main`, active PRs and targeted CI. Do not repeat merged #190–#200 or this checkpoint.
