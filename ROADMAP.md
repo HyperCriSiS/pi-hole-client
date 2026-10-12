@@ -168,6 +168,7 @@ Maintain and improve the unofficial Pi-hole client while upstream activity is li
   - [x] Domains preserve successful empty cache during failed revalidation (#188).
   - [x] Groups and Clients retain cached content during refresh/failure, with nonblocking status UI (#190).
   - [x] Query Logs retain successful empty or stale cached logs on refresh failure and show a nonblocking warning (#193).
+  - [x] Query Logs empty and short-result pull-to-refresh: an always-scrollable centered empty state and always-scrollable populated list make explicit refresh gestures available with zero or one results. Two gesture-level widget regressions; no query, filter, TOTP or API changes. Validate the exact HEAD before merge.
   - [x] Home KPI tiles never expose synthetic skeleton example metrics when realtime data is unavailable; retain genuine cached figures without shimmer during refresh (#195).
   - [x] One-shot Home realtime status is no longer marked loaded by an independent overtime success; failure/pending ordering and independent overtime failure covered by ViewModel tests (#197).
   - [x] Home query/client charts keep cached overtime datasets visible during refresh and failure with nonblocking progress/warning; first-load skeleton/error stays reserved for missing data (#198).
