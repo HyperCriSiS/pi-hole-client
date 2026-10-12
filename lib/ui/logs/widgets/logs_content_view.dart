@@ -102,6 +102,8 @@ class LogsContentView extends StatelessWidget {
                 child: logs.isNotEmpty
                     ? ListView.builder(
                         controller: scrollController,
+                        // Short results should also allow pull-to-refresh.
+                        physics: const AlwaysScrollableScrollPhysics(),
                         itemCount: isLoadingMore
                             ? logs.length + 1
                             : logs.length,

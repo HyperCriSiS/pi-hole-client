@@ -1,6 +1,6 @@
 # AI Session State
 
-Updated: 2026-10-12 (PR #218 manual snapshot revalidation and #216/#217 App Log security merged)
+Updated: 2026-10-12 (Query Logs empty/short pull-to-refresh follow-up)
 
 ## Integrated baseline
 
@@ -63,6 +63,10 @@ Updated: 2026-10-12 (PR #218 manual snapshot revalidation and #216/#217 App Log 
 ## Current bounded manual snapshot revalidation
 
 - The read-only multi-server overview preserves each server's genuine last-success counts and capture timestamp while a user-triggered read is pending or fails. Existing loading/failure labels remain prominent, so these values are dated snapshots, **not current/live metrics**. First-read failures and never-queried servers have no metrics or timestamp. Successful retries replace the snapshot and capture time; no authentication, network transport, selection, storage, background polling or write behavior changed. Targeted controller/widget regressions cover pending/failure/recovery and independent first-load failure. PR #218 merged as `36edcb8ea669df181185f5de385280dd0696d4d6` following all applicable exact-HEAD CI checks and verified unsigned source APK; no physical-device/v5-v6 smoke is claimed.
+
+## Current bounded Query Logs pull-to-refresh slice
+
+- Identified a concrete #720 gap: `NoLogsMessage` used `NeverScrollableScrollPhysics` inside `RefreshIndicator`, preventing swipe refresh with successful empty results; a one-row list also lacked always-scrollable physics. Use a centered `SliverFillRemaining` in an always-scrollable `CustomScrollView` and set `AlwaysScrollableScrollPhysics` on populated logs. Gesture-level screen tests cover empty and one-row results. Preserve existing filtering, retries, pagination, TOTP, API and local storage behavior. Exact-head CI and verified unsigned Android source APK are required before claiming integration. Device smoke pending.
 
 ## Next autonomous work unit
 

@@ -10,6 +10,8 @@ import 'package:pi_hole_client/ui/core/view_models/app_config_viewmodel.dart';
 import 'package:pi_hole_client/ui/logs/view_models/logs_viewmodel.dart';
 import 'package:pi_hole_client/ui/logs/widgets/log_details_screen.dart';
 import 'package:pi_hole_client/ui/logs/widgets/logs_filters_modal.dart';
+import 'package:pi_hole_client/ui/logs/widgets/logs_content_view.dart';
+import 'package:pi_hole_client/ui/logs/widgets/no_logs_message.dart';
 import 'package:pi_hole_client/ui/logs/widgets/logs_screen.dart';
 import 'package:provider/provider.dart';
 
@@ -154,6 +156,57 @@ void main() async {
       await tester.pumpAndSettle();
       expect(find.text("Logs couldn't be loaded"), findsWidgets);
       expect(find.byIcon(Icons.error), findsOneWidget);
+    });
+
+
+    testWidgets('pull-to-refresh works with empty successful query logs', (
+      WidgetTester tester,
+    ) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 2.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+      logsViewModel.logsList = [];
+      logsViewModel.logsListDisplay = [];
+      await tester.pumpWidget(buildAppWithRouter());
+      await tester.pumpAndSettle();
+      expect(find.byType(NoLogsMessage), findsOneWidget);
+      expect(logsViewModel.initializeLoadCallCount, 0);
+      final emptyScroll = find.descendant(
+        of: find.byType(NoLogsMessage),
+        matching: find.byType(CustomScrollView),
+      );
+      expect(emptyScroll, findsOneWidget);
+      await tester.drag(emptyScroll, const Offset(0, 350));
+      await tester.pumpAndSettle();
+      expect(logsViewModel.initializeLoadCallCount, 1);
+      expect(find.byType(NoLogsMessage), findsOneWidget);
+    });
+
+    testWidgets('pull-to-refresh works with one query log row', (
+      WidgetTester tester,
+    ) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 2.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+      await tester.pumpWidget(buildAppWithRouter());
+      await tester.pumpAndSettle();
+      expect(find.text('white.example.com'), findsWidgets);
+      expect(logsViewModel.initializeLoadCallCount, 0);
+      final shortList = find.descendant(
+        of: find.byType(LogsContentView),
+        matching: find.byType(ListView),
+      );
+      expect(shortList, findsOneWidget);
+      await tester.drag(shortList, const Offset(0, 350));
+      await tester.pumpAndSettle();
+      expect(logsViewModel.initializeLoadCallCount, 1);
+      expect(find.text('white.example.com'), findsWidgets);
     });
 
     testWidgets('keeps cached log and displays stale-data warning', (

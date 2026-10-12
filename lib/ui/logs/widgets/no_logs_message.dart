@@ -29,28 +29,30 @@ class NoLogsMessage extends StatelessWidget {
       (provider) => provider.endTime,
     );
 
-    final height = MediaQuery.of(context).size.height;
-
     return ScrollConfiguration(
       behavior: NoScrollBehavior(),
-      child: SingleChildScrollView(
-        physics: const NeverScrollableScrollPhysics(),
-        child: SizedBox(
-          height: height - 144,
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              child: Text(
-                _buildNoLogsMessage(context, startTime, endTime),
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontSize: 24,
+      child: CustomScrollView(
+        // Even an empty result must remain pull-refreshable. The previous
+        // NeverScrollableScrollPhysics prevented RefreshIndicator from firing.
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: Text(
+                  _buildNoLogsMessage(context, startTime, endTime),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontSize: 24,
+                  ),
                 ),
               ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
