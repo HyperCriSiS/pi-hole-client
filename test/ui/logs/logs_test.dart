@@ -9,10 +9,10 @@ import 'package:pi_hole_client/routing/routes.dart';
 import 'package:pi_hole_client/ui/core/view_models/app_config_viewmodel.dart';
 import 'package:pi_hole_client/ui/logs/view_models/logs_viewmodel.dart';
 import 'package:pi_hole_client/ui/logs/widgets/log_details_screen.dart';
-import 'package:pi_hole_client/ui/logs/widgets/logs_filters_modal.dart';
 import 'package:pi_hole_client/ui/logs/widgets/logs_content_view.dart';
-import 'package:pi_hole_client/ui/logs/widgets/no_logs_message.dart';
+import 'package:pi_hole_client/ui/logs/widgets/logs_filters_modal.dart';
 import 'package:pi_hole_client/ui/logs/widgets/logs_screen.dart';
+import 'package:pi_hole_client/ui/logs/widgets/no_logs_message.dart';
 import 'package:provider/provider.dart';
 
 import '../../../testing/fakes/repositories/local/fake_app_config_repository.dart';
