@@ -35,7 +35,7 @@ Updated: 2026-10-12 (upstream #767/#768 selective triage and README privacy navi
 - Generated Pi-hole FTL v6.7 client pinned; remaining narrow handwritten compatibility paths intentionally guarded. `sqlite3 >=3.5.2 <3.6.0` due to Flutter 3.44.1 resolver constraints; no overrides.
 - Fork identity / Android ID / F-Droid publication **on hold by user decision** pending upstream collaboration. Optional identity tools archived in PR #181. Source APK build remains unsigned and validated.
 - Device checks still pending: #442 Android 16 PopupMenu, #636 Android 17 self-signed TLS, #501 density, #293 secure-storage migration, #686 IME, #741 Android 17 Impeller/Vulkan. Optional failed API smoke pending. No physical-device validation claimed.
-- Upstream triage cursor `b3c940460ba7f25e7ef2fd0328fc91b2ed0a2abe`; #767 generated-code parity and #768 privacy/copyright review pending.
+- Previous upstream issue-audit cursor: `b3c940460ba7f25e7ef2fd0328fc91b2ed0a2abe`. Merged upstream PRs #767 (generator-only incompatibility hold) and #768 (selective fork privacy-link correction; LICENSE/NOTICE unchanged) were reviewed on 2026-10-12; see `UPSTREAM_TRIAGE.md`. The remaining general upstream issue audit is separate.
 
 ## Active bounded work unit
 
