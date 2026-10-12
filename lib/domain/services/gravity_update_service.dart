@@ -30,6 +30,9 @@ class GravityUpdateService {
   final FtlRepository _ftlRepository;
 
   StreamSubscription<Result<List<String>>>? _subscription;
+  // Cancel requests can arrive while the initial persistence awaits are
+  // pending, before the actual HTTP stream subscription even exists.
+  int _generation = 0;
 
   /// Starts a gravity update and streams progress via callbacks.
   ///
@@ -44,6 +47,8 @@ class GravityUpdateService {
     required void Function(List<FtlMessage> messages) onMessagesUpdated,
     void Function(GravityStreamHint? hint)? onStreamHint,
   }) async {
+    final generation = ++_generation;
+    bool isCurrent() => generation == _generation;
     final logs = <String>[];
     final startedAt = DateTime.now();
     var status = GravityStatus.running;
@@ -51,12 +56,14 @@ class GravityUpdateService {
 
     // Clear previous gravity data from the database
     await _repository.deleteGravityData(address);
+    if (!isCurrent()) return;
     await _repository.upsertGravityUpdate(
       address,
       startedAt,
       startedAt,
       status,
     );
+    if (!isCurrent()) return;
     onStarted(startedAt);
     onStatusChanged(status);
 
@@ -65,6 +72,7 @@ class GravityUpdateService {
 
     _subscription = stream.listen(
       (result) async {
+        if (!isCurrent()) return;
         await result.fold(
           (data) async {
             if (data.isNotEmpty) {
@@ -80,7 +88,7 @@ class GravityUpdateService {
                 );
               }).toList();
               await _repository.insertGravityLogs(address, entries);
-              onLogsUpdated(logs);
+              if (isCurrent()) onLogsUpdated(logs);
             }
           },
           (error) async {
@@ -95,6 +103,7 @@ class GravityUpdateService {
               completedAt!,
               status,
             );
+            if (!isCurrent()) return;
             onStatusChanged(status);
             onCompleted(completedAt!);
             await _subscription?.cancel();
@@ -102,6 +111,7 @@ class GravityUpdateService {
         );
       },
       onError: (error) async {
+        if (!isCurrent()) return;
         onStreamHint?.call(
           diagnoseGravityStreamFailure(error, hasProgress: logs.isNotEmpty),
         );
@@ -113,11 +123,12 @@ class GravityUpdateService {
           completedAt!,
           status,
         );
+        if (!isCurrent()) return;
         onStatusChanged(status);
         onCompleted(completedAt!);
       },
       onDone: () async {
-        if (status == GravityStatus.error) return;
+        if (!isCurrent() || status == GravityStatus.error) return;
 
         status = GravityStatus.success;
         completedAt = DateTime.now();
@@ -127,13 +138,17 @@ class GravityUpdateService {
           completedAt!,
           status,
         );
+        if (!isCurrent()) return;
 
         // Delay to ensure the messages are fetched after the update is complete
         await Future.delayed(const Duration(milliseconds: 500));
+        if (!isCurrent()) return;
         final msgsResult = await _ftlRepository.fetchInfoMessages();
+        if (!isCurrent()) return;
         final messages = msgsResult.getOrElse((_) => []);
         if (messages.isNotEmpty) {
           await _repository.insertGravityMessages(address, messages);
+          if (!isCurrent()) return;
           onMessagesUpdated(messages);
         }
         onStatusChanged(status);
@@ -173,6 +188,7 @@ class GravityUpdateService {
 
   /// Cancels the active gravity update stream subscription.
   void cancelUpdate() {
+    ++_generation;
     _subscription?.cancel();
     _subscription = null;
   }

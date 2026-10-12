@@ -4,6 +4,7 @@ import 'package:command_it/command_it.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pi_hole_client/domain/model/enums.dart';
+import 'package:pi_hole_client/domain/model/gravity/gravity_snapshot.dart';
 import 'package:pi_hole_client/domain/model/gravity/gravity_stream_diagnostics.dart';
 import 'package:pi_hole_client/utils/exceptions.dart';
 import 'package:pi_hole_client/ui/settings/server_settings/adlists/view_models/gravity_update_viewmodel.dart';
@@ -12,6 +13,19 @@ import 'package:result_dart/result_dart.dart';
 import '../../../../../../testing/fakes/repositories/api/fake_actions_repository.dart';
 import '../../../../../../testing/fakes/repositories/api/fake_ftl_repository.dart';
 import '../../../../../../testing/fakes/repositories/local/fake_gravity_repository.dart';
+
+class _DeferredGravityRepository extends FakeGravityRepository {
+  final pending = <String, Completer<Result<GravitySnapshot>>>{};
+
+  @override
+  Future<Result<GravitySnapshot>> fetchGravityData(String address) {
+    return (pending[address] ??= Completer<Result<GravitySnapshot>>()).future;
+  }
+
+  void complete(String address, GravitySnapshot snapshot) {
+    pending[address]!.complete(Success(snapshot));
+  }
+}
 
 void main() async {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -79,6 +93,87 @@ void main() async {
       expect(gravityUpdateViewModel.completedAtTime, null);
       expect(gravityUpdateViewModel.isLoaded, false);
       expect(listenerCalled, true);
+    });
+
+    test('switching servers discards an obsolete in-flight gravity load', () async {
+      final deferred = _DeferredGravityRepository();
+      final viewModel = GravityUpdateViewModel(repository: deferred);
+      addTearDown(viewModel.dispose);
+
+      viewModel.update(
+        actionsRepository: fakeActionsRepository,
+        ftlRepository: fakeFtlRepository,
+        serverAddress: 'http://server-a',
+      );
+      final first = viewModel.load();
+      viewModel.update(
+        actionsRepository: fakeActionsRepository,
+        ftlRepository: fakeFtlRepository,
+        serverAddress: 'http://server-b',
+      );
+      final second = viewModel.load();
+
+      deferred.complete(
+        'http://server-a',
+        const GravitySnapshot(
+          status: GravityStatus.error,
+          logs: ['old server secret'],
+          messages: [],
+        ),
+      );
+      await first;
+      expect(viewModel.isLoaded, isFalse);
+      expect(viewModel.logs, isEmpty);
+      expect(viewModel.status, GravityStatus.idle);
+
+      deferred.complete(
+        'http://server-b',
+        const GravitySnapshot(
+          status: GravityStatus.success,
+          logs: ['new server'],
+          messages: [],
+        ),
+      );
+      await second;
+      expect(viewModel.isLoaded, isTrue);
+      expect(viewModel.logs, ['new server']);
+      expect(viewModel.status, GravityStatus.success);
+    });
+
+    test('unbinding repositories clears previous server gravity data', () async {
+      await gravityUpdateViewModel.load();
+      expect(gravityUpdateViewModel.isLoaded, isTrue);
+      expect(gravityUpdateViewModel.logs, isNotEmpty);
+
+      gravityUpdateViewModel.update(serverAddress: null);
+      expect(gravityUpdateViewModel.status, GravityStatus.idle);
+      expect(gravityUpdateViewModel.logs, isEmpty);
+      expect(gravityUpdateViewModel.messages, isEmpty);
+      expect(gravityUpdateViewModel.isLoaded, isFalse);
+      expect(gravityUpdateViewModel.startedAtTime, isNull);
+      expect(gravityUpdateViewModel.completedAtTime, isNull);
+    });
+
+    test('dispose prevents a pending gravity load from publishing state', () async {
+      final deferred = _DeferredGravityRepository();
+      final viewModel = GravityUpdateViewModel(repository: deferred);
+      viewModel.update(
+        actionsRepository: fakeActionsRepository,
+        ftlRepository: fakeFtlRepository,
+        serverAddress: 'http://server-a',
+      );
+      final pending = viewModel.load();
+      viewModel.dispose();
+      deferred.complete(
+        'http://server-a',
+        const GravitySnapshot(
+          status: GravityStatus.success,
+          logs: ['after dispose'],
+          messages: [],
+        ),
+      );
+      await pending;
+      expect(viewModel.isLoaded, isFalse);
     });
 
     test('clearMessages() clears messages and notifies listeners', () async {

@@ -1,6 +1,6 @@
 # AI Session State
 
-Updated: 2026-10-12 (Query Logs empty/short pull-to-refresh follow-up)
+Updated: 2026-10-12 (Gravity server-scope asynchronous isolation candidate)
 
 ## Integrated baseline
 
@@ -67,6 +67,10 @@ Updated: 2026-10-12 (Query Logs empty/short pull-to-refresh follow-up)
 ## Current bounded Query Logs pull-to-refresh slice
 
 - Identified a concrete #720 gap: `NoLogsMessage` used `NeverScrollableScrollPhysics` inside `RefreshIndicator`, preventing swipe refresh with successful empty results; a one-row list also lacked always-scrollable physics. Use a centered `SliverFillRemaining` in an always-scrollable `CustomScrollView` and set `AlwaysScrollableScrollPhysics` on populated logs. Gesture-level screen tests cover empty and one-row results. Preserve existing filtering, retries, pagination, TOTP, API and local storage behavior. Exact-head CI and verified unsigned Android source APK are required before claiming integration. Device smoke pending.
+
+## Current bounded Gravity async isolation work unit
+
+- A pending local Gravity snapshot load could publish old-server logs/messages after `update()` bound another server; `reset()` returned early if services were absent, retaining stale data. New per-ViewModel generation invalidates outdated snapshot completions, message deletions and stream callbacks after server switch/reset/start/dispose; reset clears state even if no repository is bound. Service-side cancellation generation also guards the initial persistence awaits so an abandoned update cannot launch a stream afterward, and prevents late completion callbacks. Added deterministic deferred local fetch and delayed-delete service tests. No changes to auth/TOTP, Pi-hole API shape, database schema, server ownership, background polling or UI strings. Verify final feature HEAD's tests/analyzer, APK unsigned artifact, static and docs checks before merging; physical-device smoke remains outstanding.
 
 ## Next autonomous work unit
 
