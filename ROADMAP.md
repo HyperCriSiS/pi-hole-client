@@ -12,6 +12,7 @@ Maintain and improve the unofficial Pi-hole client while upstream activity is li
 
 ## Completed foundation
 
+- [x] Selectively triage upstream #767/#768 against the fork: do not copy generated Freezed/Mockito outputs from the incompatible upstream 4.x/5.8.x toolchain into the fork's locked 3.2.5/5.6.4 baseline; fix the obsolete README privacy link to the fork's existing version-controlled policy. Leave Apache LICENSE/NOTICE attribution unchanged pending separate review, and keep independent branding on hold.
 - [x] Add Live Log stalled-request watchdog and regression coverage.
 - [x] Import the relevant upstream dependency updates (#659 and #660) into `dev`.
 - [x] Implement #432 and #622; verify #592 and #593 are already addressed by current code.
