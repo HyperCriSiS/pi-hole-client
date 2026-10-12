@@ -77,10 +77,74 @@ String redactSensitiveText(String input) {
     r'''((?:"|')?\b(?:password|passwd|token|access[_-]?token|refresh[_-]?token|auth[_-]?token|sid|session[_-]?id|totp|api[_-]?key|client[_-]?secret)(?:"|')?\s*[:=]\s*)([^"'\s,;}&\]]+)''',
     caseSensitive: false,
   );
-  output = output.replaceAllMapped(
-    plainSecret,
-    (match) => '${match.group(1)}<redacted>',
+  output = output.replaceAllMapped(plainSecret, (match) {
+    final prefix = match.group(1)!;
+    // JSON numerics/bools must turn into JSON *strings*; a bare redaction
+    // marker is not valid JSON. For key=value diagnostics, keep the existing
+    // unquoted marker format.
+    final jsonKey = prefix.startsWith('"') && prefix.trimRight().endsWith(':');
+    return jsonKey ? '
+
+  // Cover request headers and exceptions which only contain a bare bearer
+  // scheme, rather than a named Authorization header.
+  final sensitiveHeader = RegExp(
+    r'\b(authorization|proxy-authorization|cookie|set-cookie|x-api-key)\s*:\s*[^\r\n]+',
+    caseSensitive: false,
   );
+  output = output.replaceAllMapped(
+    sensitiveHeader,
+    (match) => '${match.group(1)}: <redacted>',
+  );
+  final bareBearer = RegExp(r'\b(Bearer)\s+[^\s,;]+', caseSensitive: false);
+  output = output.replaceAllMapped(
+    bareBearer,
+    (match) => '${match.group(1)} <redacted>',
+  );
+
+  // URI userinfo is a second common leakage path in transport exceptions.
+  final uriUserInfo = RegExp(
+    r'\b(https?://)[^/\s:@]+:[^/\s@]+@',
+    caseSensitive: false,
+  );
+  output = output.replaceAllMapped(
+    uriUserInfo,
+    (match) => '${match.group(1)}<redacted>@',
+  );
+
+  return output;
+}
+ + '{prefix}"<redacted>"' : '
+
+  // Cover request headers and exceptions which only contain a bare bearer
+  // scheme, rather than a named Authorization header.
+  final sensitiveHeader = RegExp(
+    r'\b(authorization|proxy-authorization|cookie|set-cookie|x-api-key)\s*:\s*[^\r\n]+',
+    caseSensitive: false,
+  );
+  output = output.replaceAllMapped(
+    sensitiveHeader,
+    (match) => '${match.group(1)}: <redacted>',
+  );
+  final bareBearer = RegExp(r'\b(Bearer)\s+[^\s,;]+', caseSensitive: false);
+  output = output.replaceAllMapped(
+    bareBearer,
+    (match) => '${match.group(1)} <redacted>',
+  );
+
+  // URI userinfo is a second common leakage path in transport exceptions.
+  final uriUserInfo = RegExp(
+    r'\b(https?://)[^/\s:@]+:[^/\s@]+@',
+    caseSensitive: false,
+  );
+  output = output.replaceAllMapped(
+    uriUserInfo,
+    (match) => '${match.group(1)}<redacted>@',
+  );
+
+  return output;
+}
+ + '{prefix}<redacted>';
+  });
 
   // Cover request headers and exceptions which only contain a bare bearer
   // scheme, rather than a named Authorization header.
