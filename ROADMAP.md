@@ -17,6 +17,7 @@ Maintain and improve the unofficial Pi-hole client while upstream activity is li
 - [x] Implement #432 and #622; verify #592 and #593 are already addressed by current code.
 - [x] Implement #632 structured App Log diagnostics with central secret redaction and regression tests for connection/auth/session/secure-storage failures.
   - [x] Harden quoted App Log credentials (including spaces and escaped quotes), extended token/header/URI-userinfo variants and exported clipboard/detail redaction with focused service/widget regressions. No log persistence or extra diagnostics collection.
+  - [x] Follow-up: redact JSON-serialized Authorization/Proxy-Authorization/Cookie/Set-Cookie/X-API-Key headers and common API/ID-token or private-key aliases, preserving JSON scalars and harmless metadata. Service and clipboard/detail regressions cover the gap; no authentication or persistence changes.
 - [x] Implement #178 so removing the app-lock passcode immediately clears in-memory lock state, with regression coverage.
 - [x] Make the optional SonarQube CI stage skip cleanly when `SONAR_TOKEN` is not configured, avoiding a false-red validation workflow and unnecessary Flutter/analyzer setup.
 - [x] Add PR-scoped Actions concurrency to the Dart-test, test-release and docs-deployment workflows so newer commits automatically cancel stale runs without cancelling `main`/release pushes.

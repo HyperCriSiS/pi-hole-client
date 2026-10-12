@@ -54,6 +54,10 @@ Updated: 2026-10-12 (manual multi-server snapshot freshness merged and validated
 
 - App Log privacy: the original central `redactSensitiveText` JSON matcher stopped at whitespace even inside quoted values, so secret-bearing error strings such as `{"password":"two words"}` could retain part of the credential in stored logs and their clipboard/detail UI. Introduced full quoted-value redaction with escaped-quote handling, wider canonical auth/session key coverage, unquoted JSON/query values, HTTP auth/cookie/bearer headers and HTTPS URL userinfo. Regression coverage in `test/domain/services/app_log_service_test.dart` and `test/ui/app_logs/app_logs_test.dart` checks JSON structure, redacted clipboard JSON and detail content. This does not promise to detect arbitrary unknown secret formats; no auth, API, session or storage mutation. Feature PR and exact-HEAD CI required before calling integrated.
 
+## Current bounded App Log privacy follow-up
+
+- After PR #216, CamelCase `accessToken`/`refreshToken`/`clientSecret` names were already covered by the case-insensitive optional-separator matchers. The remaining gap was JSON-serialized HTTP header keys (`Authorization`, `proxyAuthorization`, `Cookie`, `setCookie`, `X-API-Key`) whose quoted key syntax bypassed the plain-text header matcher, together with `apiToken`, `idToken` and private-key aliases. Extend both quoted/unquoted key patterns, preserve valid JSON for string/numeric/boolean values, retain unrelated metadata, and verify stored AppLogs, clipboard export and detail UI. This is defense in depth, not arbitrary-secret detection. No auth/session/API changes; real-device checks remain outstanding.
+
 ## Next autonomous work unit
 
 1. Recheck live `main`, active PRs and targeted CI. Do not repeat merged #190–#200 or this checkpoint.

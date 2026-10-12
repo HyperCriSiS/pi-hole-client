@@ -87,6 +87,84 @@ void main() {
       }
     });
 
+    test('redacts JSON-serialized auth headers and token aliases', () {
+      final service = AppLogService();
+      final payload = jsonEncode(<String, Object>{
+        'headers': <String, Object>{
+          'Authorization': 'Basic encoded-private-credential',
+          'proxyAuthorization': 'Negotiate private-session',
+          'Cookie': 'sid=cookie-private; path=/',
+          'setCookie': 'login=opaque-cookie; HttpOnly',
+          'X-API-Key': 'api-key-private',
+        },
+        'credentials': <String, Object>{
+          'apiToken': 'api token with whitespace',
+          'id_token': 'jwt-token-private',
+          'privateKey': 'private-key-private',
+          'clientSecret': 'camel case private',
+        },
+        'flags': <String, Object>{
+          'requestId': 'safe-request-id',
+          'isAuthenticated': false,
+        },
+      });
+
+      service.addDiagnostic(type: 'transport', message: payload, resBody: payload);
+
+      final log = service.logs.single;
+      for (final text in [log.message, log.resBody!]) {
+        final data = jsonDecode(text) as Map<String, dynamic>;
+        final headers = data['headers'] as Map<String, dynamic>;
+        final credentials = data['credentials'] as Map<String, dynamic>;
+        for (final key in [
+          'Authorization',
+          'proxyAuthorization',
+          'Cookie',
+          'setCookie',
+          'X-API-Key',
+        ]) {
+          expect(headers[key], '<redacted>', reason: key);
+        }
+        for (final key in [
+          'apiToken',
+          'id_token',
+          'privateKey',
+          'clientSecret',
+        ]) {
+          expect(credentials[key], '<redacted>', reason: key);
+        }
+        final flags = data['flags'] as Map<String, dynamic>;
+        expect(flags['requestId'], 'safe-request-id');
+        expect(flags['isAuthenticated'], false);
+      }
+    });
+
+    test('unquoted aliases and JSON scalar secrets stay redacted', () {
+      final service = AppLogService();
+      service.addDiagnostic(
+        type: 'auth',
+        message: 'apiToken=my-private-token idToken=another-private-token '
+            'proxyAuthorization=opaque-auth-value',
+        resBody: jsonEncode(<String, Object>{
+          'apiToken': 123456,
+          'Authorization': true,
+          'Cookie': false,
+          'safe': 42,
+        }),
+      );
+      final log = service.logs.single;
+      expect(log.message, contains('apiToken=<redacted>'));
+      expect(log.message, contains('idToken=<redacted>'));
+      expect(log.message, contains('proxyAuthorization=<redacted>'));
+      expect(log.message, isNot(contains('private-token')));
+      expect(log.message, isNot(contains('opaque-auth-value')));
+      final data = jsonDecode(log.resBody!) as Map<String, dynamic>;
+      expect(data['apiToken'], '<redacted>');
+      expect(data['Authorization'], '<redacted>');
+      expect(data['Cookie'], '<redacted>');
+      expect(data['safe'], 42);
+    });
+
     test('redacts URL credentials, query keys and bare bearer tokens', () {
       final service = AppLogService();
       service.addDiagnostic(
