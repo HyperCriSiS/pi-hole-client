@@ -11,6 +11,7 @@ on:
       - 'AGENTS.md'
       - 'tools/archive/**'
       - 'UPSTREAM_TRIAGE.md'
+      - 'README.md'
   pull_request:
     paths-ignore:
       - 'website/**'
@@ -19,6 +20,7 @@ on:
       - 'AGENTS.md'
       - 'tools/archive/**'
       - 'UPSTREAM_TRIAGE.md'
+      - 'README.md'
 
 env:
   api_level: 35
