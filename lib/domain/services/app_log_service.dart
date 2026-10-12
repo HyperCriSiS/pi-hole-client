@@ -51,40 +51,65 @@ class AppLogService {
   }
 }
 
-/// Redacts common credential forms from diagnostic text.
+/// Redacts common credential forms before diagnostics reach the UI/clipboard.
 ///
-/// This is intentionally conservative. It covers key/value text, JSON-like
-/// values and HTTP authorization/cookie headers. It never tries to preserve the
-/// secret value itself.
+/// Quoted values are handled first: a password such as "two words" must not
+/// leave its second word visible. This is defense in depth, not a general
+/// guarantee that arbitrary free-form secrets can be detected.
 String redactSensitiveText(String input) {
   var output = input;
 
-  final jsonSecret = RegExp(
-    r'(["\x27]?)(password|token|sid|totp)(["\x27]?\s*:\s*)(["\x27]?)[^"\x27,}\s]+(["\x27]?)',
+  // Consume the *entire* quoted value, including whitespace and escaped
+  // quotes. The closing quote must match the opening quote.
+  final quotedSecret = RegExp(
+    r'''((?:"|')?\b(?:password|passwd|token|access[_-]?token|refresh[_-]?token|auth[_-]?token|sid|session[_-]?id|totp|api[_-]?key|client[_-]?secret)(?:"|')?\s*[:=]\s*)(["'])(?:\\.|(?!\2)[^\\])*\2''',
     caseSensitive: false,
   );
   output = output.replaceAllMapped(
-    jsonSecret,
+    quotedSecret,
     (match) =>
-        '${match.group(1) ?? ''}${match.group(2)}${match.group(3)}<redacted>',
+        '${match.group(1)}${match.group(2)}<redacted>${match.group(2)}',
   );
 
-  final keyValueSecret = RegExp(
-    r'\b(password|token|sid|totp)\s*([=:])\s*[^\s,;]+',
+  // Numeric and unquoted values, including query parameters, must also be
+  // redacted. Exclude quotes to preserve already-redacted JSON structure.
+  final plainSecret = RegExp(
+    r'''((?:"|')?\b(?:password|passwd|token|access[_-]?token|refresh[_-]?token|auth[_-]?token|sid|session[_-]?id|totp|api[_-]?key|client[_-]?secret)(?:"|')?\s*[:=]\s*)([^"'\s,;}&\]]+)''',
     caseSensitive: false,
   );
-  output = output.replaceAllMapped(
-    keyValueSecret,
-    (match) => '${match.group(1)}${match.group(2)}<redacted>',
-  );
+  output = output.replaceAllMapped(plainSecret, (match) {
+    final prefix = match.group(1)!;
+    // JSON numerics/bools must turn into JSON *strings*; a bare redaction
+    // marker is not valid JSON. For key=value diagnostics, keep the existing
+    // unquoted marker format.
+    final jsonKey = prefix.startsWith('"') && prefix.trimRight().endsWith(':');
+    return jsonKey ? '${prefix}"<redacted>"' : '${prefix}<redacted>';
+  });
 
+  // Cover request headers and exceptions which only contain a bare bearer
+  // scheme, rather than a named Authorization header.
   final sensitiveHeader = RegExp(
-    r'\b(authorization|cookie|set-cookie)\s*:\s*[^\r\n]+',
+    r'\b(authorization|proxy-authorization|cookie|set-cookie|x-api-key)\s*:\s*[^\r\n]+',
     caseSensitive: false,
   );
   output = output.replaceAllMapped(
     sensitiveHeader,
     (match) => '${match.group(1)}: <redacted>',
+  );
+  final bareBearer = RegExp(r'\b(Bearer)\s+[^\s,;]+', caseSensitive: false);
+  output = output.replaceAllMapped(
+    bareBearer,
+    (match) => '${match.group(1)} <redacted>',
+  );
+
+  // URI userinfo is a second common leakage path in transport exceptions.
+  final uriUserInfo = RegExp(
+    r'\b(https?://)[^/\s:@]+:[^/\s@]+@',
+    caseSensitive: false,
+  );
+  output = output.replaceAllMapped(
+    uriUserInfo,
+    (match) => '${match.group(1)}<redacted>@',
   );
 
   return output;

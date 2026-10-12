@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -94,6 +96,69 @@ void main() async {
       await tester.tap(find.text('Body'));
       await tester.pumpAndSettle();
       expect(find.text('body'), findsOneWidget);
+    });
+
+
+    testWidgets('copied logs and detail modal contain only redacted secrets', (
+      WidgetTester tester,
+    ) async {
+      final clipboard = <MethodCall>[];
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(SystemChannels.platform, (
+            MethodCall call,
+          ) async {
+            if (call.method == 'Clipboard.setData') clipboard.add(call);
+            return null;
+          });
+      addTearDown(() {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(SystemChannels.platform, null);
+      });
+
+      appConfigViewModel.addLog(
+        AppLog(
+          type: 'connection',
+          dateTime: DateTime.utc(2026, 10, 12),
+          message: 'Connection failed password="two word password"',
+          resBody: '{"access_token":"very private token",'
+              '"sid":"session with spaces"}',
+        ),
+      );
+      await tester.pumpWidget(
+        buildTestApp(
+          const AppLogsScreen(),
+          appConfigViewModel: appConfigViewModel,
+        ),
+      );
+      await tester.pump();
+
+      expect(find.textContaining('two word password'), findsNothing);
+      await tester.tap(find.byIcon(Icons.share));
+      await tester.pump();
+      expect(clipboard, hasLength(1));
+      final payload = clipboard.single.arguments as Map<Object?, Object?>;
+      final exported = jsonDecode(payload['text']! as String) as List<dynamic>;
+      final exportedLog = exported.single as Map<String, dynamic>;
+      expect(exportedLog['message'], contains('password="<redacted>"'));
+      expect(exportedLog['resBody'], contains('"access_token":"<redacted>"'));
+      expect(exportedLog['resBody'], contains('"sid":"<redacted>"'));
+      for (final secret in [
+        'two word password',
+        'very private token',
+        'session with spaces',
+      ]) {
+        expect(payload['text'], isNot(contains(secret)));
+      }
+
+      await tester.tap(find.textContaining('Connection failed'));
+      await tester.pumpAndSettle();
+      expect(find.byType(AppLogDetailsModal), findsOneWidget);
+      expect(find.textContaining('two word password'), findsNothing);
+      await tester.tap(find.text('Body'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('very private token'), findsNothing);
+      expect(find.textContaining('session with spaces'), findsNothing);
+      expect(find.textContaining('<redacted>'), findsWidgets);
     });
 
     testWidgets('should show blank screen (no app logs)', (

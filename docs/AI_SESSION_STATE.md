@@ -50,6 +50,10 @@ Updated: 2026-10-12 (manual multi-server snapshot freshness merged and validated
 
 - Multi-server overview snapshot freshness **merged and CI-validated via PR #214**; source commit `623b46a588b86835279273436343cbc506508751`, squash `484ea44621cec308d4a4505f1799277aee154857`. Only read-success cards display individually captured device-local date/time. Failure and not-requested cards show none. No auth, network or write changes; physical-device checks remain pending.
 
+## Current bounded security fix
+
+- App Log privacy: the original central `redactSensitiveText` JSON matcher stopped at whitespace even inside quoted values, so secret-bearing error strings such as `{"password":"two words"}` could retain part of the credential in stored logs and their clipboard/detail UI. Introduced full quoted-value redaction with escaped-quote handling, wider canonical auth/session key coverage, unquoted JSON/query values, HTTP auth/cookie/bearer headers and HTTPS URL userinfo. Regression coverage in `test/domain/services/app_log_service_test.dart` and `test/ui/app_logs/app_logs_test.dart` checks JSON structure, redacted clipboard JSON and detail content. This does not promise to detect arbitrary unknown secret formats; no auth, API, session or storage mutation. Feature PR and exact-HEAD CI required before calling integrated.
+
 ## Next autonomous work unit
 
 1. Recheck live `main`, active PRs and targeted CI. Do not repeat merged #190–#200 or this checkpoint.
