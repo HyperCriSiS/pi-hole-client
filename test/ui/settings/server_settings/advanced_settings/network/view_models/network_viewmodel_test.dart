@@ -2,12 +2,34 @@ import 'dart:async';
 
 import 'package:command_it/command_it.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pi_hole_client/domain/model/network/network.dart';
 import 'package:pi_hole_client/ui/settings/server_settings/advanced_settings/network/view_models/network_viewmodel.dart';
+import 'package:result_dart/result_dart.dart';
 
 import '../../../../../../../testing/fakes/repositories/api/fake_ftl_repository.dart';
 import '../../../../../../../testing/fakes/repositories/api/fake_network_repository.dart';
 import '../../../../../../../testing/models/v6/ftl.dart';
 import '../../../../../../../testing/models/v6/network.dart';
+
+class _DeferredNetworkRepository extends FakeNetworkRepository {
+  Completer<Result<List<Device>>>? pendingDevices;
+
+  @override
+  Future<Result<List<Device>>> fetchDevices({
+    int? maxDevices = 999,
+    int? maxAddresses = 25,
+  }) {
+    final pending = pendingDevices;
+    if (pending != null) {
+      pendingDevices = null;
+      return pending.future;
+    }
+    return super.fetchDevices(
+      maxDevices: maxDevices,
+      maxAddresses: maxAddresses,
+    );
+  }
+}
 
 void main() {
   group('NetworkViewModel', () {
@@ -87,6 +109,58 @@ void main() {
       expect(sawRecovered, isTrue);
     });
 
+
+    test('late revalidation cannot restore an already deleted device', () async {
+      final repository = _DeferredNetworkRepository();
+      final scoped = NetworkViewModel(
+        networkRepository: repository,
+        ftlRepository: fakeFtlRepository,
+      );
+      addTearDown(scoped.dispose);
+
+      await scoped.loadDevices.runAsync();
+      expect(scoped.data.devices.length, 2);
+      final priorIp = scoped.data.currentClientIp;
+
+      final pending = Completer<Result<List<Device>>>();
+      repository.pendingDevices = pending;
+      final refresh = scoped.loadDevices.runAsync();
+      expect(scoped.loadDevices.isRunning.value, isTrue);
+
+      await scoped.deleteDevice.runAsync(1);
+      expect(scoped.data.devices.any((d) => d.id == 1), isFalse);
+
+      pending.complete(Success(kRepoFetchDevices));
+      await refresh;
+
+      expect(scoped.data.devices.length, 1);
+      expect(scoped.data.devices.any((d) => d.id == 1), isFalse);
+      expect(scoped.data.currentClientIp, priorIp);
+      expect(scoped.hasLoadedSuccessfully, isTrue);
+      expect(scoped.loadDevices.errors.value, isNull);
+    });
+
+    test('failed deletion does not invalidate a successful refresh', () async {
+      final repository = _DeferredNetworkRepository();
+      final scoped = NetworkViewModel(
+        networkRepository: repository,
+        ftlRepository: fakeFtlRepository,
+      );
+      addTearDown(scoped.dispose);
+
+      await scoped.loadDevices.runAsync();
+      final pending = Completer<Result<List<Device>>>();
+      repository.pendingDevices = pending;
+      final refresh = scoped.loadDevices.runAsync();
+
+      repository.shouldFail = true;
+      await expectLater(scoped.deleteDevice.runAsync(1), throwsA(isA<Exception>()));
+
+      pending.complete(Success(kRepoFetchDevices));
+      await refresh;
+      expect(scoped.data.devices, kRepoFetchDevices);
+      expect(scoped.hasLoadedSuccessfully, isTrue);
+    });
 
     test('deleteDevice success removes device locally', () async {
       await viewModel.loadDevices.runAsync();

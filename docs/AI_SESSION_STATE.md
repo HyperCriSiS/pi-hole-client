@@ -1,6 +1,6 @@
 # AI Session State
 
-Updated: 2026-10-13 (PR #226 ordered Gravity persistence integrated and CI validated)
+Updated: 2026-10-13 (Sessions/Network refresh-vs-delete ordering candidate)
 
 ## Integrated baseline
 
@@ -88,6 +88,10 @@ Updated: 2026-10-13 (PR #226 ordered Gravity persistence integrated and CI valid
 ## Integrated Gravity progress-ordering work unit
 
 - Follow-up after integrated PR #221: the `GravityUpdateService` stream uses async callbacks in `Stream.listen`, which Dart does not await. With fast progress frames and slow local SQLite inserts, multiple log writes can overlap and `onDone` can publish success before the final persisted progress frame. A terminal failure may likewise overtake the in-flight progress write. Queue per-stream event work and await the queue in the terminal `onDone`; the existing generation cancellation checks remain in force. Deterministic gated-repository regressions prove ordered progress persistence before success and terminal errors after pending progress, without live Pi-hole access. No changes to auth/TOTP, server selection, networking, schemas or background polling. Integrated via PR #226, squash `ee6d38d58567dada625fee531f143c8a1833b0a3`, exact validated feature HEAD `2112428f3fcfa209405b81c4a6e3230ab55bf6c5`. All 15 applicable checks passed or were intentionally skipped: full Flutter/analyzer, Sonar, Codecov, CodeQL, four static analyses, docs build, unsigned Android source APK and `Verify unsigned release artifact`. No physical-device/live Pi-hole smoke claimed.
+
+## Current bounded #720 refresh/delete consistency
+
+- Sessions and Network support manual data revalidation while their separate delete commands execute. A fetch started before a successful deletion can otherwise complete later and reinsert the deleted row into the UI cache. Add a per-ViewModel successful-mutation revision captured at fetch start; apply successful fetch data only if the revision is unchanged, preserving the newer local deletion. Failed deletes do not advance the revision, so regular fetch/error and retry behavior remains intact. Four deterministic deferred-repository regressions cover successful delete and failed delete for both screens. No API/auth/TOTP, server switching, network transport or storage change. Full exact-head Flutter/analyzer, quality/static and unsigned Android source APK validation required before merge. Live server/device smoke pending.
 
 ## Next autonomous work unit
 
