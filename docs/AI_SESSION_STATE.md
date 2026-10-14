@@ -1,6 +1,6 @@
 # AI Session State
 
-Updated: 2026-10-14 (PR #228 Sessions/Network refresh-delete race integrated)
+Updated: 2026-10-14 (Local DNS/CNAME stale-refresh safeguard candidate)
 
 ## Integrated baseline
 
@@ -93,6 +93,11 @@ Updated: 2026-10-14 (PR #228 Sessions/Network refresh-delete race integrated)
 ## Integrated #720 refresh/delete consistency
 
 - Sessions and Network support manual data revalidation while their separate delete commands execute. A fetch started before a successful deletion can otherwise complete later and reinsert the deleted row into the UI cache. Add a per-ViewModel successful-mutation revision captured at fetch start; apply successful fetch data only if the revision is unchanged, preserving the newer local deletion. Failed deletes do not advance the revision, so regular fetch/error and retry behavior remains intact. Four deterministic deferred-repository regressions cover successful delete and failed delete for both screens. No API/auth/TOTP, server switching, network transport or storage change. Integrated via PR #228, squash `539c4c5ca790dcb4c828fe37062795449a0c6f79` after full exact-HEAD Flutter/analyzer, Sonar, Codecov, CodeQL/static, docs and unsigned Android APK artifact verification. Live server/device smoke pending.
+
+## Local DNS/CNAME stale-refresh work unit
+
+- Local DNS fetches host records, device options and optional v6 CNAME records, then replaces its complete ViewModel snapshot. If a user-initiated add/update/delete succeeds while a previous refresh is in flight, the older response can otherwise overwrite that local host/CNAME mutation. Maintain one successful-mutation revision shared by all six write commands; capture it before all remote fetches and ignore the stale successful response when it changes. Failed/rejected writes do not invalidate a legitimate revalidation; existing successful-empty and failed-revalidation semantics remain intact.
+- Nine deterministic ViewModel regressions cover all six host/CNAME add/update/delete paths, failed host/CNAME writes and an empty-cache refresh overlapped with host add. No API transport, auth/TOTP, server ownership, storage or background polling changes. Exact-HEAD Flutter/analyzer, Sonar/Codecov, CodeQL/static, docs CI and verified unsigned Android source APK are required before integration; physical-device and live Pi-hole smoke remain pending.
 
 ## Next autonomous work unit
 

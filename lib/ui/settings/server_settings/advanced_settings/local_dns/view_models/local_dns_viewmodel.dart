@@ -84,12 +84,16 @@ class LocalDnsViewModel extends ChangeNotifier {
 
   LocalDnsData _data = const LocalDnsData(records: [], deviceOptions: []);
   bool _hasLoadedSuccessfully = false;
+  // A refresh started before a successful host/CNAME mutation must not
+  // overwrite the newer local result with its stale server snapshot.
+  int _mutationRevision = 0;
 
   LocalDnsData get data => _data;
   bool get hasLoadedSuccessfully => _hasLoadedSuccessfully;
   bool get supportsCname => _cnameRepository != null;
 
   Future<void> _loadRecords() async {
+    final revisionAtRequest = _mutationRevision;
     final dnsFuture = _localDnsRepository.fetchRecords();
     final devicesFuture = _networkRepository.fetchDevices();
     final cnameFuture = _cnameRepository?.fetchCnameRecords();
@@ -101,6 +105,8 @@ class LocalDnsViewModel extends ChangeNotifier {
     if (dnsResult case Failure()) throw dnsResult.exceptionOrNull();
     if (devicesResult case Failure()) throw devicesResult.exceptionOrNull();
     if (cnameResult case Failure()) throw cnameResult.exceptionOrNull();
+    // The server response may predate a locally committed CRUD operation.
+    if (revisionAtRequest != _mutationRevision) return;
 
     _data = LocalDnsData(
       records: dnsResult.getOrNull()!,
@@ -122,6 +128,7 @@ class LocalDnsViewModel extends ChangeNotifier {
     );
     switch (result) {
       case Success():
+        ++_mutationRevision;
         _data = LocalDnsData(
           records: [..._data.records, record],
           deviceOptions: _data.deviceOptions,
@@ -149,6 +156,7 @@ class LocalDnsViewModel extends ChangeNotifier {
     );
     switch (result) {
       case Success():
+        ++_mutationRevision;
         final records = [..._data.records];
         if (index != -1) records[index] = params.newRecord;
         _data = LocalDnsData(
@@ -169,6 +177,7 @@ class LocalDnsViewModel extends ChangeNotifier {
     );
     switch (result) {
       case Success():
+        ++_mutationRevision;
         final records = [..._data.records]..remove(record);
         _data = LocalDnsData(
           records: records,
@@ -191,6 +200,7 @@ class LocalDnsViewModel extends ChangeNotifier {
     final result = await repository.addCnameRecord(record: record);
     switch (result) {
       case Success():
+        ++_mutationRevision;
         _data = LocalDnsData(
           records: _data.records,
           deviceOptions: _data.deviceOptions,
@@ -212,6 +222,7 @@ class LocalDnsViewModel extends ChangeNotifier {
     );
     switch (result) {
       case Success():
+        ++_mutationRevision;
         _data = LocalDnsData(
           records: _data.records,
           deviceOptions: _data.deviceOptions,
@@ -231,6 +242,7 @@ class LocalDnsViewModel extends ChangeNotifier {
     final result = await repository.deleteCnameRecord(record: record);
     switch (result) {
       case Success():
+        ++_mutationRevision;
         _data = LocalDnsData(
           records: _data.records,
           deviceOptions: _data.deviceOptions,
