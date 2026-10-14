@@ -81,6 +81,92 @@ void main() {
       expect(viewModel.hasRevalidationError, isTrue);
     });
 
+
+    group('stale refresh overlapping successful mutations', () {
+      for (final operation in ['add', 'update', 'delete']) {
+        test('keeps successful group $operation over an older read', () async {
+          await viewModel.loadGroups.runAsync();
+          final original = List<Group>.of(viewModel.groups);
+          final stale = Completer<Result<List<Group>>>();
+          fakeGroupRepository.fetchGroupsOverride = () => stale.future;
+          final refresh = viewModel.loadGroups.runAsync();
+
+          if (operation == 'add') {
+            await viewModel.addGroup.runAsync((
+              name: 'created',
+              comment: 'new group',
+              enabled: true,
+            ));
+          } else if (operation == 'update') {
+            await viewModel.updateGroup.runAsync((
+              name: 'test',
+              comment: 'changed while refreshing',
+              enabled: true,
+            ));
+          } else {
+            await viewModel.deleteGroup.runAsync(original.last);
+          }
+
+          final newer = List<Group>.of(viewModel.groups);
+          expect(newer, isNot(equals(original)));
+          stale.complete(Success(original));
+          await refresh;
+
+          expect(viewModel.groups, newer);
+          expect(viewModel.filteredGroups, newer);
+          expect(viewModel.hasSuccessfulLoad, isTrue);
+          expect(viewModel.loadGroups.errors.value, isNull);
+        });
+      }
+    });
+
+    test('failed group mutation does not invalidate a legitimate refresh', () async {
+      await viewModel.loadGroups.runAsync();
+      final stale = Completer<Result<List<Group>>>();
+      fakeGroupRepository.fetchGroupsOverride = () => stale.future;
+      final refresh = viewModel.loadGroups.runAsync();
+
+      fakeGroupRepository.shouldFail = true;
+      await expectLater(
+        viewModel.addGroup.runAsync((
+          name: 'failed',
+          comment: null,
+          enabled: true,
+        )),
+        throwsA(isA<Exception>()),
+      );
+      stale.complete(const Success<List<Group>, Exception>([]));
+      await refresh;
+
+      expect(viewModel.groups, isEmpty);
+      expect(viewModel.filteredGroups, isEmpty);
+      expect(viewModel.hasSuccessfulLoad, isTrue);
+      expect(viewModel.loadGroups.errors.value, isNull);
+    });
+
+    test('older empty refresh cannot remove a newly added group', () async {
+      fakeGroupRepository.fetchGroupsOverride =
+          () async => const Success<List<Group>, Exception>([]);
+      await viewModel.loadGroups.runAsync();
+      expect(viewModel.groups, isEmpty);
+
+      final stale = Completer<Result<List<Group>>>();
+      fakeGroupRepository.fetchGroupsOverride = () => stale.future;
+      final refresh = viewModel.loadGroups.runAsync();
+      await viewModel.addGroup.runAsync((
+        name: 'new',
+        comment: null,
+        enabled: true,
+      ));
+      final newer = List<Group>.of(viewModel.groups);
+      stale.complete(const Success<List<Group>, Exception>([]));
+      await refresh;
+
+      expect(viewModel.groups, newer);
+      expect(viewModel.groups, hasLength(1));
+      expect(viewModel.hasSuccessfulLoad, isTrue);
+    });
+
     test('setSearchMode updates search mode', () {
       viewModel.setSearchMode(true);
       expect(viewModel.searchMode, true);

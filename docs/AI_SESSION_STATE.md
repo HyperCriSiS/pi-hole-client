@@ -1,6 +1,6 @@
 # AI Session State
 
-Updated: 2026-10-14 (PR #237 unstructured v6 error fallback hardening integrated)
+Updated: 2026-10-15 (Groups/Clients/Adlists stale-refresh CRUD safeguard candidate)
 
 ## Integrated baseline
 
@@ -127,6 +127,12 @@ Updated: 2026-10-14 (PR #237 unstructured v6 error fallback hardening integrated
 - Known transport failures already have fixed, credential-free error text, but previously unclassified Dio errors without an HTTP response could still forward `DioException.message` with a credential-bearing URL. Missing Pi-hole response messages could also fall back to that raw Dio text. Separately, the `safeDioCall` and streaming generic catches previously interpolated arbitrary thrown exceptions and stacktraces into user-visible `ApiException` objects and debug logs.
 - The scoped fix returns an optional `ApiTransportFailure.unexpected` for an unknown Dio failure *without* a response, never inventing an HTTP code. With a real response but no explicit server error message, it uses a status-only `HTTP N` fallback. Genuine Pi-hole-provided structured error messages, keys, hints, HTTP statuses and existing 401/TOTP behavior are preserved. The generic normal/stream fallback emits only the thrown object's runtime type, not raw message or stack. An already structured `ApiException` is propagated unchanged so its deliberate message and HTTP status are preserved.
 - Deterministic mapper and normal/stream wrapper regressions cover missing-response Dio failures, actual HTTP 503 fallbacks and secret-bearing unstructured `FormatException` messages. No TLS, auth/session, retry eligibility, API request, server switching, persistence, translations or native changes. Integrated via PR #237 (squash `ae7646f2205a20ff2bc4498a46ff46e35fab26e4`) after final source HEAD `6b7dc4efa703d306f1044f72e522333a7639c6b2` passed all 15 applicable checks, including Flutter/analyzer, Sonar, Codecov, CodeQL/static, docs and verified unsigned Android APK. Initial CI feedback led to a nullability cleanup and explicit structured `ApiException` preservation test; both validated again on final HEAD. Live Pi-hole and affected-device smoke remains pending.
+
+## Groups, Clients and Adlists stale-refresh-vs-CRUD safeguard (validation candidate)
+
+- While manual list revalidation runs, a successful add/update/delete in `GroupsViewModel`, `ClientsViewModel` or `AdlistsViewModel` changes the local snapshot, but the earlier server response previously replaced it when it eventually completed. The earlier #720 work kept successfully loaded lists visible through refreshes; this separate concurrency race remained.
+- Each ViewModel now captures a successful-mutation revision at the beginning of `_loadGroups`, `_loadClients` or `_loadAdlists` and skips only a stale successful result after an intervening committed mutation. All nine successful CRUD handlers advance the revision; failed mutations do not. Filters and successful empty snapshots remain in place; unrelated UI and network/auth/TOTP behavior is unchanged.
+- Fifteen deterministic deferred-response regressions: nine add/update/delete successes, three failed mutations which must not invalidate a legitimate refresh, and three successfully empty cached lists followed by a mutation and older empty refresh. Exact-head Flutter tests/analyzer, Sonar/Codecov, CodeQL/static, docs and verified unsigned Android source APK required before integration; real Pi-hole/device smoke remains pending.
 
 ## Next autonomous work unit
 

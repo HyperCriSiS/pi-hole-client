@@ -41,6 +41,9 @@ class GroupsViewModel extends ChangeNotifier {
   List<Group> _groups = [];
   // Distinguishes a successful empty result from an uninitialized cache.
   bool _hasSuccessfulLoad = false;
+  // A refresh started before a successful local CRUD mutation must not
+  // overwrite its newer local snapshot when the old server read completes.
+  int _mutationRevision = 0;
   List<Group> _filteredGroups = [];
   String _searchTerm = '';
   bool _searchMode = false;
@@ -71,9 +74,12 @@ class GroupsViewModel extends ChangeNotifier {
 
   // --- Command implementations ---
   Future<void> _loadGroups() async {
+    final revisionAtRequest = _mutationRevision;
     final result = await _groupRepository.fetchGroups();
     switch (result) {
       case Success():
+        // The pending read predates a completed add/update/delete.
+        if (revisionAtRequest != _mutationRevision) return;
         _groups = result.getOrNull();
         _hasSuccessfulLoad = true;
         _applyFilters();
@@ -93,6 +99,7 @@ class GroupsViewModel extends ChangeNotifier {
     );
     switch (result) {
       case Success():
+        ++_mutationRevision;
         _groups = [..._groups, result.getOrNull()];
         _applyFilters();
         notifyListeners();
@@ -111,6 +118,7 @@ class GroupsViewModel extends ChangeNotifier {
     );
     switch (result) {
       case Success():
+        ++_mutationRevision;
         final updated = result.getOrNull();
         _groups = _groups.map((g) => g.id == updated.id ? updated : g).toList();
         _applyFilters();
@@ -124,6 +132,7 @@ class GroupsViewModel extends ChangeNotifier {
     final result = await _groupRepository.deleteGroup(group.name);
     switch (result) {
       case Success():
+        ++_mutationRevision;
         _groups = _groups.where((g) => g.id != group.id).toList();
         _applyFilters();
         notifyListeners();
