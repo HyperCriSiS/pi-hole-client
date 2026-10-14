@@ -80,6 +80,92 @@ void main() {
       expect(viewModel.hasRevalidationError, isTrue);
     });
 
+
+    group('stale refresh overlapping successful mutations', () {
+      for (final operation in ['add', 'update', 'delete']) {
+        test('keeps successful client $operation over an older read', () async {
+          await viewModel.loadClients.runAsync();
+          final original = List<ManagedClient>.of(viewModel.clients);
+          final stale = Completer<Result<List<ManagedClient>>>();
+          fakeClientRepository.fetchClientsOverride = () => stale.future;
+          final refresh = viewModel.loadClients.runAsync();
+
+          if (operation == 'add') {
+            await viewModel.addClient.runAsync((
+              client: '10.0.0.88',
+              comment: 'new client',
+              groups: [0],
+            ));
+          } else if (operation == 'update') {
+            await viewModel.updateClient.runAsync((
+              client: '192.168.1.100',
+              comment: 'changed while refreshing',
+              groups: [0],
+            ));
+          } else {
+            await viewModel.deleteClient.runAsync(original.first);
+          }
+
+          final newer = List<ManagedClient>.of(viewModel.clients);
+          expect(newer, isNot(equals(original)));
+          stale.complete(Success(original));
+          await refresh;
+
+          expect(viewModel.clients, newer);
+          expect(viewModel.filteredClients, newer);
+          expect(viewModel.hasSuccessfulLoad, isTrue);
+          expect(viewModel.loadClients.errors.value, isNull);
+        });
+      }
+    });
+
+    test('failed client mutation leaves earlier valid refresh applicable', () async {
+      await viewModel.loadClients.runAsync();
+      final stale = Completer<Result<List<ManagedClient>>>();
+      fakeClientRepository.fetchClientsOverride = () => stale.future;
+      final refresh = viewModel.loadClients.runAsync();
+
+      fakeClientRepository.shouldFail = true;
+      await expectLater(
+        viewModel.addClient.runAsync((
+          client: '10.0.0.99',
+          comment: 'failed',
+          groups: [0],
+        )),
+        throwsA(isA<Exception>()),
+      );
+      stale.complete(const Success<List<ManagedClient>, Exception>([]));
+      await refresh;
+
+      expect(viewModel.clients, isEmpty);
+      expect(viewModel.filteredClients, isEmpty);
+      expect(viewModel.hasSuccessfulLoad, isTrue);
+      expect(viewModel.loadClients.errors.value, isNull);
+    });
+
+    test('older empty refresh cannot remove a newly added client', () async {
+      fakeClientRepository.fetchClientsOverride =
+          () async => const Success<List<ManagedClient>, Exception>([]);
+      await viewModel.loadClients.runAsync();
+      expect(viewModel.clients, isEmpty);
+
+      final stale = Completer<Result<List<ManagedClient>>>();
+      fakeClientRepository.fetchClientsOverride = () => stale.future;
+      final refresh = viewModel.loadClients.runAsync();
+      await viewModel.addClient.runAsync((
+        client: '10.0.0.88',
+        comment: null,
+        groups: [0],
+      ));
+      final newer = List<ManagedClient>.of(viewModel.clients);
+      stale.complete(const Success<List<ManagedClient>, Exception>([]));
+      await refresh;
+
+      expect(viewModel.clients, newer);
+      expect(viewModel.clients, hasLength(1));
+      expect(viewModel.hasSuccessfulLoad, isTrue);
+    });
+
     test('setSearchMode updates search mode', () {
       viewModel.setSearchMode(true);
       expect(viewModel.searchMode, true);

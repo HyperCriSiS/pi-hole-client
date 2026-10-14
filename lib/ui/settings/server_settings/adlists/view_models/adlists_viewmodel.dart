@@ -49,6 +49,9 @@ class AdlistsViewModel extends ChangeNotifier {
   // A successful empty response is also a usable snapshot.
   // This ViewModel is created for one server-scoped repository.
   bool _hasSuccessfulLoad = false;
+  // A refresh started before a successful local CRUD mutation must not
+  // overwrite its newer local snapshot when the old server read completes.
+  int _mutationRevision = 0;
   List<Adlist> _whitelistAdlists = [];
   List<Adlist> _blacklistAdlists = [];
   List<Adlist> _filteredWhitelistAdlists = [];
@@ -85,9 +88,12 @@ class AdlistsViewModel extends ChangeNotifier {
 
   // --- Command implementations ---
   Future<void> _loadAdlists() async {
+    final revisionAtRequest = _mutationRevision;
     final result = await _adListRepository.fetchAdlists();
     switch (result) {
       case Success():
+        // The pending read predates a completed add/update/delete.
+        if (revisionAtRequest != _mutationRevision) return;
         final adlists = result.getOrThrow();
         _whitelistAdlists = adlists
             .where((a) => a.type == ListType.allow)
@@ -110,6 +116,7 @@ class AdlistsViewModel extends ChangeNotifier {
     );
     switch (result) {
       case Success():
+        ++_mutationRevision;
         _removeAdlistFromList(adlist);
       case Failure():
         throw result.exceptionOrNull();
@@ -135,6 +142,7 @@ class AdlistsViewModel extends ChangeNotifier {
     );
     switch (result) {
       case Success():
+        ++_mutationRevision;
         final added = result.getOrNull();
         if (added.type == ListType.allow) {
           _whitelistAdlists = [..._whitelistAdlists, added];
@@ -158,6 +166,7 @@ class AdlistsViewModel extends ChangeNotifier {
     );
     switch (result) {
       case Success():
+        ++_mutationRevision;
         final updated = result.getOrNull();
         // Replace in-place and remove from the other list (handles type changes).
         if (updated.type == ListType.allow) {

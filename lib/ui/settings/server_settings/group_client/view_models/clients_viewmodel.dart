@@ -53,6 +53,9 @@ class ClientsViewModel extends ChangeNotifier {
   List<ManagedClient> _clients = [];
   // Distinguishes a successful empty result from an uninitialized cache.
   bool _hasSuccessfulLoad = false;
+  // A refresh started before a successful local CRUD mutation must not
+  // overwrite its newer local snapshot when the old server read completes.
+  int _mutationRevision = 0;
   List<ManagedClient> _filteredClients = [];
   Map<String, String> _ipToMac = {};
   Map<int, String> _groupNames = {};
@@ -100,9 +103,12 @@ class ClientsViewModel extends ChangeNotifier {
 
   // --- Command implementations ---
   Future<void> _loadClients() async {
+    final revisionAtRequest = _mutationRevision;
     final result = await _clientRepository.fetchClients();
     switch (result) {
       case Success():
+        // The pending read predates a completed add/update/delete.
+        if (revisionAtRequest != _mutationRevision) return;
         _clients = result.getOrNull();
         _hasSuccessfulLoad = true;
         _applyFilters();
@@ -122,6 +128,7 @@ class ClientsViewModel extends ChangeNotifier {
     );
     switch (result) {
       case Success():
+        ++_mutationRevision;
         _clients = [..._clients, result.getOrNull()];
         _applyFilters();
         notifyListeners();
@@ -140,6 +147,7 @@ class ClientsViewModel extends ChangeNotifier {
     );
     switch (result) {
       case Success():
+        ++_mutationRevision;
         final updated = result.getOrNull();
         _clients = _clients
             .map((c) => c.id == updated.id ? updated : c)
@@ -155,6 +163,7 @@ class ClientsViewModel extends ChangeNotifier {
     final result = await _clientRepository.deleteClient(client.client);
     switch (result) {
       case Success():
+        ++_mutationRevision;
         _clients = _clients.where((c) => c.id != client.id).toList();
         _applyFilters();
         notifyListeners();

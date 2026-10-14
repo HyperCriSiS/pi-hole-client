@@ -158,6 +158,110 @@ void main() {
       expect(vm.blacklistAdlists, isEmpty);
     });
 
+
+    group('stale refresh overlapping successful mutations', () {
+      for (final operation in ['add', 'update', 'delete']) {
+        test('keeps successful adlist $operation over an older read', () async {
+          final repository = _ControllableAdlistRepository();
+          final vm = AdlistsViewModel(adListRepository: repository);
+          addTearDown(vm.dispose);
+          await vm.loadAdlists.runAsync();
+          final original = [
+            ...vm.whitelistAdlists,
+            ...vm.blacklistAdlists,
+          ];
+          final stale = Completer<Result<List<Adlist>>>();
+          repository.nextFetch = stale;
+          final refresh = vm.loadAdlists.runAsync();
+
+          if (operation == 'add') {
+            await vm.addAdlist.runAsync((
+              address: 'https://new.example.com/hosts',
+              type: ListType.allow,
+              groups: [0],
+              comment: 'new list',
+              enabled: true,
+            ));
+          } else if (operation == 'update') {
+            await vm.updateAdlist.runAsync(
+              vm.blacklistAdlists.first.copyWith(
+                comment: 'changed while refreshing',
+              ),
+            );
+          } else {
+            await vm.deleteAdlist.runAsync(vm.blacklistAdlists.first);
+          }
+
+          final allow = List<Adlist>.of(vm.whitelistAdlists);
+          final block = List<Adlist>.of(vm.blacklistAdlists);
+          expect([...allow, ...block], isNot(equals(original)));
+          stale.complete(Success(original));
+          await refresh;
+
+          expect(vm.whitelistAdlists, allow);
+          expect(vm.blacklistAdlists, block);
+          expect(vm.filteredWhitelistAdlists, allow);
+          expect(vm.filteredBlacklistAdlists, block);
+          expect(vm.hasSuccessfulLoad, isTrue);
+          expect(vm.loadAdlists.errors.value, isNull);
+        });
+      }
+    });
+
+    test('failed adlist mutation keeps a valid in-flight refresh', () async {
+      final repository = _ControllableAdlistRepository();
+      final vm = AdlistsViewModel(adListRepository: repository);
+      addTearDown(vm.dispose);
+      await vm.loadAdlists.runAsync();
+      final stale = Completer<Result<List<Adlist>>>();
+      repository.nextFetch = stale;
+      final refresh = vm.loadAdlists.runAsync();
+
+      repository.shouldFail = true;
+      await expectLater(
+        vm.addAdlist.runAsync((
+          address: 'https://failed.example.com/hosts',
+          type: ListType.block,
+          groups: [0],
+          comment: null,
+          enabled: true,
+        )),
+        throwsA(isA<Exception>()),
+      );
+      stale.complete(const Success<List<Adlist>, Exception>([]));
+      await refresh;
+
+      expect(vm.whitelistAdlists, isEmpty);
+      expect(vm.blacklistAdlists, isEmpty);
+      expect(vm.hasSuccessfulLoad, isTrue);
+      expect(vm.loadAdlists.errors.value, isNull);
+    });
+
+    test('older empty refresh cannot remove a newly added adlist', () async {
+      final repository = _ControllableAdlistRepository()..returnEmpty = true;
+      final vm = AdlistsViewModel(adListRepository: repository);
+      addTearDown(vm.dispose);
+      await vm.loadAdlists.runAsync();
+      expect(vm.whitelistAdlists, isEmpty);
+
+      final stale = Completer<Result<List<Adlist>>>();
+      repository.nextFetch = stale;
+      final refresh = vm.loadAdlists.runAsync();
+      await vm.addAdlist.runAsync((
+        address: 'https://new.example.com/hosts',
+        type: ListType.allow,
+        groups: [0],
+        comment: null,
+        enabled: true,
+      ));
+      stale.complete(const Success<List<Adlist>, Exception>([]));
+      await refresh;
+
+      expect(vm.whitelistAdlists, hasLength(1));
+      expect(vm.filteredWhitelistAdlists, hasLength(1));
+      expect(vm.hasSuccessfulLoad, isTrue);
+    });
+
     test('onSearch filters adlists based on search term', () async {
       await viewModel.loadAdlists.runAsync();
       listenerCalled = false;
