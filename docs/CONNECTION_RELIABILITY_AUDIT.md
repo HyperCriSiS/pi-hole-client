@@ -34,8 +34,15 @@
 
 **Avoid premature changes:** Cached session expiry is currently handled reactively through 401 and secure SID renewal. Proactive validity tracking or probes can increase network/auth attempts, especially across multiple servers and TOTP setups. First measure real failures and request cost; do not introduce periodic auth probes as part of error classification.
 
+## P2 implementation and evidence
+
+- Integrated via PR #235, squash `b22a1bd42180e0697301ed61af9d6d1a79a7c80f`, exact final tested feature HEAD `9ff879e6442e2576895dc8120ae7920dc3bf86c7`.
+- `ApiException` now exposes an optional `ApiTransportFailure` category. Known Dio connect/send/receive/**transform** timeouts, general timeout, connection, TLS and cancellation failures use fixed credential-free messages without inventing HTTP status. Normal and streaming wrappers also avoid fabricated 503/504 for raw `SocketException` or `TimeoutException`, and classify direct TLS errors. Actual Pi-hole HTTP error statuses and nested API error key/message/hint remain unchanged.
+- Deterministic mapper and wrapper regressions include timeout stage distinction, TLS handshake, cancellation, wrapped Socket/Timeout errors, direct raw exceptions and secret exclusion. Initial exact-head CI detected Dio `transformTimeout` missing from the exhaustive switch; the final HEAD fixed and tested it. Full Flutter/analyzer, Sonar, Codecov, CodeQL/static, docs build and unsigned Android source APK including explicit `Verify unsigned release artifact` passed (15 successful/intentionally skipped checks).
+- This closes the **typed transport categorization** slice, not physical network troubleshooting. Android 16/17, self-signed HTTPS, real Pi-hole v5/v6 and TLS pinning behavior still need device smoke. Unknown/unstructured exception sanitization and any UI/Connection Doctor display changes remain separate, evidence-driven decisions.
+
 ## Acceptance gates
 
-- P1 was integrated in PR #233, squash `513ba4f76f895ab3cd4740cfba8d4c2188166ab9`, exact tested HEAD `004a4d265a750df7a9b1bd97cfb130ce50a76f6d`: all 16 applicable checks passed or were intentionally skipped including Flutter/analyzer, Sonar, Codecov, CodeQL/static, docs and verified unsigned Android source APK. The P2 diagnostics work remains planning only; no timeout/error classification has been changed.
+- P1 was integrated in PR #233, squash `513ba4f76f895ab3cd4740cfba8d4c2188166ab9`, exact tested HEAD `004a4d265a750df7a9b1bd97cfb130ce50a76f6d`: all 16 applicable checks passed or were intentionally skipped including Flutter/analyzer, Sonar, Codecov, CodeQL/static, docs and verified unsigned Android source APK. The P2 typed transport failure slice is also integrated in PR #235 with full exact-head CI; physical-device/TLS smoke remains pending.
 - Implementation requires an isolated branch, deterministic failing-before/fixed-after tests, no security-policy regressions, and exact HEAD Flutter/analyzer + applicable security/quality CI and unsigned Android source APK verification.
 - Real Pi-hole v5/v6, Android 16/17, self-signed certificate behavior and proxy-device validation remain separate manual gates.
