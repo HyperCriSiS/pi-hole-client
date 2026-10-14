@@ -201,6 +201,20 @@ void main() {
       expect(error.toString(), isNot(contains('secret-in-stream')));
     });
 
+    test('preserves a deliberately structured stream API failure', () async {
+      final structured = ApiException(
+        message: 'API returned null response body',
+        statusCode: 200,
+      );
+      final results = await safeDioCallStream<String>(() async* {
+        throw structured;
+      }).toList();
+
+      final error = results.single.exceptionOrNull();
+      expect(error, same(structured));
+      expect((error! as ApiException).statusCode, 200);
+    });
+
     test('yields Failure on unknown exception during stream', () async {
       final results = await safeDioCallStream<String>(() async* {
         throw Exception('unexpected');
@@ -274,6 +288,8 @@ void main() {
       expect(result.isError(), true);
       final error = result.exceptionOrNull()! as ApiException;
       expect(error.message, contains('API returned null response body'));
+      expect(error.statusCode, 200);
+      expect(error.transportFailure, isNull);
     });
   });
 }
