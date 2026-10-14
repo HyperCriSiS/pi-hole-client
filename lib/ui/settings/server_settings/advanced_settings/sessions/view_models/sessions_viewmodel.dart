@@ -28,15 +28,20 @@ class SessionsViewModel extends ChangeNotifier {
   // --- State ---
   List<AuthSession> _sessions = [];
   bool _hasLoadedSuccessfully = false;
+  // A refresh started before a successful deletion must not restore the
+  // removed session when its older response arrives afterward.
+  int _mutationRevision = 0;
 
   // --- Getters ---
   List<AuthSession> get sessions => _sessions;
   bool get hasLoadedSuccessfully => _hasLoadedSuccessfully;
 
   Future<void> _loadSessions() async {
+    final revisionAtRequest = _mutationRevision;
     final result = await _authRepository.getAllSessions();
     switch (result) {
       case Success():
+        if (revisionAtRequest != _mutationRevision) return;
         _sessions = result.getOrNull();
         _hasLoadedSuccessfully = true;
         notifyListeners();
@@ -49,6 +54,7 @@ class SessionsViewModel extends ChangeNotifier {
     final result = await _authRepository.deleteSessionById(sessionId);
     switch (result) {
       case Success():
+        ++_mutationRevision;
         _sessions = _sessions.where((s) => s.id != sessionId).toList();
         notifyListeners();
       case Failure():

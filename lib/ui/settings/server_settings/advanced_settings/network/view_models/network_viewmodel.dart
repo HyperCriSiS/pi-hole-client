@@ -40,18 +40,23 @@ class NetworkViewModel extends ChangeNotifier {
   // --- State ---
   NetworkData _data = const NetworkData(devices: [], currentClientIp: '');
   bool _hasLoadedSuccessfully = false;
+  // Ignore an older refresh response when a device deletion succeeded since
+  // that request began; otherwise the deleted row could reappear locally.
+  int _mutationRevision = 0;
 
   // --- Getters ---
   NetworkData get data => _data;
   bool get hasLoadedSuccessfully => _hasLoadedSuccessfully;
 
   Future<void> _loadDevices() async {
+    final revisionAtRequest = _mutationRevision;
     final (devicesResult, clientResult) = await (
       _networkRepository.fetchDevices(),
       _ftlRepository.fetchInfoClient(),
     ).wait;
     if (devicesResult case Failure()) throw devicesResult.exceptionOrNull();
     if (clientResult case Failure()) throw clientResult.exceptionOrNull();
+    if (revisionAtRequest != _mutationRevision) return;
 
     _data = NetworkData(
       devices: devicesResult.getOrNull()!,
@@ -65,6 +70,7 @@ class NetworkViewModel extends ChangeNotifier {
     final result = await _networkRepository.deleteDevice(deviceId);
     switch (result) {
       case Success():
+        ++_mutationRevision;
         _data = NetworkData(
           devices: _data.devices.where((d) => d.id != deviceId).toList(),
           currentClientIp: _data.currentClientIp,

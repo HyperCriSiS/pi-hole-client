@@ -2,10 +2,26 @@ import 'dart:async';
 
 import 'package:command_it/command_it.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pi_hole_client/domain/model/auth/auth.dart';
 import 'package:pi_hole_client/ui/settings/server_settings/advanced_settings/sessions/view_models/sessions_viewmodel.dart';
+import 'package:result_dart/result_dart.dart';
 
 import '../../../../../../../testing/fakes/repositories/api/fake_auth_repository.dart';
 import '../../../../../../../testing/models/v6/auth.dart';
+
+class _DeferredSessionsRepository extends FakeAuthRepository {
+  Completer<Result<List<AuthSession>>>? pendingLoad;
+
+  @override
+  Future<Result<List<AuthSession>>> getAllSessions() {
+    final pending = pendingLoad;
+    if (pending != null) {
+      pendingLoad = null;
+      return pending.future;
+    }
+    return super.getAllSessions();
+  }
+}
 
 void main() {
   group('SessionsViewModel', () {
@@ -99,6 +115,53 @@ void main() {
       expect(sawRecovered, isTrue);
     });
 
+
+    test('late revalidation cannot restore an already deleted session', () async {
+      final repository = _DeferredSessionsRepository();
+      final scoped = SessionsViewModel(authRepository: repository);
+      addTearDown(scoped.dispose);
+
+      await scoped.loadSessions.runAsync();
+      expect(scoped.sessions.length, 3);
+      expect(scoped.hasLoadedSuccessfully, isTrue);
+
+      final pending = Completer<Result<List<AuthSession>>>();
+      repository.pendingLoad = pending;
+      final refresh = scoped.loadSessions.runAsync();
+      expect(scoped.loadSessions.isRunning.value, isTrue);
+
+      await scoped.deleteSession.runAsync(0);
+      expect(scoped.sessions.any((s) => s.id == 0), isFalse);
+
+      // This is the pre-delete snapshot, returned after the delete succeeded.
+      pending.complete(Success(kRepoGetAllSessions));
+      await refresh;
+
+      expect(scoped.sessions.length, 2);
+      expect(scoped.sessions.any((s) => s.id == 0), isFalse);
+      expect(scoped.hasLoadedSuccessfully, isTrue);
+      expect(scoped.loadSessions.isRunning.value, isFalse);
+      expect(scoped.loadSessions.errors.value, isNull);
+    });
+
+    test('failed deletion does not invalidate a successful refresh', () async {
+      final repository = _DeferredSessionsRepository();
+      final scoped = SessionsViewModel(authRepository: repository);
+      addTearDown(scoped.dispose);
+
+      await scoped.loadSessions.runAsync();
+      final pending = Completer<Result<List<AuthSession>>>();
+      repository.pendingLoad = pending;
+      final refresh = scoped.loadSessions.runAsync();
+
+      repository.shouldFail = true;
+      await expectLater(scoped.deleteSession.runAsync(0), throwsA(isA<Exception>()));
+
+      pending.complete(Success(kRepoGetAllSessions));
+      await refresh;
+      expect(scoped.sessions, kRepoGetAllSessions);
+      expect(scoped.hasLoadedSuccessfully, isTrue);
+    });
 
     test('deleteSession success removes session locally', () async {
       await viewModel.loadSessions.runAsync();
