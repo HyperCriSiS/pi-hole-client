@@ -1,6 +1,6 @@
 # AI Session State
 
-Updated: 2026-10-14 (v6 retry and connection failure policy audit; documentation candidate)
+Updated: 2026-10-14 (v6 retry and connection failure policy audit)
 
 ## Integrated baseline
 
