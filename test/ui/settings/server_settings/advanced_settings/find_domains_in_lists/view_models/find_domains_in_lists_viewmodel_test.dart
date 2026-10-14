@@ -12,6 +12,23 @@ import 'package:result_dart/result_dart.dart';
 import '../../../../../../../testing/fakes/repositories/api/fake_adlist_repository.dart';
 import '../../../../../../../testing/fakes/repositories/api/fake_domain_repository.dart';
 
+/// Delays one deletion so a new search can complete before its response.
+class _DeferredDomainRepository extends FakeDomainRepository {
+  Completer<Result<Unit>>? nextDelete;
+
+  @override
+  Future<Result<Unit>> deleteDomain(
+    DomainType type,
+    DomainKind kind,
+    String domain,
+  ) {
+    final pending = nextDelete;
+    nextDelete = null;
+    if (pending != null) return pending.future;
+    return super.deleteDomain(type, kind, domain);
+  }
+}
+
 class _ControlledSearchRepository extends FakeAdlistRepository {
   Completer<Result<ListSearchResult>>? nextSearch;
   ListSearchResult? canned;
@@ -213,6 +230,260 @@ void main() {
       expect(vm.hasReusableResults, true);
       expect(vm.searchResult?.meta.total, 0);
       expect(vm.gravityMatches, isEmpty);
+    });
+
+
+    group('local edits versus in-flight search revalidation', () {
+      const query = (domain: 'example.com', partial: true, limit: 20);
+
+      Domain domain({int id = 11, String? comment}) => Domain(
+        id: id,
+        name: 'example.com',
+        punyCode: 'example.com',
+        type: DomainType.deny,
+        kind: DomainKind.exact,
+        comment: comment,
+        groups: [0],
+        enabled: true,
+        dateAdded: now,
+        dateModified: now,
+      );
+
+      Future<ListSearchResult> withDomain(
+        _ControlledSearchRepository repo,
+        Domain record,
+      ) async {
+        final result = (await repo.searchLists(
+          domain: query.domain,
+          partial: query.partial,
+          limit: query.limit,
+        )).getOrThrow();
+        return result.copyWith(
+          domains: [record],
+          meta: const ListSearchMeta(
+            domainsExact: 1,
+            domainsRegex: 0,
+            gravityAllow: 0,
+            gravityBlock: 1,
+            total: 2,
+          ),
+        );
+      }
+
+      test('old search cannot restore a successfully deleted domain', () async {
+        final repo = _ControlledSearchRepository();
+        final initial = await withDomain(repo, domain());
+        repo.canned = initial;
+        final vm = FindDomainsInListsViewModel(
+          adListRepository: repo,
+          domainRepository: fakeDomainRepository,
+        );
+        addTearDown(vm.dispose);
+        await vm.searchLists.runAsync(query);
+
+        final older = Completer<Result<ListSearchResult>>();
+        repo.nextSearch = older;
+        final refresh = vm.searchLists.runAsync(query);
+        await Future<void>.delayed(Duration.zero);
+        await vm.deleteDomain.runAsync(domain());
+        expect(vm.domainResults, isEmpty);
+
+        older.complete(Success(initial));
+        await refresh;
+        expect(vm.domainResults, isEmpty);
+        expect(vm.gravityMatches, initial.gravityMatches);
+        expect(vm.hasReusableResults, isTrue);
+        expect(vm.searchLists.errors.value, isNull);
+
+        // A later manual search must still accept current server data.
+        repo.canned = initial.copyWith(domains: []);
+        await vm.searchLists.runAsync(query);
+        expect(vm.domainResults, isEmpty);
+      });
+
+      test('old search cannot restore a successfully deleted adlist', () async {
+        final repo = _ControlledSearchRepository();
+        final vm = FindDomainsInListsViewModel(
+          adListRepository: repo,
+          domainRepository: fakeDomainRepository,
+        );
+        addTearDown(vm.dispose);
+        await vm.searchLists.runAsync(query);
+        final original = vm.searchResult!;
+        final adlist = vm.gravityMatches.single.adlist;
+
+        final older = Completer<Result<ListSearchResult>>();
+        repo.nextSearch = older;
+        final refresh = vm.searchLists.runAsync(query);
+        await Future<void>.delayed(Duration.zero);
+        await vm.deleteAdlist.runAsync(adlist);
+        expect(vm.gravityMatches, isEmpty);
+
+        older.complete(Success(original));
+        await refresh;
+        expect(vm.gravityMatches, isEmpty);
+        expect(vm.hasReusableResults, isTrue);
+        expect(vm.searchLists.errors.value, isNull);
+      });
+
+      test('old search cannot undo a domain detail edit', () async {
+        final repo = _ControlledSearchRepository();
+        final initial = await withDomain(repo, domain());
+        repo.canned = initial;
+        final vm = FindDomainsInListsViewModel(
+          adListRepository: repo,
+          domainRepository: fakeDomainRepository,
+        );
+        addTearDown(vm.dispose);
+        await vm.searchLists.runAsync(query);
+
+        final older = Completer<Result<ListSearchResult>>();
+        repo.nextSearch = older;
+        final refresh = vm.searchLists.runAsync(query);
+        await Future<void>.delayed(Duration.zero);
+        vm.updateDomainInResults(domain(comment: 'edited'));
+
+        older.complete(Success(initial));
+        await refresh;
+        expect(vm.domainResults.single.comment, 'edited');
+        expect(vm.gravityMatches, initial.gravityMatches);
+        expect(vm.hasReusableResults, isTrue);
+      });
+
+      test('old search cannot undo an adlist detail edit', () async {
+        final repo = _ControlledSearchRepository();
+        final vm = FindDomainsInListsViewModel(
+          adListRepository: repo,
+          domainRepository: fakeDomainRepository,
+        );
+        addTearDown(vm.dispose);
+        await vm.searchLists.runAsync(query);
+        final initial = vm.searchResult!;
+        final original = vm.gravityMatches.single.adlist;
+
+        final older = Completer<Result<ListSearchResult>>();
+        repo.nextSearch = older;
+        final refresh = vm.searchLists.runAsync(query);
+        await Future<void>.delayed(Duration.zero);
+        vm.updateAdlistInResults(original.copyWith(comment: 'edited'));
+
+        older.complete(Success(initial));
+        await refresh;
+        expect(vm.gravityMatches.single.adlist.comment, 'edited');
+        expect(vm.hasReusableResults, isTrue);
+      });
+
+      test('failed domain deletion leaves a valid refresh applicable', () async {
+        final repo = _ControlledSearchRepository();
+        final initial = await withDomain(repo, domain());
+        repo.canned = initial;
+        final vm = FindDomainsInListsViewModel(
+          adListRepository: repo,
+          domainRepository: fakeDomainRepository,
+        );
+        addTearDown(vm.dispose);
+        await vm.searchLists.runAsync(query);
+
+        final newer = initial.copyWith(domains: []);
+        final pending = Completer<Result<ListSearchResult>>();
+        repo.nextSearch = pending;
+        final refresh = vm.searchLists.runAsync(query);
+        await Future<void>.delayed(Duration.zero);
+
+        fakeDomainRepository.shouldFail = true;
+        await expectLater(
+          vm.deleteDomain.runAsync(domain()),
+          throwsA(isA<Exception>()),
+        );
+        pending.complete(Success(newer));
+        await refresh;
+        expect(vm.domainResults, isEmpty);
+        expect(vm.gravityMatches, newer.gravityMatches);
+        expect(vm.searchLists.errors.value, isNull);
+      });
+
+      test('failed adlist deletion leaves a valid refresh applicable', () async {
+        final repo = _ControlledSearchRepository();
+        final vm = FindDomainsInListsViewModel(
+          adListRepository: repo,
+          domainRepository: fakeDomainRepository,
+        );
+        addTearDown(vm.dispose);
+        await vm.searchLists.runAsync(query);
+        final initial = vm.searchResult!;
+        final olderAdlist = initial.gravityMatches.single.adlist;
+
+        final newer = initial.copyWith(gravityMatches: []);
+        final pending = Completer<Result<ListSearchResult>>();
+        repo.nextSearch = pending;
+        final refresh = vm.searchLists.runAsync(query);
+        await Future<void>.delayed(Duration.zero);
+
+        repo.shouldFail = true;
+        await expectLater(
+          vm.deleteAdlist.runAsync(olderAdlist),
+          throwsA(isA<Exception>()),
+        );
+        pending.complete(Success(newer));
+        await refresh;
+        expect(vm.gravityMatches, isEmpty);
+        expect(vm.searchLists.errors.value, isNull);
+      });
+
+      test('unrelated callback does not invalidate pending valid search', () async {
+        final repo = _ControlledSearchRepository();
+        final initial = await withDomain(repo, domain());
+        repo.canned = initial;
+        final vm = FindDomainsInListsViewModel(
+          adListRepository: repo,
+          domainRepository: fakeDomainRepository,
+        );
+        addTearDown(vm.dispose);
+        await vm.searchLists.runAsync(query);
+
+        final newer = initial.copyWith(domains: []);
+        final pending = Completer<Result<ListSearchResult>>();
+        repo.nextSearch = pending;
+        final refresh = vm.searchLists.runAsync(query);
+        await Future<void>.delayed(Duration.zero);
+
+        vm.updateDomainInResults(domain(id: 999, comment: 'irrelevant'));
+        pending.complete(Success(newer));
+        await refresh;
+        expect(vm.domainResults, isEmpty);
+        expect(vm.hasReusableResults, isTrue);
+      });
+
+      test('late domain delete from older query cannot change new results', () async {
+        final repo = _ControlledSearchRepository();
+        final domainRepo = _DeferredDomainRepository();
+        final initial = await withDomain(repo, domain());
+        repo.canned = initial;
+        final vm = FindDomainsInListsViewModel(
+          adListRepository: repo,
+          domainRepository: domainRepo,
+        );
+        addTearDown(vm.dispose);
+        await vm.searchLists.runAsync(query);
+
+        final delayedDelete = Completer<Result<Unit>>();
+        domainRepo.nextDelete = delayedDelete;
+        final deletion = vm.deleteDomain.runAsync(domain());
+        await Future<void>.delayed(Duration.zero);
+
+        const other = (domain: 'other.example', partial: true, limit: 20);
+        final otherResult = initial.copyWith(
+          domains: [domain(comment: 'other query result')],
+        );
+        repo.canned = otherResult;
+        await vm.searchLists.runAsync(other);
+        expect(vm.domainResults, otherResult.domains);
+
+        delayedDelete.complete(const Success(unit));
+        await deletion;
+        expect(vm.domainResults, otherResult.domains);
+        expect(vm.hasReusableResults, isTrue);
+      });
     });
 
     test('deleteDomain removes domain from results', () async {
