@@ -1,6 +1,6 @@
 # V6 connection reliability: bounded technical audit
 
-**Scope:** Current Dart/Flutter Pi-hole v6 connection/session layer. This is an investigation and implementation plan, not a verified production fix. No new dependencies or runtime changes.
+**Scope:** Historical Dart/Flutter Pi-hole v6 connection/session audit, followed by separately verified implementation PRs. The audit itself introduced no dependencies or runtime changes; see the integration evidence below.
 
 ## Current behavior already worth preserving
 
@@ -39,7 +39,14 @@
 - Integrated via PR #235, squash `b22a1bd42180e0697301ed61af9d6d1a79a7c80f`, exact final tested feature HEAD `9ff879e6442e2576895dc8120ae7920dc3bf86c7`.
 - `ApiException` now exposes an optional `ApiTransportFailure` category. Known Dio connect/send/receive/**transform** timeouts, general timeout, connection, TLS and cancellation failures use fixed credential-free messages without inventing HTTP status. Normal and streaming wrappers also avoid fabricated 503/504 for raw `SocketException` or `TimeoutException`, and classify direct TLS errors. Actual Pi-hole HTTP error statuses and nested API error key/message/hint remain unchanged.
 - Deterministic mapper and wrapper regressions include timeout stage distinction, TLS handshake, cancellation, wrapped Socket/Timeout errors, direct raw exceptions and secret exclusion. Initial exact-head CI detected Dio `transformTimeout` missing from the exhaustive switch; the final HEAD fixed and tested it. Full Flutter/analyzer, Sonar, Codecov, CodeQL/static, docs build and unsigned Android source APK including explicit `Verify unsigned release artifact` passed (15 successful/intentionally skipped checks).
-- This closes the **typed transport categorization** slice, not physical network troubleshooting. Android 16/17, self-signed HTTPS, real Pi-hole v5/v6 and TLS pinning behavior still need device smoke. Unknown/unstructured exception sanitization and any UI/Connection Doctor display changes remain separate, evidence-driven decisions.
+- This closes the **typed transport categorization** slice, not physical network troubleshooting. Android 16/17, self-signed HTTPS, real Pi-hole v5/v6 and TLS pinning behavior still need device smoke. A further bounded unstructured error fallback hardening was integrated in PR #237; new Connection Doctor/UI display changes remain separate, evidence-driven decisions.
+
+## P2 follow-up: unstructured API error fallback
+
+- Integrated through PR #237 (squash `ae7646f2205a20ff2bc4498a46ff46e35fab26e4`), exact final tested feature HEAD `6b7dc4efa703d306f1044f72e522333a7639c6b2`.
+- Unknown/no-response Dio exceptions now return `ApiTransportFailure.unexpected` with a neutral message and no HTTP status. Genuine HTTP response codes and explicitly returned API error key, hint and message remain authoritative; when the response has no explicit message, the fallback `HTTP N` replaces potentially sensitive raw Dio diagnostic strings.
+- Unexpected exceptions caught by regular or streaming `safeDioCall` expose only a runtime type, not unstructured messages or stack traces. Already structured `ApiException` objects are propagated intact: preserving their intentional message and HTTP status was essential for the `RequireData` error contract. This is a hardening of generic **fallbacks**, not a guarantee that all explicit server-provided error content is scrubbed.
+- Deterministic mapping and wrapper/stream regressions validate secret exclusion and structured-error preservation. Initial exact-HEAD CI identified non-nullable response cleanups; a later full run caught the structured-error regression. Both issues were fixed, and the final source HEAD passed all 15 applicable CI checks including Flutter/analyzer, Sonar, Codecov, CodeQL/static, docs build, and `Verify unsigned release artifact` on the unsigned Android source APK. Live TLS/device validation remains pending.
 
 ## Acceptance gates
 
