@@ -1,6 +1,6 @@
 # AI Session State
 
-Updated: 2026-10-14 (PR #230 Local DNS/CNAME stale-refresh safeguard integrated)
+Updated: 2026-10-14 (v6 retry and connection failure policy audit; documentation candidate)
 
 ## Integrated baseline
 
@@ -99,6 +99,13 @@ Updated: 2026-10-14 (PR #230 Local DNS/CNAME stale-refresh safeguard integrated)
 
 - Local DNS fetches host records, device options and optional v6 CNAME records, then replaces its complete ViewModel snapshot. If a user-initiated add/update/delete succeeds while a previous refresh is in flight, the older response can otherwise overwrite that local host/CNAME mutation. Maintain one successful-mutation revision shared by all six write commands; capture it before all remote fetches and ignore the stale successful response when it changes. Failed/rejected writes do not invalidate a legitimate revalidation; existing successful-empty and failed-revalidation semantics remain intact.
 - Nine deterministic ViewModel regressions cover all six host/CNAME add/update/delete paths, failed host/CNAME writes and an empty-cache refresh overlapped with host add. No API transport, auth/TOTP, server ownership, storage or background polling changes. Integrated via PR #230 (squash `2614e33a5834eaeb970d6269f8e2639cc47bc9d4`), exact tested source HEAD `da072b0505d588dbe2800942baf40eecb9151285`; all 15 applicable exact-head CI checks passed or were intentionally skipped, including Flutter/analyzer, Sonar/Codecov, CodeQL/static, docs and verified unsigned APK. Physical-device and live Pi-hole smoke remain pending.
+
+## V6 connection reliability policy audit (documentation-only)
+
+- Reviewed the current v6 session cache, secure SID store, generated Dio transport, repository retry helper, error mapping, and existing regression inventory. Session load and renewal single-flight, 2FA gate, server-scoped secure storage, and structured API errors are already implemented; do not replace or regress them.
+- Confirmed in `lib/data/repositories/utils/call_with_retry.dart`: `runWithResultRetry` defaults to `maxRetries: 1` and retries errors other than explicitly excluded `AlreadyExistsException`/`GroupInUseException`; multiple v6 add/update/delete repositories use this default. Tests in `test/data/repositories/api/v6/*_generated_retry_test.dart` prove 401 recovery but do not establish ambiguous timeout/5xx mutation safety. Plan a separately reviewed, exact-head-CI-gated code slice that permits explicit, bounded 401 session recovery but blocks unintended mutation replay after unknown outcomes. Retain legacy/read policies unless proven safe to change.
+- Dio transport has explicit connect and receive timeouts, but `ApiException.fromDioException` principally preserves HTTP status and response error metadata. Explore typed timeout/connection diagnostics without synthetic server HTTP status claims or credential leakage. Do not add proactive authentication or expiry validation before measuring impact on TOTP and multi-server behavior.
+- The audit is captured without introducing any new library/runtime or changing production behavior in `docs/CONNECTION_RELIABILITY_AUDIT.md`. Physical-device, v5/v6 live validation and existing connection/TLS device gates remain pending.
 
 ## Next autonomous work unit
 
