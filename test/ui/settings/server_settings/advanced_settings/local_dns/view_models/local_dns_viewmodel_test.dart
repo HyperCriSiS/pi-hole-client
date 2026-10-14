@@ -20,11 +20,18 @@ const sameIpRecords = [
 
 class _FakeCnameRepository implements CnameRepository {
   bool shouldFail = false;
+  List<CnameRecord> records = const [];
+  Completer<Result<List<CnameRecord>>>? pendingFetch;
 
   @override
   Future<Result<List<CnameRecord>>> fetchCnameRecords() async {
+    final pending = pendingFetch;
+    if (pending != null) {
+      pendingFetch = null;
+      return pending.future;
+    }
     if (shouldFail) return Failure(Exception('Force CNAME fetch failure'));
-    return const Success([]);
+    return Success(records);
   }
 
   @override
@@ -46,6 +53,20 @@ class _FakeCnameRepository implements CnameRepository {
   Future<Result<Unit>> deleteCnameRecord({required CnameRecord record}) async {
     if (shouldFail) return Failure(Exception('Force CNAME delete failure'));
     return const Success(unit);
+  }
+}
+
+class _DeferredLocalDnsRepository extends FakeLocalDnsRepository {
+  Completer<Result<List<LocalDns>>>? pendingFetch;
+
+  @override
+  Future<Result<List<LocalDns>>> fetchRecords() {
+    final pending = pendingFetch;
+    if (pending != null) {
+      pendingFetch = null;
+      return pending.future;
+    }
+    return super.fetchRecords();
   }
 }
 
@@ -165,6 +186,190 @@ void main() {
       expect(sawRecovered, isTrue);
     });
 
+
+
+    group('refresh overlapping successful host mutations', () {
+      for (final operation in ['add', 'update', 'delete']) {
+        test('does not undo a completed host $operation', () async {
+          final repository = _DeferredLocalDnsRepository();
+          final scoped = LocalDnsViewModel(
+            localDnsRepository: repository,
+            networkRepository: fakeNetworkRepository,
+            cnameRepository: fakeCnameRepository,
+          );
+          addTearDown(scoped.dispose);
+
+          await scoped.loadRecords.runAsync();
+          final original = List<LocalDns>.of(scoped.data.records);
+          final options = scoped.data.deviceOptions;
+
+          final pending = Completer<Result<List<LocalDns>>>();
+          repository.pendingFetch = pending;
+          final refresh = scoped.loadRecords.runAsync();
+          expect(scoped.loadRecords.isRunning.value, isTrue);
+
+          if (operation == 'add') {
+            await scoped.addRecord.runAsync(
+              const LocalDns(ip: '192.168.1.250', name: 'added'),
+            );
+          } else if (operation == 'update') {
+            await scoped.updateRecord.runAsync((
+              oldRecord: original.first,
+              newRecord: const LocalDns(
+                ip: '192.168.1.251',
+                name: 'updated',
+              ),
+            ));
+          } else {
+            await scoped.deleteRecord.runAsync(original.first);
+          }
+
+          final afterMutation = List<LocalDns>.of(scoped.data.records);
+          expect(afterMutation, isNot(equals(original)));
+
+          // The delayed response is a pre-mutation snapshot.
+          pending.complete(Success(original));
+          await refresh;
+
+          expect(scoped.data.records, afterMutation);
+          expect(scoped.data.deviceOptions, options);
+          expect(scoped.hasLoadedSuccessfully, isTrue);
+          expect(scoped.loadRecords.errors.value, isNull);
+        });
+      }
+    });
+
+    group('refresh overlapping successful CNAME mutations', () {
+      const oldRecord = CnameRecord(
+        alias: 'old.example',
+        target: 'target.example',
+      );
+      const newRecord = CnameRecord(
+        alias: 'new.example',
+        target: 'target.example',
+      );
+
+      for (final operation in ['add', 'update', 'delete']) {
+        test('does not undo a completed CNAME $operation', () async {
+          fakeCnameRepository.records = [oldRecord];
+          await viewModel.loadRecords.runAsync();
+          final hostSnapshot = List<LocalDns>.of(viewModel.data.records);
+          final options = viewModel.data.deviceOptions;
+
+          final pending = Completer<Result<List<CnameRecord>>>();
+          fakeCnameRepository.pendingFetch = pending;
+          final refresh = viewModel.loadRecords.runAsync();
+
+          if (operation == 'add') {
+            await viewModel.addCnameRecord.runAsync(newRecord);
+          } else if (operation == 'update') {
+            await viewModel.updateCnameRecord.runAsync((
+              oldRecord: oldRecord,
+              record: newRecord,
+            ));
+          } else {
+            await viewModel.deleteCnameRecord.runAsync(oldRecord);
+          }
+
+          final afterMutation = List<CnameRecord>.of(
+            viewModel.data.cnameRecords,
+          );
+          expect(afterMutation, isNot(equals([oldRecord])));
+
+          pending.complete(const Success([oldRecord]));
+          await refresh;
+
+          expect(viewModel.data.cnameRecords, afterMutation);
+          expect(viewModel.data.records, hostSnapshot);
+          expect(viewModel.data.deviceOptions, options);
+          expect(viewModel.hasLoadedSuccessfully, isTrue);
+          expect(viewModel.loadRecords.errors.value, isNull);
+        });
+      }
+    });
+
+    test('failed host mutation preserves an earlier valid refresh', () async {
+      final repository = _DeferredLocalDnsRepository();
+      final scoped = LocalDnsViewModel(
+        localDnsRepository: repository,
+        networkRepository: fakeNetworkRepository,
+        cnameRepository: fakeCnameRepository,
+      );
+      addTearDown(scoped.dispose);
+
+      await scoped.loadRecords.runAsync();
+      final pending = Completer<Result<List<LocalDns>>>();
+      repository.pendingFetch = pending;
+      final refresh = scoped.loadRecords.runAsync();
+
+      repository.shouldFail = true;
+      await expectLater(
+        scoped.addRecord.runAsync(
+          const LocalDns(ip: '192.168.1.253', name: 'failed'),
+        ),
+        throwsA(isA<Exception>()),
+      );
+
+      const remoteRecord = LocalDns(
+        ip: '192.168.1.252',
+        name: 'remote',
+      );
+      pending.complete(const Success([remoteRecord]));
+      await refresh;
+
+      expect(scoped.data.records, const [remoteRecord]);
+      expect(scoped.hasLoadedSuccessfully, isTrue);
+      expect(scoped.loadRecords.errors.value, isNull);
+    });
+
+    test('failed CNAME mutation preserves an earlier valid refresh', () async {
+      const remoteRecord = CnameRecord(
+        alias: 'remote.example',
+        target: 'target.example',
+      );
+      final pending = Completer<Result<List<CnameRecord>>>();
+      fakeCnameRepository.pendingFetch = pending;
+      final refresh = viewModel.loadRecords.runAsync();
+
+      fakeCnameRepository.shouldFail = true;
+      await expectLater(
+        viewModel.deleteCnameRecord.runAsync(remoteRecord),
+        throwsA(isA<Exception>()),
+      );
+
+      pending.complete(const Success([remoteRecord]));
+      await refresh;
+
+      expect(viewModel.data.cnameRecords, const [remoteRecord]);
+      expect(viewModel.hasLoadedSuccessfully, isTrue);
+      expect(viewModel.loadRecords.errors.value, isNull);
+    });
+
+    test('older empty refresh cannot undo an added host', () async {
+      final repository = _DeferredLocalDnsRepository()..records = [];
+      final scoped = LocalDnsViewModel(
+        localDnsRepository: repository,
+        networkRepository: fakeNetworkRepository,
+        cnameRepository: fakeCnameRepository,
+      );
+      addTearDown(scoped.dispose);
+
+      await scoped.loadRecords.runAsync();
+      expect(scoped.hasLoadedSuccessfully, isTrue);
+      expect(scoped.data.records, isEmpty);
+
+      final pending = Completer<Result<List<LocalDns>>>();
+      repository.pendingFetch = pending;
+      final refresh = scoped.loadRecords.runAsync();
+      const newRecord = LocalDns(ip: '192.168.1.254', name: 'new');
+      await scoped.addRecord.runAsync(newRecord);
+
+      pending.complete(const Success([]));
+      await refresh;
+
+      expect(scoped.data.records, const [newRecord]);
+      expect(scoped.hasLoadedSuccessfully, isTrue);
+    });
 
     test('addRecord success appends record locally', () async {
       await viewModel.loadRecords.runAsync();
