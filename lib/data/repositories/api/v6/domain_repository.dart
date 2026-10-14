@@ -65,6 +65,7 @@ class DomainRepositoryV6 extends BaseV6SidRepository
           ),
         );
       },
+      retryWhen: shouldRetryMutation,
       onRetry: (_, e) => renewSidIfExpired(e),
     );
   }
@@ -101,6 +102,7 @@ class DomainRepositoryV6 extends BaseV6SidRepository
           ),
         );
       },
+      retryWhen: shouldRetryMutation,
       onRetry: (_, e) => renewSidIfExpired(e),
     );
   }
@@ -121,6 +123,7 @@ class DomainRepositoryV6 extends BaseV6SidRepository
           domain: domain,
         );
       },
+      retryWhen: shouldRetryMutation,
       onRetry: (_, e) => renewSidIfExpired(e),
     );
   }

@@ -46,6 +46,7 @@ class LocalDnsRepositoryV6 extends BaseV6SidRepository
         );
         return mapDuplicateFailure(result);
       },
+      retryWhen: shouldRetryMutation,
       onRetry: (_, e) => renewSidIfExpired(e),
     );
   }
@@ -64,6 +65,7 @@ class LocalDnsRepositoryV6 extends BaseV6SidRepository
           value: '$ip $name',
         );
       },
+      retryWhen: shouldRetryMutation,
       onRetry: (_, e) => renewSidIfExpired(e),
     );
   }
@@ -98,6 +100,7 @@ class LocalDnsRepositoryV6 extends BaseV6SidRepository
         );
         return patchResult.map((_) => unit);
       },
+      retryWhen: shouldRetryMutation,
       onRetry: (_, e) => renewSidIfExpired(e),
     );
   }
@@ -129,6 +132,7 @@ class LocalDnsRepositoryV6 extends BaseV6SidRepository
         );
         return mapDuplicateFailure(result);
       },
+      retryWhen: shouldRetryMutation,
       onRetry: (_, e) => renewSidIfExpired(e),
     );
   }
@@ -144,6 +148,7 @@ class LocalDnsRepositoryV6 extends BaseV6SidRepository
           value: _serializeCnameRecord(record),
         );
       },
+      retryWhen: shouldRetryMutation,
       onRetry: (_, e) => renewSidIfExpired(e),
     );
   }
@@ -183,6 +188,7 @@ class LocalDnsRepositoryV6 extends BaseV6SidRepository
         );
         return patchResult.map((_) => unit);
       },
+      retryWhen: shouldRetryMutation,
       onRetry: (_, e) => renewSidIfExpired(e),
     );
   }

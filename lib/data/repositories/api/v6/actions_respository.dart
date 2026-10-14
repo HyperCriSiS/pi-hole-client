@@ -43,6 +43,7 @@ class ActionsRepositoryV6 extends BaseV6SidRepository
 
         return networkResult.map((_) => unit);
       },
+      retryWhen: shouldRetryMutation,
       onRetry: (_, e) => renewSidIfExpired(e),
     );
   }
@@ -56,6 +57,7 @@ class ActionsRepositoryV6 extends BaseV6SidRepository
         final result = await _service.actionFlushLogs();
         return result.map((_) => unit);
       },
+      retryWhen: shouldRetryMutation,
       onRetry: (_, e) => renewSidIfExpired(e),
     );
   }
@@ -84,6 +86,7 @@ class ActionsRepositoryV6 extends BaseV6SidRepository
         final result = await _service.actionRestartDns();
         return result.map((_) => unit);
       },
+      retryWhen: shouldRetryMutation,
       onRetry: (_, e) => renewSidIfExpired(e),
     );
   }

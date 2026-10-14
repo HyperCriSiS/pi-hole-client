@@ -86,8 +86,11 @@ Future<T> runWithRetry<T>({
 /// - [action]: The asynchronous operation to execute. Must return a [Future<Result<T>>].
 /// - [maxRetries]: Maximum number of retry attempts before giving up. Defaults to 1.
 /// - [delay]: Delay between retry attempts. Defaults to 10 milliseconds.
-/// - [onRetry]: Optional callback invoked after each failed attempt, with the
-///   current attempt count and the failure exception.
+/// - [retryWhen]: Optional failure predicate deciding whether another attempt
+///   is permitted; omitted retains general-purpose retry behavior. Use an
+///   explicit predicate for potentially non-idempotent API mutations.
+/// - [onRetry]: Optional callback invoked only when a retry is permitted,
+///   with the current attempt count and the failure exception.
 ///
 /// An [AlreadyExistsException] or [GroupInUseException] is returned at once,
 /// because sending the same request again cannot succeed.
@@ -103,6 +106,7 @@ Future<Result<T>> runWithResultRetry<T extends Object>({
   required Future<Result<T>> Function() action,
   int maxRetries = 1,
   Duration delay = const Duration(milliseconds: 10),
+  bool Function(Object error)? retryWhen,
   Future<void> Function(int attempt, Object error)? onRetry,
 }) async {
   var attempt = 0;
@@ -126,6 +130,9 @@ Future<Result<T>> runWithResultRetry<T extends Object>({
 
     final error = lastFailure.exceptionOrNull();
     if (error is AlreadyExistsException || error is GroupInUseException) {
+      return lastFailure;
+    }
+    if (retryWhen != null && (error == null || !retryWhen(error))) {
       return lastFailure;
     }
 

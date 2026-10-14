@@ -39,6 +39,7 @@ class DhcpRepositoryV6 extends BaseV6SidRepository implements DhcpRepository {
         final result = await _service.deleteDhcpLease(ip: ip);
         return result.map((_) => unit);
       },
+      retryWhen: shouldRetryMutation,
       onRetry: (_, e) => renewSidIfExpired(e),
     );
   }

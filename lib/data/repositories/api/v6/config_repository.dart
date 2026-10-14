@@ -68,6 +68,7 @@ class ConfigRepositoryV6 extends BaseV6SidRepository
           (e) => legacy_config.Config.fromJson(e.toJson()).toDomain(),
         );
       },
+      retryWhen: shouldRetryMutation,
       onRetry: (_, e) => renewSidIfExpired(e),
     );
   }

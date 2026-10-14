@@ -59,6 +59,7 @@ class GroupRepositoryV6 extends BaseV6SidRepository implements GroupRepository {
           ),
         );
       },
+      retryWhen: shouldRetryMutation,
       onRetry: (_, e) => renewSidIfExpired(e),
     );
   }
@@ -84,6 +85,7 @@ class GroupRepositoryV6 extends BaseV6SidRepository implements GroupRepository {
           ),
         );
       },
+      retryWhen: shouldRetryMutation,
       onRetry: (_, e) => renewSidIfExpired(e),
     );
   }
@@ -100,6 +102,7 @@ class GroupRepositoryV6 extends BaseV6SidRepository implements GroupRepository {
         }
         return result;
       },
+      retryWhen: shouldRetryMutation,
       onRetry: (_, e) => renewSidIfExpired(e),
     );
   }

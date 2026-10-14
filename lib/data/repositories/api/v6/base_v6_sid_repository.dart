@@ -24,6 +24,17 @@ abstract class BaseV6SidRepository {
 
   Future<void> clearAndRenewSid() => _sessionCache.clearAndRenewSid();
 
+  /// Retry a mutation only after an HTTP 401 rejection, or when SID loading
+  /// failed before the API request was sent. Other transport/server failures
+  /// may follow a committed write and cannot be safely replayed. TOTP errors
+  /// require interactive recovery rather than background retries.
+  bool shouldRetryMutation(Object error) {
+    if (error is SidNotFoundException) return true;
+    if (error is HttpStatusCodeException) return error.statusCode == 401;
+    if (error is ApiException) return error.statusCode == 401;
+    return false;
+  }
+
   Future<void> renewSidIfExpired(Object error) async {
     final generatedClientUnauthorized =
         error is ApiException && error.statusCode == 401;
