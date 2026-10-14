@@ -533,7 +533,7 @@ void main() {
     // Commands started against the old server must not put their completion
     // into the new server's lists, nor invalidate a concurrent new-server read.
     for (final operation in ['add', 'update', 'delete']) {
-      for (final succeeds on [true, false]) {
+      for (final succeeds in [true, false]) {
         test(
           'old-server $operation ${succeeds ? 'success' : 'failure'} '
           'cannot affect new-server cache or revalidation',
