@@ -28,7 +28,7 @@ void main() {
         expect(exception.message, 'Session is invalid');
       });
 
-      test('uses DioException message when error map has no message', () {
+      test('uses HTTP fallback when error map has no message', () {
         final dioException = DioException(
           requestOptions: RequestOptions(),
           message: 'Bad Response',
@@ -46,7 +46,7 @@ void main() {
 
         expect(exception.statusCode, 400);
         expect(exception.errorCode, 'bad_request');
-        expect(exception.message, 'Bad Response');
+        expect(exception.message, 'HTTP 400');
       });
 
       test('handles response data without error map', () {
@@ -65,7 +65,7 @@ void main() {
 
         expect(exception.statusCode, 500);
         expect(exception.errorCode, isNull);
-        expect(exception.message, 'Something went wrong');
+        expect(exception.message, 'HTTP 500');
       });
 
       test('handles non-map response data', () {
@@ -84,7 +84,7 @@ void main() {
 
         expect(exception.statusCode, 502);
         expect(exception.errorCode, isNull);
-        expect(exception.message, 'Server error');
+        expect(exception.message, 'HTTP 502');
       });
 
       test('handles null response', () {
@@ -102,7 +102,7 @@ void main() {
         expect(exception.transportFailure, ApiTransportFailure.connection);
       });
 
-      test('uses Unknown error when no message available', () {
+      test('uses HTTP fallback when no response message available', () {
         final dioException = DioException(
           requestOptions: RequestOptions(),
           response: Response(
@@ -116,7 +116,7 @@ void main() {
         final exception = ApiException.fromDioException(dioException);
 
         expect(exception.statusCode, 500);
-        expect(exception.message, 'Unknown error');
+        expect(exception.message, 'HTTP 500');
       });
     });
 
@@ -221,17 +221,58 @@ void main() {
         expect(exception.message, 'Request timed out.');
       });
 
-      test('unclassified unknown Dio errors keep legacy fallback', () {
+      test('unknown no-response Dio error never exposes request secrets', () {
+        final exception = ApiException.fromDioException(
+          DioException(
+            requestOptions: RequestOptions(
+              path: '/api/stats?sid=secret-session-123',
+            ),
+            type: DioExceptionType.unknown,
+            message: 'Request failed: sid=secret-session-123',
+            error: Exception('password=secret-password'),
+          ),
+        );
+
+        expect(exception.transportFailure, ApiTransportFailure.unexpected);
+        expect(exception.statusCode, isNull);
+        expect(exception.message, 'Unexpected transport error.');
+        expect(exception.toString(), isNot(contains('secret-session-123')));
+        expect(exception.toString(), isNot(contains('secret-password')));
+      });
+
+      test('Dio badResponse without a response has no synthetic HTTP code', () {
         final exception = ApiException.fromDioException(
           DioException(
             requestOptions: RequestOptions(),
-            type: DioExceptionType.unknown,
-            message: 'Unknown failure',
+            type: DioExceptionType.badResponse,
+            message: 'password=very-sensitive',
           ),
         );
-        expect(exception.transportFailure, isNull);
+
+        expect(exception.transportFailure, ApiTransportFailure.unexpected);
         expect(exception.statusCode, isNull);
-        expect(exception.message, 'Unknown failure');
+        expect(exception.message, 'Unexpected transport error.');
+        expect(exception.toString(), isNot(contains('very-sensitive')));
+      });
+
+      test('real HTTP response without Pi-hole message has safe fallback', () {
+        final exception = ApiException.fromDioException(
+          DioException(
+            requestOptions: RequestOptions(),
+            type: DioExceptionType.badResponse,
+            message: 'sid=very-sensitive',
+            response: Response(
+              statusCode: 503,
+              data: {'unrelated': 'value'},
+              requestOptions: RequestOptions(),
+            ),
+          ),
+        );
+
+        expect(exception.statusCode, 503);
+        expect(exception.transportFailure, isNull);
+        expect(exception.message, 'HTTP 503');
+        expect(exception.toString(), isNot(contains('very-sensitive')));
       });
     });
 

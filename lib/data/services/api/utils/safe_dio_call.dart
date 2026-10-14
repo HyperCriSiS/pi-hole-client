@@ -56,8 +56,16 @@ Future<Result<T>> safeDioCall<T extends Object>(
     );
     logger.e(exception.message);
     return Failure(exception);
-  } catch (e, st) {
-    final exception = ApiException.unknown('Unexpected error: $e\n$st');
+  } on ApiException catch (e) {
+    // Already structured by the API layer (for example RequireData): retain
+    // the original HTTP status and purpose-built message.
+    logger.e('API error (status: ${e.statusCode ?? 'none'}).');
+    return Failure(e);
+  } catch (e) {
+    // Raw exception messages and stacktraces can expose credentials.
+    final exception = ApiException.unknown(
+      'Unexpected API error (${e.runtimeType}).',
+    );
     logger.e(exception.message);
     return Failure(exception);
   }
@@ -97,8 +105,15 @@ Stream<Result<T>> safeDioCallStream<T extends Object>(
     );
     logger.e(exception.message);
     yield Failure(exception);
-  } catch (e, st) {
-    final exception = ApiException.unknown('Unexpected error: $e\n$st');
+  } on ApiException catch (e) {
+    // Keep explicitly structured API errors intact, as in non-stream calls.
+    logger.e('API stream error (status: ${e.statusCode ?? 'none'}).');
+    yield Failure(e);
+  } catch (e) {
+    // Raw exception messages and stacktraces can expose credentials.
+    final exception = ApiException.unknown(
+      'Unexpected API error (${e.runtimeType}).',
+    );
     logger.e(exception.message);
     yield Failure(exception);
   }
