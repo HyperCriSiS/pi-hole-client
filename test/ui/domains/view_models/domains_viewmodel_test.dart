@@ -20,6 +20,9 @@ class _ControllableDomainRepository implements DomainRepository {
   Completer<void>? gate;
   bool shouldFail = false;
   int fetchCount = 0;
+  Completer<Result<Domain>>? pendingAdd;
+  Completer<Result<Domain>>? pendingUpdate;
+  Completer<Result<Unit>>? pendingDelete;
 
   void setLists(DomainLists lists) => _lists = lists;
 
@@ -47,6 +50,7 @@ class _ControllableDomainRepository implements DomainRepository {
     List<int>? groups = const [0],
     bool? enabled = true,
   }) async {
+    if (pendingAdd != null) return pendingAdd!.future;
     final added = Domain(
       id: _lists.allowExact.length + _lists.denyExact.length + 100,
       name: domain,
@@ -70,14 +74,20 @@ class _ControllableDomainRepository implements DomainRepository {
     String? comment,
     List<int>? groups = const [0],
     bool? enabled = true,
-  }) async => Failure(Exception('not used'));
+  }) async {
+    if (pendingUpdate != null) return pendingUpdate!.future;
+    return Failure(Exception('not used'));
+  }
 
   @override
   Future<Result<Unit>> deleteDomain(
     DomainType type,
     DomainKind kind,
     String domain,
-  ) async => const Success(unit);
+  ) async {
+    if (pendingDelete != null) return pendingDelete!.future;
+    return const Success(unit);
+  }
 }
 
 DateTime _ts = DateTime(2025, 1, 1);
@@ -518,6 +528,108 @@ void main() {
         expect(vm.whitelistDomains.single.name, 'b.com');
       },
     );
+
+
+    // Commands started against the old server must not put their completion
+    // into the new server's lists, nor invalidate a concurrent new-server read.
+    for (final operation in ['add', 'update', 'delete']) {
+      for (final outcome in ['success', 'failure', 'throw']) {
+        test(
+          'old-server $operation $outcome '
+          'cannot affect new-server cache or revalidation',
+          () async {
+            final succeeds = outcome == 'success';
+            final throws = outcome == 'throw';
+            final repoA = _ControllableDomainRepository(_listsWith('a.com'));
+            final repoB = _ControllableDomainRepository(_listsWith('b.com'));
+            final vm = DomainsViewModel(domainRepository: repoA);
+            addTearDown(vm.dispose);
+
+            await vm.loadDomains.runAsync();
+            final original = vm.whitelistDomains.single;
+            late Future<void> pendingMutation;
+            if (operation == 'add') {
+              repoA.pendingAdd = Completer<Result<Domain>>();
+              pendingMutation = vm.addDomain.runAsync((
+                type: DomainType.allow,
+                kind: DomainKind.exact,
+                domain: 'added-to-a.com',
+              ));
+            } else if (operation == 'update') {
+              repoA.pendingUpdate = Completer<Result<Domain>>();
+              pendingMutation = vm.updateDomain.runAsync(
+                original.copyWith(comment: 'old server edit'),
+              );
+            } else {
+              repoA.pendingDelete = Completer<Result<Unit>>();
+              pendingMutation = vm.deleteDomain.runAsync(original);
+            }
+            // Ensure the asynchronous command has entered the old repository.
+            await Future<void>.delayed(Duration.zero);
+
+            vm.update(domainRepository: repoB);
+            await vm.loadDomains.runAsync();
+            expect(vm.whitelistDomains.single.name, 'b.com');
+            expect(vm.filteredWhitelistDomains.single.name, 'b.com');
+
+            // A fresh B-side revalidation is already in flight when A responds.
+            repoB.setLists(_listsWith('b-new.com'));
+            repoB.gate = Completer<void>();
+            final pendingNewServerRead = vm.loadDomains.runAsync();
+            await Future<void>.delayed(Duration.zero);
+
+            if (operation == 'add') {
+              if (throws) {
+                repoA.pendingAdd!.completeError(Exception('old server threw'));
+              } else {
+                repoA.pendingAdd!.complete(
+                succeeds
+                    ? Success(original.copyWith(
+                        id: 99,
+                        name: 'added-to-a.com',
+                        punyCode: 'added-to-a.com',
+                      ))
+                    : Failure(Exception('old server add error')),
+                );
+              }
+            } else if (operation == 'update') {
+              if (throws) {
+                repoA.pendingUpdate!.completeError(Exception('old server threw'));
+              } else {
+                repoA.pendingUpdate!.complete(
+                succeeds
+                    ? Success(original.copyWith(comment: 'old server edit'))
+                    : Failure(Exception('old server update error')),
+                );
+              }
+            } else {
+              if (throws) {
+                repoA.pendingDelete!.completeError(Exception('old server threw'));
+              } else {
+                repoA.pendingDelete!.complete(
+                succeeds
+                    ? const Success(unit)
+                    : Failure(Exception('old server delete error')),
+                );
+              }
+            }
+            // Even an old failure is intentionally ignored after server switch.
+            await pendingMutation;
+            expect(vm.whitelistDomains.single.name, 'b.com');
+            expect(vm.filteredWhitelistDomains.single.name, 'b.com');
+            expect(vm.loadingStatus, LoadStatus.loaded);
+
+            // The earlier A response must not advance B's mutation sequence.
+            repoB.gate!.complete();
+            await pendingNewServerRead;
+            expect(vm.whitelistDomains.single.name, 'b-new.com');
+            expect(vm.filteredWhitelistDomains.single.name, 'b-new.com');
+            expect(vm.isRevalidating, isFalse);
+            expect(vm.loadingStatus, LoadStatus.loaded);
+          },
+        );
+      }
+    }
 
     test('update() resets cached state but does not load on its own', () async {
       final repoA = _ControllableDomainRepository(_listsWith('a.com'));

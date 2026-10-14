@@ -1,6 +1,6 @@
 # AI Session State
 
-Updated: 2026-10-15 (PR #241 Find Domains mutation/revalidation race integrated)
+Updated: 2026-10-15 (Domains server-switch CRUD isolation candidate)
 
 ## Integrated baseline
 
@@ -141,6 +141,12 @@ Updated: 2026-10-15 (PR #241 Find Domains mutation/revalidation race integrated)
 - `FindDomainsInListsViewModel` reuses a successful search snapshot across identical-query revalidation. However, a search response started before a successful domain/adlist delete or detail update can overwrite the newer local result. A delayed domain deletion started under an older query can also mutate results for a different search.
 - Capture a per-query generation and successful-visible-mutation revision before each request. Ignore only obsolete successful responses, advance mutation revision for successful visible domain/adlist deletions and actual detail edits, and scope async deletions to their originating query. Failed deletes and unmatched edits leave valid refreshes untouched; successful empty results, different-query clearing and failure/error behavior remain unchanged.
 - Eight deterministic delayed-response ViewModel tests cover both deletions, both detail updates, two failed deletes, an irrelevant callback and a delete from an old query completing after a new search. No repository transport, SID/TOTP, auth, server selection, storage, API, filtering, timer or UI localization changes. Integrated via PR #241, squash `c89353b1b732212887e77694fb49afd51d5a2f9c`, exact CI-tested feature HEAD `ed2ea173d92e664aac4d803e94ec5b52c60be12d`; all 15 applicable checks passed or were intentionally skipped (Dart/analyzer, Sonar/Codecov, CodeQL/static, docs, unsigned Android APK with successful `Verify unsigned release artifact`). Real device/live Pi-hole smoke pending.
+
+## Domains server-switch asynchronous CRUD guard (CI candidate)
+
+- `DomainsViewModel._loadDomains` already guards old responses with `_serverEpoch`, but the local state updates in `_addDomain`, `_updateDomain`, and `_deleteDomain` previously checked only `_disposed`. A write started against server A could finish after switching to B, mutating B's list or changing B's mutation sequence; old errors could also surface against B.
+- Capture the selected-server epoch at the start of all three old-server repository writes, then ignore their results (success or failure) once the selected repository changes. Do **not** cancel/replay writes that already went to A, or change B authentication/session behavior.
+- Nine deterministic gated-response regression cases cover success/Failure/thrown error for add/update/delete, preserving the B cache and a parallel B revalidation after A resolves. Existing same-server mutations and stale-fetch behavior remain intact. Exact-head Dart/analyzer, Sonar, Codecov, CodeQL/static, docs and verified unsigned APK gate the code merge; real v5/v6 Android device smoke remains pending.
 
 ## Next autonomous work unit
 
