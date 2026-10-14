@@ -16,6 +16,7 @@ enum ApiTransportFailure {
   connection,
   tls,
   cancelled,
+  unexpected,
 }
 
 /// Returns a fixed, credential-free diagnostic rather than forwarding a Dio
@@ -29,6 +30,7 @@ String _transportMessage(ApiTransportFailure failure) => switch (failure) {
   ApiTransportFailure.connection => 'Network connection failed.',
   ApiTransportFailure.tls => 'TLS certificate or handshake failed.',
   ApiTransportFailure.cancelled => 'Request cancelled.',
+  ApiTransportFailure.unexpected => 'Unexpected transport error.',
 };
 
 ApiTransportFailure? _classifyTransportFailure(DioException error) {
@@ -95,6 +97,14 @@ class ApiException implements Exception {
       );
     }
     final response = e.response;
+    // Unknown Dio errors can contain request URLs or credentials in the raw
+    // exception text. Do not turn those into UI-facing API errors.
+    if (response == null) {
+      return ApiException(
+        message: _transportMessage(ApiTransportFailure.unexpected),
+        transportFailure: ApiTransportFailure.unexpected,
+      );
+    }
     String? errorCode;
     String? hint;
     String message;
@@ -105,12 +115,12 @@ class ApiException implements Exception {
       if (error is Map<String, dynamic>) {
         errorCode = error['key'] as String?;
         hint = error['hint'] as String?;
-        message = error['message'] as String? ?? e.message ?? 'Unknown error';
+        message = error['message'] as String? ?? 'HTTP ${response.statusCode ?? 'error'}';
       } else {
-        message = e.message ?? 'Unknown error';
+        message = 'HTTP ${response.statusCode ?? 'error'}';
       }
     } else {
-      message = e.message ?? 'Unknown error';
+      message = 'HTTP ${response.statusCode ?? 'error'}';
     }
 
     return ApiException(

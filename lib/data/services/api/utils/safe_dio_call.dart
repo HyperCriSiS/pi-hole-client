@@ -56,8 +56,11 @@ Future<Result<T>> safeDioCall<T extends Object>(
     );
     logger.e(exception.message);
     return Failure(exception);
-  } catch (e, st) {
-    final exception = ApiException.unknown('Unexpected error: $e\n$st');
+  } catch (e) {
+    // Raw exception messages and stacktraces can expose credentials.
+    final exception = ApiException.unknown(
+      'Unexpected API error (${e.runtimeType}).',
+    );
     logger.e(exception.message);
     return Failure(exception);
   }
@@ -97,8 +100,11 @@ Stream<Result<T>> safeDioCallStream<T extends Object>(
     );
     logger.e(exception.message);
     yield Failure(exception);
-  } catch (e, st) {
-    final exception = ApiException.unknown('Unexpected error: $e\n$st');
+  } catch (e) {
+    // Raw exception messages and stacktraces can expose credentials.
+    final exception = ApiException.unknown(
+      'Unexpected API error (${e.runtimeType}).',
+    );
     logger.e(exception.message);
     yield Failure(exception);
   }
