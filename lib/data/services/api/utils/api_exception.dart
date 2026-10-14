@@ -1,4 +1,59 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:dio/dio.dart';
+
+/// Transport failure observed without an authoritative HTTP error response.
+///
+/// Preserve this independently of the HTTP status, so connection diagnostics
+/// do not mistake network failures for server-generated 503/504 responses.
+enum ApiTransportFailure {
+  connectTimeout,
+  sendTimeout,
+  receiveTimeout,
+  timeout,
+  connection,
+  tls,
+  cancelled,
+}
+
+/// Returns a fixed, credential-free diagnostic rather than forwarding a Dio
+/// message containing URLs, headers, or underlying exception details.
+String _transportMessage(ApiTransportFailure failure) => switch (failure) {
+  ApiTransportFailure.connectTimeout => 'Connection timed out.',
+  ApiTransportFailure.sendTimeout => 'Request upload timed out.',
+  ApiTransportFailure.receiveTimeout => 'Server response timed out.',
+  ApiTransportFailure.timeout => 'Request timed out.',
+  ApiTransportFailure.connection => 'Network connection failed.',
+  ApiTransportFailure.tls => 'TLS certificate or handshake failed.',
+  ApiTransportFailure.cancelled => 'Request cancelled.',
+};
+
+ApiTransportFailure? _classifyTransportFailure(DioException error) {
+  switch (error.type) {
+    case DioExceptionType.connectionTimeout:
+      return ApiTransportFailure.connectTimeout;
+    case DioExceptionType.sendTimeout:
+      return ApiTransportFailure.sendTimeout;
+    case DioExceptionType.receiveTimeout:
+      return ApiTransportFailure.receiveTimeout;
+    case DioExceptionType.badCertificate:
+      return ApiTransportFailure.tls;
+    case DioExceptionType.connectionError:
+      return error.error is TlsException
+          ? ApiTransportFailure.tls
+          : ApiTransportFailure.connection;
+    case DioExceptionType.cancel:
+      return ApiTransportFailure.cancelled;
+    case DioExceptionType.unknown:
+      if (error.error is TlsException) return ApiTransportFailure.tls;
+      if (error.error is SocketException) return ApiTransportFailure.connection;
+      if (error.error is TimeoutException) return ApiTransportFailure.timeout;
+      return null;
+    case DioExceptionType.badResponse:
+      return null;
+  }
+}
 
 /// Exception representing an API error from Dio-based API calls.
 ///
@@ -11,6 +66,7 @@ class ApiException implements Exception {
     this.statusCode,
     this.errorCode,
     this.hint,
+    this.transportFailure,
   });
 
   /// Creates an [ApiException] from a [DioException].
@@ -27,6 +83,13 @@ class ApiException implements Exception {
   /// }
   /// ```
   factory ApiException.fromDioException(DioException e) {
+    final transportFailure = _classifyTransportFailure(e);
+    if (transportFailure != null) {
+      return ApiException(
+        message: _transportMessage(transportFailure),
+        transportFailure: transportFailure,
+      );
+    }
     final response = e.response;
     String? errorCode;
     String? hint;
@@ -61,6 +124,7 @@ class ApiException implements Exception {
   final int? statusCode;
   final String? errorCode;
   final String? hint;
+  final ApiTransportFailure? transportFailure;
 
   @override
   String toString() =>

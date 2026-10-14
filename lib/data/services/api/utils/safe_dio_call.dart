@@ -35,17 +35,24 @@ Future<Result<T>> safeDioCall<T extends Object>(
     final exception = ApiException.fromDioException(e);
     logger.e('Dio error: ${exception.message}');
     return Failure(exception);
-  } on SocketException catch (e) {
+  } on TlsException {
     final exception = ApiException(
-      message: 'Network connection failed. ${e.message}',
-      statusCode: 503,
+      message: 'TLS certificate or handshake failed.',
+      transportFailure: ApiTransportFailure.tls,
     );
     logger.e(exception.message);
     return Failure(exception);
-  } on TimeoutException catch (e) {
+  } on SocketException {
     final exception = ApiException(
-      message: 'Request timed out. ${e.message}',
-      statusCode: 504,
+      message: 'Network connection failed.',
+      transportFailure: ApiTransportFailure.connection,
+    );
+    logger.e(exception.message);
+    return Failure(exception);
+  } on TimeoutException {
+    final exception = ApiException(
+      message: 'Request timed out.',
+      transportFailure: ApiTransportFailure.timeout,
     );
     logger.e(exception.message);
     return Failure(exception);
@@ -69,17 +76,24 @@ Stream<Result<T>> safeDioCallStream<T extends Object>(
     final exception = ApiException.fromDioException(e);
     logger.e('Dio stream error: ${exception.message}');
     yield Failure(exception);
-  } on SocketException catch (e) {
+  } on TlsException {
     final exception = ApiException(
-      message: 'Network connection failed. ${e.message}',
-      statusCode: 503,
+      message: 'TLS certificate or handshake failed.',
+      transportFailure: ApiTransportFailure.tls,
     );
     logger.e(exception.message);
     yield Failure(exception);
-  } on TimeoutException catch (e) {
+  } on SocketException {
     final exception = ApiException(
-      message: 'Request timed out. ${e.message}',
-      statusCode: 504,
+      message: 'Network connection failed.',
+      transportFailure: ApiTransportFailure.connection,
+    );
+    logger.e(exception.message);
+    yield Failure(exception);
+  } on TimeoutException {
+    final exception = ApiException(
+      message: 'Request timed out.',
+      transportFailure: ApiTransportFailure.timeout,
     );
     logger.e(exception.message);
     yield Failure(exception);

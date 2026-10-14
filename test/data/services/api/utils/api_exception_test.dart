@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pi_hole_client/data/services/api/utils/api_exception.dart';
@@ -95,7 +98,8 @@ void main() {
 
         expect(exception.statusCode, isNull);
         expect(exception.errorCode, isNull);
-        expect(exception.message, 'Connection refused');
+        expect(exception.message, 'Network connection failed.');
+        expect(exception.transportFailure, ApiTransportFailure.connection);
       });
 
       test('uses Unknown error when no message available', () {
@@ -113,6 +117,116 @@ void main() {
 
         expect(exception.statusCode, 500);
         expect(exception.message, 'Unknown error');
+      });
+    });
+
+
+    group('transport classification', () {
+      final cases = <(DioExceptionType, ApiTransportFailure, String)>[
+        (
+          DioExceptionType.connectionTimeout,
+          ApiTransportFailure.connectTimeout,
+          'Connection timed out.',
+        ),
+        (
+          DioExceptionType.sendTimeout,
+          ApiTransportFailure.sendTimeout,
+          'Request upload timed out.',
+        ),
+        (
+          DioExceptionType.receiveTimeout,
+          ApiTransportFailure.receiveTimeout,
+          'Server response timed out.',
+        ),
+        (
+          DioExceptionType.connectionError,
+          ApiTransportFailure.connection,
+          'Network connection failed.',
+        ),
+        (
+          DioExceptionType.badCertificate,
+          ApiTransportFailure.tls,
+          'TLS certificate or handshake failed.',
+        ),
+        (
+          DioExceptionType.cancel,
+          ApiTransportFailure.cancelled,
+          'Request cancelled.',
+        ),
+      ];
+
+      for (final (type, expected, message) in cases) {
+        test('$type has a typed cause but no fabricated HTTP code', () {
+          final exception = ApiException.fromDioException(
+            DioException(
+              requestOptions: RequestOptions(
+                path: '/api/stats/summary?password=secret-value',
+              ),
+              type: type,
+              message: 'password=secret-value',
+            ),
+          );
+
+          expect(exception.transportFailure, expected);
+          expect(exception.statusCode, isNull);
+          expect(exception.errorCode, isNull);
+          expect(exception.message, message);
+          expect(exception.toString(), isNot(contains('secret-value')));
+        });
+      }
+
+      test('identifies TLS handshake inside a Dio connection error', () {
+        final exception = ApiException.fromDioException(
+          DioException(
+            requestOptions: RequestOptions(),
+            type: DioExceptionType.connectionError,
+            error: const HandshakeException('secret-handshake-detail'),
+          ),
+        );
+
+        expect(exception.transportFailure, ApiTransportFailure.tls);
+        expect(exception.statusCode, isNull);
+        expect(exception.message, 'TLS certificate or handshake failed.');
+        expect(exception.toString(), isNot(contains('secret-handshake-detail')));
+      });
+
+      test('classifies wrapped SocketException in unknown Dio error', () {
+        final exception = ApiException.fromDioException(
+          DioException(
+            requestOptions: RequestOptions(),
+            type: DioExceptionType.unknown,
+            error: const SocketException('secret-address'),
+          ),
+        );
+        expect(exception.transportFailure, ApiTransportFailure.connection);
+        expect(exception.statusCode, isNull);
+        expect(exception.message, 'Network connection failed.');
+      });
+
+      test('classifies wrapped TimeoutException in unknown Dio error', () {
+        final exception = ApiException.fromDioException(
+          DioException(
+            requestOptions: RequestOptions(),
+            type: DioExceptionType.unknown,
+            error: TimeoutException('secret-timeout-detail'),
+          ),
+        );
+        expect(exception.transportFailure, ApiTransportFailure.timeout);
+        expect(exception.statusCode, isNull);
+        expect(exception.message, 'Request timed out.');
+      });
+
+      test('unclassified unknown Dio errors keep legacy fallback', () {
+        final exception = ApiException.fromDioException(
+          DioException(
+            requestOptions: RequestOptions(),
+            type: DioExceptionType.unknown,
+            message: 'Unknown failure',
+          ),
+        );
+        expect(exception.transportFailure, isNull);
+        expect(exception.statusCode, isNull);
+        expect(exception.message, 'Unknown failure');
       });
     });
 
