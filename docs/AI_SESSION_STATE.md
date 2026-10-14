@@ -1,6 +1,6 @@
 # AI Session State
 
-Updated: 2026-10-14 (v6 retry and connection failure policy audit)
+Updated: 2026-10-14 (v6 mutation retry safety code candidate)
 
 ## Integrated baseline
 
@@ -106,6 +106,12 @@ Updated: 2026-10-14 (v6 retry and connection failure policy audit)
 - Confirmed in `lib/data/repositories/utils/call_with_retry.dart`: `runWithResultRetry` defaults to `maxRetries: 1` and retries errors other than explicitly excluded `AlreadyExistsException`/`GroupInUseException`; multiple v6 add/update/delete repositories use this default. Tests in `test/data/repositories/api/v6/*_generated_retry_test.dart` prove 401 recovery but do not establish ambiguous timeout/5xx mutation safety. Plan a separately reviewed, exact-head-CI-gated code slice that permits explicit, bounded 401 session recovery but blocks unintended mutation replay after unknown outcomes. Retain legacy/read policies unless proven safe to change.
 - Dio transport has explicit connect and receive timeouts, but `ApiException.fromDioException` principally preserves HTTP status and response error metadata. Explore typed timeout/connection diagnostics without synthetic server HTTP status claims or credential leakage. Do not add proactive authentication or expiry validation before measuring impact on TOTP and multi-server behavior.
 - The audit is captured without introducing any new library/runtime or changing production behavior in `docs/CONNECTION_RELIABILITY_AUDIT.md`. Physical-device, v5/v6 live validation and existing connection/TLS device gates remain pending.
+
+## V6 mutation retry guard — code candidate
+
+- The generic `runWithResultRetry` helper accepts an optional `retryWhen` predicate; without it, established read and v5 callers preserve their existing retry behavior. Across all 28 state-changing v6 repository methods (actions, adlists, clients, config, DHCP, DNS blocking, domains, groups, Local DNS/CNAME, network devices, auth-session deletion, and FTL messages), explicit `shouldRetryMutation` allows replay only after definitive HTTP 401 rejection or `SidNotFoundException` before request dispatch. It rejects 429/5xx/timeout/network and TOTP exceptions without invoking the renewal callback.
+- Deterministic helper tests verify accepted/rejected retry and exception path; base classifier tests cover status, missing SID and TOTP; v6 domain repository tests cover 429, 5xx, timeout and delayed ambiguous delete while existing read/write 401 tests continue exercising actual SID renewal. No new HTTP requests or automatic interactive auth, and no changes to v5, transport, persisted credentials, server isolation, logging, Flutter UI or storage schema.
+- **Candidate, not yet integrated:** require successful CI on the exact final feature HEAD (full Flutter/analyzer, Sonar, Codecov, CodeQL/static, docs and unsigned Android source APK with `Verify unsigned release artifact`). Physical-device and live Pi-hole smoke pending.
 
 ## Next autonomous work unit
 
