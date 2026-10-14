@@ -169,11 +169,19 @@ class DomainsViewModel extends ChangeNotifier {
       throw Exception('DomainRepository not available');
     }
     final serverEpoch = _serverEpoch;
-    final result = await repository.deleteDomain(
-      domain.type,
-      domain.kind,
-      domain.punyCode,
-    );
+    late final Result<Unit> result;
+    try {
+      result = await repository.deleteDomain(
+        domain.type,
+        domain.kind,
+        domain.punyCode,
+      );
+    } catch (_) {
+      // Some repository implementations throw instead of returning Failure.
+      // A stale error must not be reported against the new selected server.
+      if (_disposed || serverEpoch != _serverEpoch) return;
+      rethrow;
+    }
     // The request may have succeeded on the former Pi-hole. It must never
     // mutate or report an old-server failure against the newly selected one.
     if (_disposed || serverEpoch != _serverEpoch) return;
@@ -193,11 +201,17 @@ class DomainsViewModel extends ChangeNotifier {
       throw Exception('DomainRepository not available');
     }
     final serverEpoch = _serverEpoch;
-    final result = await repository.addDomain(
-      params.type,
-      params.kind,
-      params.domain,
-    );
+    late final Result<Domain> result;
+    try {
+      result = await repository.addDomain(
+        params.type,
+        params.kind,
+        params.domain,
+      );
+    } catch (_) {
+      if (_disposed || serverEpoch != _serverEpoch) return;
+      rethrow;
+    }
     if (_disposed || serverEpoch != _serverEpoch) return;
     switch (result) {
       case Success():
@@ -221,14 +235,20 @@ class DomainsViewModel extends ChangeNotifier {
       throw Exception('DomainRepository not available');
     }
     final serverEpoch = _serverEpoch;
-    final result = await repository.updateDomain(
-      domain.type,
-      domain.kind,
-      domain.punyCode,
-      comment: domain.comment,
-      groups: domain.groups,
-      enabled: domain.enabled,
-    );
+    late final Result<Domain> result;
+    try {
+      result = await repository.updateDomain(
+        domain.type,
+        domain.kind,
+        domain.punyCode,
+        comment: domain.comment,
+        groups: domain.groups,
+        enabled: domain.enabled,
+      );
+    } catch (_) {
+      if (_disposed || serverEpoch != _serverEpoch) return;
+      rethrow;
+    }
     if (_disposed || serverEpoch != _serverEpoch) return;
     switch (result) {
       case Success():

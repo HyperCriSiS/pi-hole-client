@@ -533,11 +533,13 @@ void main() {
     // Commands started against the old server must not put their completion
     // into the new server's lists, nor invalidate a concurrent new-server read.
     for (final operation in ['add', 'update', 'delete']) {
-      for (final succeeds in [true, false]) {
+      for (final outcome in ['success', 'failure', 'throw']) {
         test(
-          'old-server $operation ${succeeds ? 'success' : 'failure'} '
+          'old-server $operation $outcome '
           'cannot affect new-server cache or revalidation',
           () async {
+            final succeeds = outcome == 'success';
+            final throws = outcome == 'throw';
             final repoA = _ControllableDomainRepository(_listsWith('a.com'));
             final repoB = _ControllableDomainRepository(_listsWith('b.com'));
             final vm = DomainsViewModel(domainRepository: repoA);
@@ -577,7 +579,10 @@ void main() {
             await Future<void>.delayed(Duration.zero);
 
             if (operation == 'add') {
-              repoA.pendingAdd!.complete(
+              if (throws) {
+                repoA.pendingAdd!.completeError(Exception('old server threw'));
+              } else {
+                repoA.pendingAdd!.complete(
                 succeeds
                     ? Success(original.copyWith(
                         id: 99,
@@ -585,19 +590,28 @@ void main() {
                         punyCode: 'added-to-a.com',
                       ))
                     : Failure(Exception('old server add error')),
-              );
+                );
+              }
             } else if (operation == 'update') {
-              repoA.pendingUpdate!.complete(
+              if (throws) {
+                repoA.pendingUpdate!.completeError(Exception('old server threw'));
+              } else {
+                repoA.pendingUpdate!.complete(
                 succeeds
                     ? Success(original.copyWith(comment: 'old server edit'))
                     : Failure(Exception('old server update error')),
-              );
+                );
+              }
             } else {
-              repoA.pendingDelete!.complete(
+              if (throws) {
+                repoA.pendingDelete!.completeError(Exception('old server threw'));
+              } else {
+                repoA.pendingDelete!.complete(
                 succeeds
                     ? const Success(unit)
                     : Failure(Exception('old server delete error')),
-              );
+                );
+              }
             }
             // Even an old failure is intentionally ignored after server switch.
             await pendingMutation;

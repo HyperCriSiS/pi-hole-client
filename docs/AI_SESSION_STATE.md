@@ -146,7 +146,7 @@ Updated: 2026-10-15 (Domains server-switch CRUD isolation candidate)
 
 - `DomainsViewModel._loadDomains` already guards old responses with `_serverEpoch`, but the local state updates in `_addDomain`, `_updateDomain`, and `_deleteDomain` previously checked only `_disposed`. A write started against server A could finish after switching to B, mutating B's list or changing B's mutation sequence; old errors could also surface against B.
 - Capture the selected-server epoch at the start of all three old-server repository writes, then ignore their results (success or failure) once the selected repository changes. Do **not** cancel/replay writes that already went to A, or change B authentication/session behavior.
-- Six deterministic gated-response regression cases cover success/failure for add/update/delete, preserving the B cache and a parallel B revalidation after A resolves. Existing same-server mutations and stale-fetch behavior remain intact. Exact-head Dart/analyzer, Sonar, Codecov, CodeQL/static, docs and verified unsigned APK gate the code merge; real v5/v6 Android device smoke remains pending.
+- Nine deterministic gated-response regression cases cover success/Failure/thrown error for add/update/delete, preserving the B cache and a parallel B revalidation after A resolves. Existing same-server mutations and stale-fetch behavior remain intact. Exact-head Dart/analyzer, Sonar, Codecov, CodeQL/static, docs and verified unsigned APK gate the code merge; real v5/v6 Android device smoke remains pending.
 
 ## Next autonomous work unit
 
