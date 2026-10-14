@@ -43,6 +43,10 @@ class FindDomainsInListsViewModel extends ChangeNotifier {
   String? _errorMessage;
   // Only results for exactly these successful search parameters can be reused.
   ({String domain, bool partial, int limit})? _lastSuccessfulQuery;
+  // Independent revisions keep an older search from resurrecting an entry
+  // committed or edited locally, and keep late writes scoped to their query.
+  int _mutationRevision = 0;
+  int _queryGeneration = 0;
 
   // --- Getters ---
   ListSearchResult? get searchResult => _searchResult;
@@ -62,6 +66,7 @@ class FindDomainsInListsViewModel extends ChangeNotifier {
     _errorMessage = null;
     _hasSearched = true;
     if (_lastSuccessfulQuery != params) {
+      ++_queryGeneration;
       // Never show an earlier domain/partial/limit result for a new query.
       _lastSuccessfulQuery = null;
       _searchResult = null;
@@ -70,6 +75,8 @@ class FindDomainsInListsViewModel extends ChangeNotifier {
     }
     notifyListeners();
 
+    final queryAtStart = _queryGeneration;
+    final mutationAtStart = _mutationRevision;
     final result = await _adListRepository.searchLists(
       domain: params.domain,
       partial: params.partial,
@@ -77,6 +84,12 @@ class FindDomainsInListsViewModel extends ChangeNotifier {
     );
     switch (result) {
       case Success():
+        // A result predating a local deletion/edit or a different query
+        // is not authoritative for the current visible search.
+        if (queryAtStart != _queryGeneration ||
+            mutationAtStart != _mutationRevision) {
+          return;
+        }
         final data = result.getOrNull();
         _searchResult = data;
         _lastSuccessfulQuery = params;
@@ -101,6 +114,7 @@ class FindDomainsInListsViewModel extends ChangeNotifier {
   }
 
   Future<void> _deleteDomain(Domain domain) async {
+    final queryAtStart = _queryGeneration;
     final result = await _domainRepository.deleteDomain(
       domain.type,
       domain.kind,
@@ -108,6 +122,12 @@ class FindDomainsInListsViewModel extends ChangeNotifier {
     );
     switch (result) {
       case Success():
+        // A completed delete from an earlier query must not edit a new query.
+        if (queryAtStart != _queryGeneration ||
+            !_domainResults.any((d) => d.id == domain.id)) {
+          return;
+        }
+        ++_mutationRevision;
         _domainResults = _domainResults
             .where((d) => d.id != domain.id)
             .toList();
@@ -118,12 +138,18 @@ class FindDomainsInListsViewModel extends ChangeNotifier {
   }
 
   Future<void> _deleteAdlist(Adlist adlist) async {
+    final queryAtStart = _queryGeneration;
     final result = await _adListRepository.deleteAdlist(
       adlist.address,
       adlist.type,
     );
     switch (result) {
       case Success():
+        if (queryAtStart != _queryGeneration ||
+            !_gravityMatches.any((m) => m.adlist.id == adlist.id)) {
+          return;
+        }
+        ++_mutationRevision;
         _gravityMatches = _gravityMatches
             .where((m) => m.adlist.id != adlist.id)
             .toList();
@@ -135,6 +161,10 @@ class FindDomainsInListsViewModel extends ChangeNotifier {
 
   // --- State mutation (details screen update callbacks) ---
   void updateDomainInResults(Domain updated) {
+    if (!_domainResults.any((d) => d.id == updated.id && d != updated)) {
+      return;
+    }
+    ++_mutationRevision;
     _domainResults = _domainResults
         .map((d) => d.id == updated.id ? updated : d)
         .toList();
@@ -143,6 +173,15 @@ class FindDomainsInListsViewModel extends ChangeNotifier {
 
   void updateAdlistInResults(Adlist updated) {
     final addr = updated.address.trim().toLowerCase();
+    if (!_gravityMatches.any(
+      (m) =>
+          (m.adlist.id == updated.id ||
+              m.adlist.address.trim().toLowerCase() == addr) &&
+          m.adlist != updated,
+    )) {
+      return;
+    }
+    ++_mutationRevision;
     _gravityMatches = _gravityMatches.map((m) {
       if (m.adlist.id == updated.id ||
           m.adlist.address.trim().toLowerCase() == addr) {

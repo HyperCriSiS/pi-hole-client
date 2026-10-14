@@ -1,6 +1,6 @@
 # AI Session State
 
-Updated: 2026-10-15 (PR #239 Group/Client/Adlist stale-refresh safeguard integrated)
+Updated: 2026-10-15 (Find Domains mutation/revalidation race correction candidate)
 
 ## Integrated baseline
 
@@ -134,6 +134,12 @@ Updated: 2026-10-15 (PR #239 Group/Client/Adlist stale-refresh safeguard integra
 - While manual list revalidation runs, a successful add/update/delete in `GroupsViewModel`, `ClientsViewModel` or `AdlistsViewModel` changes the local snapshot, but the earlier server response previously replaced it when it eventually completed. The earlier #720 work kept successfully loaded lists visible through refreshes; this separate concurrency race remained.
 - Each ViewModel now captures a successful-mutation revision at the beginning of `_loadGroups`, `_loadClients` or `_loadAdlists` and skips only a stale successful result after an intervening committed mutation. All nine successful CRUD handlers advance the revision; failed mutations do not. Filters and successful empty snapshots remain in place; unrelated UI and network/auth/TOTP behavior is unchanged.
 - Fifteen deterministic deferred-response regressions: nine add/update/delete successes, three failed mutations which must not invalidate a legitimate refresh, and three successfully empty cached lists followed by a mutation and older empty refresh. Integrated via PR #239 (squash `1be936914e65ea2609c7a71edaec09742791185d`, exact tested HEAD `926b3df4636023cc7a72f8acb2a0f9f50fc6eb81`) after all 15 applicable CI checks passed or were intentionally skipped, including Flutter/analyzer, Sonar/Codecov, CodeQL/static, docs and verified unsigned Android source APK. Real Pi-hole/device smoke remains pending.
+
+## Find Domains in Lists mutation/search race work unit (CI candidate)
+
+- `FindDomainsInListsViewModel` reuses a successful search snapshot across identical-query revalidation. However, a search response started before a successful domain/adlist delete or detail update can overwrite the newer local result. A delayed domain deletion started under an older query can also mutate results for a different search.
+- Capture a per-query generation and successful-visible-mutation revision before each request. Ignore only obsolete successful responses, advance mutation revision for successful visible domain/adlist deletions and actual detail edits, and scope async deletions to their originating query. Failed deletes and unmatched edits leave valid refreshes untouched; successful empty results, different-query clearing and failure/error behavior remain unchanged.
+- Eight deterministic delayed-response ViewModel tests cover both deletions, both detail updates, two failed deletes, an irrelevant callback and a delete from an old query completing after a new search. No repository transport, SID/TOTP, auth, server selection, storage, API, filtering, timer or UI localization changes. Exact-head Dart/analyzer, Sonar/Codecov, CodeQL/static, docs and verified unsigned Android source APK remain pre-merge gates. Real device/live Pi-hole smoke pending.
 
 ## Next autonomous work unit
 
