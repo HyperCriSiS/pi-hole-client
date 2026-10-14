@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pi_hole_client/data/repositories/api/v6/domain_repository.dart';
 import 'package:pi_hole_client/data/repositories/api/v6/v6_session_cache.dart';
@@ -19,6 +21,9 @@ class _RetryDomainService extends PiholeV6Service {
   int addCallCount = 0;
   int replaceCallCount = 0;
   int deleteCallCount = 0;
+  Exception? addFailure;
+  Exception? deleteFailure;
+  Completer<Result<Unit>>? deferredDelete;
   String? lastSid;
   String? lastAddType;
   String? lastAddKind;
@@ -55,6 +60,7 @@ class _RetryDomainService extends PiholeV6Service {
     lastAddType = type;
     lastAddKind = kind;
     lastAddBody = body;
+    if (addFailure != null) return Failure(addFailure!);
     if (addCallCount == 1) {
       return Failure(ApiException(message: 'Unauthorized', statusCode: 401));
     }
@@ -89,6 +95,12 @@ class _RetryDomainService extends PiholeV6Service {
     lastDeleteType = type;
     lastDeleteKind = kind;
     lastDeleteDomain = domain;
+    final pending = deferredDelete;
+    if (pending != null) {
+      deferredDelete = null;
+      return pending.future;
+    }
+    if (deleteFailure != null) return Failure(deleteFailure!);
     if (deleteCallCount == 1) {
       return Failure(ApiException(message: 'Unauthorized', statusCode: 401));
     }
@@ -108,6 +120,98 @@ DomainRepositoryV6 _repository({
 }
 
 void main() {
+
+  test('does not retry domain add after HTTP 429 or ambiguous 5xx', () async {
+    for (final status in [429, 500, 503]) {
+      final client = FakePiholeV6ApiClient();
+      final service = _RetryDomainService()
+        ..addFailure = ApiException(message: 'Unknown outcome', statusCode: status);
+      final repository = _repository(
+        client: client,
+        creds: FakeSessionCredentialService(),
+        service: service,
+      );
+
+      final result = await repository.addDomain(
+        DomainType.deny,
+        DomainKind.exact,
+        'example.com',
+      );
+
+      expect(result.exceptionOrNull(), same(service.addFailure));
+      expect(service.addCallCount, 1);
+      expect(client.postAuthCallCount, 0);
+    }
+  });
+
+  test('does not retry domain add after response timeout', () async {
+    final client = FakePiholeV6ApiClient();
+    final service = _RetryDomainService()
+      ..addFailure = TimeoutException('Lost response');
+    final repository = _repository(
+      client: client,
+      creds: FakeSessionCredentialService(),
+      service: service,
+    );
+
+    final result = await repository.addDomain(
+      DomainType.allow,
+      DomainKind.exact,
+      'example.com',
+    );
+
+    expect(result.exceptionOrNull(), isA<TimeoutException>());
+    expect(service.addCallCount, 1);
+    expect(client.postAuthCallCount, 0);
+  });
+
+  test('does not replay delayed ambiguous domain deletion', () async {
+    final client = FakePiholeV6ApiClient();
+    final service = _RetryDomainService();
+    final repository = _repository(
+      client: client,
+      creds: FakeSessionCredentialService(),
+      service: service,
+    );
+    final pending = Completer<Result<Unit>>();
+    service.deferredDelete = pending;
+
+    final operation = repository.deleteDomain(
+      DomainType.deny,
+      DomainKind.exact,
+      'example.com',
+    );
+
+    // The server may have completed the delete before its response was lost.
+    pending.complete(Failure(ApiException(message: 'Connection lost')));
+    final result = await operation;
+
+    expect(result.isError(), isTrue);
+    expect(service.deleteCallCount, 1);
+    expect(client.postAuthCallCount, 0);
+  });
+
+  test('does not replay domain delete after HTTP 500', () async {
+    final client = FakePiholeV6ApiClient();
+    final service = _RetryDomainService()
+      ..deleteFailure = ApiException(message: 'Unknown outcome', statusCode: 500);
+    final repository = _repository(
+      client: client,
+      creds: FakeSessionCredentialService(),
+      service: service,
+    );
+
+    final result = await repository.deleteDomain(
+      DomainType.deny,
+      DomainKind.exact,
+      'example.com',
+    );
+
+    expect(result.exceptionOrNull(), same(service.deleteFailure));
+    expect(service.deleteCallCount, 1);
+    expect(client.postAuthCallCount, 0);
+  });
+
   test('renews SID and retries generated domain read after 401', () async {
     final client = FakePiholeV6ApiClient();
     final creds = FakeSessionCredentialService();

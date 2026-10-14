@@ -71,6 +71,7 @@ class AdlistRepositoryV6 extends BaseV6SidRepository
           ),
         );
       },
+      retryWhen: shouldRetryMutation,
       onRetry: (_, e) => renewSidIfExpired(e),
     );
   }
@@ -104,6 +105,7 @@ class AdlistRepositoryV6 extends BaseV6SidRepository
           ),
         );
       },
+      retryWhen: shouldRetryMutation,
       onRetry: (_, e) => renewSidIfExpired(e),
     );
   }
@@ -116,6 +118,7 @@ class AdlistRepositoryV6 extends BaseV6SidRepository
         _service.setSid(sid);
         return _service.deleteList(list: address, type: type.name);
       },
+      retryWhen: shouldRetryMutation,
       onRetry: (_, e) => renewSidIfExpired(e),
     );
   }

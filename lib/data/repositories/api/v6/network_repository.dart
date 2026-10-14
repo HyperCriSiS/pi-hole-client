@@ -50,6 +50,7 @@ class NetworkRepositoryV6 extends BaseV6SidRepository
         _service.setSid(sid);
         return _service.deleteNetworkDevice(deviceId: deviceId);
       },
+      retryWhen: shouldRetryMutation,
       onRetry: (_, e) => renewSidIfExpired(e),
     );
   }

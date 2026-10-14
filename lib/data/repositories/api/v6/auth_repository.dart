@@ -78,6 +78,7 @@ class AuthRepositoryV6 extends BaseV6SidRepository implements AuthRepository {
       // session) instead of retrying the same delete, so a genuinely failed
       // logout leaves the old session to time out. Best-effort cleanup, low
       // impact; left as-is for now.
+      retryWhen: shouldRetryMutation,
       onRetry: (_, e) => renewSidIfExpired(e),
     );
   }
@@ -103,6 +104,7 @@ class AuthRepositoryV6 extends BaseV6SidRepository implements AuthRepository {
         _service.setSid(sid);
         return _service.deleteAuthSession(id: id);
       },
+      retryWhen: shouldRetryMutation,
       onRetry: (_, e) => renewSidIfExpired(e),
     );
   }

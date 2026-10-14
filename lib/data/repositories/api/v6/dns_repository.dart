@@ -59,6 +59,7 @@ class DnsRepositoryV6 extends BaseV6SidRepository implements DnsRepository {
           (e) => legacy_dns.Blocking.fromJson(e.toJson()).toDomain(),
         );
       },
+      retryWhen: shouldRetryMutation,
       onRetry: (_, e) => renewSidIfExpired(e),
     );
   }

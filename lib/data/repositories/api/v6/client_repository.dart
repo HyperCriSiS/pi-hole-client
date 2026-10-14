@@ -59,6 +59,7 @@ class ClientRepositoryV6 extends BaseV6SidRepository
           ),
         );
       },
+      retryWhen: shouldRetryMutation,
       onRetry: (_, e) => renewSidIfExpired(e),
     );
   }
@@ -85,6 +86,7 @@ class ClientRepositoryV6 extends BaseV6SidRepository
           ),
         );
       },
+      retryWhen: shouldRetryMutation,
       onRetry: (_, e) => renewSidIfExpired(e),
     );
   }
@@ -97,6 +99,7 @@ class ClientRepositoryV6 extends BaseV6SidRepository
         _service.setSid(sid);
         return _service.deleteClient(client: client);
       },
+      retryWhen: shouldRetryMutation,
       onRetry: (_, e) => renewSidIfExpired(e),
     );
   }

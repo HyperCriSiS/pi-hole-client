@@ -1,4 +1,8 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pi_hole_client/data/services/api/utils/api_exception.dart';
 import 'package:pi_hole_client/data/repositories/utils/call_with_retry.dart';
 import 'package:pi_hole_client/utils/exceptions.dart';
 import 'package:result_dart/result_dart.dart';
@@ -49,6 +53,64 @@ void main() {
   });
 
   group('runWithResultRetry', () {
+    test('opt-in predicate prevents ambiguous mutation replay', () async {
+      final errors = <Exception>[
+        ApiException(message: 'Rate limit', statusCode: 429),
+        ApiException(message: 'Server failure', statusCode: 500),
+        ApiException(message: 'Receive timeout'),
+        const SocketException('Connection lost'),
+        TimeoutException('Response lost'),
+      ];
+      for (final error in errors) {
+        var attempts = 0;
+        var recoveries = 0;
+        final result = await runWithResultRetry<String>(
+          action: () async {
+            attempts++;
+            return Failure(error);
+          },
+          retryWhen: (_) => false,
+          onRetry: (_, _) async => recoveries++,
+        );
+        expect(result.exceptionOrNull(), same(error));
+        expect(attempts, 1);
+        expect(recoveries, 0);
+      }
+    });
+
+    test('opt-in predicate permits exactly one eligible renewal', () async {
+      var attempts = 0;
+      var recoveries = 0;
+      final result = await runWithResultRetry<String>(
+        action: () async {
+          attempts++;
+          if (attempts == 1) {
+            return Failure(ApiException(message: 'Unauthorized', statusCode: 401));
+          }
+          return const Success('renewed');
+        },
+        retryWhen: (e) => e is ApiException && e.statusCode == 401,
+        onRetry: (_, _) async => recoveries++,
+      );
+      expect(result.getOrNull(), 'renewed');
+      expect(attempts, 2);
+      expect(recoveries, 1);
+    });
+
+    test('opt-in predicate also handles thrown transport errors', () async {
+      var attempts = 0;
+      final result = await runWithResultRetry<String>(
+        action: () async {
+          attempts++;
+          throw TimeoutException('Response lost');
+        },
+        retryWhen: (_) => false,
+      );
+      expect(result.exceptionOrNull(), isA<TimeoutException>());
+      expect(attempts, 1);
+    });
+
+
     test('should return Success result when action succeeds', () async {
       final result = await runWithResultRetry<String>(
         action: () async => const Success('Success'),

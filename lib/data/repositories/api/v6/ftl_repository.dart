@@ -101,6 +101,7 @@ class FtlRepositoryV6 extends BaseV6SidRepository implements FtlRepository {
         _service.setSid(sid);
         return _service.deleteInfoMessage(messageId: messageId);
       },
+      retryWhen: shouldRetryMutation,
       onRetry: (_, e) => renewSidIfExpired(e),
     );
   }
