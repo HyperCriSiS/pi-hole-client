@@ -117,7 +117,7 @@ Updated: 2026-10-14 (v6 typed transport failure validation candidate)
 ## Current bounded v6 typed transport failure slice
 
 - Previously `safeDioCall` / `safeDioCallStream` mapped raw `SocketException` to synthetic HTTP 503 and `TimeoutException` to 504 despite receiving no HTTP response. `ApiException.fromDioException` discarded Dio failure subtype distinctions and sometimes forwarded raw exception messages that may include server URLs or credentials.
-- Introduce optional `ApiTransportFailure` on `ApiException`; classify connect/send/receive timeouts, unknown timeout, connection failures, TLS handshake/certificate errors, and cancellation via fixed credential-free messages, keeping transport `statusCode` null. Preserve genuine HTTP response status, error key/message/hint and established 401/TOTP behavior, including repository retry semantics.
+- Introduce optional `ApiTransportFailure` on `ApiException`; classify connect/send/receive/transform timeouts, unknown timeout, connection failures, TLS handshake/certificate errors, and cancellation via fixed credential-free messages, keeping transport `statusCode` null. Preserve genuine HTTP response status, error key/message/hint and established 401/TOTP behavior, including repository retry semantics.
 - Add factory and wrapper + stream mapping regressions. No changes to HTTP transport, TLS certificate policy, server selection, credentials, domain/repository data, background polling or UI translations. Exact-head Flutter/analyzer, docs, CodeQL/static, Sonar, Codecov and unsigned Android source APK verification required before merge; live device/TLS smoke pending.
 
 ## Next autonomous work unit

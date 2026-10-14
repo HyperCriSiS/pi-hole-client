@@ -11,6 +11,7 @@ enum ApiTransportFailure {
   connectTimeout,
   sendTimeout,
   receiveTimeout,
+  transformTimeout,
   timeout,
   connection,
   tls,
@@ -23,6 +24,7 @@ String _transportMessage(ApiTransportFailure failure) => switch (failure) {
   ApiTransportFailure.connectTimeout => 'Connection timed out.',
   ApiTransportFailure.sendTimeout => 'Request upload timed out.',
   ApiTransportFailure.receiveTimeout => 'Server response timed out.',
+  ApiTransportFailure.transformTimeout => 'Response processing timed out.',
   ApiTransportFailure.timeout => 'Request timed out.',
   ApiTransportFailure.connection => 'Network connection failed.',
   ApiTransportFailure.tls => 'TLS certificate or handshake failed.',
@@ -37,6 +39,8 @@ ApiTransportFailure? _classifyTransportFailure(DioException error) {
       return ApiTransportFailure.sendTimeout;
     case DioExceptionType.receiveTimeout:
       return ApiTransportFailure.receiveTimeout;
+    case DioExceptionType.transformTimeout:
+      return ApiTransportFailure.transformTimeout;
     case DioExceptionType.badCertificate:
       return ApiTransportFailure.tls;
     case DioExceptionType.connectionError:

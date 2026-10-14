@@ -139,6 +139,11 @@ void main() {
           'Server response timed out.',
         ),
         (
+          DioExceptionType.transformTimeout,
+          ApiTransportFailure.transformTimeout,
+          'Response processing timed out.',
+        ),
+        (
           DioExceptionType.connectionError,
           ApiTransportFailure.connection,
           'Network connection failed.',
