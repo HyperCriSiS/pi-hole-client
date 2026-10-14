@@ -98,14 +98,15 @@ void main() {
       expect(service.flushArpCallCount, 0);
     });
 
-    test('retries generated flush/network failure', () async {
+    test('does not replay ambiguous generated flush/network failure', () async {
       service.shouldFailFlushNetwork = true;
 
       final result = await repository.flushArp();
 
       expectError(result, messageContains: 'Forced actionFlushNetwork failure');
-      expect(service.flushNetworkCallCount, 2);
+      expect(service.flushNetworkCallCount, 1);
       expect(service.flushArpCallCount, 0);
+      expect(client.postAuthCallCount, 0);
     });
 
     test(
@@ -122,15 +123,16 @@ void main() {
       },
     );
 
-    test('propagates generated flush/arp fallback failure', () async {
+    test('does not repeat a failed flush/arp fallback write', () async {
       service.shouldFlushNetworkReturn404 = true;
       service.shouldFailFlushArp = true;
 
       final result = await repository.flushArp();
 
       expectError(result, messageContains: 'Forced actionFlushArp failure');
-      expect(service.flushNetworkCallCount, 2);
-      expect(service.flushArpCallCount, 2);
+      expect(service.flushNetworkCallCount, 1);
+      expect(service.flushArpCallCount, 1);
+      expect(client.postAuthCallCount, 0);
     });
 
     test('renews SID and retries generated flush/network after 401', () async {

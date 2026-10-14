@@ -87,7 +87,7 @@ void main() {
     },
   );
 
-  test('non-duplicate failure keeps its type and normal retry behavior', () async {
+  test('non-duplicate HTTP 500 remains typed without replaying host add', () async {
     service.error = HttpStatusCodeException(500, 'Server error');
 
     final result = await repository.addRecord(
@@ -98,6 +98,6 @@ void main() {
     final error = result.exceptionOrNull();
     expect(error, isA<HttpStatusCodeException>());
     expect(error, isNot(isA<AlreadyExistsException>()));
-    expect(service.addCallCount, 2);
+    expect(service.addCallCount, 1);
   });
 }
