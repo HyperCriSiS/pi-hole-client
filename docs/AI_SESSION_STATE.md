@@ -1,6 +1,6 @@
 # AI Session State
 
-Updated: 2026-10-14 (PR #235 typed transport failure handling integrated)
+Updated: 2026-10-14 (unstructured v6 error fallback hardening candidate)
 
 ## Integrated baseline
 
@@ -120,6 +120,12 @@ Updated: 2026-10-14 (PR #235 typed transport failure handling integrated)
 - Previously `safeDioCall` / `safeDioCallStream` mapped raw `SocketException` to synthetic HTTP 503 and `TimeoutException` to 504 despite receiving no HTTP response. `ApiException.fromDioException` discarded Dio failure subtype distinctions and sometimes forwarded raw exception messages that may include server URLs or credentials.
 - Introduce optional `ApiTransportFailure` on `ApiException`; classify connect/send/receive/transform timeouts, unknown timeout, connection failures, TLS handshake/certificate errors, and cancellation via fixed credential-free messages, keeping transport `statusCode` null. Preserve genuine HTTP response status, error key/message/hint and established 401/TOTP behavior, including repository retry semantics.
 - Add factory and wrapper + stream mapping regressions. No changes to HTTP transport, TLS certificate policy, server selection, credentials, domain/repository data, background polling or UI translations. Integrated via PR #235 (squash `b22a1bd42180e0697301ed61af9d6d1a79a7c80f`) after final tested feature HEAD `9ff879e6442e2576895dc8120ae7920dc3bf86c7` passed all 15 applicable checks (success or intentional skip), including Flutter/analyzer, Sonar, Codecov, CodeQL/static, docs and verified unsigned Android source APK. Initial CI exposed the additional Dio `transformTimeout` enum member, which was fixed and retested on the final HEAD. Live device/TLS smoke pending.
+
+## Bounded follow-up: unstructured v6 API errors
+
+- Known transport failures already have fixed, credential-free error text, but previously unclassified Dio errors without an HTTP response could still forward `DioException.message` with a credential-bearing URL. Missing Pi-hole response messages could also fall back to that raw Dio text. Separately, the `safeDioCall` and streaming generic catches previously interpolated arbitrary thrown exceptions and stacktraces into user-visible `ApiException` objects and debug logs.
+- The scoped fix returns an optional `ApiTransportFailure.unexpected` for an unknown Dio failure *without* a response, never inventing an HTTP code. With a real response but no explicit server error message, it uses a status-only `HTTP N` fallback. Genuine Pi-hole-provided structured error messages, keys, hints, HTTP statuses and existing 401/TOTP behavior are preserved. The generic normal/stream fallback emits only the thrown object's runtime type, not the raw message or stack.
+- Deterministic mapper and normal/stream wrapper regressions cover missing-response Dio failures, actual HTTP 503 fallbacks and secret-bearing unstructured `FormatException` messages. No TLS, auth/session, retry eligibility, API request, server switching, persistence, translations or native changes. Full exact-head CI including unsigned APK verification required; live Pi-hole and affected-device smoke remains pending.
 
 ## Next autonomous work unit
 

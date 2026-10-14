@@ -91,6 +91,17 @@ void main() {
       expect(error.toString(), isNot(contains('secret-session')));
     });
 
+    test('unknown exception cannot expose raw secret-bearing message', () async {
+      final result = await safeDioCall<String>(() async {
+        throw const FormatException('sid=secret-from-json');
+      });
+      final error = result.exceptionOrNull()! as ApiException;
+      expect(error.statusCode, isNull);
+      expect(error.message, 'Unexpected API error (FormatException).');
+      expect(error.toString(), isNot(contains('secret-from-json')));
+      expect(error.toString(), isNot(contains('safe_dio_call_test.dart')));
+    });
+
     test('returns Failure on unknown exception', () async {
       final result = await safeDioCall<String>(() async {
         throw const FormatException('bad data');
@@ -99,8 +110,8 @@ void main() {
       expect(result.isError(), true);
       final error = result.exceptionOrNull()! as ApiException;
       expect(error.statusCode, isNull);
-      expect(error.message, contains('Unexpected error'));
-      expect(error.message, contains('bad data'));
+      expect(error.message, 'Unexpected API error (FormatException).');
+      expect(error.message, isNot(contains('bad data')));
     });
   });
 
@@ -180,6 +191,16 @@ void main() {
       expect(error.toString(), isNot(contains('secret-stream')));
     });
 
+    test('stream fallback suppresses unstructured secrets', () async {
+      final results = await safeDioCallStream<String>(() async* {
+        throw const FormatException('password=secret-in-stream');
+      }).toList();
+      final error = results.single.exceptionOrNull()! as ApiException;
+      expect(error.statusCode, isNull);
+      expect(error.message, 'Unexpected API error (FormatException).');
+      expect(error.toString(), isNot(contains('secret-in-stream')));
+    });
+
     test('yields Failure on unknown exception during stream', () async {
       final results = await safeDioCallStream<String>(() async* {
         throw Exception('unexpected');
@@ -188,7 +209,8 @@ void main() {
       expect(results.length, 1);
       expect(results[0].isError(), true);
       final error = results[0].exceptionOrNull()! as ApiException;
-      expect(error.message, contains('Unexpected error'));
+      expect(error.message, startsWith('Unexpected API error ('));
+      expect(error.message, isNot(contains('unexpected')));
     });
   });
 
