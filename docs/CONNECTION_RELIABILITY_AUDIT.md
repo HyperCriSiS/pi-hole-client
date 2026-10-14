@@ -16,7 +16,7 @@
 
 **Failure scenario:** A server commits a change but its response is lost or times out, or it returns an unrelated error. Blind replay can repeat that mutation. The code demonstrates this *possibility*; no live incident or data loss has been claimed.
 
-**Required implementation validation (code candidate):**
+**P1 implementation and validation:**
 
 1. Add deterministic helper-level tests distinguishing `ApiException(statusCode: 401)`, `429`, `500`, missing-status timeouts/connection failures, and success. Check action execution counts; use a delayed/indeterminate response for at least one non-idempotent write.
 2. Add repository-level cases for representative v6 add and delete operations, including `getSid()`/renewal involvement. Preserve a single legitimate 401 renewal/replay after session refresh, but do not replay ambiguous writes after unknown outcomes.
@@ -36,6 +36,6 @@
 
 ## Acceptance gates
 
-- The P1 implementation is a code candidate until all exact-head CI gates pass and the PR is integrated. The P2 diagnostics work remains planning only; no timeout/error classification has been changed.
+- P1 was integrated in PR #233, squash `513ba4f76f895ab3cd4740cfba8d4c2188166ab9`, exact tested HEAD `004a4d265a750df7a9b1bd97cfb130ce50a76f6d`: all 16 applicable checks passed or were intentionally skipped including Flutter/analyzer, Sonar, Codecov, CodeQL/static, docs and verified unsigned Android source APK. The P2 diagnostics work remains planning only; no timeout/error classification has been changed.
 - Implementation requires an isolated branch, deterministic failing-before/fixed-after tests, no security-policy regressions, and exact HEAD Flutter/analyzer + applicable security/quality CI and unsigned Android source APK verification.
 - Real Pi-hole v5/v6, Android 16/17, self-signed certificate behavior and proxy-device validation remain separate manual gates.
