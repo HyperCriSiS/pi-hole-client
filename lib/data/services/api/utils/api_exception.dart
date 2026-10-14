@@ -109,8 +109,8 @@ class ApiException implements Exception {
     String? hint;
     String message;
 
-    if (response?.data is Map<String, dynamic>) {
-      final data = response!.data as Map<String, dynamic>;
+    if (response.data is Map<String, dynamic>) {
+      final data = response.data as Map<String, dynamic>;
       final error = data['error'];
       if (error is Map<String, dynamic>) {
         errorCode = error['key'] as String?;
@@ -125,7 +125,7 @@ class ApiException implements Exception {
 
     return ApiException(
       message: message,
-      statusCode: response?.statusCode,
+      statusCode: response.statusCode,
       errorCode: errorCode,
       hint: hint,
     );
