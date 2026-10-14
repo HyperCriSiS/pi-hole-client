@@ -1,6 +1,6 @@
 # AI Session State
 
-Updated: 2026-10-14 (PR #233 v6 mutation replay guard integrated)
+Updated: 2026-10-14 (v6 typed transport failure validation candidate)
 
 ## Integrated baseline
 
@@ -113,6 +113,12 @@ Updated: 2026-10-14 (PR #233 v6 mutation replay guard integrated)
 - The generic `runWithResultRetry` helper accepts an optional `retryWhen` predicate; without it, established read and v5 callers preserve their existing retry behavior. Across all 28 state-changing v6 repository methods (actions, adlists, clients, config, DHCP, DNS blocking, domains, groups, Local DNS/CNAME, network devices, auth-session deletion, and FTL messages), explicit `shouldRetryMutation` allows replay only after definitive HTTP 401 rejection or `SidNotFoundException` before request dispatch. It rejects 429/5xx/timeout/network and TOTP exceptions without invoking the renewal callback.
 - Deterministic helper tests verify accepted/rejected retry and exception path; base classifier tests cover status, missing SID and TOTP; v6 domain repository tests cover 429, 5xx, timeout and delayed ambiguous delete while existing read/write 401 tests continue exercising actual SID renewal. No new HTTP requests or automatic interactive auth, and no changes to v5, transport, persisted credentials, server isolation, logging, Flutter UI or storage schema.
 - **Integrated via PR #233** as squash `513ba4f76f895ab3cd4740cfba8d4c2188166ab9`; exact final feature HEAD `004a4d265a750df7a9b1bd97cfb130ce50a76f6d` passed all 16 checks (successful or expected skipped), including full Flutter/analyzer, Sonar, Codecov, CodeQL/static, audit/docs and verified unsigned source APK. Initial CI exposed three old tests that expected unsafe replay after ambiguous errors; those fixtures were corrected, and all checks re-ran on the new HEAD. Physical-device/live Pi-hole smoke pending.
+
+## Current bounded v6 typed transport failure slice
+
+- Previously `safeDioCall` / `safeDioCallStream` mapped raw `SocketException` to synthetic HTTP 503 and `TimeoutException` to 504 despite receiving no HTTP response. `ApiException.fromDioException` discarded Dio failure subtype distinctions and sometimes forwarded raw exception messages that may include server URLs or credentials.
+- Introduce optional `ApiTransportFailure` on `ApiException`; classify connect/send/receive/transform timeouts, unknown timeout, connection failures, TLS handshake/certificate errors, and cancellation via fixed credential-free messages, keeping transport `statusCode` null. Preserve genuine HTTP response status, error key/message/hint and established 401/TOTP behavior, including repository retry semantics.
+- Add factory and wrapper + stream mapping regressions. No changes to HTTP transport, TLS certificate policy, server selection, credentials, domain/repository data, background polling or UI translations. Exact-head Flutter/analyzer, docs, CodeQL/static, Sonar, Codecov and unsigned Android source APK verification required before merge; live device/TLS smoke pending.
 
 ## Next autonomous work unit
 

@@ -37,27 +37,58 @@ void main() {
       expect(error.message, 'Session expired');
     });
 
-    test('returns Failure with statusCode 503 on SocketException', () async {
+    test('returns a transport failure without HTTP code on SocketException', () async {
       final result = await safeDioCall<String>(() async {
         throw const SocketException('Connection refused');
       });
 
       expect(result.isError(), true);
       final error = result.exceptionOrNull()! as ApiException;
-      expect(error.statusCode, 503);
-      expect(error.message, contains('Network connection failed'));
-      expect(error.message, contains('Connection refused'));
+      expect(error.statusCode, isNull);
+      expect(error.transportFailure, ApiTransportFailure.connection);
+      expect(error.message, 'Network connection failed.');
     });
 
-    test('returns Failure with statusCode 504 on TimeoutException', () async {
+    test('returns a transport failure without HTTP code on TimeoutException', () async {
       final result = await safeDioCall<String>(() async {
         throw TimeoutException('Request took too long');
       });
 
       expect(result.isError(), true);
       final error = result.exceptionOrNull()! as ApiException;
-      expect(error.statusCode, 504);
-      expect(error.message, contains('Request timed out'));
+      expect(error.statusCode, isNull);
+      expect(error.transportFailure, ApiTransportFailure.timeout);
+      expect(error.message, 'Request timed out.');
+    });
+
+
+    test('returns a typed TLS failure without exposing handshake details', () async {
+      final result = await safeDioCall<String>(() async {
+        throw const HandshakeException('password=secret-handshake-detail');
+      });
+
+      final error = result.exceptionOrNull()! as ApiException;
+      expect(error.transportFailure, ApiTransportFailure.tls);
+      expect(error.statusCode, isNull);
+      expect(error.message, 'TLS certificate or handshake failed.');
+      expect(error.toString(), isNot(contains('secret-handshake-detail')));
+    });
+
+    test('Dio receive timeout retains stage and excludes raw request URL', () async {
+      final result = await safeDioCall<String>(() async {
+        throw DioException(
+          requestOptions: RequestOptions(
+            path: '/api/stats/summary?sid=secret-session',
+          ),
+          type: DioExceptionType.receiveTimeout,
+          message: 'sid=secret-session',
+        );
+      });
+      final error = result.exceptionOrNull()! as ApiException;
+      expect(error.transportFailure, ApiTransportFailure.receiveTimeout);
+      expect(error.statusCode, isNull);
+      expect(error.message, 'Server response timed out.');
+      expect(error.toString(), isNot(contains('secret-session')));
     });
 
     test('returns Failure on unknown exception', () async {
@@ -120,8 +151,9 @@ void main() {
       expect(results.length, 1);
       expect(results[0].isError(), true);
       final error = results[0].exceptionOrNull()! as ApiException;
-      expect(error.statusCode, 503);
-      expect(error.message, contains('Network connection failed'));
+      expect(error.statusCode, isNull);
+      expect(error.transportFailure, ApiTransportFailure.connection);
+      expect(error.message, 'Network connection failed.');
     });
 
     test('yields Failure on TimeoutException during stream', () async {
@@ -132,7 +164,20 @@ void main() {
       expect(results.length, 1);
       expect(results[0].isError(), true);
       final error = results[0].exceptionOrNull()! as ApiException;
-      expect(error.statusCode, 504);
+      expect(error.statusCode, isNull);
+      expect(error.transportFailure, ApiTransportFailure.timeout);
+    });
+
+
+    test('yields a TLS failure without HTTP code during stream', () async {
+      final results = await safeDioCallStream<String>(() async* {
+        throw const HandshakeException('sid=secret-stream');
+      }).toList();
+      final error = results.single.exceptionOrNull()! as ApiException;
+      expect(error.transportFailure, ApiTransportFailure.tls);
+      expect(error.statusCode, isNull);
+      expect(error.message, 'TLS certificate or handshake failed.');
+      expect(error.toString(), isNot(contains('secret-stream')));
     });
 
     test('yields Failure on unknown exception during stream', () async {
