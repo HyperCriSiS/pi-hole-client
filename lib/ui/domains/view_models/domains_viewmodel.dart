@@ -168,12 +168,15 @@ class DomainsViewModel extends ChangeNotifier {
     if (repository == null) {
       throw Exception('DomainRepository not available');
     }
+    final serverEpoch = _serverEpoch;
     final result = await repository.deleteDomain(
       domain.type,
       domain.kind,
       domain.punyCode,
     );
-    if (_disposed) return;
+    // The request may have succeeded on the former Pi-hole. It must never
+    // mutate or report an old-server failure against the newly selected one.
+    if (_disposed || serverEpoch != _serverEpoch) return;
     switch (result) {
       case Success():
         _removeDomainFromList(domain);
@@ -189,12 +192,13 @@ class DomainsViewModel extends ChangeNotifier {
     if (repository == null) {
       throw Exception('DomainRepository not available');
     }
+    final serverEpoch = _serverEpoch;
     final result = await repository.addDomain(
       params.type,
       params.kind,
       params.domain,
     );
-    if (_disposed) return;
+    if (_disposed || serverEpoch != _serverEpoch) return;
     switch (result) {
       case Success():
         final domain = result.getOrNull();
@@ -216,6 +220,7 @@ class DomainsViewModel extends ChangeNotifier {
     if (repository == null) {
       throw Exception('DomainRepository not available');
     }
+    final serverEpoch = _serverEpoch;
     final result = await repository.updateDomain(
       domain.type,
       domain.kind,
@@ -224,7 +229,7 @@ class DomainsViewModel extends ChangeNotifier {
       groups: domain.groups,
       enabled: domain.enabled,
     );
-    if (_disposed) return;
+    if (_disposed || serverEpoch != _serverEpoch) return;
     switch (result) {
       case Success():
         final updated = result.getOrNull();
