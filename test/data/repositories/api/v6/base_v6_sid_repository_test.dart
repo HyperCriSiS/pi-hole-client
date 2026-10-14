@@ -60,6 +60,29 @@ void main() {
     });
   });
 
+  group('shouldRetryMutation', () {
+    test('allows only definitive HTTP 401 or pre-dispatch missing SID', () {
+      expect(repo.shouldRetryMutation(HttpStatusCodeException(401)), isTrue);
+      expect(repo.shouldRetryMutation(
+        ApiException(message: 'Unauthorized', statusCode: 401),
+      ), isTrue);
+      expect(repo.shouldRetryMutation(SidNotFoundException()), isTrue);
+
+      for (final status in [400, 403, 408, 429, 495, 500, 503, 504]) {
+        expect(repo.shouldRetryMutation(HttpStatusCodeException(status)), isFalse);
+        expect(repo.shouldRetryMutation(
+          ApiException(message: 'Unrelated error', statusCode: status),
+        ), isFalse);
+      }
+      expect(repo.shouldRetryMutation(ApiException(message: 'Timeout')), isFalse);
+      expect(repo.shouldRetryMutation(TotpRequiredException()), isFalse);
+      expect(repo.shouldRetryMutation(TotpInvalidException()), isFalse);
+      expect(repo.shouldRetryMutation(TotpReusedException()), isFalse);
+      expect(repo.shouldRetryMutation(TotpRateLimitException()), isFalse);
+      expect(repo.shouldRetryMutation(Exception('Connection lost')), isFalse);
+    });
+  });
+
   // ---------------------------------------------------------------------------
   // isReauthRequired
   // ---------------------------------------------------------------------------
