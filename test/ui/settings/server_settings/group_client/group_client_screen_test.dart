@@ -481,16 +481,32 @@ void main() async {
         ),
       );
 
-      await tester.pumpAndSettle();
+      // Only wait for finite modal and snackbar transitions. A repeating
+      // loading animation elsewhere in the widget tree must not make this
+      // flow test hang until the CI timeout.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 350));
 
       await tester.tap(find.byType(FloatingActionButton));
-      await tester.pumpAndSettle();
+      // Only wait for finite modal and snackbar transitions. A repeating
+      // loading animation elsewhere in the widget tree must not make this
+      // flow test hang until the CI timeout.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 350));
 
       await tester.enterText(find.byType(TextField).first, 'Work');
-      await tester.pumpAndSettle();
+      // Only wait for finite modal and snackbar transitions. A repeating
+      // loading animation elsewhere in the widget tree must not make this
+      // flow test hang until the CI timeout.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 350));
 
       await tester.tap(find.text('Add'));
-      await tester.pumpAndSettle();
+      // Only wait for finite modal and snackbar transitions. A repeating
+      // loading animation elsewhere in the widget tree must not make this
+      // flow test hang until the CI timeout.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 350));
 
       expect(find.text('Group added successfully'), findsOneWidget);
     });
@@ -623,16 +639,32 @@ void main() async {
         ),
       );
 
-      await tester.pumpAndSettle();
+      // Only wait for finite modal and snackbar transitions. A repeating
+      // loading animation elsewhere in the widget tree must not make this
+      // flow test hang until the CI timeout.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 350));
 
       await tester.tap(find.byType(FloatingActionButton));
-      await tester.pumpAndSettle();
+      // Only wait for finite modal and snackbar transitions. A repeating
+      // loading animation elsewhere in the widget tree must not make this
+      // flow test hang until the CI timeout.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 350));
 
       await tester.enterText(find.byType(TextField).first, '192.168.1.2');
-      await tester.pumpAndSettle();
+      // Only wait for finite modal and snackbar transitions. A repeating
+      // loading animation elsewhere in the widget tree must not make this
+      // flow test hang until the CI timeout.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 350));
 
       await tester.tap(find.text('Add'));
-      await tester.pumpAndSettle();
+      // Only wait for finite modal and snackbar transitions. A repeating
+      // loading animation elsewhere in the widget tree must not make this
+      // flow test hang until the CI timeout.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 350));
 
       expect(find.text('Client added successfully'), findsOneWidget);
     });
