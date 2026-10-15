@@ -31,12 +31,58 @@ void main() {
     });
 
     test('initial values are correct', () {
-      expect(viewModel.loadingStatus, LoadStatus.loaded);
+      expect(viewModel.loadingStatus, LoadStatus.loading);
       expect(viewModel.clients, []);
       expect(viewModel.filteredClients, []);
       expect(viewModel.searchTerm, '');
       expect(viewModel.searchMode, false);
       expect(listenerCalled, false);
+    });
+
+
+    test('first clients load remains loading until a successful empty result', () async {
+      final pending = Completer<Result<List<ManagedClient>>>();
+      fakeClientRepository.fetchClientsOverride = () => pending.future;
+
+      expect(viewModel.loadingStatus, LoadStatus.loading);
+      expect(viewModel.hasSuccessfulLoad, isFalse);
+      expect(viewModel.clients, isEmpty);
+
+      final firstLoad = viewModel.loadClients.runAsync();
+      expect(viewModel.loadingStatus, LoadStatus.loading);
+      expect(viewModel.hasSuccessfulLoad, isFalse);
+
+      pending.complete(const Success<List<ManagedClient>, Exception>([]));
+      await firstLoad;
+      expect(viewModel.loadingStatus, LoadStatus.loaded);
+      expect(viewModel.hasSuccessfulLoad, isTrue);
+      expect(viewModel.clients, isEmpty);
+      expect(viewModel.isRevalidating, isFalse);
+    });
+
+    test('failed initial clients load shows error until manual recovery', () async {
+      fakeClientRepository.shouldFail = true;
+      expect(viewModel.loadingStatus, LoadStatus.loading);
+
+      await expectLater(
+        viewModel.loadClients.runAsync(),
+        throwsA(isA<Exception>()),
+      );
+      expect(viewModel.loadingStatus, LoadStatus.error);
+      expect(viewModel.hasSuccessfulLoad, isFalse);
+      expect(viewModel.hasRevalidationError, isFalse);
+
+      fakeClientRepository.shouldFail = false;
+      final pending = Completer<Result<List<ManagedClient>>>();
+      fakeClientRepository.fetchClientsOverride = () => pending.future;
+      final recovery = viewModel.loadClients.runAsync();
+      expect(viewModel.loadingStatus, LoadStatus.loading);
+
+      pending.complete(const Success<List<ManagedClient>, Exception>([]));
+      await recovery;
+      expect(viewModel.loadingStatus, LoadStatus.loaded);
+      expect(viewModel.clients, isEmpty);
+      expect(viewModel.hasRevalidationError, isFalse);
     });
 
     test('retains successful cache during refresh, failure and recovery', () async {

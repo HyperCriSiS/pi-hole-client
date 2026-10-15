@@ -435,6 +435,27 @@ void main() async {
       expect(find.byType(AddGroupModal), findsOneWidget);
     });
 
+    testWidgets('GroupsList initially shows loading instead of an empty list', (
+      WidgetTester tester,
+    ) async {
+      final controller = ScrollController();
+      addTearDown(controller.dispose);
+      await tester.pumpWidget(
+        buildWidget(
+          GroupsList(
+            scrollController: controller,
+            searchTerm: '',
+            selectedGroup: null,
+            onGroupSelected: (_) {},
+          ),
+        ),
+      );
+
+      expect(groupsViewModel.hasSuccessfulLoad, isFalse);
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.text('Default'), findsNothing);
+    });
+
     testWidgets('GroupsList adds group and shows success snackbar', (
       WidgetTester tester,
     ) async {
@@ -446,6 +467,9 @@ void main() async {
         tester.view.resetDevicePixelRatio();
       });
 
+      // This test exercises the add flow, not first-load behavior.
+      // The production screen factory starts loading before user actions.
+      await groupsViewModel.loadGroups.runAsync();
       await tester.pumpWidget(
         buildWidget(
           GroupsList(
@@ -457,16 +481,32 @@ void main() async {
         ),
       );
 
-      await tester.pumpAndSettle();
+      // Only wait for finite modal and snackbar transitions. A repeating
+      // loading animation elsewhere in the widget tree must not make this
+      // flow test hang until the CI timeout.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 350));
 
       await tester.tap(find.byType(FloatingActionButton));
-      await tester.pumpAndSettle();
+      // Only wait for finite modal and snackbar transitions. A repeating
+      // loading animation elsewhere in the widget tree must not make this
+      // flow test hang until the CI timeout.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 350));
 
       await tester.enterText(find.byType(TextField).first, 'Work');
-      await tester.pumpAndSettle();
+      // Only wait for finite modal and snackbar transitions. A repeating
+      // loading animation elsewhere in the widget tree must not make this
+      // flow test hang until the CI timeout.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 350));
 
       await tester.tap(find.text('Add'));
-      await tester.pumpAndSettle();
+      // Only wait for finite modal and snackbar transitions. A repeating
+      // loading animation elsewhere in the widget tree must not make this
+      // flow test hang until the CI timeout.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 350));
 
       expect(find.text('Group added successfully'), findsOneWidget);
     });
@@ -553,6 +593,27 @@ void main() async {
 
       expect(find.byType(AddClientModal), findsOneWidget);
     });
+    testWidgets('ClientsList initially shows loading instead of an empty list', (
+      WidgetTester tester,
+    ) async {
+      final controller = ScrollController();
+      addTearDown(controller.dispose);
+      await tester.pumpWidget(
+        buildWidget(
+          ClientsList(
+            scrollController: controller,
+            onClientSelected: (_) {},
+            selectedClient: null,
+            groups: const {0: 'Default'},
+          ),
+        ),
+      );
+
+      expect(clientsViewModel.hasSuccessfulLoad, isFalse);
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.text('192.168.1.100 (desktop)'), findsNothing);
+    });
+
     testWidgets('ClientsList adds client and shows success snackbar', (
       WidgetTester tester,
     ) async {
@@ -564,6 +625,9 @@ void main() async {
         tester.view.resetDevicePixelRatio();
       });
 
+      // Seed the initial successful list as the production factory does;
+      // otherwise pumpAndSettle would correctly wait on the initial spinner.
+      await clientsViewModel.loadClients.runAsync();
       await tester.pumpWidget(
         buildWidget(
           ClientsList(
@@ -575,16 +639,32 @@ void main() async {
         ),
       );
 
-      await tester.pumpAndSettle();
+      // Only wait for finite modal and snackbar transitions. A repeating
+      // loading animation elsewhere in the widget tree must not make this
+      // flow test hang until the CI timeout.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 350));
 
       await tester.tap(find.byType(FloatingActionButton));
-      await tester.pumpAndSettle();
+      // Only wait for finite modal and snackbar transitions. A repeating
+      // loading animation elsewhere in the widget tree must not make this
+      // flow test hang until the CI timeout.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 350));
 
       await tester.enterText(find.byType(TextField).first, '192.168.1.2');
-      await tester.pumpAndSettle();
+      // Only wait for finite modal and snackbar transitions. A repeating
+      // loading animation elsewhere in the widget tree must not make this
+      // flow test hang until the CI timeout.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 350));
 
       await tester.tap(find.text('Add'));
-      await tester.pumpAndSettle();
+      // Only wait for finite modal and snackbar transitions. A repeating
+      // loading animation elsewhere in the widget tree must not make this
+      // flow test hang until the CI timeout.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 350));
 
       expect(find.text('Client added successfully'), findsOneWidget);
     });

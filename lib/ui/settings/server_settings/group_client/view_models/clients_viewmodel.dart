@@ -75,11 +75,14 @@ class ClientsViewModel extends ChangeNotifier {
   bool get searchMode => _searchMode;
 
   LoadStatus get loadingStatus {
-    // Keep last known data (including a successful empty list) on reload.
+    // Only a successful server read (including an empty one) establishes a
+    // loaded snapshot. Never advertise a not-yet-requested list as empty.
     if (_hasSuccessfulLoad) return LoadStatus.loaded;
-    if (loadClients.isRunning.value) return LoadStatus.loading;
-    if (loadClients.errors.value != null) return LoadStatus.error;
-    return LoadStatus.loaded;
+    if (loadClients.errors.value != null &&
+        !loadClients.isRunning.value) {
+      return LoadStatus.error;
+    }
+    return LoadStatus.loading;
   }
 
   // --- Lookup updates ---

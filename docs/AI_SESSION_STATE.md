@@ -1,6 +1,6 @@
 # AI Session State
 
-Updated: 2026-10-15 (PR #243 Domains server-switch CRUD isolation integrated)
+Updated: 2026-10-15 (Groups/Clients first-load false-empty UX candidate)
 
 ## Integrated baseline
 
@@ -148,6 +148,12 @@ Updated: 2026-10-15 (PR #243 Domains server-switch CRUD isolation integrated)
 - `DomainsViewModel._loadDomains` already guards old responses with `_serverEpoch`, but the local state updates in `_addDomain`, `_updateDomain`, and `_deleteDomain` previously checked only `_disposed`. A write started against server A could finish after switching to B, mutating B's list or changing B's mutation sequence; old errors could also surface against B.
 - Capture the selected-server epoch at the start of all three old-server repository writes, then ignore their results (success or failure) once the selected repository changes. Do **not** cancel/replay writes that already went to A, or change B authentication/session behavior.
 - Nine deterministic gated-response regression cases cover success/Failure/thrown error for add/update/delete, preserving the B cache and a parallel B revalidation after A resolves. Existing same-server mutations and stale-fetch behavior remain intact. Integrated via PR #243 (squash `1cdf76f8855ad555c0fdb3eb239956d35c9733e3`) after final feature HEAD `b53536021e15c2866babd596c3849d8e2c2ef0e6` passed all 15 applicable CI checks (success or intentional skip), including Flutter tests/analyzer, Sonar, Codecov, CodeQL/static, docs, and explicitly verified unsigned Android source APK. Real v5/v6 Android device smoke remains pending.
+
+## Groups/Clients first-load false-empty state (validation candidate)
+
+- The Group/Client screen factory immediately starts `loadGroups.run()` / `loadClients.run()`, while the ViewModels previously returned `LoadStatus.loaded` when no fetch had ever succeeded and the command was not running. Both list widgets render `CustomTabContentList`, so that initial state could briefly show `groupsNone` / `clientsNone` before a server read.
+- Both ViewModels now return `LoadStatus.loading` until a successful full-list snapshot, including a real empty result; a failed first read yields `LoadStatus.error`; an in-progress retry returns loading; and a previously successful snapshot always stays loaded during failed/retrying revalidation. This reuses the existing loading/error/list widgets; no localization or new network behavior.
+- Four deterministic ViewModel regressions cover deferred first empty loads and first-load failure/retry/recovery for Groups and Clients. Two new widget tests assert that uninitialized Group/Client lists display the existing spinner. The first exact-head full-suite run exposed two legacy add-flow widget tests that attempted `pumpAndSettle()` without first loading their ViewModel: now those two fixtures initialize their successful list before exercising their unrelated add-dialog workflows. Existing tests cover cached refresh success/failure, including legitimate empty snapshots. No API/auth/TOTP, server selection, persistence, database, background polling, or Android native changes. Exact-head Flutter/analyzer, CodeQL/static, Sonar/Codecov, docs and explicit unsigned Android source artifact verification before merge. Physical-device/v5/v6 smoke remains pending.
 
 ## Next autonomous work unit
 
